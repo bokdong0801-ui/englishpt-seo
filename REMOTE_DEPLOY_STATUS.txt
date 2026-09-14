@@ -1,2 +1,16 @@
 REMOTE DEPLOY STATUS
-The connected GitHub account currently exposes only card-terminal repositories. No ENGLISH PT repository is available through the connector, so no remote push was performed. This package is deployment-ready and can be pushed once the ENGLISH PT repository is connected or supplied.
+
+GitHub repository connected: bokdong0801-ui/englishpt-seo
+Production release uploaded to main: YES
+Content pages: 95
+Legacy redirects: 74
+Sitemap: present
+Robots: present
+Shared CSS/JS assets: present
+Vercel config: present
+
+NEXT REMOTE STEP
+Connect the GitHub repository to Vercel (or another redirect-capable host), deploy, then verify the live domain, redirects, canonical URLs, sitemap, EmailJS submission, and mobile rendering.
+
+DOMAIN CHECK
+Current canonical/sitemap domain is https://englishpt.kr. Confirm or replace this before final production indexing if a different domain will be used.
