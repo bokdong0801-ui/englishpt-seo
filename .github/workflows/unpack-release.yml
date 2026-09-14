@@ -5,7 +5,7 @@ on:
     branches:
       - release/englishpt-95-v1
     paths:
-      - '.release/site-release.tar.gz.b64'
+      - '.release/part-*'
       - '.github/workflows/unpack-release.yml'
 
 permissions:
@@ -20,17 +20,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Unpack static site payload
+      - name: Rebuild and unpack static site payload
         shell: bash
         run: |
           set -euo pipefail
-          if [ ! -f .release/site-release.tar.gz.b64 ]; then
-            echo "Release payload is not present yet; nothing to unpack."
+          shopt -s nullglob
+          parts=(.release/part-*)
+          if [ ${#parts[@]} -eq 0 ]; then
+            echo "Release payload chunks are not present yet; nothing to unpack."
             exit 0
           fi
+          cat .release/part-* > /tmp/englishpt-site.tar.gz.b64
+          base64 -d /tmp/englishpt-site.tar.gz.b64 > /tmp/englishpt-site.tar.gz
+          echo "60d9e410e11b483d2a41b89cb64f7abfdafe3bb166dd02d1470d13c5e07e2525  /tmp/englishpt-site.tar.gz" | sha256sum -c -
           rm -rf /tmp/englishpt-site
           mkdir -p /tmp/englishpt-site
-          base64 -d .release/site-release.tar.gz.b64 > /tmp/englishpt-site.tar.gz
           tar -xzf /tmp/englishpt-site.tar.gz -C /tmp/englishpt-site
           rsync -a --delete \
             --exclude='.git/' \
