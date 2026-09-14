@@ -1,0 +1,446 @@
+[
+  {
+    "OLD URL": "/dalseo-songhyeondong-1to1-tos.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘토스’와 ‘토익스피킹’은 같은 시험 의도이며 대상별 페이지도 시험 준비 목적이 동일해 1개의 토익스피킹 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-academy-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-adult-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-academy-video.html",
+    "NEW URL": "/dalseo-songhyeondong-adult-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-basic-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-adult-basic-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘기초회화’와 ‘기초영어회화’의 검색의도가 사실상 같아 대표 기초영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-beginner-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-adult-beginner-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘왕초보회화’와 ‘왕초보영어회화’의 검색의도가 사실상 같아 대표 왕초보영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-conv-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-adult-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-conv-video.html",
+    "NEW URL": "/dalseo-songhyeondong-adult-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-ielts.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-ielts.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "대상보다 IELTS 4영역·Band Score 준비가 검색의도를 지배해 1개의 IELTS 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-opic.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-opic.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "성인·직장인·주부 모두 OPIc 등급 달성이 핵심이라 대상별 유사 페이지를 1개의 OPIc 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-toeic-speaking.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘토스’와 ‘토익스피킹’은 같은 시험 의도이며 대상별 페이지도 시험 준비 목적이 동일해 1개의 토익스피킹 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-toeic.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-toeic.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "성인·직장인·주부 모두 TOEIC 점수 달성이 핵심이라 대상별 유사 페이지를 1개의 TOEIC 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-tos.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘토스’와 ‘토익스피킹’은 같은 시험 의도이며 대상별 페이지도 시험 준비 목적이 동일해 1개의 토익스피킹 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-tutor-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-adult-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-adult-tutor-video.html",
+    "NEW URL": "/dalseo-songhyeondong-adult-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-academy-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-biz-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-academy-video.html",
+    "NEW URL": "/dalseo-songhyeondong-biz-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-basic-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-biz-basic-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘기초회화’와 ‘기초영어회화’의 검색의도가 사실상 같아 대표 기초영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-beginner-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-biz-beginner-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘왕초보회화’와 ‘왕초보영어회화’의 검색의도가 사실상 같아 대표 왕초보영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-cert.html",
+    "NEW URL": "/dalseo-songhyeondong-adult-cert.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "성인·직장인·주부 페이지 모두 ‘어떤 영어시험을 준비할지 선택’ 의도가 같아 성인 자격증 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-conv-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-biz-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-conv-video.html",
+    "NEW URL": "/dalseo-songhyeondong-biz-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-ielts.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-ielts.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "대상보다 IELTS 4영역·Band Score 준비가 검색의도를 지배해 1개의 IELTS 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-opic.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-opic.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "성인·직장인·주부 모두 OPIc 등급 달성이 핵심이라 대상별 유사 페이지를 1개의 OPIc 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-toeic-speaking.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘토스’와 ‘토익스피킹’은 같은 시험 의도이며 대상별 페이지도 시험 준비 목적이 동일해 1개의 토익스피킹 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-toeic.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-toeic.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "성인·직장인·주부 모두 TOEIC 점수 달성이 핵심이라 대상별 유사 페이지를 1개의 TOEIC 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-tos.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘토스’와 ‘토익스피킹’은 같은 시험 의도이며 대상별 페이지도 시험 준비 목적이 동일해 1개의 토익스피킹 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-tutor-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-biz-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-biz-tutor-video.html",
+    "NEW URL": "/dalseo-songhyeondong-biz-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-elem-academy-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-elem-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-elem-academy-video.html",
+    "NEW URL": "/dalseo-songhyeondong-elem-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-elem-basic-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-elem-basic-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘기초회화’와 ‘기초영어회화’의 검색의도가 사실상 같아 대표 기초영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-elem-beginner-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-elem-beginner-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘왕초보회화’와 ‘왕초보영어회화’의 검색의도가 사실상 같아 대표 왕초보영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-elem-conv-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-elem-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-elem-conv-video.html",
+    "NEW URL": "/dalseo-songhyeondong-elem-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-elem-tutor-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-elem-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-elem-tutor-video.html",
+    "NEW URL": "/dalseo-songhyeondong-elem-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-high-academy-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-high-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-high-academy-video.html",
+    "NEW URL": "/dalseo-songhyeondong-high-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-high-basic-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-high-basic-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘기초회화’와 ‘기초영어회화’의 검색의도가 사실상 같아 대표 기초영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-high-beginner-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-high-beginner-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘왕초보회화’와 ‘왕초보영어회화’의 검색의도가 사실상 같아 대표 왕초보영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-high-conv-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-high-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-high-conv-video.html",
+    "NEW URL": "/dalseo-songhyeondong-high-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-high-tutor-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-high-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-high-tutor-video.html",
+    "NEW URL": "/dalseo-songhyeondong-high-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-academy-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-housewife-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-academy-video.html",
+    "NEW URL": "/dalseo-songhyeondong-housewife-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-basic-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-housewife-basic-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘기초회화’와 ‘기초영어회화’의 검색의도가 사실상 같아 대표 기초영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-beginner-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-housewife-beginner-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘왕초보회화’와 ‘왕초보영어회화’의 검색의도가 사실상 같아 대표 왕초보영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-cert.html",
+    "NEW URL": "/dalseo-songhyeondong-adult-cert.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "성인·직장인·주부 페이지 모두 ‘어떤 영어시험을 준비할지 선택’ 의도가 같아 성인 자격증 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-conv-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-housewife-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-conv-video.html",
+    "NEW URL": "/dalseo-songhyeondong-housewife-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-ielts.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-ielts.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "대상보다 IELTS 4영역·Band Score 준비가 검색의도를 지배해 1개의 IELTS 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-opic.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-opic.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "성인·직장인·주부 모두 OPIc 등급 달성이 핵심이라 대상별 유사 페이지를 1개의 OPIc 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-toeic-speaking.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘토스’와 ‘토익스피킹’은 같은 시험 의도이며 대상별 페이지도 시험 준비 목적이 동일해 1개의 토익스피킹 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-toeic.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-toeic.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "성인·직장인·주부 모두 TOEIC 점수 달성이 핵심이라 대상별 유사 페이지를 1개의 TOEIC 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-tos.html",
+    "NEW URL": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘토스’와 ‘토익스피킹’은 같은 시험 의도이며 대상별 페이지도 시험 준비 목적이 동일해 1개의 토익스피킹 대표 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-tutor-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-housewife-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-housewife-tutor-video.html",
+    "NEW URL": "/dalseo-songhyeondong-housewife-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-mid-academy-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-mid-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-mid-academy-video.html",
+    "NEW URL": "/dalseo-songhyeondong-mid-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-mid-basic-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-mid-basic-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘기초회화’와 ‘기초영어회화’의 검색의도가 사실상 같아 대표 기초영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-mid-beginner-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-mid-beginner-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘왕초보회화’와 ‘왕초보영어회화’의 검색의도가 사실상 같아 대표 왕초보영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-mid-conv-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-mid-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-mid-conv-video.html",
+    "NEW URL": "/dalseo-songhyeondong-mid-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-mid-tutor-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-mid-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-mid-tutor-video.html",
+    "NEW URL": "/dalseo-songhyeondong-mid-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-senior-academy-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-senior-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-senior-academy-video.html",
+    "NEW URL": "/dalseo-songhyeondong-senior-academy.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-senior-basic-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-senior-basic-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘기초회화’와 ‘기초영어회화’의 검색의도가 사실상 같아 대표 기초영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-senior-beginner-conv.html",
+    "NEW URL": "/dalseo-songhyeondong-senior-beginner-eng-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "‘왕초보회화’와 ‘왕초보영어회화’의 검색의도가 사실상 같아 대표 왕초보영어회화 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-senior-conv-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-senior-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-senior-conv-video.html",
+    "NEW URL": "/dalseo-songhyeondong-senior-conv.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-senior-tutor-phone.html",
+    "NEW URL": "/dalseo-songhyeondong-senior-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  },
+  {
+    "OLD URL": "/dalseo-songhyeondong-senior-tutor-video.html",
+    "NEW URL": "/dalseo-songhyeondong-senior-tutor.html",
+    "Redirect Type": "301 Permanent",
+    "이유": "전화/화상이라는 수업 전달방식 분리를 제거하고 동일 대상·서비스 검색의도를 하나의 방식중립 페이지로 통합"
+  }
+]

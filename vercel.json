@@ -1,0 +1,379 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/englishpt.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-1to1-tos.html",
+      "destination": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-academy-phone.html",
+      "destination": "/dalseo-songhyeondong-adult-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-academy-video.html",
+      "destination": "/dalseo-songhyeondong-adult-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-basic-conv.html",
+      "destination": "/dalseo-songhyeondong-adult-basic-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-beginner-conv.html",
+      "destination": "/dalseo-songhyeondong-adult-beginner-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-conv-phone.html",
+      "destination": "/dalseo-songhyeondong-adult-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-conv-video.html",
+      "destination": "/dalseo-songhyeondong-adult-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-ielts.html",
+      "destination": "/dalseo-songhyeondong-1to1-ielts.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-opic.html",
+      "destination": "/dalseo-songhyeondong-1to1-opic.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-toeic-speaking.html",
+      "destination": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-toeic.html",
+      "destination": "/dalseo-songhyeondong-1to1-toeic.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-tos.html",
+      "destination": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-tutor-phone.html",
+      "destination": "/dalseo-songhyeondong-adult-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-adult-tutor-video.html",
+      "destination": "/dalseo-songhyeondong-adult-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-academy-phone.html",
+      "destination": "/dalseo-songhyeondong-biz-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-academy-video.html",
+      "destination": "/dalseo-songhyeondong-biz-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-basic-conv.html",
+      "destination": "/dalseo-songhyeondong-biz-basic-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-beginner-conv.html",
+      "destination": "/dalseo-songhyeondong-biz-beginner-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-cert.html",
+      "destination": "/dalseo-songhyeondong-adult-cert.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-conv-phone.html",
+      "destination": "/dalseo-songhyeondong-biz-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-conv-video.html",
+      "destination": "/dalseo-songhyeondong-biz-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-ielts.html",
+      "destination": "/dalseo-songhyeondong-1to1-ielts.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-opic.html",
+      "destination": "/dalseo-songhyeondong-1to1-opic.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-toeic-speaking.html",
+      "destination": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-toeic.html",
+      "destination": "/dalseo-songhyeondong-1to1-toeic.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-tos.html",
+      "destination": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-tutor-phone.html",
+      "destination": "/dalseo-songhyeondong-biz-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-biz-tutor-video.html",
+      "destination": "/dalseo-songhyeondong-biz-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-elem-academy-phone.html",
+      "destination": "/dalseo-songhyeondong-elem-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-elem-academy-video.html",
+      "destination": "/dalseo-songhyeondong-elem-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-elem-basic-conv.html",
+      "destination": "/dalseo-songhyeondong-elem-basic-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-elem-beginner-conv.html",
+      "destination": "/dalseo-songhyeondong-elem-beginner-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-elem-conv-phone.html",
+      "destination": "/dalseo-songhyeondong-elem-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-elem-conv-video.html",
+      "destination": "/dalseo-songhyeondong-elem-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-elem-tutor-phone.html",
+      "destination": "/dalseo-songhyeondong-elem-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-elem-tutor-video.html",
+      "destination": "/dalseo-songhyeondong-elem-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-high-academy-phone.html",
+      "destination": "/dalseo-songhyeondong-high-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-high-academy-video.html",
+      "destination": "/dalseo-songhyeondong-high-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-high-basic-conv.html",
+      "destination": "/dalseo-songhyeondong-high-basic-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-high-beginner-conv.html",
+      "destination": "/dalseo-songhyeondong-high-beginner-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-high-conv-phone.html",
+      "destination": "/dalseo-songhyeondong-high-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-high-conv-video.html",
+      "destination": "/dalseo-songhyeondong-high-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-high-tutor-phone.html",
+      "destination": "/dalseo-songhyeondong-high-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-high-tutor-video.html",
+      "destination": "/dalseo-songhyeondong-high-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-academy-phone.html",
+      "destination": "/dalseo-songhyeondong-housewife-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-academy-video.html",
+      "destination": "/dalseo-songhyeondong-housewife-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-basic-conv.html",
+      "destination": "/dalseo-songhyeondong-housewife-basic-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-beginner-conv.html",
+      "destination": "/dalseo-songhyeondong-housewife-beginner-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-cert.html",
+      "destination": "/dalseo-songhyeondong-adult-cert.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-conv-phone.html",
+      "destination": "/dalseo-songhyeondong-housewife-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-conv-video.html",
+      "destination": "/dalseo-songhyeondong-housewife-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-ielts.html",
+      "destination": "/dalseo-songhyeondong-1to1-ielts.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-opic.html",
+      "destination": "/dalseo-songhyeondong-1to1-opic.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-toeic-speaking.html",
+      "destination": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-toeic.html",
+      "destination": "/dalseo-songhyeondong-1to1-toeic.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-tos.html",
+      "destination": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-tutor-phone.html",
+      "destination": "/dalseo-songhyeondong-housewife-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-housewife-tutor-video.html",
+      "destination": "/dalseo-songhyeondong-housewife-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-mid-academy-phone.html",
+      "destination": "/dalseo-songhyeondong-mid-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-mid-academy-video.html",
+      "destination": "/dalseo-songhyeondong-mid-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-mid-basic-conv.html",
+      "destination": "/dalseo-songhyeondong-mid-basic-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-mid-beginner-conv.html",
+      "destination": "/dalseo-songhyeondong-mid-beginner-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-mid-conv-phone.html",
+      "destination": "/dalseo-songhyeondong-mid-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-mid-conv-video.html",
+      "destination": "/dalseo-songhyeondong-mid-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-mid-tutor-phone.html",
+      "destination": "/dalseo-songhyeondong-mid-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-mid-tutor-video.html",
+      "destination": "/dalseo-songhyeondong-mid-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-senior-academy-phone.html",
+      "destination": "/dalseo-songhyeondong-senior-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-senior-academy-video.html",
+      "destination": "/dalseo-songhyeondong-senior-academy.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-senior-basic-conv.html",
+      "destination": "/dalseo-songhyeondong-senior-basic-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-senior-beginner-conv.html",
+      "destination": "/dalseo-songhyeondong-senior-beginner-eng-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-senior-conv-phone.html",
+      "destination": "/dalseo-songhyeondong-senior-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-senior-conv-video.html",
+      "destination": "/dalseo-songhyeondong-senior-conv.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-senior-tutor-phone.html",
+      "destination": "/dalseo-songhyeondong-senior-tutor.html",
+      "permanent": true
+    },
+    {
+      "source": "/dalseo-songhyeondong-senior-tutor-video.html",
+      "destination": "/dalseo-songhyeondong-senior-tutor.html",
+      "permanent": true
+    }
+  ]
+}

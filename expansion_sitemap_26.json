@@ -1,0 +1,236 @@
+[
+  {
+    "url": "/dalseo-songhyeondong-univ-tutor.html",
+    "page_name": "대학생영어과외",
+    "primary_keyword": "송현동 대학생영어과외",
+    "page_type": "AUDIENCE",
+    "theme": "univ",
+    "search_intent": "대학생 영어 전체 방향",
+    "focus": "학점·취업 시험·교환학생·전공 영어 중 현재 학기에서 가장 급한 목표를 정하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-univ-conv.html",
+    "page_name": "대학생영어회화",
+    "primary_keyword": "송현동 대학생영어회화",
+    "page_type": "CONVERSATION",
+    "theme": "univ",
+    "search_intent": "캠퍼스·교환학생·발표 영어회화",
+    "focus": "친구와의 일상 대화부터 발표·세미나 질문까지 대학 생활에서 말을 이어가는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-univ-academy.html",
+    "page_name": "대학생영어학원",
+    "primary_keyword": "송현동 대학생영어학원",
+    "page_type": "SEO SUPPORT",
+    "theme": "compare",
+    "search_intent": "대학생 영어학원 비교",
+    "focus": "고정 진도형 수업과 대학생의 학기·시험·교환학생 목표를 맞춤 관리하는 방식의 차이를 비교하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-univ-basic-eng-conv.html",
+    "page_name": "대학생기초영어회화",
+    "primary_keyword": "송현동 대학생기초영어회화",
+    "page_type": "BEGINNER",
+    "theme": "univ",
+    "search_intent": "대학생 기초회화 재정리",
+    "focus": "수능·내신으로 배운 문법을 실제 기본 문장과 캠퍼스 대화로 다시 연결하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-univ-beginner-eng-conv.html",
+    "page_name": "대학생왕초보영어회화",
+    "primary_keyword": "송현동 대학생왕초보영어회화",
+    "page_type": "BEGINNER",
+    "theme": "univ",
+    "search_intent": "대학생 왕초보·재시작",
+    "focus": "영어에 대한 부담을 낮추고 알고 있는 단어를 짧은 반응과 첫 문장으로 바꾸는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-univ-exchange.html",
+    "page_name": "대학생교환학생영어",
+    "primary_keyword": "송현동 교환학생영어",
+    "page_type": "PURPOSE",
+    "theme": "univ",
+    "search_intent": "교환학생·해외수학 준비",
+    "focus": "지원 시험 점수와 현지 수업·생활에서 실제로 필요한 영어를 하나의 준비 일정으로 연결하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-univ-major-english.html",
+    "page_name": "대학생전공영어",
+    "primary_keyword": "송현동 대학생전공영어",
+    "page_type": "PURPOSE",
+    "theme": "univ",
+    "search_intent": "전공수업·영어강의·발표",
+    "focus": "전공 자료를 읽고 핵심을 요약해 발표·질문·토론으로 연결하는 학업 영어 수행력"
+  },
+  {
+    "url": "/dalseo-songhyeondong-jobseeker-tutor.html",
+    "page_name": "취준생영어과외",
+    "primary_keyword": "송현동 취준생영어과외",
+    "page_type": "AUDIENCE",
+    "theme": "job",
+    "search_intent": "취업 영어 전체 우선순위",
+    "focus": "채용 마감·공인영어·영어면접·자기소개 중 합격 가능성에 가장 직접적인 목표부터 정하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-jobseeker-conv.html",
+    "page_name": "취준생영어회화",
+    "primary_keyword": "송현동 취준생영어회화",
+    "page_type": "CONVERSATION",
+    "theme": "job",
+    "search_intent": "취업·면접 전 영어말하기 기반",
+    "focus": "자기소개·경험·지원동기처럼 취업 과정에서 자주 말해야 하는 내용을 자연스럽게 이어가는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-jobseeker-academy.html",
+    "page_name": "취준생영어학원",
+    "primary_keyword": "송현동 취준생영어학원",
+    "page_type": "SEO SUPPORT",
+    "theme": "compare",
+    "search_intent": "취업 영어학원 비교",
+    "focus": "정규반·시험반·면접반 중 현재 채용 일정에 맞는 관리 구조를 비교하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-jobseeker-basic-eng-conv.html",
+    "page_name": "취준생기초영어회화",
+    "primary_keyword": "송현동 취준생기초영어회화",
+    "page_type": "BEGINNER",
+    "theme": "job",
+    "search_intent": "취업 전 기초 말하기 재정리",
+    "focus": "취업 영어를 시작하기 전에 자기소개·경험 설명에 필요한 기본 문장 구조를 안정시키는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-jobseeker-beginner-eng-conv.html",
+    "page_name": "취준생왕초보영어회화",
+    "primary_keyword": "송현동 취준생왕초보영어회화",
+    "page_type": "BEGINNER",
+    "theme": "job",
+    "search_intent": "취업 영어 왕초보 시작",
+    "focus": "영어면접을 두려워하기 전에 이름·전공·경험·지원 이유를 가장 짧은 문장부터 말하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-intl-tutor.html",
+    "page_name": "국제학교영어과외",
+    "primary_keyword": "송현동 국제학교영어과외",
+    "page_type": "AUDIENCE",
+    "theme": "intl",
+    "search_intent": "국제학교 학업영어 전체 허브",
+    "focus": "이미 영어를 사용하는 학생의 성적·라이팅·발표·시험·방학 유지 목표를 학업 수행 중심으로 관리하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-intl-school-grade.html",
+    "page_name": "국제학교내신관리",
+    "primary_keyword": "송현동 국제학교내신관리",
+    "page_type": "PURPOSE",
+    "theme": "intl",
+    "search_intent": "국제학교 자체 성적·과제 관리",
+    "focus": "과목별 rubric·assignment·participation 기준을 읽고 성적을 깎는 학업 행동을 찾아 관리하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-intl-academic-writing.html",
+    "page_name": "국제학교에세이라이팅",
+    "primary_keyword": "송현동 국제학교에세이라이팅",
+    "page_type": "PURPOSE",
+    "theme": "intl",
+    "search_intent": "Academic Essay/Writing 심화",
+    "focus": "주장·근거·분석·인용을 연결해 과목별 academic writing의 완성도를 높이는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-intl-reading.html",
+    "page_name": "국제학교아카데믹리딩",
+    "primary_keyword": "송현동 국제학교아카데믹리딩",
+    "page_type": "PURPOSE",
+    "theme": "intl",
+    "search_intent": "고난도 Academic Reading",
+    "focus": "문학·사회·과학 등 긴 텍스트에서 주장·근거·관점·구조를 빠르게 추적하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-intl-presentation.html",
+    "page_name": "국제학교프레젠테이션",
+    "primary_keyword": "송현동 국제학교프레젠테이션",
+    "page_type": "PURPOSE",
+    "theme": "intl",
+    "search_intent": "Academic Presentation",
+    "focus": "정보를 나열하지 않고 핵심 메시지·시각자료·전달·Q&A를 하나의 발표 수행으로 묶는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-intl-debate.html",
+    "page_name": "국제학교디베이트",
+    "primary_keyword": "송현동 국제학교디베이트",
+    "page_type": "PURPOSE",
+    "theme": "intl",
+    "search_intent": "Debate/Discussion 심화",
+    "focus": "입장·근거·반박·질문을 논리적으로 연결하고 상대 주장을 듣고 즉시 대응하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-intl-sat.html",
+    "page_name": "국제학교SAT준비",
+    "primary_keyword": "송현동 국제학교SAT준비",
+    "page_type": "TEST",
+    "theme": "intl",
+    "search_intent": "Digital SAT 준비",
+    "focus": "Digital SAT Reading and Writing에서 내용 영역별 오답과 adaptive module의 시간·정확도 병목을 관리하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-intl-toefl-junior.html",
+    "page_name": "국제학교TOEFLJunior",
+    "primary_keyword": "송현동 TOEFL Junior",
+    "page_type": "TEST",
+    "theme": "intl",
+    "search_intent": "TOEFL Junior 준비",
+    "focus": "Listening·Language Form and Meaning·Reading을 중심으로 학업 및 사회적 영어의 현재 위치를 확인하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-intl-vacation-maintenance.html",
+    "page_name": "국제학교방학영어유지",
+    "primary_keyword": "송현동 국제학교방학영어유지",
+    "page_type": "PURPOSE",
+    "theme": "intl",
+    "search_intent": "방학 Academic English 유지",
+    "focus": "방학 동안 읽기·쓰기·발표 감각을 유지하면서 다음 학기 과목 난도를 준비하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-1to1-duolingo.html",
+    "page_name": "1:1듀오링고영어테스트",
+    "primary_keyword": "송현동 듀오링고영어테스트",
+    "page_type": "TEST",
+    "theme": "test",
+    "search_intent": "Duolingo English Test 준비",
+    "focus": "10–160 점수 체계와 Reading·Writing·Listening·Speaking 및 통합 subscore를 기준으로 목표 학교에 필요한 영어 수행을 준비하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-academy-toeic.html",
+    "page_name": "토익학원비교",
+    "primary_keyword": "송현동 토익학원",
+    "page_type": "SEO SUPPORT",
+    "theme": "compare",
+    "search_intent": "토익학원 검색자의 1:1 비교",
+    "focus": "정규 진도형 토익반과 LC·RC/파트별 점수 병목을 개인 관리하는 방식 중 현재 점수·마감에 맞는 선택을 비교하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-academy-opic.html",
+    "page_name": "오픽학원비교",
+    "primary_keyword": "송현동 오픽학원",
+    "page_type": "SEO SUPPORT",
+    "theme": "compare",
+    "search_intent": "오픽학원 검색자의 1:1 비교",
+    "focus": "공통 스크립트·유형 강의와 개인 경험 소재·돌발 대응·녹음 피드백 방식의 차이를 비교하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-academy-ielts.html",
+    "page_name": "아이엘츠학원비교",
+    "primary_keyword": "송현동 아이엘츠학원",
+    "page_type": "SEO SUPPORT",
+    "theme": "compare",
+    "search_intent": "IELTS 학원 검색자의 1:1 비교",
+    "focus": "4영역 공통 커리큘럼과 Writing 첨삭·Speaking 피드백처럼 개인 편차가 큰 영역의 관리 방식을 비교하는 것"
+  },
+  {
+    "url": "/dalseo-songhyeondong-1to1-interview.html",
+    "page_name": "1:1영어면접",
+    "primary_keyword": "송현동 영어면접",
+    "page_type": "PURPOSE",
+    "theme": "interview",
+    "search_intent": "취업·이직 영어면접 준비",
+    "focus": "자기소개·지원동기·직무질문·경험·꼬리질문을 실제 면접 흐름으로 반복하고 답변을 내 경험으로 만드는 것"
+  }
+]

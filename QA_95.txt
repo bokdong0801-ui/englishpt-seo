@@ -1,0 +1,12 @@
+ENGLISH PT 95 PAGE RELEASE QA
+Content pages: 95
+Expansion pages: 26
+Canonical mismatches: 0
+Missing H1: 0
+JSON-LD parse errors: 0
+Broken internal HTML links: 0
+Forbidden delivery-mode sales terms: 0
+Content similarity >=0.70 pairs: 0
+
+TOP SIMILARITY PAIRS:
+

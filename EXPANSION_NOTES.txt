@@ -1,0 +1,14 @@
+ENGLISH PT EXPANSION 95 — NOTES
+
+Added 26 pages:
+- University: 7
+- Job seeker: 5
+- International school: 9
+- Duolingo English Test: 1
+- Academy comparison: 3
+- English interview: 1
+
+International school test facts checked against official sources on 2026-09-14:
+- Digital SAT: College Board states Reading and Writing = 64 min / 54 questions; Math = 70 min / 44 questions; each section has two modules.
+- TOEFL Junior Standard: ETS lists Listening Comprehension, Language Form and Meaning, Reading Comprehension; total 126 items / 600-900 scale.
+- DET: official Duolingo English Test materials describe 10-160 overall and skill scores, computer-adaptive testing, and 6,500+ accepting programs; always verify the target program's current admissions requirement.
