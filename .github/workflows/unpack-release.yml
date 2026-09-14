@@ -1,0 +1,54 @@
+name: Unpack ENGLISH PT release
+
+on:
+  push:
+    branches:
+      - release/englishpt-95-v1
+    paths:
+      - '.release/site-release.tar.gz.b64'
+      - '.github/workflows/unpack-release.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Unpack static site payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -f .release/site-release.tar.gz.b64 ]; then
+            echo "Release payload is not present yet; nothing to unpack."
+            exit 0
+          fi
+          rm -rf /tmp/englishpt-site
+          mkdir -p /tmp/englishpt-site
+          base64 -d .release/site-release.tar.gz.b64 > /tmp/englishpt-site.tar.gz
+          tar -xzf /tmp/englishpt-site.tar.gz -C /tmp/englishpt-site
+          rsync -a --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.release/' \
+            --exclude='README.md' \
+            /tmp/englishpt-site/ ./
+
+      - name: Commit expanded release files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No generated file changes."
+            exit 0
+          fi
+          git commit -m "build: expand ENGLISH PT 95-page release"
+          git push origin HEAD:release/englishpt-95-v1
