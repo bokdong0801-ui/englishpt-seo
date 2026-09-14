@@ -1,56 +1,42 @@
-ENGLISH PT FINAL RELEASE V3
-Generated: 2026-09-14
+ENGLISH PT / NETLIFY-READY RELEASE
+Updated: 2026-09-14
 
-CONTENT PAGES: 95
-EXPANSION PAGES: 26
-LEGACY REDIRECTS: 74
-DOMAIN IN CANONICAL/SITEMAP: https://englishpt.kr
-
-CURRENT REPOSITORY
-- GitHub repository: bokdong0801-ui/englishpt-seo
-- Branch: main
-- The 95-page production files are uploaded to main.
-- Shared assets: assets/styles.css, assets/site.js
-
-DEPLOYMENT
-1) Deploy the repository root as the web root.
-2) Use the redirect config appropriate for the host:
-   - Vercel: vercel.json
-   - Netlify / compatible static hosts: _redirects
-   - Apache: .htaccess if present in the deployment package
-   GitHub Pages does not provide true server-side 301 redirects, so Vercel or another redirect-capable host is recommended.
-3) If the final domain is not englishpt.kr, replace https://englishpt.kr in every HTML canonical/OG/schema reference, sitemap.xml and robots.txt before production launch.
-4) After the live site is spot-checked, submit /sitemap.xml in Google Search Console.
-5) Keep permanent legacy redirects for at least one year.
-
-LEAD FORM
-The existing EmailJS production settings from the original site are reused in assets/site.js. Test exactly one real submission after deployment and confirm the message arrives correctly.
-
-QA
+STATUS
 - Content pages: 95
+- Legacy permanent redirects: 74
+- GitHub repository: bokdong0801-ui/englishpt-seo
+- Planned host: Netlify
+- Public deployment: PAUSED until the final domain is chosen
+- Current domain in canonical / Schema / sitemap / robots: https://englishpt.kr (PLACEHOLDER ONLY)
+
+NETLIFY SETUP
+- netlify.toml: publishes the repository root as a static site
+- _redirects: contains the root redirect and legacy URL permanent redirects
+- No build framework is required; this is a static HTML/CSS/JS site
+- Do not publish publicly until the final domain has replaced the placeholder domain
+
+WHEN THE FINAL DOMAIN IS DECIDED
+1) Run: python scripts/set-domain.py https://YOUR-DOMAIN
+2) Review canonical URLs, JSON-LD URLs, sitemap.xml and robots.txt
+3) Commit and push the domain replacement
+4) Connect this GitHub repository to Netlify
+5) Deploy the main branch
+6) Attach the custom domain and HTTPS
+7) Verify representative pages, CSS/JS assets, 74 legacy redirects and / -> /englishpt.html
+8) Test one real EmailJS lead submission
+9) Submit /sitemap.xml to Google Search Console
+
+QA BEFORE HOSTING
+- 95 content pages
 - Canonical mismatches: 0
 - Missing H1: 0
 - JSON-LD parse errors: 0
 - Broken internal HTML links: 0
-- Forbidden delivery-mode sales terms: 0
-- Content similarity >=0.70 pairs: 0
+- Forbidden phone/video/visit sales splits: 0
+- Content similarity >= 0.70: 0 pairs
 
 IMPORTANT
-- FAQ remains visible user content; FAQPage schema is intentionally not used.
-- No phone/video/visit delivery-method SEO split is used in the new architecture.
-- Illustrative cases are explicitly labeled as illustrative, not real testimonials.
-- The legacy backup folder from the source project was never modified.
-
-EXPANSION V3
-- Added university: 7 pages
-- Added job seeker: 5 pages
-- Added international school: 9 pages
-- Added Duolingo English Test: 1 page
-- Added academy comparison: 3 pages
-- Added English interview: 1 page
-- Existing 74 legacy redirects are retained.
-
-NEXT
-- Connect this repository to Vercel or another redirect-capable host.
-- Verify the final domain before production indexing.
-- Run live redirect/canonical/sitemap/form/mobile checks after deployment.
+- Visible FAQ content is retained; FAQPage schema is intentionally omitted
+- Illustrative cases are labeled as illustrative rather than testimonials
+- The original backup folder from the prior project was not modified
+- GitHub Pages is not the intended production host because this migration relies on server-side permanent redirects
