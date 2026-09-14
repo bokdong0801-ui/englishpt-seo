@@ -1,16 +1,8 @@
 REMOTE DEPLOY STATUS
+GitHub upload: COMPLETE
+Repository: bokdong0801-ui/englishpt-seo
+Host selected: Netlify
+Public deployment: PAUSED by user request
+Reason: final production domain has not been purchased/decided yet
 
-GitHub repository connected: bokdong0801-ui/englishpt-seo
-Production release uploaded to main: YES
-Content pages: 95
-Legacy redirects: 74
-Sitemap: present
-Robots: present
-Shared CSS/JS assets: present
-Vercel config: present
-
-NEXT REMOTE STEP
-Connect the GitHub repository to Vercel (or another redirect-capable host), deploy, then verify the live domain, redirects, canonical URLs, sitemap, EmailJS submission, and mobile rendering.
-
-DOMAIN CHECK
-Current canonical/sitemap domain is https://englishpt.kr. Confirm or replace this before final production indexing if a different domain will be used.
+The repository is Netlify-ready. Once the final domain is chosen, replace the placeholder domain across canonical/Schema/sitemap/robots, then connect the repository to Netlify and deploy main.
