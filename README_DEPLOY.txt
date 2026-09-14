@@ -1,43 +1,56 @@
-ENGLISH PT FINAL RELEASE V1
+ENGLISH PT FINAL RELEASE V3
 Generated: 2026-09-14
 
 CONTENT PAGES: 95
+EXPANSION PAGES: 26
 LEGACY REDIRECTS: 74
 DOMAIN IN CANONICAL/SITEMAP: https://englishpt.kr
 
+CURRENT REPOSITORY
+- GitHub repository: bokdong0801-ui/englishpt-seo
+- Branch: main
+- The 95-page production files are uploaded to main.
+- Shared assets: assets/styles.css, assets/site.js
+
 DEPLOYMENT
-1) Upload the contents of this folder to the web root.
-2) Keep only the redirect config appropriate for your host:
-   - Apache: .htaccess
-   - Netlify: _redirects
+1) Deploy the repository root as the web root.
+2) Use the redirect config appropriate for the host:
    - Vercel: vercel.json
-   GitHub Pages does not provide true server-side 301 redirects; use a host/proxy that supports redirects or ask for fallback redirect stubs.
-3) If the final domain is not englishpt.kr, replace https://englishpt.kr in all HTML, sitemap.xml and robots.txt before launch.
-4) Submit /sitemap.xml in Google Search Console after deployment.
-5) Keep permanent redirects for at least one year; updating external links is still recommended.
+   - Netlify / compatible static hosts: _redirects
+   - Apache: .htaccess if present in the deployment package
+   GitHub Pages does not provide true server-side 301 redirects, so Vercel or another redirect-capable host is recommended.
+3) If the final domain is not englishpt.kr, replace https://englishpt.kr in every HTML canonical/OG/schema reference, sitemap.xml and robots.txt before production launch.
+4) After the live site is spot-checked, submit /sitemap.xml in Google Search Console.
+5) Keep permanent legacy redirects for at least one year.
 
 LEAD FORM
-The existing EmailJS production settings from the uploaded site are reused:
-- public key: eJdMKTqwA8M35JTQJsGTd
-- service: service_r1950hf
-- template: template_mqovosk
-Test one real submission after deployment.
+The existing EmailJS production settings from the original site are reused in assets/site.js. Test exactly one real submission after deployment and confirm the message arrives correctly.
+
+QA
+- Content pages: 95
+- Canonical mismatches: 0
+- Missing H1: 0
+- JSON-LD parse errors: 0
+- Broken internal HTML links: 0
+- Forbidden delivery-mode sales terms: 0
+- Content similarity >=0.70 pairs: 0
 
 IMPORTANT
-- FAQ is visible content only. FAQPage schema is intentionally not included because Google deprecated the FAQ rich result in 2026.
-- No phone/video/visit delivery-method sales sections are used.
+- FAQ remains visible user content; FAQPage schema is intentionally not used.
+- No phone/video/visit delivery-method SEO split is used in the new architecture.
 - Illustrative cases are explicitly labeled as illustrative, not real testimonials.
-- englishpt-seo-backup-20260909 was never modified.
-
-
-[2026-09-14 경로 보정]
-- 개별 HTML이 깨져 보였던 원인은 채팅 미리보기에서 /assets 공용 CSS/JS를 함께 제공하지 못한 것이었습니다.
-- 배포본은 assets/styles.css, assets/site.js 상대경로로 보정했습니다.
-- review_standalone/의 7개 대표 HTML은 CSS/JS가 인라인되어 파일 하나만 열어도 디자인이 보입니다.
-- 실제 배포에는 루트의 69개 콘텐츠 페이지와 assets/, redirect 설정, sitemap.xml, robots.txt를 사용하세요.
+- The legacy backup folder from the source project was never modified.
 
 EXPANSION V3
-- Added 26 pages.
-- Existing 74 legacy redirects are retained unchanged.
-- Expansion pages use no phone/video/visit SEO split.
-- Search Console: submit the updated sitemap only after the 95-page release is live and spot-checked.
+- Added university: 7 pages
+- Added job seeker: 5 pages
+- Added international school: 9 pages
+- Added Duolingo English Test: 1 page
+- Added academy comparison: 3 pages
+- Added English interview: 1 page
+- Existing 74 legacy redirects are retained.
+
+NEXT
+- Connect this repository to Vercel or another redirect-capable host.
+- Verify the final domain before production indexing.
+- Run live redirect/canonical/sitemap/form/mobile checks after deployment.
