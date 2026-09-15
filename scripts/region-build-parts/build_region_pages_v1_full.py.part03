@@ -1,0 +1,85 @@
+"><div class="shell"><h2>공식 관계 기반 지역정보</h2><p>이 페이지는 교육 서비스 페이지와 분리된 지역정보 전용 페이지입니다. V5 master의 공식 코드·관계 데이터만 사용하며 이름 유사도나 거리 기반 추정 연결은 사용하지 않습니다.</p></div></section></main><footer><div class="shell"><strong>KOREA REGION DB</strong><span>V5 CURRENT · static region page</span></div></footer></body></html>'''
+    return doc, {'place_id':pid,'place_type':p['place_type'],'type_label':typ,'name':display_name(p),'url_path':page_path(p),'title':title,'description':desc,'h1':h1,'robots':robots,'indexable':pid in INDEXABLE,'metadata_collision':pid in COLLISION_IDS,'source_snapshot_date':p.get('source_snapshot_date','')}
+
+# Reuse tested sample CSS.
+CSS=Path('scripts/region.css').read_text(encoding='utf-8')
+CSS += '\n.notice{background:#fff5e7;border:1px solid #f1d7a8;border-radius:14px;padding:15px;color:#775316;font-size:13px}.hub-list{columns:3;column-gap:12px}.hub-list a{display:block;break-inside:avoid;padding:8px 0;color:#17365d;font-size:13px}.hub-count{font-size:13px;color:#66788a;margin-bottom:20px}@media(max-width:800px){.hub-list{columns:2}}@media(max-width:520px){.hub-list{columns:1}}\n'
+(OUT/'assets'/'region.css').write_text(CSS,encoding='utf-8')
+
+# Build entity pages.
+manifest=[]
+for i,p in enumerate(target,1):
+    doc,row=render(p); manifest.append(row)
+    dest=OUT/page_path(p).strip('/')/'index.html'; dest.parent.mkdir(parents=True,exist_ok=True); dest.write_text(doc,encoding='utf-8')
+    if i%5000==0: print(f'generated {i}/{len(target)}')
+
+# Manifest files.
+fields=list(manifest[0].keys())
+with open(OUT/'manifest'/'pages.csv','w',encoding='utf-8-sig',newline='') as f:
+    w=csv.DictWriter(f,fieldnames=fields); w.writeheader(); w.writerows(manifest)
+with open(OUT/'manifest'/'pages.jsonl','w',encoding='utf-8') as f:
+    for m in manifest: f.write(json.dumps(m,ensure_ascii=False,separators=(',',':'))+'\n')
+
+# Hub/support pages (not counted in 26,937 entity pages).
+def hub_doc(title,desc,items):
+    links=''.join(f'<a href="{page_path(p)}">{esc(display_name(p))} <small>· {esc(TYPE_LABEL.get(p["place_type"],p["place_type"]))}</small></a>' for p in items)
+    return f'''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title><meta name="description" content="{esc(desc)}"><meta name="robots" content="index,follow"><link rel="stylesheet" href="../assets/region.css"></head><body><header class="site-head"><div class="shell head-inner"><a class="brand" href="/">KOREA <b>REGION DB</b></a><nav class="global"><a href="/regions/">행정구역</a><a href="/stations/">역</a><a href="/newtowns/">신도시</a><a href="/districts/">지구</a></nav></div></header><main class="shell" style="padding:48px 0"><h1>{esc(title)}</h1><p class="hub-count">{esc(desc)} · {len(items):,}개</p><div class="panel hub-list">{links}</div></main></body></html>'''
+
+region_hub=[p for p in target if p['place_type']=='SIDO'] + [p for p in target if p['place_type']=='ADMIN_SIGUNGU' and p['place_id'] in INDEXABLE]
+station_hub=sorted(TARGET_BY_TYPE['STATION'],key=display_name)
+newtown_hub=sorted(TARGET_BY_TYPE['NEWTOWN'],key=display_name)
+district_hub=sorted([p for p in target if p['place_type'] in DISTRICT_TYPES],key=display_name)
+(OUT/'regions'/'index.html').write_text(hub_doc('전국 행정구역','시도에서 읍면동·리로 이어지는 V5 CURRENT 행정구역',region_hub),encoding='utf-8')
+(OUT/'stations'/'index.html').write_text(hub_doc('전국 역','KRIC 기반 V5 CURRENT 철도·도시철도역',station_hub),encoding='utf-8')
+(OUT/'newtowns'/'index.html').write_text(hub_doc('전국 신도시','국토교통부 원천과 개발사업 관계로 연결된 신도시',newtown_hub),encoding='utf-8')
+(OUT/'districts'/'index.html').write_text(hub_doc('전국 개발지구','택지·도시개발·공공주택·산업단지 등 V5 CURRENT 지구',district_hub),encoding='utf-8')
+root='''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KOREA REGION DB</title><meta name="description" content="대한민국 행정구역·역·신도시·개발지구 공식 관계 데이터베이스"><meta name="robots" content="index,follow"><link rel="stylesheet" href="assets/region.css"></head><body><main class="shell" style="padding:64px 0"><h1>KOREA REGION DB</h1><p>V5 CURRENT 기준 26,937개 지역 엔티티 정적 페이지</p><div class="overview"><a class="panel" href="/regions/"><h2>행정구역</h2><p>24,491개</p></a><a class="panel" href="/stations/"><h2>역</h2><p>1,052개</p></a><a class="panel" href="/newtowns/"><h2>신도시</h2><p>22개</p></a><a class="panel" href="/districts/"><h2>개발지구</h2><p>1,372개</p></a></div></main></body></html>'''
+(OUT/'index.html').write_text(root,encoding='utf-8')
+
+# Type config + deployment template notes.
+config={'version':'region-pages-v1-full','source_release':'V5-MAFRA-20260915','entity_pages':len(target),'base_url':None,'canonical_status':'pending-base-url','index_policy':{'admin_current_relations_only':True,'station_duplicate_title_groups_noindex':True},'target_counts':dict(Counter(p['place_type'] for p in target))}
+(OUT/'config'/'build-config.json').write_text(json.dumps(config,ensure_ascii=False,indent=2),encoding='utf-8')
+
+# URL path lists and sitemap templates. Absolute sitemap/canonical require deployment domain.
+cat_paths={'admin':[],'stations':[],'newtowns':[],'districts':[]}
+for p in target:
+    if p['place_id'] not in INDEXABLE: continue
+    if p['place_type'] in ADMIN_TYPES: cat='admin'
+    elif p['place_type']=='STATION': cat='stations'
+    elif p['place_type']=='NEWTOWN': cat='newtowns'
+    else: cat='districts'
+    cat_paths[cat].append(page_path(p))
+for cat,paths in cat_paths.items():
+    (OUT/'sitemaps'/f'{cat}-paths.txt').write_text('\n'.join(paths)+'\n',encoding='utf-8')
+    urlset='\n'.join(f'  <url><loc>{{{{BASE_URL}}}}{xesc(path)}</loc></url>' for path in paths)
+    (OUT/'sitemaps'/f'{cat}.template.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+urlset+'\n</urlset>\n',encoding='utf-8')
+idx='\n'.join(f'  <sitemap><loc>{{{{BASE_URL}}}}/sitemaps/{cat}.xml</loc></sitemap>' for cat in cat_paths)
+(OUT/'sitemap-index.template.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+idx+'\n</sitemapindex>\n',encoding='utf-8')
+(OUT/'robots.template.txt').write_text('User-agent: *\nAllow: /\nSitemap: {{BASE_URL}}/sitemap-index.xml\n',encoding='utf-8')
+
+# QA: counts, uniqueness, required fields, link targets among generated entity pages.
+title_count=Counter(m['title'] for m in manifest); desc_count=Counter(m['description'] for m in manifest)
+errors=[]
+if len(target)!=26937: errors.append(f'target_count={len(target)} expected=26937')
+if len(manifest)!=26937: errors.append(f'manifest_count={len(manifest)} expected=26937')
+if len({m['url_path'] for m in manifest})!=26937: errors.append('duplicate_url_path')
+if any(v>1 for v in title_count.values()): errors.append(f'duplicate_titles={sum(1 for v in title_count.values() if v>1)}')
+if any(v>1 for v in desc_count.values()): errors.append(f'duplicate_descriptions={sum(1 for v in desc_count.values() if v>1)}')
+missing_files=[]; h1_bad=[]; blank_img=[]; inline_css=[]
+for m in manifest:
+    fp=OUT/m['url_path'].strip('/')/'index.html'
+    if not fp.exists(): missing_files.append(m['place_id']); continue
+    s=fp.read_text(encoding='utf-8')
+    if s.count('<h1>')!=1: h1_bad.append(m['place_id'])
+    if 'src=""' in s: blank_img.append(m['place_id'])
+    if '<style>' in s: inline_css.append(m['place_id'])
+if missing_files: errors.append(f'missing_files={len(missing_files)}')
+if h1_bad: errors.append(f'h1_bad={len(h1_bad)}')
+if blank_img: errors.append(f'blank_img={len(blank_img)}')
+if inline_css: errors.append(f'inline_css={len(inline_css)}')
+
+counts=Counter(p['place_type'] for p in target)
+category_counts={'ADMIN':sum(counts[t] for t in ADMIN_TYPES),'STATION':counts['STATION'],'NEWTOWN':counts['NEWTOWN'],'DISTRICT':sum(counts[t] for t in DISTRICT_TYPES)}
+robots_counts=Counter(m['robots'] for m in manifest)
+index_by_type=Counter(m['place_type'] for m in manifest if m['indexable'])
+qa={'pass':not errors,'errors':errors,'entity_pages':len(manifest),'support_pages':5,'category_counts':category_counts,'robots_counts':dict(robots_counts),'indexable_total':len(INDEXABLE),'indexable_by_type':dict(index_by_type),'metadata_collision_pages':len(COLLISION_IDS),'station_collision_pages_noindex':len(STATION_COLLISION_IDS),'station_collision_groups':sum(1 for ids in base_titles.values() if len(ids)>1 and all(P[x]['place_type']=='STATION' for x in ids)),'h1_bad':len(h1_bad),'blank_img_src':len(blank_img),'inline_css_pages':len(inline_css),'duplicate_titles_after_disambiguation':sum(1 for v in title_count.values() if v>1),'duplicate_descriptions_after_disambiguation':sum(1 for v in desc_count.values() if v>1),'q3_correction':{'previous_admin_index_estimate':9014,'current_relation_only_admin_index':sum(1 for p in target if p['place_type'] in ADMIN_TYPES and p['place_id'] in INDEXABLE),'admin_dong_index':sum(1 for p in TARGET_BY_TYPE['ADMIN_DONG'] if p['place_id'] in INDEXABLE),'rea
