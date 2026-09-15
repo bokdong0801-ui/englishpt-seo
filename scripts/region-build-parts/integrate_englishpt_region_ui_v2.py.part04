@@ -1,0 +1,93 @@
+-card b{font-size:11px;color:var(--blue);white-space:nowrap}.search-empty{background:#fff;border:1px dashed #c9d5e1;border-radius:18px;padding:38px;text-align:center;color:var(--muted)}.search-empty strong{display:block;color:var(--navy);font-size:15px}.search-empty p{font-size:12px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:900px){.global{display:none}.mobile-nav{display:block}.hub-card-grid,.sido-grid,.entity-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-strip{grid-template-columns:repeat(4,minmax(0,1fr))}.footer-grid{grid-template-columns:1fr}.site-footer nav{justify-content:flex-start}}
+@media(max-width:560px){.hub-hero{padding:44px 0 36px}.hub-hero.compact{padding:38px 0 32px}.hub-card-grid,.sido-grid,.entity-grid{grid-template-columns:1fr}.stat-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.hero-search{display:grid}.hero-search button{padding:12px}.search-input-row{display:grid}.search-input-row button{padding:12px}.result-card{align-items:flex-start}.footer-grid{gap:18px}.site-footer nav{display:grid;grid-template-columns:repeat(2,1fr);width:100%}}
+'''
+css_path.write_text(css,encoding='utf-8')
+
+# Update sitemaps: keep entity sitemaps, replace site.xml and index.
+site_urls=['/','/search/','/region/','/station/','/newtown/','/district/']
+def sitemap_xml(paths):
+    return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(f'<url><loc>{BASE_URL}{p}</loc></url>\n' for p in paths) + '</urlset>\n'
+(OUT/'sitemaps/site.xml').write_text(sitemap_xml(site_urls),encoding='utf-8')
+sindex=['site.xml','admin.xml','stations.xml','newtowns.xml','districts.xml']
+(OUT/'sitemap-index.xml').write_text('<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+''.join(f'<sitemap><loc>{BASE_URL}/sitemaps/{x}</loc></sitemap>\n' for x in sindex)+'</sitemapindex>\n',encoding='utf-8')
+(OUT/'robots.txt').write_text(f'User-agent: *\nAllow: /\n\nSitemap: {BASE_URL}/sitemap-index.xml\n',encoding='utf-8')
+
+# Rewrite README.
+readme=f'''# 잉글리시PT 지역정보 V2
+
+- Base URL: `{BASE_URL}`
+- Entity pages: `26,937`
+- Site name: `잉글리시PT`
+- Region section: `잉글리시PT 지역정보`
+- Logo/favicon: intentionally not included in this stage
+- Hubs: `/region/`, `/station/`, `/newtown/`, `/district/`
+- Integrated search: `/search/`
+- Search index records: `26,937`
+
+This package integrates the V5 CURRENT static entity pages with the EnglishPT site shell. It keeps the region-data pages separate from education-service landing pages.
+'''
+(OUT/'README.md').write_text(readme,encoding='utf-8')
+
+# ---------- QA ----------
+all_html=list(OUT.rglob('*.html'))
+expected_entity=26937
+qa={
+    'entity_pages':len(entity_files), 'expected_entity_pages':expected_entity,
+    'category_counts':dict(Counter(CATEGORY.values())),
+    'expected_category_counts':{'ADMIN':24491,'STATION':1052,'NEWTOWN':22,'DISTRICT':1372},
+    'total_html':len(all_html), 'search_records':len(search_records),
+    'old_brand_occurrences':0,'plural_hub_url_occurrences':0,'missing_brand_header':0,
+    'missing_footer':0,'h1_errors':0,'canonical_missing':0,'canonical_duplicates':0,
+    'og_site_name_errors':0,'jsonld_errors':0,'broken_internal_links':0,'broken_samples':[],
+    'search_invalid_urls':0,'duplicate_titles':0
+}
+canon=Counter(); titles=Counter(); hrefs=[]
+ld_re=re.compile(r'<script type="application/ld\+json">(.*?)</script>',re.S)
+for p in all_html:
+    t=p.read_text(encoding='utf-8')
+    qa['old_brand_occurrences'] += t.count('KOREA REGION DB')
+    qa['plural_hub_url_occurrences'] += sum(t.count(x) for x in ['/regions/','/stations/','/newtowns/','/districts/'])
+    if 'class="site-head"' not in t or '잉글리시PT' not in t: qa['missing_brand_header']+=1
+    if 'class="site-footer"' not in t: qa['missing_footer']+=1
+    if len(re.findall(r'<h1(?:\s|>)',t))!=1: qa['h1_errors']+=1
+    cm=re.search(r'<link rel="canonical" href="([^"]+)">',t)
+    if cm: canon[cm.group(1)]+=1
+    else: qa['canonical_missing']+=1
+    tm=re.search(r'<title>(.*?)</title>',t,re.S)
+    if tm: titles[html.unescape(tm.group(1))]+=1
+    if '<meta property="og:site_name" content="잉글리시PT">' not in t: qa['og_site_name_errors']+=1
+    for m in ld_re.finditer(t):
+        try: json.loads(m.group(1))
+        except: qa['jsonld_errors']+=1
+    hrefs.extend((p,x) for x in re.findall(r'href="(/[^"]*)"',t) if not x.startswith('//'))
+qa['canonical_duplicates']=sum(1 for v in canon.values() if v>1)
+qa['duplicate_titles']=sum(1 for v in titles.values() if v>1)
+
+# Check internal href existence; ignore query/fragment.
+for p,u in hrefs:
+    path=u.split('#',1)[0].split('?',1)[0]
+    if path=='/': target=OUT/'index.html'
+    elif path.endswith('/'): target=OUT/path.lstrip('/')/'index.html'
+    else: target=OUT/path.lstrip('/')
+    if not target.exists():
+        qa['broken_internal_links']+=1
+        if len(qa['broken_samples'])<20: qa['broken_samples'].append({'from':str(p.relative_to(OUT)),'href':u})
+
+for r in search_records:
+    target=OUT/r['u'].lstrip('/')/'index.html'
+    if not target.exists(): qa['search_invalid_urls']+=1
+
+qa['pass']=(qa['category_counts']==qa['expected_category_counts']) and all(qa[k]==0 for k in ['old_brand_occurrences','plural_hub_url_occurrences','missing_brand_header','missing_footer','h1_errors','canonical_missing','canonical_duplicates','og_site_name_errors','jsonld_errors','broken_internal_links','search_invalid_urls','duplicate_titles']) and qa['entity_pages']==expected_entity and qa['search_records']==expected_entity
+(OUT/'manifest/ui-integration-qa.json').write_text(json.dumps(qa,ensure_ascii=False,indent=2),encoding='utf-8')
+print(json.dumps(qa,ensure_ascii=False,indent=2))
+
+# ZIP.
+zip_path=Path('.region-build/v2-ui.zip')
+if zip_path.exists(): zip_path.unlink()
+with zipfile.ZipFile(zip_path,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+    for p in OUT.rglob('*'):
+        if p.is_file(): z.write(p,p.relative_to(OUT))
+sha=hashlib.sha256(zip_path.read_bytes()).hexdigest()
+Path(str(zip_path)+'.sha256').write_text(f'{sha}  {zip_path.name}\n',encoding='utf-8')
+print('ZIP',zip_path,zip_path.stat().st_size,'SHA256',sha)
