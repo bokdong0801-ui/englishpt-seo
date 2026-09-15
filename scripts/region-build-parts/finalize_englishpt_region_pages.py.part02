@@ -1,0 +1,32 @@
+g_missing==0 and jsonld_relative==0,
+    'base_url': BASE,
+    'entity_pages': entity_count,
+    'html_pages_total': len(html_files),
+    'canonical_missing': canonical_missing,
+    'canonical_wrong': canonical_wrong,
+    'og_url_missing': og_missing,
+    'relative_breadcrumb_jsonld_items': jsonld_relative,
+    'indexable_entity_pages': len(indexable),
+    'sitemap_entity_urls': len(sitemap_urls),
+    'site_support_urls': len(site_urls),
+    'sitemap_files': 5,
+    'placeholder_files_remaining': placeholder_files,
+    'errors': qa_errors,
+}
+if canonical_missing or canonical_wrong or og_missing or jsonld_relative:
+    qa['pass']=False
+(OUT/'manifest'/'domain-qa-report.json').write_text(json.dumps(qa,ensure_ascii=False,indent=2),encoding='utf-8')
+
+# Remove placeholders from bundled scripts by documenting BASE URL in a final note; build script itself intentionally remains generic.
+# The actual deployable files contain no placeholder except potentially generic generator source.
+
+# Zip cleanly.
+if ZIP.exists(): ZIP.unlink()
+with zipfile.ZipFile(ZIP,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+    for fp in sorted(OUT.rglob('*')):
+        if fp.is_file(): z.write(fp, fp.relative_to(OUT).as_posix())
+sha=hashlib.sha256(ZIP.read_bytes()).hexdigest()
+(Path(str(ZIP)+'.sha256')).write_text(f'{sha}  {ZIP.name}\n',encoding='utf-8')
+(OUT/'manifest'/'domain-report.json').write_text(json.dumps(qa,ensure_ascii=False,indent=2),encoding='utf-8')
+print(json.dumps(qa,ensure_ascii=False,indent=2))
+print('ZIP', ZIP, ZIP.stat().st_size, sha)
