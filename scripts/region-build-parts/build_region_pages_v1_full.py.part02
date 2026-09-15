@@ -1,0 +1,92 @@
+small>" if sub else ""}</div>'
+
+def type_modules(p):
+    pid=p['place_id']; t=p['place_type']; sections=[]
+    if t in {'SIDO','SIGUNGU','LEGAL_EUP','LEGAL_MYEON'}:
+        kids=current_children(pid)
+        label={'SIDO':'하위 법정 시군구','SIGUNGU':'하위 법정구역','LEGAL_EUP':'하위 법정리','LEGAL_MYEON':'하위 법정리'}[t]
+        sections.append((label,f'<p class="section-lead">V5 CURRENT 기준 직계 하위 지역 {len(kids):,}개가 연결되어 있습니다.</p>'+chips(kids)))
+        admins=[q for r,q in related(pid,'ADMINISTERS','in') if r['legal_status']=='CURRENT']
+        if admins: sections.append(('행정기관 연결','<p class="section-lead">현재 ADMINISTERS 관계로 연결된 행정기관입니다.</p>'+chips(admins)))
+    elif t in {'ADMIN_SIDO','ADMIN_SIGUNGU','ADMIN_EUP','ADMIN_MYEON','ADMIN_DONG'}:
+        administered=[q for r,q in related(pid,'ADMINISTERS','out') if r['legal_status']=='CURRENT']
+        sections.append(('현재 관할 법정구역',f'<p class="section-lead">V5 CURRENT ADMINISTERS 관계 {len(administered):,}개를 표시합니다.</p>'+chips(administered)))
+    elif t=='LEGAL_DONG':
+        admins=[q for r,q in related(pid,'ADMINISTERS','in') if r['legal_status']=='CURRENT']
+        sections.append(('현재 행정 관할',f'<p class="section-lead">현재 이 법정동을 관할하는 행정동 {len(admins):,}개가 연결되어 있습니다.</p>'+chips(admins)))
+    elif t=='LEGAL_RI':
+        villages=[q for r,q in related(pid,'VILLAGE_IN','in')]+[q for r,q in related(pid,'RURAL_CENTER_IN','in')]
+        sections.append(('공식 농촌마을 연결',f'<p class="section-lead">농림축산식품부 원천과 정확한 법정코드 관계로 연결된 마을·중심지 {len(villages):,}개입니다.</p>'+chips(villages)))
+    elif t=='STATION':
+        locs=[q for r,q in related(pid,'STATION_IN','out')]
+        sections.append(('역 소재 지역','<p class="section-lead">KRIC 역 데이터에서 연결된 행정구역입니다.</p>'+chips(locs)))
+        if p.get('latitude') and p.get('longitude'):
+            sections.append(('좌표',f'<div class="coordinate"><div><span>위도</span><strong>{esc(p["latitude"])}</strong></div><div><span>경도</span><strong>{esc(p["longitude"])}</strong></div></div>'))
+        if pid in STATION_COLLISION_IDS:
+            sections.append(('데이터 중복 주의','<div class="notice">동일 역명이 여러 KRIC 레코드로 존재하지만 현재 V5에 노선 식별 필드가 없어 임의 병합하지 않았습니다. 이 페이지는 검색색인을 보류합니다.</div>'))
+    elif t=='NEWTOWN':
+        projects=[q for r,q in related(pid,'NEWTOWN_PROJECT_OF','out')]
+        sections.append(('연계 개발사업','<p class="section-lead">공식 관계로 연결된 개발사업만 표시합니다.</p>'+chips(projects)))
+        areas=[]
+        for proj in projects:
+            areas.extend(q for r,q in related(proj['place_id'],'DISTRICT_IN','out'))
+        if areas: sections.append(('개발사업 소재 지역',chips(areas)))
+    elif t in DISTRICT_TYPES:
+        areas=[q for r,q in related(pid,'DISTRICT_IN','out')]
+        sections.append(('소재 행정구역','<p class="section-lead">지구정보 원천에서 정확하게 연결된 행정구역입니다.</p>'+chips(areas)))
+        cards=[]
+        if p.get('official_code'): cards.append(fact('사업·지구 코드',p['official_code']))
+        if p.get('valid_from'): cards.append(fact('유효 시작일',p['valid_from']))
+        cards.append(fact('지구 유형',TYPE_LABEL.get(t,t)))
+        sections.append(('사업 식별정보','<div class="facts facts-three">'+''.join(cards)+'</div>'))
+    return sections
+
+def breadcrumb(p):
+    parts=['<a href="/">홈</a>']
+    if p['place_type']=='STATION': parts.append('<a href="/stations/">역</a>')
+    elif p['place_type']=='NEWTOWN': parts.append('<a href="/newtowns/">신도시</a>')
+    elif p['place_type'] in DISTRICT_TYPES: parts.append('<a href="/districts/">개발지구</a>')
+    else:
+        parts.append('<a href="/regions/">행정구역</a>')
+        for q in parent_chain(p['place_id']): parts.append(entity_link(q,short_name(q)))
+    parts.append(f'<span aria-current="page">{esc(short_name(p))}</span>')
+    return '<nav class="breadcrumb" aria-label="breadcrumb">'+'<span class="sep">/</span>'.join(parts)+'</nav>'
+
+def jsonld(p):
+    crumbs=[{'@type':'ListItem','position':1,'name':'홈','item':'/'}]
+    pos=2
+    if p['place_type']=='STATION': base=('역','/stations/')
+    elif p['place_type']=='NEWTOWN': base=('신도시','/newtowns/')
+    elif p['place_type'] in DISTRICT_TYPES: base=('개발지구','/districts/')
+    else: base=('행정구역','/regions/')
+    crumbs.append({'@type':'ListItem','position':pos,'name':base[0],'item':base[1]}); pos+=1
+    if p['place_type'] in ADMIN_TYPES:
+        for q in parent_chain(p['place_id']):
+            crumbs.append({'@type':'ListItem','position':pos,'name':short_name(q),'item':page_path(q)}); pos+=1
+    crumbs.append({'@type':'ListItem','position':pos,'name':short_name(p),'item':page_path(p)})
+    pl={'@context':'https://schema.org','@type':'Place','name':display_name(p),'additionalType':TYPE_LABEL.get(p['place_type'],p['place_type'])}
+    if p.get('latitude') and p.get('longitude'):
+        pl['geo']={'@type':'GeoCoordinates','latitude':p['latitude'],'longitude':p['longitude']}
+    return json.dumps([{'@context':'https://schema.org','@type':'BreadcrumbList','itemListElement':crumbs},pl],ensure_ascii=False,separators=(',',':'))
+
+def render(p):
+    title,desc,h1=make_meta(p); pid=p['place_id']; typ=TYPE_LABEL.get(p['place_type'],p['place_type'])
+    parent=P.get(p.get('parent_place_id','')); chain=parent_chain(pid); robots='index,follow' if pid in INDEXABLE else 'noindex,follow'
+    fs=[fact('유형',typ,p['place_type']),fact('상태','현재','CURRENT')]
+    if p.get('official_code'): fs.append(fact('공식 코드',p['official_code']))
+    if parent: fs.append(fact('직계 상위 지역',display_name(parent),TYPE_LABEL.get(parent['place_type'],parent['place_type'])))
+    fs.append(fact('데이터 기준일',p.get('source_snapshot_date') or '—'))
+    if p.get('valid_from'): fs.append(fact('유효 시작일',p['valid_from']))
+    facts_html='<div class="facts">'+''.join(fs)+'</div>'
+    if chain:
+        hierarchy='<ol class="hierarchy">'+''.join(f'<li>{entity_link(q,short_name(q))}<small>{esc(TYPE_LABEL.get(q["place_type"],q["place_type"]))}</small></li>' for q in chain+[p])+'</ol>'
+    else: hierarchy='<p class="empty">상위 행정계층 대신 유형별 공식 관계를 사용합니다.</p>'
+    alias_rows=A[pid]
+    aliases_html='<div class="alias-grid">'+''.join(f'<div><strong>{esc(a["alias"])}</strong><span>{esc(a["alias_type"])}</span></div>' for a in alias_rows[:32])+'</div>' if alias_rows else '<p class="empty">별도 별칭 데이터가 없습니다.</p>'
+    type_html=''.join(f'<section class="panel"><div class="panel-head"><span class="kicker">TYPE MODULE</span><h2>{esc(head)}</h2></div>{body}</section>' for head,body in type_modules(p))
+    src=SOURCE_LABEL.get(p.get('source_id'),p.get('source_id') or '—'); validity=SOURCE_LABEL.get(p.get('validity_source_id'),p.get('validity_source_id') or '')
+    source_rows=[('주 데이터 원천',src),('스냅샷',p.get('source_snapshot_date') or '—')]
+    if validity: source_rows.append(('유효성 원천',validity))
+    source_html=''.join(f'<div class="source-row"><span>{esc(k)}</span><strong>{esc(v)}</strong></div>' for k,v in source_rows)
+    collision='yes' if pid in COLLISION_IDS else 'no'
+    doc=f'''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)}</title><meta name="description" content="{esc(desc)}"><meta name="robots" content="{robots}"><meta name="theme-color" content="#17365D"><link rel="stylesheet" href="../../assets/region.css"><script type="application/ld+json">{jsonld(p)}</script></head><body class="type-{esc(p['place_type'].lower().replace('_','-'))}"><header class="site-head"><div class="shell head-inner"><a class="brand" href="/">KOREA <b>REGION DB</b></a><nav class="global"><a href="/regions/">행정구역</a><a href="/stations/">역</a><a href="/newtowns/">신도시</a><a href="/districts/">지구</a></nav></div></header><main><div class="shell">{breadcrumb(p)}</div><section class="hero"><div class="shell hero-grid"><div><div class="badges"><span class="badge badge-type">{esc(typ)}</span><span class="badge badge-current">CURRENT</span></div><h1>{esc(h1)}</h1><p>{esc(desc)}</p><div class="hero-code"><span>PLACE ID</span><code>{esc(pid)}</code></div></div><aside class="identity"><span class="identity-label">데이터 식별</span><strong>{esc(short_name(p))}</strong><dl><div><dt>분류</dt><dd>{esc(p['place_type'])}</dd></div><div><dt>공식 코드</dt><dd>{esc(p.get('official_code') or '—')}</dd></div><div><dt>스냅샷</dt><dd>{esc(p.get('source_snapshot_date') or '—')}</dd></div></dl></aside></div></section><section class="shell overview"><div class="panel"><div class="panel-head"><span class="kicker">OVERVIEW</span><h2>핵심 정보</h2></div>{facts_html}</div><div class="panel"><div class="panel-head"><span class="kicker">HIERARCHY</span><h2>행정계층</h2></div>{hierarchy}</div></section><div class="shell content-grid"><div class="main-col">{type_html}<section class="panel"><div class="panel-head"><span class="kicker">ALIASES</span><h2>명칭·별칭</h2></div>{aliases_html}</section></div><aside class="side-col"><section class="panel sticky-panel"><div class="panel-head"><span class="kicker">SOURCE</span><h2>데이터 출처</h2></div>{source_html}<div class="quality"><span>검색노출 정책</span><strong>{robots}</strong><small>metadata collision: {collision}</small></div></section></aside></div><section class="data-note">'''
