@@ -1,5 +1,9 @@
 [build]
+  command = "python scripts/prepare-region-deploy.py"
   publish = "."
+
+[build.environment]
+  PYTHON_VERSION = "3.12"
 
 [build.processing]
   skip_processing = true
