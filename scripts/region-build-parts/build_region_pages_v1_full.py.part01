@@ -1,0 +1,159 @@
+from __future__ import annotations
+import csv, json, html, os, re, shutil, zipfile, hashlib
+from pathlib import Path
+from collections import defaultdict, Counter
+from xml.sax.saxutils import escape as xesc
+
+ROOT=Path('.region-build/v5/master')
+OUT=Path('.region-build/v1-full')
+ZIP=Path('.region-build/v1-full.zip')
+if OUT.exists(): shutil.rmtree(OUT)
+for d in ['assets','config','manifest','sitemaps','regions','stations','newtowns','districts']:
+    (OUT/d).mkdir(parents=True,exist_ok=True)
+
+
+def read_csv(name):
+    with open(ROOT/name,encoding='utf-8-sig',newline='') as f:
+        return list(csv.DictReader(f))
+
+places=read_csv('places_geo_master.csv')
+relations=read_csv('relations_geo_master.csv')
+aliases=read_csv('aliases_geo_master.csv')
+P={p['place_id']:p for p in places}
+A=defaultdict(list)
+for a in aliases: A[a['place_id']].append(a)
+R_FROM=defaultdict(list); R_TO=defaultdict(list)
+for r in relations:
+    R_FROM[r['from_place_id']].append(r); R_TO[r['to_place_id']].append(r)
+
+TYPE_LABEL={
+'SIDO':'법정 시도','ADMIN_SIDO':'행정 시도','SIGUNGU':'법정 시군구','ADMIN_SIGUNGU':'행정 시군구',
+'LEGAL_EUP':'법정 읍','ADMIN_EUP':'행정 읍','LEGAL_MYEON':'법정 면','ADMIN_MYEON':'행정 면',
+'LEGAL_DONG':'법정동','ADMIN_DONG':'행정동','LEGAL_RI':'법정리','STATION':'철도·도시철도역','NEWTOWN':'신도시',
+'LAND_DEVELOPMENT_DISTRICT':'택지개발지구','URBAN_DEVELOPMENT_DISTRICT':'도시개발지구','PUBLIC_HOUSING_DISTRICT':'공공주택지구',
+'INDUSTRIAL_COMPLEX':'산업단지','PRIVATE_RENTAL_DISTRICT':'민간임대주택지구','FREE_ECONOMIC_ZONE':'경제자유구역',
+'INNOVATION_CITY_DISTRICT':'혁신도시','REGIONAL_DEVELOPMENT_DISTRICT':'지역개발지구','RND_SPECIAL_ZONE':'연구개발특구',
+'ENTERPRISE_CITY_DISTRICT':'기업도시','URBAN_CONVERGENCE_DISTRICT':'도심융합특구','JEJU_SPECIAL_DISTRICT':'제주특별지구',
+'WATERFRONT_DISTRICT':'친수구역','PROVINCIAL_OFFICE_RELOCATION_DISTRICT':'도청이전지구','RURAL_DEVELOPMENT_DISTRICT':'농촌개발지구',
+'COAST_INLAND_DEVELOPMENT_DISTRICT':'해안·내륙권 개발지구','HAPPY_CITY_DISTRICT':'행복도시지구',
+'RURAL_VILLAGE':'농촌마을','RURAL_CENTER':'농촌중심지','NATURAL_TOPONYM':'자연지명'
+}
+DISTRICT_TYPES={k for k in TYPE_LABEL if k.endswith('_DISTRICT')} | {'INDUSTRIAL_COMPLEX','FREE_ECONOMIC_ZONE','RND_SPECIAL_ZONE','ENTERPRISE_CITY_DISTRICT','INNOVATION_CITY_DISTRICT'}
+ADMIN_TYPES={'SIDO','ADMIN_SIDO','SIGUNGU','ADMIN_SIGUNGU','LEGAL_EUP','ADMIN_EUP','LEGAL_MYEON','ADMIN_MYEON','LEGAL_DONG','ADMIN_DONG','LEGAL_RI'}
+TARGET_TYPES=ADMIN_TYPES | {'STATION','NEWTOWN'} | DISTRICT_TYPES
+SOURCE_LABEL={
+'codego_bjd':'법정동 코드 원천 · codego_bjd','mois_jscode':'행정기관 코드 원천 · mois_jscode',
+'kric_urban_station':'KRIC 도시철도역 원천 · kric_urban_station','molit_newtown_1_2':'국토교통부 신도시 원천 · molit_newtown_1_2',
+'tpsis_district_info':'택지정보시스템 지구정보 · tpsis_district_info','mafra_rural_village_basic':'농림축산식품부 농촌마을 원천 · mafra_rural_village_basic'}
+
+target=[p for p in places if p['legal_status']=='CURRENT' and p['place_type'] in TARGET_TYPES]
+TARGET_SET={p['place_id'] for p in target}
+TARGET_BY_TYPE=defaultdict(list)
+for p in target: TARGET_BY_TYPE[p['place_type']].append(p)
+
+# Q3 SEO policy: only CURRENT ADMINISTERS relations count.
+legal_dong_full={p['full_name_ko'] for p in TARGET_BY_TYPE['LEGAL_DONG']}
+sigungu_codes={p['official_code'] for p in TARGET_BY_TYPE['SIGUNGU']}
+admin_current_count=Counter()
+ri_rich=set()
+for r in relations:
+    if r['relation_type']=='ADMINISTERS' and r['legal_status']=='CURRENT':
+        admin_current_count[r['from_place_id']]+=1
+    if r['relation_type'] in {'VILLAGE_IN','RURAL_CENTER_IN'}:
+        ri_rich.add(r['to_place_id'])
+
+# Preliminary title collision groups to identify unresolved station duplicates.
+def display_name(p):
+    if p['place_type']=='STATION':
+        fn=(p.get('full_name_ko') or '').strip(); nm=(p.get('name_ko') or '').strip()
+        if fn.endswith('역역'): return fn[:-1]
+        if fn: return fn
+        return nm if nm.endswith('역') else nm+'역'
+    return p.get('full_name_ko') or p.get('name_ko') or p['place_id']
+def short_name(p): return display_name(p) if p['place_type']=='STATION' else (p.get('name_ko') or display_name(p))
+def safe_id(pid): return re.sub(r'[^a-zA-Z0-9._-]+','-',pid).strip('-')
+def page_path(p):
+    sid=safe_id(p['place_id']); t=p['place_type']
+    if t=='STATION': return f'/station/{sid}/'
+    if t=='NEWTOWN': return f'/newtown/{sid}/'
+    if t in DISTRICT_TYPES: return f'/district/{sid}/'
+    return f'/region/{sid}/'
+
+def base_meta(p):
+    t=p['place_type']; full=display_name(p); nm=short_name(p)
+    if t=='SIDO': return f'{full} 행정구역 | 시군구·읍면동 지역정보', f'{full}의 행정구역 정보입니다. 공식 지역코드와 하위 시군구, 연결된 법정·행정 구역을 확인합니다.', f'{full} 행정구역'
+    if t=='ADMIN_SIDO': return f'{full} 행정기관 | 관할 행정구역', f'{full}의 행정기관 정보입니다. 행정기관 코드와 관할 행정구역 관계를 확인합니다.', f'{full} 행정기관'
+    if t=='SIGUNGU': return f'{full} 지역정보 | 법정동·행정동', f'{full}의 지역정보입니다. 공식 지역코드와 상위 시도, 하위 법정구역 및 행정 관할 관계를 확인합니다.', f'{full} 지역정보'
+    if t=='ADMIN_SIGUNGU': return f'{full} 행정기관 | 관할 읍면동', f'{full}의 행정기관 정보입니다. 행정기관 코드와 관할 읍면동, 관련 법정구역을 확인합니다.', f'{full} 행정기관'
+    if t=='LEGAL_EUP': return f'{full} | 읍·리 지역정보', f'{full}의 법정 읍 정보입니다. 공식 지역코드와 상위 지역, 하위 법정리와 행정 관할 관계를 확인합니다.', full
+    if t=='ADMIN_EUP': return f'{full} | 행정 읍 정보', f'{full}의 행정 읍 정보입니다. 행정기관 코드와 관할 법정구역 관계를 확인합니다.', f'{full} 행정 읍'
+    if t=='LEGAL_MYEON': return f'{full} | 면·리 지역정보', f'{full}의 법정 면 정보입니다. 공식 지역코드와 상위 지역, 하위 법정리와 행정 관할 관계를 확인합니다.', full
+    if t=='ADMIN_MYEON': return f'{full} | 행정 면 정보', f'{full}의 행정 면 정보입니다. 행정기관 코드와 관할 법정구역 관계를 확인합니다.', f'{full} 행정 면'
+    if t=='LEGAL_DONG': return f'{full} | 법정동 정보', f'{full}의 법정동 정보입니다. 법정동 코드와 상위 행정구역, 현재 이 지역을 관할하는 행정동 관계를 확인합니다.', f'{full} 법정동'
+    if t=='ADMIN_DONG': return f'{full} | 행정동 정보', f'{full}의 행정동 정보입니다. 행정기관 코드와 상위 행정구역, 이 행정동이 관할하는 법정동을 확인합니다.', f'{full} 행정동'
+    if t=='LEGAL_RI': return f'{full} | 법정리 정보', f'{full}의 법정리 정보입니다. 공식 지역코드와 상위 읍·면, 행정 관할과 연결된 공식 농촌마을 정보를 확인합니다.', full
+    if t=='STATION': return f'{full} | 위치·지역정보', f'{full}의 위치와 지역정보입니다. 공식 좌표, 소재 행정구역, 역명 별칭과 데이터 출처를 확인합니다.', full
+    if t=='NEWTOWN': return f'{nm} | 신도시·개발지구 정보', f'{nm}의 신도시 정보입니다. 공식 데이터에서 연결된 개발사업과 관련 행정구역 관계를 확인합니다.', nm
+    if t in DISTRICT_TYPES: return f'{nm} | 개발지구 정보', f'{nm}의 {TYPE_LABEL.get(t,"개발지구")} 정보입니다. 사업 코드, 지정·유효 시점과 소재 행정구역을 확인합니다.', nm
+    return f'{full} | 지역정보', f'{full}의 공식 지역정보와 관계 데이터를 확인합니다.', full
+
+base_titles=defaultdict(list)
+for p in target: base_titles[base_meta(p)[0]].append(p['place_id'])
+COLLISION_IDS={pid for ids in base_titles.values() if len(ids)>1 for pid in ids}
+STATION_COLLISION_IDS={pid for ids in base_titles.values() if len(ids)>1 and all(P[x]['place_type']=='STATION' for x in ids) for pid in ids}
+
+def make_meta(p):
+    title,desc,h1=base_meta(p)
+    if p['place_id'] in COLLISION_IDS:
+        ident=p.get('official_code') or safe_id(p['place_id']).split('-')[-1][-8:]
+        title=f'{title} · {ident}'
+        desc=f'{desc[:-1]} 데이터 식별값 {ident}을 함께 표시합니다.' if desc.endswith('.') else f'{desc} 데이터 식별값 {ident}을 함께 표시합니다.'
+    return title,desc,h1
+
+def production_indexable(p):
+    t=p['place_type']; pid=p['place_id']
+    if t in {'SIDO','SIGUNGU','LEGAL_EUP','LEGAL_MYEON','LEGAL_DONG'}: return True
+    if t=='ADMIN_SIGUNGU': return p['official_code'] not in sigungu_codes
+    if t=='ADMIN_DONG': return p['full_name_ko'] not in legal_dong_full or admin_current_count[pid]>=2
+    if t=='LEGAL_RI': return pid in ri_rich
+    if t in {'STATION','NEWTOWN'} or t in DISTRICT_TYPES:
+        if t=='STATION' and pid in STATION_COLLISION_IDS: return False
+        return True
+    return False
+
+INDEXABLE={p['place_id'] for p in target if production_indexable(p)}
+
+def esc(x): return html.escape(str(x or ''))
+def parent_chain(pid):
+    chain=[]; seen=set(); cur=P.get(pid)
+    while cur and cur.get('parent_place_id') and cur['parent_place_id'] not in seen:
+        par=P.get(cur['parent_place_id'])
+        if not par: break
+        chain.append(par); seen.add(par['place_id']); cur=par
+    return list(reversed(chain))
+def current_children(pid):
+    out=[]
+    for r in R_TO[pid]:
+        if r['relation_type']!='PART_OF' or r['legal_status']!='CURRENT': continue
+        q=P.get(r['from_place_id'])
+        if q and q['legal_status']=='CURRENT': out.append(q)
+    return out
+def related(pid, rel_type, direction):
+    rows=R_FROM[pid] if direction=='out' else R_TO[pid]
+    out=[]
+    for r in rows:
+        if r['relation_type']!=rel_type: continue
+        q=P.get(r['to_place_id'] if direction=='out' else r['from_place_id'])
+        if q: out.append((r,q))
+    return out
+
+def entity_link(q,label=None):
+    text=label or display_name(q)
+    if q['place_id'] in TARGET_SET:
+        return f'<a class="entity-link" href="{page_path(q)}">{esc(text)} <span aria-hidden="true">→</span></a>'
+    return f'<span class="entity-link is-static">{esc(text)}</span>'
+def chips(items,limit=60):
+    if not items: return '<p class="empty">표시할 현재 데이터가 없습니다.</p>'
+    return '<ul class="chip-list">'+''.join(f'<li>{entity_link(q)}</li>' for q in items[:limit])+'</ul>'
+def fact(label,value,sub=''):
+    return f'<div class="fact"><span>{esc(label)}</span><strong>{esc(value or "—")}</strong>{f"<small>{esc(sub)}</small>" if sub else ""}</div>'

@@ -1,0 +1,186 @@
+from pathlib import Path
+import csv, json, re, shutil, html, hashlib, zipfile, os, sys
+from collections import defaultdict, Counter
+from urllib.parse import urlparse
+
+BASE_URL = 'https://englishpt.kr'
+SRC = Path('.region-build/v1-englishpt')
+OUT = Path('.region-build/v2-ui')
+MASTER = Path('.region-build/v5/master')
+
+if OUT.exists():
+    shutil.rmtree(OUT)
+shutil.copytree(SRC, OUT)
+
+# Remove old plural hubs; singular hub indexes will live beside entity directories.
+for old in ['regions','stations','newtowns','districts']:
+    p = OUT / old
+    if p.exists():
+        shutil.rmtree(p)
+
+manifest_path = OUT / 'manifest/pages.csv'
+with manifest_path.open(encoding='utf-8-sig', newline='') as f:
+    rows = list(csv.DictReader(f))
+by_id = {r['place_id']: r for r in rows}
+
+# Load V5 master.
+with (MASTER/'places_geo_master.csv').open(encoding='utf-8-sig', newline='') as f:
+    places = list(csv.DictReader(f))
+place_by_id = {r['place_id']: r for r in places}
+with (MASTER/'relations_geo_master.csv').open(encoding='utf-8-sig', newline='') as f:
+    relations = list(csv.DictReader(f))
+with (MASTER/'aliases_geo_master.csv').open(encoding='utf-8-sig', newline='') as f:
+    alias_rows = list(csv.DictReader(f))
+
+aliases = defaultdict(list)
+for a in alias_rows:
+    if a['place_id'] in by_id and a['alias']:
+        aliases[a['place_id']].append(a['alias'])
+
+# Hierarchy ancestor helper.
+def ancestor_of_type(pid, wanted):
+    seen=set()
+    cur=place_by_id.get(pid)
+    while cur and cur['place_id'] not in seen:
+        seen.add(cur['place_id'])
+        if cur['place_type'] == wanted:
+            return cur
+        parent=cur.get('parent_place_id')
+        cur=place_by_id.get(parent) if parent else None
+    return None
+
+# Relation targets used for location context.
+rel_targets=defaultdict(list)
+for rel in relations:
+    s=rel.get('source_place_id') or rel.get('from_place_id') or rel.get('subject_place_id') or rel.get('source_id')
+    t=rel.get('target_place_id') or rel.get('to_place_id') or rel.get('object_place_id') or rel.get('target_id')
+    rt=rel.get('relation_type') or rel.get('relation') or rel.get('type')
+    if s and t and rt:
+        rel_targets[(s,rt)].append(t)
+
+# Detect actual relation header if generic guess failed.
+if not rel_targets and relations:
+    print('Relations header:', list(relations[0]))
+    raise SystemExit('Relation columns not recognized')
+
+CATEGORY = {}
+for r in rows:
+    u=r['url_path']
+    if u.startswith('/station/'): c='STATION'
+    elif u.startswith('/newtown/'): c='NEWTOWN'
+    elif u.startswith('/district/'): c='DISTRICT'
+    elif u.startswith('/region/'): c='ADMIN'
+    else: raise ValueError(f'Unknown URL category: {u}')
+    CATEGORY[r['place_id']] = c
+
+# Common header/footer.
+HEADER = '''<a class="skip-link" href="#main-content">본문 바로가기</a><header class="site-head"><div class="shell head-inner"><div class="brand-wrap"><a class="brand" href="/">잉글리시PT</a><a class="brand-section" href="/region/">지역정보</a></div><nav class="global" aria-label="주요 메뉴"><a href="/search/">통합검색</a><a href="/region/">행정구역</a><a href="/station/">역</a><a href="/newtown/">신도시</a><a href="/district/">개발지구</a></nav><details class="mobile-nav"><summary aria-label="메뉴 열기">메뉴</summary><div><a href="/search/">통합검색</a><a href="/region/">행정구역</a><a href="/station/">역</a><a href="/newtown/">신도시</a><a href="/district/">개발지구</a></div></details></div></header>'''
+FOOTER = '''<footer class="site-footer"><div class="shell footer-grid"><div><strong>잉글리시PT</strong><p>공식 코드와 관계 데이터를 바탕으로 정리한 대한민국 지역정보입니다.</p></div><nav aria-label="지역정보 하단 메뉴"><a href="/search/">전국 지역검색</a><a href="/region/">행정구역</a><a href="/station/">역</a><a href="/newtown/">신도시</a><a href="/district/">개발지구</a></nav></div></footer>'''
+
+hub_replacements = {
+    'https://englishpt.kr/regions/':'https://englishpt.kr/region/',
+    'https://englishpt.kr/stations/':'https://englishpt.kr/station/',
+    'https://englishpt.kr/newtowns/':'https://englishpt.kr/newtown/',
+    'https://englishpt.kr/districts/':'https://englishpt.kr/district/',
+    '/regions/':'/region/', '/stations/':'/station/', '/newtowns/':'/newtown/', '/districts/':'/district/'
+}
+
+def branded_title(t):
+    t=t.strip()
+    if '잉글리시PT' in t: return t
+    suffix=' | 잉글리시PT'
+    return t+suffix if len(t)+len(suffix) <= 58 else t
+
+def inject_webpage_jsonld(text, canonical, title):
+    m=re.search(r'<script type="application/ld\+json">(.*?)</script>', text, flags=re.S)
+    if not m: return text
+    try:
+        data=json.loads(m.group(1))
+    except Exception:
+        return text
+    if isinstance(data, dict): data=[data]
+    if not isinstance(data, list): return text
+    # Remove prior WebPage/WebSite if rerun.
+    data=[x for x in data if not (isinstance(x,dict) and x.get('@type') in {'WebPage','WebSite'})]
+    data.append({
+        '@context':'https://schema.org','@type':'WebPage','url':canonical,'name':title,
+        'isPartOf':{'@type':'WebSite','name':'잉글리시PT','url':BASE_URL+'/'},
+        'publisher':{'@type':'Organization','name':'잉글리시PT','url':BASE_URL+'/'}
+    })
+    return text[:m.start(1)] + json.dumps(data, ensure_ascii=False, separators=(',',':')) + text[m.end(1):]
+
+entity_files=[]
+for prefix in ['region','station','newtown','district']:
+    entity_files.extend([p for p in (OUT/prefix).glob('*/index.html')])
+
+for i,p in enumerate(entity_files,1):
+    text=p.read_text(encoding='utf-8')
+    for a,b in hub_replacements.items(): text=text.replace(a,b)
+    text=text.replace('KOREA REGION DB','잉글리시PT 지역정보')
+    text=re.sub(r'<header class="site-head">.*?</header>', HEADER, text, count=1, flags=re.S)
+    text=re.sub(r'<footer>.*?</footer>', FOOTER, text, count=1, flags=re.S)
+    # Ensure main landmark target.
+    text=text.replace('<main>', '<main id="main-content">', 1)
+    # Brand title; preserve factual core.
+    mt=re.search(r'<title>(.*?)</title>', text, flags=re.S)
+    if mt:
+        old=html.unescape(mt.group(1))
+        new=branded_title(old)
+        text=text[:mt.start(1)] + html.escape(new, quote=False) + text[mt.end(1):]
+        text=re.sub(r'<meta property="og:title" content="[^"]*">', f'<meta property="og:title" content="{html.escape(new, quote=True)}">', text, count=1)
+    else:
+        new='잉글리시PT 지역정보'
+    text=re.sub(r'<meta property="og:site_name" content="[^"]*">', '<meta property="og:site_name" content="잉글리시PT">', text, count=1)
+    mc=re.search(r'<link rel="canonical" href="([^"]+)">', text)
+    canonical=mc.group(1) if mc else BASE_URL+'/'
+    text=inject_webpage_jsonld(text, canonical, new)
+    text=text.replace('이 페이지는 교육 서비스 페이지와 분리된 지역정보 전용 페이지입니다.', '이 페이지는 잉글리시PT의 지역정보 전용 데이터 페이지입니다.')
+    p.write_text(text, encoding='utf-8')
+
+# Keep manifest metadata aligned with the HTML title policy.
+for r in rows:
+    r['title']=branded_title(r['title'])
+with manifest_path.open('w',encoding='utf-8-sig',newline='') as f:
+    w=csv.DictWriter(f,fieldnames=list(rows[0].keys()))
+    w.writeheader(); w.writerows(rows)
+with (OUT/'manifest/pages.jsonl').open('w',encoding='utf-8') as f:
+    for r in rows:
+        f.write(json.dumps(r,ensure_ascii=False,separators=(',',':'))+'\n')
+
+# ---------- Search index ----------
+# Location context for non-admin categories.
+def location_context(pid):
+    c=CATEGORY.get(pid)
+    p=place_by_id.get(pid,{})
+    if c=='ADMIN': return p.get('full_name_ko') or p.get('name_ko') or ''
+    reltypes = {'STATION':['STATION_IN'], 'NEWTOWN':['NEWTOWN_PROJECT_OF','NEWTOWN_IN'], 'DISTRICT':['DISTRICT_IN']}.get(c,[])
+    targets=[]
+    for rt in reltypes: targets += rel_targets.get((pid,rt),[])
+    names=[]
+    for tid in targets:
+        tp=place_by_id.get(tid)
+        if not tp: continue
+        # If target is a district for newtown, find DISTRICT_IN one hop.
+        if c=='NEWTOWN' and ('DISTRICT' in tp.get('place_type','') or tp.get('place_type') in {'INDUSTRIAL_COMPLEX','FREE_ECONOMIC_ZONE'}):
+            for at in rel_targets.get((tid,'DISTRICT_IN'),[]):
+                ap=place_by_id.get(at)
+                if ap and ap.get('full_name_ko'): names.append(ap['full_name_ko'])
+        if tp.get('full_name_ko'): names.append(tp['full_name_ko'])
+    # dedupe preserving order
+    return ' · '.join(dict.fromkeys(names))
+
+search_records=[]
+for r in rows:
+    pid=r['place_id']; p=place_by_id.get(pid,{})
+    al=list(dict.fromkeys(aliases.get(pid,[])))[:8]
+    context=location_context(pid)
+    display=p.get('full_name_ko') or r['name'] or r['h1']
+    name=p.get('name_ko') or r['name'] or display
+    q=' '.join([name,display,context,r['type_label'],*al]).lower()
+    search_records.append({'n':name,'f':display,'t':r['type_label'],'c':CATEGORY[pid],'u':r['url_path'],'x':context,'a':al,'q':q})
+(OUT/'assets').mkdir(exist_ok=True)
+(OUT/'assets/search-index.json').write_text(json.dumps(search_records, ensure_ascii=False, separators=(',',':')), encoding='utf-8')
+
+# ---------- Page shell helpers ----------
+def head(title, desc, canonical, css='../assets/region.css', robots='index,follow', extra=''):
+    full_title=brande

@@ -1,0 +1,95 @@
+d_title(title)
+    ld=[
+        {'@context':'https://schema.org','@type':'WebSite','name':'잉글리시PT','url':BASE_URL+'/'},
+        {'@context':'https://schema.org','@type':'WebPage','name':full_title,'url':canonical,'isPartOf':{'@type':'WebSite','name':'잉글리시PT','url':BASE_URL+'/'}}
+    ]
+    return f'''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(full_title)}</title><meta name="description" content="{html.escape(desc,quote=True)}"><meta name="robots" content="{robots}"><meta name="theme-color" content="#17365D"><link rel="canonical" href="{canonical}"><meta property="og:title" content="{html.escape(full_title,quote=True)}"><meta property="og:description" content="{html.escape(desc,quote=True)}"><meta property="og:type" content="website"><meta property="og:url" content="{canonical}"><meta property="og:site_name" content="잉글리시PT"><link rel="stylesheet" href="{css}">{extra}<script type="application/ld+json">{json.dumps(ld,ensure_ascii=False,separators=(',',':'))}</script></head>'''
+
+def footer(): return FOOTER
+
+def card(title, count, href, desc):
+    return f'<a class="hub-card" href="{href}"><span>{html.escape(title)}</span><strong>{count:,}</strong><p>{html.escape(desc)}</p><b>바로가기 →</b></a>'
+
+counts=Counter(CATEGORY.values())
+ptype_counts=Counter(r['place_type'] for r in rows if CATEGORY[r['place_id']]=='ADMIN')
+
+# Build grouping by SIDO based on parent or relations.
+def sido_names_for(pid):
+    c=CATEGORY[pid]
+    ids=[]
+    if c=='ADMIN':
+        a=ancestor_of_type(pid,'SIDO')
+        if a: ids.append(a['place_id'])
+    else:
+        reltypes={'STATION':['STATION_IN'],'NEWTOWN':['NEWTOWN_PROJECT_OF','NEWTOWN_IN'],'DISTRICT':['DISTRICT_IN']}[c]
+        targets=[]
+        for rt in reltypes: targets += rel_targets.get((pid,rt),[])
+        for tid in targets:
+            tp=place_by_id.get(tid)
+            if not tp: continue
+            if c=='NEWTOWN' and ('DISTRICT' in tp.get('place_type','') or tp.get('place_type') in {'INDUSTRIAL_COMPLEX','FREE_ECONOMIC_ZONE'}):
+                for at in rel_targets.get((tid,'DISTRICT_IN'),[]):
+                    a=ancestor_of_type(at,'SIDO');
+                    if a: ids.append(a['place_id'])
+            a=ancestor_of_type(tid,'SIDO')
+            if a: ids.append(a['place_id'])
+    # names
+    names=[]
+    for sid in dict.fromkeys(ids):
+        sp=place_by_id.get(sid)
+        if sp: names.append(sp.get('name_ko') or sp.get('full_name_ko'))
+    return names or ['기타']
+
+# Root landing page (integration placeholder).
+root_desc='잉글리시PT 지역정보에서 전국 행정구역, 역, 신도시, 개발지구 26,937개 데이터를 검색하고 관계 정보를 확인할 수 있습니다.'
+root = head('잉글리시PT 지역정보',root_desc,BASE_URL+'/',css='assets/region.css') + '<body>'+HEADER+'''<main id="main-content"><section class="hub-hero"><div class="shell"><span class="hub-eyebrow">ENGLISHPT · REGION DATA</span><h1>대한민국 지역정보를<br>한 곳에서 검색하세요</h1><p>행정구역·역·신도시·개발지구의 공식 코드와 관계 데이터를 연결해 제공합니다.</p><form class="hero-search" action="/search/" method="get"><label class="sr-only" for="home-q">지역 검색</label><input id="home-q" name="q" placeholder="지역명, 역명, 신도시, 개발지구 검색"><button type="submit">검색</button></form></div></section><section class="shell hub-section"><div class="hub-card-grid">''' + ''.join([
+    card('행정구역',counts['ADMIN'],'/region/','시도·시군구·읍면동·리'),
+    card('역',counts['STATION'],'/station/','전국 철도·도시철도 역'),
+    card('신도시',counts['NEWTOWN'],'/newtown/','공식 신도시 프로젝트'),
+    card('개발지구',counts['DISTRICT'],'/district/','택지·도시개발·공공주택 등')]) + '''</div></section><section class="shell hub-section"><div class="panel intro-panel"><span class="kicker">ABOUT REGION DATA</span><h2>잉글리시PT 지역정보</h2><p>지역정보 페이지는 교육 서비스 소개와 분리해 운영합니다. V5 CURRENT master의 공식 코드·상하위 계층·관계 데이터를 사용하며, 이름 유사도나 거리만으로 관계를 추정하지 않습니다.</p></div></section></main>''' + footer() + '</body></html>'
+(OUT/'index.html').write_text(root,encoding='utf-8')
+
+# Region hub.
+sido_rows=[r for r in rows if r['place_type']=='SIDO']
+sido_rows.sort(key=lambda r:r['name'])
+type_labels=[('SIDO','시도'),('SIGUNGU','시군구'),('LEGAL_EUP','법정읍'),('LEGAL_MYEON','법정면'),('LEGAL_DONG','법정동'),('ADMIN_DONG','행정동'),('LEGAL_RI','법정리')]
+region_desc='전국 시도·시군구·읍면동·리 행정구역을 공식 코드와 행정계층을 기준으로 찾아볼 수 있습니다.'
+region_html=head('전국 행정구역',region_desc,BASE_URL+'/region/')+'<body>'+HEADER+'''<main id="main-content"><section class="hub-hero compact"><div class="shell"><span class="hub-eyebrow">ADMINISTRATIVE AREAS</span><h1>전국 행정구역</h1><p>시도에서 시군구, 읍면동과 리까지 행정계층을 따라 탐색합니다.</p><a class="primary-link" href="/search/?category=ADMIN">행정구역 검색하기 →</a></div></section><section class="shell hub-section"><div class="stat-strip">''' + ''.join(f'<div><strong>{ptype_counts[k]:,}</strong><span>{lab}</span></div>' for k,lab in type_labels) + '''</div><div class="panel"><div class="panel-head"><span class="kicker">BROWSE BY SIDO</span><h2>시도별 지역 찾기</h2></div><div class="sido-grid">''' + ''.join(f'<a href="{r["url_path"]}"><strong>{html.escape(r["name"])}</strong><span>지역정보 →</span></a>' for r in sido_rows) + '''</div></div></section></main>'''+footer()+'</body></html>'
+(OUT/'region/index.html').write_text(region_html,encoding='utf-8')
+
+# Generic grouped hubs for station/newtown.
+def make_grouped_hub(cat, path, title, eyebrow, desc):
+    grouped=defaultdict(list)
+    for r in rows:
+        if CATEGORY[r['place_id']] != cat: continue
+        for sn in sido_names_for(r['place_id']): grouped[sn].append(r)
+    for g in grouped: grouped[g].sort(key=lambda x:x['name'])
+    sections=[]
+    for g in sorted(grouped):
+        links=''.join(f'<a href="{r["url_path"]}"><strong>{html.escape(r["name"])}</strong><small>{html.escape(r["type_label"])}</small></a>' for r in grouped[g])
+        sections.append(f'<details class="hub-group" open><summary><span>{html.escape(g)}</span><b>{len(grouped[g]):,}</b></summary><div class="entity-grid">{links}</div></details>')
+    h=head(title,desc,BASE_URL+path)
+    body='<body>'+HEADER+f'''<main id="main-content"><section class="hub-hero compact"><div class="shell"><span class="hub-eyebrow">{eyebrow}</span><h1>{title}</h1><p>{desc}</p><a class="primary-link" href="/search/?category={cat}">이 범위에서 검색하기 →</a></div></section><section class="shell hub-section"><p class="hub-count">총 {counts[cat]:,}개</p>{''.join(sections)}</section></main>'''+footer()+'</body></html>'
+    (OUT/path.strip('/')/'index.html').write_text(h+body,encoding='utf-8')
+
+make_grouped_hub('STATION','/station/','전국 역 찾기','STATIONS','전국 철도·도시철도 역을 소재 지역과 공식 관계 데이터로 찾아볼 수 있습니다.')
+make_grouped_hub('NEWTOWN','/newtown/','전국 신도시','NEWTOWNS','공식 신도시 프로젝트와 연결된 개발사업·행정구역 관계를 확인합니다.')
+
+# District hub grouped by place_type.
+district_groups=defaultdict(list)
+for r in rows:
+    if CATEGORY[r['place_id']]=='DISTRICT': district_groups[r['type_label']].append(r)
+for g in district_groups: district_groups[g].sort(key=lambda x:x['name'])
+dsections=[]
+for g in sorted(district_groups, key=lambda k:(-len(district_groups[k]),k)):
+    links=''.join(f'<a href="{r["url_path"]}"><strong>{html.escape(r["name"])}</strong><small>{html.escape(" · ".join(sido_names_for(r["place_id"])))}</small></a>' for r in district_groups[g])
+    dsections.append(f'<details class="hub-group"><summary><span>{html.escape(g)}</span><b>{len(district_groups[g]):,}</b></summary><div class="entity-grid">{links}</div></details>')
+desc='택지개발·도시개발·공공주택·산업단지 등 전국 개발지구를 사업 유형별로 찾아볼 수 있습니다.'
+district_html=head('전국 개발지구',desc,BASE_URL+'/district/')+'<body>'+HEADER+f'''<main id="main-content"><section class="hub-hero compact"><div class="shell"><span class="hub-eyebrow">DEVELOPMENT DISTRICTS</span><h1>전국 개발지구</h1><p>{desc}</p><a class="primary-link" href="/search/?category=DISTRICT">개발지구 검색하기 →</a></div></section><section class="shell hub-section"><p class="hub-count">총 {counts['DISTRICT']:,}개 · {len(district_groups):,}개 유형</p>{''.join(dsections)}</section></main>'''+footer()+'</body></html>'
+(OUT/'district/index.html').write_text(district_html,encoding='utf-8')
+
+# Search page and JS.
+(OUT/'search').mkdir(exist_ok=True)
+search_extra='<script defer src="/assets/search.js"></script>'
+search_desc='행정구역·역·신도시·개발지구 26,937개 데이터를 이름과 별칭으로 통합 검색합니다.'
+search_html=head('전국 지역 통합검색',search_desc,BASE_URL+'/search/',extra=search_extra)+'<body>'+HEADER+'''<main id="main-content"><section class="hub-hero compact search-hero"><div class="shell"><span class="hub-eyebrow">REGION SEARCH</span><h1>전국 지역 통합검색</h1><p>행정구역·역·신도시·개발지구를 이름과 별칭으로 검색합니다.</p></div></section><section class="shell search-section"><div class="search-box"><label for="region-search">검색어</label><div class="search-input-row"><input id="region-search" type="search" autocomplete="off" placeholder="예: 청운동, 신사역, 분당신도시, 별내지구"><button id="search-button" type="button">검색</button></div><div class="filter-row" role="group" aria-label="검색 범위"><button data-cat="ALL" class="on">전체</button><button data-cat="ADMIN">행정구역</button><button data-cat="STATION">역</button><button data-cat="NEWTOWN">신도시</button><button data-cat="DISTRICT">개발지구</butto

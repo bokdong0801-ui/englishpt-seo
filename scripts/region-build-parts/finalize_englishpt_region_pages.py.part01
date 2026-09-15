@@ -1,0 +1,190 @@
+from __future__ import annotations
+from pathlib import Path
+import csv, json, html, re, shutil, zipfile, hashlib, os
+from urllib.parse import quote
+
+SRC = Path('.region-build/v1-full')
+OUT = Path('.region-build/v1-englishpt')
+ZIP = Path('.region-build/v1-englishpt.zip')
+BASE = 'https://englishpt.kr'
+
+if OUT.exists():
+    shutil.rmtree(OUT)
+shutil.copytree(SRC, OUT)
+
+# --- Helpers ---
+def url_path_for_file(fp: Path) -> str:
+    rel = fp.relative_to(OUT).as_posix()
+    if rel == 'index.html':
+        return '/'
+    if rel.endswith('/index.html'):
+        return '/' + rel[:-len('index.html')]
+    return '/' + rel
+
+def get_tag_content(text, pattern):
+    m = re.search(pattern, text, re.I|re.S)
+    return m.group(1) if m else ''
+
+def patch_html(fp: Path):
+    s = fp.read_text(encoding='utf-8')
+    path = url_path_for_file(fp)
+    canonical = BASE + path
+    title = get_tag_content(s, r'<title>(.*?)</title>')
+    desc = get_tag_content(s, r'<meta\s+name="description"\s+content="(.*?)">')
+    if not desc:
+        desc = '대한민국 행정구역·역·신도시·개발지구 공식 관계 데이터베이스'
+
+    # Remove stale canonical / OG URLs if this finalizer is rerun.
+    s = re.sub(r'<link\s+rel="canonical"\s+href="[^"]*">', '', s, flags=re.I)
+    s = re.sub(r'<meta\s+property="og:(?:title|description|type|url|site_name)"\s+content="[^"]*">', '', s, flags=re.I)
+
+    seo = (
+        f'<link rel="canonical" href="{html.escape(canonical, quote=True)}">'
+        f'<meta property="og:title" content="{title}">'
+        f'<meta property="og:description" content="{desc}">'
+        f'<meta property="og:type" content="website">'
+        f'<meta property="og:url" content="{html.escape(canonical, quote=True)}">'
+        f'<meta property="og:site_name" content="KOREA REGION DB">'
+    )
+    # Insert immediately before first stylesheet or JSON-LD/script/end-head.
+    if '<link rel="stylesheet"' in s:
+        s = s.replace('<link rel="stylesheet"', seo + '<link rel="stylesheet"', 1)
+    elif '<script type="application/ld+json">' in s:
+        s = s.replace('<script type="application/ld+json">', seo + '<script type="application/ld+json">', 1)
+    else:
+        s = s.replace('</head>', seo + '</head>', 1)
+
+    # Breadcrumb structured-data item URLs become absolute.
+    s = s.replace('"item":"/','"item":"'+BASE+'/')
+    # The previous replacement turns home "/" into BASE + "/" correctly.
+    fp.write_text(s, encoding='utf-8')
+    return canonical
+
+html_files = sorted(OUT.rglob('*.html'))
+canonicals = {}
+for i, fp in enumerate(html_files, 1):
+    canonicals[fp.relative_to(OUT).as_posix()] = patch_html(fp)
+    if i % 5000 == 0:
+        print(f'patched html {i}/{len(html_files)}')
+
+# --- Update manifest with absolute canonical_url ---
+csv_path = OUT/'manifest'/'pages.csv'
+with csv_path.open(encoding='utf-8-sig', newline='') as f:
+    rows = list(csv.DictReader(f))
+fields = list(rows[0].keys())
+if 'canonical_url' not in fields:
+    fields.append('canonical_url')
+for r in rows:
+    r['canonical_url'] = BASE + r['url_path']
+with csv_path.open('w', encoding='utf-8-sig', newline='') as f:
+    w=csv.DictWriter(f, fieldnames=fields); w.writeheader(); w.writerows(rows)
+
+jsonl_path = OUT/'manifest'/'pages.jsonl'
+with jsonl_path.open('w', encoding='utf-8') as f:
+    for r in rows:
+        f.write(json.dumps(r, ensure_ascii=False, separators=(',',':'))+'\n')
+
+# --- Real sitemaps: only indexable entity pages, plus root/hubs in site.xml ---
+by_cat = {'admin':[], 'stations':[], 'newtowns':[], 'districts':[]}
+ADMIN_TYPES={'SIDO','ADMIN_SIDO','SIGUNGU','ADMIN_SIGUNGU','LEGAL_EUP','ADMIN_EUP','LEGAL_MYEON','ADMIN_MYEON','LEGAL_DONG','ADMIN_DONG','LEGAL_RI'}
+DISTRICT_TYPES={'LAND_DEVELOPMENT_DISTRICT','URBAN_DEVELOPMENT_DISTRICT','PUBLIC_HOUSING_DISTRICT','INDUSTRIAL_COMPLEX','PRIVATE_RENTAL_DISTRICT','FREE_ECONOMIC_ZONE','INNOVATION_CITY_DISTRICT','REGIONAL_DEVELOPMENT_DISTRICT','RND_SPECIAL_ZONE','ENTERPRISE_CITY_DISTRICT','URBAN_CONVERGENCE_DISTRICT','JEJU_SPECIAL_DISTRICT','WATERFRONT_DISTRICT','PROVINCIAL_OFFICE_RELOCATION_DISTRICT','RURAL_DEVELOPMENT_DISTRICT','HAPPY_CITY_DISTRICT','COAST_INLAND_DEVELOPMENT_DISTRICT'}
+for r in rows:
+    if str(r['indexable']).lower() not in {'true','1','yes'}:
+        continue
+    pt=r['place_type']
+    if pt in ADMIN_TYPES: cat='admin'
+    elif pt=='STATION': cat='stations'
+    elif pt=='NEWTOWN': cat='newtowns'
+    elif pt in DISTRICT_TYPES: cat='districts'
+    else: continue
+    by_cat[cat].append(r)
+
+def xml_escape(v):
+    return html.escape(v, quote=False)
+
+for cat, items in by_cat.items():
+    lines=['<?xml version="1.0" encoding="UTF-8"?>','<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for r in items:
+        lines.append('  <url>')
+        lines.append(f'    <loc>{xml_escape(r["canonical_url"])}</loc>')
+        d=(r.get('source_snapshot_date') or '').strip()
+        if re.fullmatch(r'\d{4}-\d{2}-\d{2}', d):
+            lines.append(f'    <lastmod>{d}</lastmod>')
+        lines.append('  </url>')
+    lines.append('</urlset>')
+    (OUT/'sitemaps'/f'{cat}.xml').write_text('\n'.join(lines)+'\n',encoding='utf-8')
+
+site_urls=['/','/regions/','/stations/','/newtowns/','/districts/']
+lines=['<?xml version="1.0" encoding="UTF-8"?>','<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+for p in site_urls:
+    lines.append(f'  <url><loc>{BASE}{p}</loc></url>')
+lines.append('</urlset>')
+(OUT/'sitemaps'/'site.xml').write_text('\n'.join(lines)+'\n',encoding='utf-8')
+
+idx=['<?xml version="1.0" encoding="UTF-8"?>','<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+for name in ['site','admin','stations','newtowns','districts']:
+    idx.append(f'  <sitemap><loc>{BASE}/sitemaps/{name}.xml</loc></sitemap>')
+idx.append('</sitemapindex>')
+(OUT/'sitemap-index.xml').write_text('\n'.join(idx)+'\n',encoding='utf-8')
+(OUT/'robots.txt').write_text(f'User-agent: *\nAllow: /\nSitemap: {BASE}/sitemap-index.xml\n',encoding='utf-8')
+
+# Keep template files but set them to real base URL too, preventing accidental placeholder deploys.
+for fp in list((OUT/'sitemaps').glob('*.template.xml')) + [OUT/'sitemap-index.template.xml', OUT/'robots.template.txt']:
+    if fp.exists():
+        fp.write_text(fp.read_text(encoding='utf-8').replace('{{BASE_URL}}', BASE),encoding='utf-8')
+
+# --- Config/readme ---
+config_path=OUT/'config'/'build-config.json'
+config=json.loads(config_path.read_text(encoding='utf-8'))
+config['base_url']=BASE
+config['canonical_status']='applied'
+config['canonical_entity_pages']=len(rows)
+config['sitemap_entity_urls']=sum(len(v) for v in by_cat.values())
+config['site_support_urls']=len(site_urls)
+config_path.write_text(json.dumps(config,ensure_ascii=False,indent=2),encoding='utf-8')
+
+readme_path=OUT/'README.md'
+readme=readme_path.read_text(encoding='utf-8')
+readme=re.sub(r'## Deployment\n.*?\n\n## SEO policy correction',
+             '## Deployment\n배포 기준 도메인은 `https://englishpt.kr` 입니다. 26,937개 엔티티 페이지와 5개 허브/루트 페이지에 self canonical 및 OG URL을 적용했고, 실제 `robots.txt`, `sitemap-index.xml`, 카테고리 sitemap XML을 생성했습니다. Structured-data breadcrumb URL도 절대 URL로 변환했습니다.\n\n## SEO policy correction',
+             readme, flags=re.S)
+readme_path.write_text(readme,encoding='utf-8')
+
+# --- Reusable post-build finalizer inside package ---
+shutil.copy2(Path(__file__), OUT/'finalize_englishpt_domain.py')
+
+# --- QA ---
+qa_errors=[]
+entity_count=len(rows)
+if entity_count != 26937: qa_errors.append(f'entity_count={entity_count}')
+if len(html_files) != 26942: qa_errors.append(f'html_count={len(html_files)} expected=26942')
+canonical_missing=canonical_wrong=og_missing=placeholder_hits=jsonld_relative=0
+for fp in html_files:
+    s=fp.read_text(encoding='utf-8')
+    path=url_path_for_file(fp); expected=BASE+path
+    cm=re.search(r'<link rel="canonical" href="([^"]+)">',s)
+    if not cm: canonical_missing += 1
+    elif html.unescape(cm.group(1)) != expected: canonical_wrong += 1
+    if '<meta property="og:url" content="' not in s: og_missing += 1
+    if '{{BASE_URL}}' in s: placeholder_hits += 1
+    if re.search(r'"item":"/', s): jsonld_relative += 1
+
+# Sitemap URL counts and no noindex leakage
+sitemap_urls=[]
+for name in ['admin','stations','newtowns','districts']:
+    txt=(OUT/'sitemaps'/f'{name}.xml').read_text(encoding='utf-8')
+    sitemap_urls += re.findall(r'<loc>(.*?)</loc>',txt)
+indexable={r['canonical_url'] for r in rows if str(r['indexable']).lower() in {'true','1','yes'}}
+if set(sitemap_urls) != indexable:
+    qa_errors.append(f'sitemap_set_mismatch sitemap={len(set(sitemap_urls))} indexable={len(indexable)}')
+
+all_text_files=list(OUT.rglob('*.html'))+list(OUT.rglob('*.xml'))+list(OUT.rglob('*.txt'))+list(OUT.rglob('*.json'))+list(OUT.rglob('*.md'))+list(OUT.rglob('*.py'))
+placeholder_files=[]
+for fp in all_text_files:
+    try: txt=fp.read_text(encoding='utf-8')
+    except Exception: continue
+    if '{{BASE_URL}}' in txt:
+        placeholder_files.append(str(fp.relative_to(OUT)))
+
+qa={
+    'pass': not qa_errors and canonical_missing==0 and canonical_wrong==0 and o

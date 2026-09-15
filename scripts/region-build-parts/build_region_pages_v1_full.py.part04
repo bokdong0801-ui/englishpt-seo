@@ -1,0 +1,26 @@
+son':'Only CURRENT ADMINISTERS relations are counted; abolished relations are excluded.'}}
+(OUT/'manifest'/'qa-report.json').write_text(json.dumps(qa,ensure_ascii=False,indent=2),encoding='utf-8')
+
+README=f'''# KOREA REGION DB — Region Pages V1 Full\n\nAudited V5 CURRENT 데이터를 사용해 생성한 지역정보 전용 정적 HTML입니다.\n\n- Entity pages: {len(manifest):,}\n- ADMIN: {category_counts['ADMIN']:,}\n- STATION: {category_counts['STATION']:,}\n- NEWTOWN: {category_counts['NEWTOWN']:,}\n- DISTRICT: {category_counts['DISTRICT']:,}\n- Indexable now: {len(INDEXABLE):,}\n- QA: {'PASS' if not errors else 'FAIL'}\n\n## Deployment\n현재 최종 도메인이 지정되지 않았기 때문에 HTML canonical은 임의 도메인으로 생성하지 않았습니다. `sitemaps/*.template.xml`, `sitemap-index.template.xml`, `robots.template.txt`의 `{{{{BASE_URL}}}}`를 실제 도메인으로 치환한 후 배포합니다.\n\n## SEO policy correction\n이전 행정동 INDEX 1,913개 계산에는 폐지 관계가 포함되어 있었습니다. 이번 전체 빌드는 CURRENT ADMINISTERS만 집계하여 행정동 INDEX {qa['q3_correction']['admin_dong_index']:,}개, 행정구역 INDEX {qa['q3_correction']['current_relation_only_admin_index']:,}개로 정정했습니다.\n\n## Safety\n교육 서비스 콘텐츠는 포함하지 않습니다. 관계는 V5 master의 공식 관계만 사용하며 이름/거리 추정을 하지 않습니다. 동일 역명 KRIC 중복 레코드는 임의 병합하지 않고 noindex,follow로 보류했습니다.\n'''
+(OUT/'README.md').write_text(README,encoding='utf-8')
+
+# Include builder.
+shutil.copy(Path(__file__),OUT/'build_region_pages_v1_full.py')
+
+# Directory stats before zip.
+all_files=[f for f in OUT.rglob('*') if f.is_file()]
+raw_bytes=sum(f.stat().st_size for f in all_files)
+
+# Zip. Put contents under one top-level folder.
+if ZIP.exists(): ZIP.unlink()
+with zipfile.ZipFile(ZIP,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+    for f in all_files:
+        z.write(f,Path(OUT.name)/f.relative_to(OUT))
+zip_bytes=ZIP.stat().st_size
+sha=hashlib.sha256(ZIP.read_bytes()).hexdigest()
+qa['files_total']=len(all_files); qa['raw_bytes']=raw_bytes; qa['zip_bytes']=zip_bytes; qa['zip_sha256']=sha
+(OUT/'manifest'/'qa-report.json').write_text(json.dumps(qa,ensure_ascii=False,indent=2),encoding='utf-8')
+# refresh zip with final QA report
+with zipfile.ZipFile(ZIP,'a',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+    z.write(OUT/'manifest'/'qa-report.json',Path(OUT.name)/'manifest'/'qa-report.json')
+print(json.dumps({'out':str(OUT),'zip':str(ZIP),'qa':qa},ensure_ascii=False,indent=2))
