@@ -1,6 +1,6 @@
 {
-  "version": "1.3",
-  "status": "STRUCTURE_PASS_HIGH_GOLD_V2_CONTENT_REVIEW",
+  "version": "1.4",
+  "status": "STRUCTURE_PASS_HIGH_V3_COMPACT_REVIEW",
   "locality": {
     "locality_key": "서울특별시 종로구|사직동",
     "sido": "서울특별시",
@@ -156,5 +156,19 @@
       "deploy preview",
       "explicit production approval"
     ]
+  },
+  "high_gold_v3_compact": {
+    "status": "PROTOTYPE_NOINDEX_NOT_DEPLOYED",
+    "standard": "CONVERSION_CONTENT_STANDARD_V3_COMPACT.md",
+    "rationale": "V2 was too verbose. V3 removes non-decision prose and keeps only scope, symptoms, method, fit and conversion information.",
+    "metrics": {
+      "v2_visible_text_chars": 9608,
+      "v3_visible_text_chars": 4253,
+      "reduction_pct": 55.7,
+      "h2": 11,
+      "h3": 32,
+      "paragraphs": 49
+    },
+    "render_qa": "PASS"
   }
 }
