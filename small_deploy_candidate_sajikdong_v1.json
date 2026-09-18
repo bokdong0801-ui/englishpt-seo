@@ -1,0 +1,102 @@
+{
+  "version": "1.0",
+  "status": "CANDIDATE_ONLY_NOT_DEPLOYED",
+  "locality": {
+    "locality_key": "서울특별시 종로구|사직동",
+    "sido": "서울특별시",
+    "jurisdiction_full": "서울특별시 종로구",
+    "dong_name": "사직동",
+    "full_name_ko": "서울특별시 종로구 사직동",
+    "entity_mix": "ADMIN_DONG+LEGAL_DONG",
+    "region_slug": "seoul-jongno-sajikdong",
+    "hub_url": "/seoul-jongno-sajikdong.html",
+    "landing_eligibility": "ELIGIBLE_AFTER_SLUG_QA",
+    "variation_pack_id": "Ve4a779a721",
+    "variation_signature": "parent-view|scene-check-train-report-fit|schedule-context|three-moments|goal-check|compact-direct|comprehension-skill",
+    "content_seed": "76bc829bb4fb1cf9"
+  },
+  "pages": [
+    {
+      "page_id": "sajik_hub",
+      "intent_slug": null,
+      "theme": "theme-local",
+      "blueprint": "region-dong-router-v1",
+      "primary_keyword": "사직동 영어회화·영어과외",
+      "url": "/seoul-jongno-sajikdong.html",
+      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+    },
+    {
+      "page_id": "sajik_high_conv",
+      "intent_slug": "high-conv",
+      "theme": "theme-high",
+      "blueprint": "high-conversation-v1",
+      "primary_keyword": "사직동 고등학생영어회화",
+      "url": "/seoul-jongno-sajikdong-high-conv.html",
+      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+    },
+    {
+      "page_id": "sajik_mid_conv",
+      "intent_slug": "mid-conv",
+      "theme": "theme-mid",
+      "blueprint": "mid-conversation-v1",
+      "primary_keyword": "사직동 중학생영어회화",
+      "url": "/seoul-jongno-sajikdong-mid-conv.html",
+      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+    },
+    {
+      "page_id": "sajik_elem_tutor",
+      "intent_slug": "elem-tutor",
+      "theme": "theme-elem",
+      "blueprint": "elem-tutor-v1",
+      "primary_keyword": "사직동 초등학생영어과외",
+      "url": "/seoul-jongno-sajikdong-elem-tutor.html",
+      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+    },
+    {
+      "page_id": "sajik_univ_conv",
+      "intent_slug": "univ-conv",
+      "theme": "theme-univ",
+      "blueprint": "univ-conversation-v1",
+      "primary_keyword": "사직동 대학생영어회화",
+      "url": "/seoul-jongno-sajikdong-univ-conv.html",
+      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+    },
+    {
+      "page_id": "sajik_job_conv",
+      "intent_slug": "jobseeker-conv",
+      "theme": "theme-job",
+      "blueprint": "jobseeker-conversation-v1",
+      "primary_keyword": "사직동 취준생영어회화",
+      "url": "/seoul-jongno-sajikdong-jobseeker-conv.html",
+      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+    },
+    {
+      "page_id": "sajik_worker_biz",
+      "intent_slug": "biz-business-conv",
+      "theme": "theme-worker",
+      "blueprint": "worker-business-v1",
+      "primary_keyword": "사직동 직장인비즈니스영어",
+      "url": "/seoul-jongno-sajikdong-biz-business-conv.html",
+      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+    },
+    {
+      "page_id": "sajik_housewife_conv",
+      "intent_slug": "housewife-conv",
+      "theme": "theme-housewife",
+      "blueprint": "housewife-conversation-v1",
+      "primary_keyword": "사직동 주부영어회화",
+      "url": "/seoul-jongno-sajikdong-housewife-conv.html",
+      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+    }
+  ],
+  "required_before_html_generation": [
+    "reuse locked 8-page contracts",
+    "apply Sajikdong variation pack",
+    "same-intent cross-locality duplicate gate against Cheongun reference",
+    "broken-link check",
+    "schema/canonical/theme checks",
+    "noindex preview render",
+    "manual visual QA"
+  ],
+  "production_deploy": false
+}
