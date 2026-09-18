@@ -1,0 +1,60 @@
+{
+  "version": "4.1",
+  "status": "APPROVED_FOR_GENERATOR_INPUT_NOT_PRODUCTION",
+  "standard": "CONVERSION_CONTENT_STANDARD_V4_CONVERSATIONAL_COMPACT.md",
+  "reject_unlisted_blueprints": true,
+  "production_deploy": false,
+  "approved_blueprints": [
+    {
+      "audience": "elem",
+      "blueprint_id": "v4-elem-parent-journey-v1",
+      "intent": "elem-tutor",
+      "theme": "theme-elem",
+      "qa": "PASS"
+    },
+    {
+      "audience": "mid",
+      "blueprint_id": "v4-mid-performance-speaking-v1",
+      "intent": "mid-conv",
+      "theme": "theme-mid",
+      "qa": "PASS"
+    },
+    {
+      "audience": "high",
+      "blueprint_id": "v4-high-performance-response-v1",
+      "intent": "high-conv",
+      "theme": "theme-high",
+      "qa": "PASS"
+    },
+    {
+      "audience": "univ",
+      "blueprint_id": "v4-univ-deadline-campus-v1",
+      "intent": "univ-conv",
+      "theme": "theme-univ",
+      "qa": "PASS"
+    },
+    {
+      "audience": "job",
+      "blueprint_id": "v4-job-deadline-interview-v1",
+      "intent": "jobseeker-conv",
+      "theme": "theme-job",
+      "qa": "PASS"
+    },
+    {
+      "audience": "worker",
+      "blueprint_id": "v4-worker-workscene-v1",
+      "intent": "biz-business-conv",
+      "theme": "theme-worker",
+      "qa": "PASS"
+    }
+  ],
+  "holds": [
+    {
+      "audience": "housewife",
+      "previous_blueprint_id": "v4-housewife-motivation-restart-v1",
+      "reason": "User review: content felt generic/stiff and insufficiently grounded in 30s-60s homemaker life context.",
+      "replacement_candidate": "v4-housewife-lifefit-v2",
+      "status": "CONTENT_REVIEW_HOLD"
+    }
+  ]
+}
