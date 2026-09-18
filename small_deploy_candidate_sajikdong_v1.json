@@ -1,6 +1,6 @@
 {
-  "version": "1.2",
-  "status": "STRUCTURE_PASS_CONTENT_CONVERSION_HOLD",
+  "version": "1.3",
+  "status": "STRUCTURE_PASS_HIGH_GOLD_V2_CONTENT_REVIEW",
   "locality": {
     "locality_key": "서울특별시 종로구|사직동",
     "sido": "서울특별시",
@@ -141,6 +141,20 @@
       "decision criteria for fit",
       "contextual CTA after value is established",
       "same-intent cross-locality duplicate gate"
+    ]
+  },
+  "high_gold_v2": {
+    "status": "PROTOTYPE_NO_INDEX_NOT_DEPLOYED",
+    "title": "사직동 고등학생영어회화 - 수행평가·듣기·발표 1:1 ENGLISH PT",
+    "conversion_standard": "CONVERSION_CONTENT_STANDARD_V2.md",
+    "reference_benchmark": "REFERENCE_BENCHMARK_ENGLISHUP_MUNGYEONG_V1.md",
+    "required_before_promotion": [
+      "manual content review",
+      "same-intent duplicate gate",
+      "repository shared-asset integration",
+      "95 URL + redirect regression",
+      "deploy preview",
+      "explicit production approval"
     ]
   }
 }
