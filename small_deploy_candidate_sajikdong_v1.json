@@ -1,6 +1,6 @@
 {
-  "version": "1.0",
-  "status": "CANDIDATE_ONLY_NOT_DEPLOYED",
+  "version": "1.1",
+  "status": "READY_FOR_DEPLOY_REVIEW_NOT_DEPLOYED",
   "locality": {
     "locality_key": "서울특별시 종로구|사직동",
     "sido": "서울특별시",
@@ -98,5 +98,33 @@
     "noindex preview render",
     "manual visual QA"
   ],
-  "production_deploy": false
+  "production_deploy": false,
+  "qa": {
+    "structure_and_duplicate": "PASS",
+    "structure_failures": 0,
+    "structure_warnings": 0,
+    "cross_locality_reference": "청운동 동일 intent 8페이지",
+    "cross_duplicate_failures": 0,
+    "cross_duplicate_warnings": 0,
+    "chromium_render": "PASS",
+    "desktop_renders": 8,
+    "mobile_renders": 8,
+    "horizontal_overflow": 0,
+    "console_page_errors": 0,
+    "modal_smoke_test": "PASS"
+  },
+  "safety": {
+    "robots": "noindex,nofollow",
+    "live_lead_submission": false,
+    "sitemap": false,
+    "main_merge": false,
+    "production_deploy": false
+  },
+  "next_gate": [
+    "repository shared assets integration",
+    "existing 95 URLs and redirects regression",
+    "Netlify deploy preview",
+    "sitemap/canonical final review",
+    "explicit production approval"
+  ]
 }
