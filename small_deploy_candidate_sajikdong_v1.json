@@ -1,6 +1,6 @@
 {
-  "version": "1.1",
-  "status": "READY_FOR_DEPLOY_REVIEW_NOT_DEPLOYED",
+  "version": "1.2",
+  "status": "STRUCTURE_PASS_CONTENT_CONVERSION_HOLD",
   "locality": {
     "locality_key": "서울특별시 종로구|사직동",
     "sido": "서울특별시",
@@ -126,5 +126,21 @@
     "Netlify deploy preview",
     "sitemap/canonical final review",
     "explicit production approval"
-  ]
+  ],
+  "content_conversion_gate": {
+    "required": true,
+    "status": "HOLD",
+    "reason": "Technical structure QA passed, but pages require deeper conversion-oriented content before production review.",
+    "reference_style": "EnglishUp information density and question-by-question depth, without copying wording or visual design.",
+    "promotion_requires": [
+      "clear user problem framing",
+      "specific diagnosis logic",
+      "deep explanation of why the problem occurs",
+      "concrete training method",
+      "proof/verification logic for progress",
+      "decision criteria for fit",
+      "contextual CTA after value is established",
+      "same-intent cross-locality duplicate gate"
+    ]
+  }
 }
