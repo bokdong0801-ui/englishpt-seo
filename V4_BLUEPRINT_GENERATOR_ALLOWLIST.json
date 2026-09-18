@@ -1,5 +1,5 @@
 {
-  "version": "4.0",
+  "version": "4.1",
   "status": "APPROVED_FOR_GENERATOR_INPUT_NOT_PRODUCTION",
   "standard": "CONVERSION_CONTENT_STANDARD_V4_CONVERSATIONAL_COMPACT.md",
   "reject_unlisted_blueprints": true,
@@ -46,13 +46,15 @@
       "intent": "biz-business-conv",
       "theme": "theme-worker",
       "qa": "PASS"
-    },
+    }
+  ],
+  "holds": [
     {
       "audience": "housewife",
-      "blueprint_id": "v4-housewife-motivation-restart-v1",
-      "intent": "housewife-conv",
-      "theme": "theme-housewife",
-      "qa": "PASS"
+      "previous_blueprint_id": "v4-housewife-motivation-restart-v1",
+      "reason": "User review: content felt generic/stiff and insufficiently grounded in 30s-60s homemaker life context.",
+      "replacement_candidate": "v4-housewife-lifefit-v2",
+      "status": "CONTENT_REVIEW_HOLD"
     }
   ]
 }
