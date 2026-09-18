@@ -123,5 +123,12 @@
     "pilot_indexable": false,
     "pilot_live_lead_submission": false,
     "production_requires": "locality variation + duplicate QA + link QA + sitemap/canonical QA + explicit approval"
+  },
+  "v4_blueprint_gate": {
+    "enabled": true,
+    "allowlist_file": "V4_BLUEPRINT_GENERATOR_ALLOWLIST.json",
+    "standard": "CONVERSION_CONTENT_STANDARD_V4_CONVERSATIONAL_COMPACT.md",
+    "reject_unlisted_blueprints": true,
+    "production_deploy": false
   }
 }
