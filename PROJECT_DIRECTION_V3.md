@@ -231,14 +231,17 @@ V5에서 가져온 공식코드·place_id·좌표·relation 원문은 기본 사
 
 - Pretendard 기반
 - PT 진단/리포트/훈련 시각 언어
-- 타깃별 theme 유지
 - 모바일 우선 CTA
 - 공통 CSS/JS 재사용
 - 페이지마다 대형 inline CSS 복제 금지
+- 지역 계층 페이지는 `theme-local + page-role-region` 중립 브랜드 테마 사용
+- 대상별 서비스 페이지는 `theme-elem / theme-mid / theme-high / theme-univ / theme-job / theme-worker / theme-adult / theme-housewife` 등 고유 theme 유지
+- 지역 허브의 대상 카드에서는 목적지 theme accent를 미리 보여주되, 지역 페이지 전체 팔레트는 중립 상태 유지
+- 서비스 페이지는 색상뿐 아니라 문제 장면·진단·훈련·사례·CTA 문맥도 audience blueprint와 일치해야 함
 
 참고 사이트의 핑크/카드 디자인을 복제하지 않는다. 참고하는 것은 정보 구조와 검색자 설명 방식이다.
 
-기존에 언급된 `7개 타깃 색상`과 현재 95페이지의 adult/senior/intl 등을 포함한 실제 theme 종류가 정확히 일치하지 않으므로, 대량 생성 전에 `theme_manifest_v3`를 별도로 확정한다.
+실제 theme의 단일 기준은 `theme_manifest_v3.json`, 설계 설명은 `THEME_SYSTEM_V3.md`를 사용한다. 기존 95페이지의 현재 팔레트를 보존하면서 신규 전국 페이지부터 중앙화된 theme contract를 적용한다.
 
 ---
 
