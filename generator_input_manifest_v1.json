@@ -130,5 +130,12 @@
     "standard": "CONVERSION_CONTENT_STANDARD_V4_CONVERSATIONAL_COMPACT.md",
     "reject_unlisted_blueprints": true,
     "production_deploy": false
+  },
+  "v5_proof_layer": {
+    "status": "REVIEW_ONLY",
+    "candidates_file": "V5_DECISION_PROOF_CANDIDATES.json",
+    "proof_contract": "PROOF_DATA_CONTRACT_V1.json",
+    "enabled_for_mass_generation": false,
+    "production_deploy": false
   }
 }
