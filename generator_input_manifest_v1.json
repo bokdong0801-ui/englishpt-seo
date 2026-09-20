@@ -139,9 +139,14 @@
     "production_deploy": false
   },
   "presentation_gate": {
-    "standard": "V4_3_MINIMAL_HERO_STANDARD.md",
+    "standard": "V4_4_PHONE_DECISION_PROOF_STANDARD.md",
     "hero_contract": "minimal-keyword-only-v4.3",
-    "move_detailed_hero_copy_to_first_body": true,
+    "phone_cta": {
+      "label": "전화 010-5006-8027",
+      "href": "tel:+821050068027"
+    },
+    "decision_proof_required": true,
+    "sample_feedback_must_be_labeled_example": true,
     "preserve_title_meta_canonical_intent": true,
     "production_deploy": false
   }
