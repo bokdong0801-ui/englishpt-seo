@@ -1,5 +1,5 @@
 {
-  "version": "4.3",
+  "version": "4.4",
   "status": "PARTIAL_FINAL_APPROVAL_HOUSEWIFE_HOLD",
   "standard": "CONVERSION_CONTENT_STANDARD_V4_CONVERSATIONAL_COMPACT.md",
   "locality": "서울특별시 종로구 사직동",
@@ -27,7 +27,28 @@
         "conversation": "초등학생영어회화",
         "guide": "초등영어"
       },
-      "detailed_intro_location": "first-body-section"
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "읽기",
+        "이해",
+        "기억",
+        "사용",
+        "학부모 5분 확인",
+        "예시 피드백"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ]
     },
     "mid": {
       "id": "v4-mid-school-bridge-v2",
@@ -51,7 +72,28 @@
         "conversation": "중학생영어회화",
         "guide": "중등영어"
       },
-      "detailed_intro_location": "first-body-section"
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "본문",
+        "문법",
+        "듣기",
+        "수행",
+        "중1·중2·중3 우선순위",
+        "다음 시험 약점 기록"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ]
     },
     "high": {
       "id": "v4-high-priority-deadline-v2",
@@ -75,7 +117,28 @@
         "conversation": "고등학생영어회화",
         "guide": "고등영어"
       },
-      "detailed_intro_location": "first-body-section"
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "deadline",
+        "질문 대응",
+        "요약",
+        "회화/내신 경계",
+        "고1·고2·고3 우선순위",
+        "평가행동 피드백"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ]
     },
     "univ": {
       "id": "v4-univ-deadline-campus-v1",
@@ -140,14 +203,35 @@
         "business": "직장인비즈니스영어",
         "conversation": "직장인영어회화"
       },
-      "detailed_intro_location": "first-body-section"
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "회의",
+        "발표",
+        "콜",
+        "고객대응",
+        "실제 업무자료 일반화",
+        "다음 업무 문장"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ]
     },
     "housewife": {
       "id": "v4-housewife-lifefit-v2",
       "audience": "주부 30·40·50·60대",
       "intent": "housewife-conv",
       "theme": "theme-housewife",
-      "status": "CANDIDATE_CONTENT_REVIEW_NOT_ALLOWLISTED",
+      "status": "APPROVED_FINAL_CONTENT",
       "first_question": "영어가 싫어서 미룬 게 아니라, 가족 일정과 하루 일과 속에서 내 공부가 자꾸 뒤로 밀렸던 건 아닐까요?",
       "flow": [
         "Hero: 생활 때문에 미뤄진 영어",
@@ -172,8 +256,33 @@
       "hero_display": {
         "conversation": "주부영어회화"
       },
-      "detailed_intro_location": "first-body-section"
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "여행",
+        "아이 영어",
+        "재시작",
+        "루틴",
+        "가능 시간",
+        "생활 재사용"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ]
     }
   },
-  "presentation_standard": "V4_3_MINIMAL_HERO_STANDARD.md"
+  "presentation_standard": "V4_4_PHONE_DECISION_PROOF_STANDARD.md",
+  "phone_cta": {
+    "label": "전화 010-5006-8027",
+    "href": "tel:+821050068027"
+  }
 }
