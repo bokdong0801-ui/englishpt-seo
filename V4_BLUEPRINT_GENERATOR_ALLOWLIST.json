@@ -1,31 +1,10 @@
 {
-  "version": "4.1",
+  "version": "4.2",
   "status": "APPROVED_FOR_GENERATOR_INPUT_NOT_PRODUCTION",
   "standard": "CONVERSION_CONTENT_STANDARD_V4_CONVERSATIONAL_COMPACT.md",
   "reject_unlisted_blueprints": true,
   "production_deploy": false,
   "approved_blueprints": [
-    {
-      "audience": "elem",
-      "blueprint_id": "v4-elem-parent-journey-v1",
-      "intent": "elem-tutor",
-      "theme": "theme-elem",
-      "qa": "PASS"
-    },
-    {
-      "audience": "mid",
-      "blueprint_id": "v4-mid-performance-speaking-v1",
-      "intent": "mid-conv",
-      "theme": "theme-mid",
-      "qa": "PASS"
-    },
-    {
-      "audience": "high",
-      "blueprint_id": "v4-high-performance-response-v1",
-      "intent": "high-conv",
-      "theme": "theme-high",
-      "qa": "PASS"
-    },
     {
       "audience": "univ",
       "blueprint_id": "v4-univ-deadline-campus-v1",
@@ -41,11 +20,32 @@
       "qa": "PASS"
     },
     {
+      "audience": "elem",
+      "blueprint_id": "v4-elem-parent-evidence-v2",
+      "intent": "elem-tutor",
+      "theme": "theme-elem",
+      "qa": "PASS_FINAL_CONTENT"
+    },
+    {
+      "audience": "mid",
+      "blueprint_id": "v4-mid-school-bridge-v2",
+      "intent": "mid-conv",
+      "theme": "theme-mid",
+      "qa": "PASS_FINAL_CONTENT"
+    },
+    {
+      "audience": "high",
+      "blueprint_id": "v4-high-priority-deadline-v2",
+      "intent": "high-conv",
+      "theme": "theme-high",
+      "qa": "PASS_FINAL_CONTENT"
+    },
+    {
       "audience": "worker",
-      "blueprint_id": "v4-worker-workscene-v1",
+      "blueprint_id": "v4-worker-work-output-v2",
       "intent": "biz-business-conv",
       "theme": "theme-worker",
-      "qa": "PASS"
+      "qa": "PASS_FINAL_CONTENT"
     }
   ],
   "holds": [
@@ -56,5 +56,10 @@
       "replacement_candidate": "v4-housewife-lifefit-v2",
       "status": "CONTENT_REVIEW_HOLD"
     }
+  ],
+  "notes": [
+    "elem/mid/high/worker replaced with final audience-specific V4.2 content blueprints",
+    "housewife remains on content review hold until lifefit candidate is user-approved",
+    "univ/job remain on previous approved V4 blueprint pending future dedicated final review"
   ]
 }
