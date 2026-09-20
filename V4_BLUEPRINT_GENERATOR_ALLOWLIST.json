@@ -1,7 +1,7 @@
 {
-  "version": "4.2",
+  "version": "4.4",
   "status": "APPROVED_FOR_GENERATOR_INPUT_NOT_PRODUCTION",
-  "standard": "CONVERSION_CONTENT_STANDARD_V4_CONVERSATIONAL_COMPACT.md",
+  "standard": "V4_4_PHONE_DECISION_PROOF_STANDARD.md",
   "reject_unlisted_blueprints": true,
   "production_deploy": false,
   "approved_blueprints": [
@@ -46,20 +46,23 @@
       "intent": "biz-business-conv",
       "theme": "theme-worker",
       "qa": "PASS_FINAL_CONTENT"
-    }
-  ],
-  "holds": [
+    },
     {
       "audience": "housewife",
-      "previous_blueprint_id": "v4-housewife-motivation-restart-v1",
-      "reason": "User review: content felt generic/stiff and insufficiently grounded in 30s-60s homemaker life context.",
-      "replacement_candidate": "v4-housewife-lifefit-v2",
-      "status": "CONTENT_REVIEW_HOLD"
+      "blueprint_id": "v4-housewife-lifefit-v2",
+      "intent": "housewife-conv",
+      "theme": "theme-housewife",
+      "qa": "PASS_FINAL_CONTENT"
     }
   ],
+  "holds": [],
   "notes": [
     "elem/mid/high/worker replaced with final audience-specific V4.2 content blueprints",
     "housewife remains on content review hold until lifefit candidate is user-approved",
     "univ/job remain on previous approved V4 blueprint pending future dedicated final review"
-  ]
+  ],
+  "phone_cta": {
+    "label": "전화 010-5006-8027",
+    "href": "tel:+821050068027"
+  }
 }
