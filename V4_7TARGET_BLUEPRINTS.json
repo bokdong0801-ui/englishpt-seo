@@ -1,5 +1,5 @@
 {
-  "version": "4.4",
+  "version": "4.5",
   "status": "PARTIAL_FINAL_APPROVAL_HOUSEWIFE_HOLD",
   "standard": "CONVERSION_CONTENT_STANDARD_V4_CONVERSATIONAL_COMPACT.md",
   "locality": "서울특별시 종로구 사직동",
@@ -21,7 +21,7 @@
         "학부모 FAQ",
         "상담 CTA"
       ],
-      "hero_contract": "minimal-keyword-only-v4.3",
+      "hero_contract": "localized-minimal-keyword-v4.5",
       "hero_display": {
         "tutor": "초등학생영어과외",
         "conversation": "초등학생영어회화",
@@ -48,7 +48,12 @@
         "sample_feedback",
         "faq",
         "final_cta"
-      ]
+      ],
+      "hero_h1_templates": {
+        "tutor": "{dong_name} 초등학생영어과외",
+        "conversation": "{dong_name} 초등학생영어회화",
+        "guide": "{dong_name} 초등영어"
+      }
     },
     "mid": {
       "id": "v4-mid-school-bridge-v2",
@@ -67,7 +72,7 @@
         "학생·학부모 FAQ",
         "상담 CTA"
       ],
-      "hero_contract": "minimal-keyword-only-v4.3",
+      "hero_contract": "localized-minimal-keyword-v4.5",
       "hero_display": {
         "conversation": "중학생영어회화",
         "guide": "중등영어"
@@ -93,7 +98,11 @@
         "sample_feedback",
         "faq",
         "final_cta"
-      ]
+      ],
+      "hero_h1_templates": {
+        "conversation": "{dong_name} 중학생영어회화",
+        "guide": "{dong_name} 중등영어"
+      }
     },
     "high": {
       "id": "v4-high-priority-deadline-v2",
@@ -112,7 +121,7 @@
         "고등 FAQ",
         "상담 CTA"
       ],
-      "hero_contract": "minimal-keyword-only-v4.3",
+      "hero_contract": "localized-minimal-keyword-v4.5",
       "hero_display": {
         "conversation": "고등학생영어회화",
         "guide": "고등영어"
@@ -138,7 +147,11 @@
         "sample_feedback",
         "faq",
         "final_cta"
-      ]
+      ],
+      "hero_h1_templates": {
+        "conversation": "{dong_name} 고등학생영어회화",
+        "guide": "{dong_name} 고등영어"
+      }
     },
     "univ": {
       "id": "v4-univ-deadline-campus-v1",
@@ -198,7 +211,7 @@
         "직장인 FAQ",
         "상담 CTA"
       ],
-      "hero_contract": "minimal-keyword-only-v4.3",
+      "hero_contract": "localized-minimal-keyword-v4.5",
       "hero_display": {
         "business": "직장인비즈니스영어",
         "conversation": "직장인영어회화"
@@ -224,7 +237,11 @@
         "sample_feedback",
         "faq",
         "final_cta"
-      ]
+      ],
+      "hero_h1_templates": {
+        "business": "{dong_name} 직장인비즈니스영어",
+        "conversation": "{dong_name} 직장인영어회화"
+      }
     },
     "housewife": {
       "id": "v4-housewife-lifefit-v2",
@@ -252,7 +269,7 @@
         "No guaranteed daytime availability",
         "Age cards are representative contexts, not stereotypes"
       ],
-      "hero_contract": "minimal-keyword-only-v4.3",
+      "hero_contract": "localized-minimal-keyword-v4.5",
       "hero_display": {
         "conversation": "주부영어회화"
       },
@@ -277,10 +294,13 @@
         "sample_feedback",
         "faq",
         "final_cta"
-      ]
+      ],
+      "hero_h1_templates": {
+        "conversation": "{dong_name} 주부영어회화"
+      }
     }
   },
-  "presentation_standard": "V4_4_PHONE_DECISION_PROOF_STANDARD.md",
+  "presentation_standard": "V4_5_LOCALIZED_MINIMAL_HERO_STANDARD.md",
   "phone_cta": {
     "label": "전화 010-5006-8027",
     "href": "tel:+821050068027"
