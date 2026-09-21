@@ -20,7 +20,7 @@ for (const item of manifest.files) {
     page.on('pageerror', err => errors.push('pageerror:'+err.message));
     const url = 'http://127.0.0.1:8000/pilot-v45-5x7/' + encodeURIComponent(file);
     let navError = null;
-    try { await page.goto(url,{waitUntil:'networkidle',timeout:30000}); } catch(e) { navError=e.message; }
+    try { await page.goto(url,{waitUntil:'domcontentloaded',timeout:8000}); } catch(e) { navError=e.message; }
     const metrics = navError ? null : await page.evaluate(() => ({
       h1Count: document.querySelectorAll('h1').length,
       h1: document.querySelector('h1')?.textContent?.trim() || '',
