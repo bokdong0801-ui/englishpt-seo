@@ -534,5 +534,23 @@
     "artifact_name": "v45-pilot-render-qa",
     "note": "Chromium Playwright render QA executed on the safe branch. Production deploy remains false."
   },
-  "production_deploy": false
+  "production_deploy": false,
+  "human_content_qa": {
+    "status": "HOLD_BEFORE_MASS_GENERATION",
+    "review_file": "PILOT_5X7_HUMAN_CONTENT_REVIEW_V1.md",
+    "critical": [
+      "Korean particle inflection",
+      "dynamic label-to-sentence grammar"
+    ],
+    "high": [
+      "content depth below V4 baseline",
+      "locality depth limited to variation pack"
+    ],
+    "medium": [
+      "prototype section labels",
+      "common ending copy repetition"
+    ],
+    "technical_qa_still_pass": true,
+    "production_deploy": false
+  }
 }
