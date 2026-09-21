@@ -342,6 +342,8 @@ def extract_source(path: Path):
     proofs = re.findall(r'<li><b>(.*?)</b><span>.*?</span></li>', raw, re.S)
     proofs = [html.unescape(re.sub(r"<.*?>", "", x)).strip() for x in proofs[:6]]
     feedback = re.search(r'<div class="feedback">.*?<p>(.*?)</p>', raw, re.S)
+    if not feedback:
+        feedback = re.search(r'<p class="kicker">피드백 예시</p>.*?<article class="card"><b>예시 1</b><p>(.*?)</p>', raw, re.S)
     feedback = html.unescape(re.sub(r"<.*?>", "", feedback.group(1))).strip() if feedback else ""
     if len(cards) != 4 or len(steps) != 5 or len(proofs) != 6:
         raise RuntimeError(f"source extraction failed: {path.name} cards={len(cards)} steps={len(steps)} proofs={len(proofs)}")
@@ -383,30 +385,37 @@ def situation_paras(variation, title, symptom):
         f"재사용이 안 됐다면 새로운 표현을 더하기 전에 어떤 조건에서 다시 멈췄는지 찾습니다. 그 조건을 다음 {title} 연습의 출발점으로 가져가 반복량을 줄입니다.",
     ]
 
-def flow_paras(variation, title):
+def flow_paras(variation, title, step_index):
+    phase = [
+        "첫 단계에서는 현재 상태와 다음 목표가 맞는지 확인해 출발점을 정합니다.",
+        "두 번째 단계에서는 이미 되는 부분을 유지하면서 핵심 기능을 작은 단위로 안정시킵니다.",
+        "세 번째 단계에서는 예시와 메모 같은 단서를 줄여 스스로 문장을 구성하는 비중을 높입니다.",
+        "네 번째 단계에서는 질문·상대·순서를 바꾸어 익숙한 조건 밖에서도 같은 기준이 남는지 봅니다.",
+        "마지막 단계에서는 실제 사용 장면과 연결하고 다음 수업에서 다시 볼 행동을 한두 가지 기록합니다.",
+    ][step_index]
     if variation == "scene":
         return [
             f"{title}에서는 최근 실제로 막힌 장면과 비슷한 조건을 먼저 만듭니다. 무엇을 했는지보다 어느 순간에 도움이 필요했는지를 짧게 기록합니다.",
-            "잘된 행동은 그대로 두고 멈춘 지점 앞뒤만 다시 연습합니다. 다음 단계에서는 질문이나 문장을 바꿔도 같은 기준이 유지되는지 봅니다.",
+            phase + " 잘된 행동은 그대로 두고 멈춘 지점 앞뒤만 다시 연습해 기록을 다음 단계로 넘깁니다.",
         ]
     if variation == "deadline":
         return [
             f"{title} 단계는 다음 일정에서 역산해 필요한 만큼만 진행합니다. 남은 시간이 짧을수록 새로운 범위를 넓히기보다 실제 결과에 직접 연결되는 행동을 우선합니다.",
-            "일정 직전에는 성공률만 보지 않고 긴장하거나 시간이 줄었을 때도 회복할 수 있는지 확인합니다. 일정이 끝난 뒤에는 다음 준비를 위해 흔들린 조건을 남깁니다.",
+            phase + " 일정 직전에는 긴장이나 시간 압박이 생겨도 회복할 수 있는지 확인합니다.",
         ]
     if variation == "error":
         return [
             f"{title}에서는 결과보다 원인을 한 번 더 봅니다. 같은 실수도 지식 부족인지, 이해 문제인지, 알고도 늦게 나오는 회수 문제인지에 따라 다음 연습이 달라집니다.",
-            "힌트를 준 뒤 바로 좋아지는지, 다시 혼자 했을 때도 유지되는지 확인합니다. 스스로 오류를 알아차리고 고치는 범위가 넓어지는지도 함께 기록합니다.",
+            phase + " 힌트를 준 뒤와 다시 혼자 했을 때를 비교해 스스로 수정하는 범위도 기록합니다.",
         ]
     if variation == "use":
         return [
             f"{title} 단계는 다음 실제 사용 장면에서 해야 할 행동을 기준으로 설계합니다. 설명을 들은 뒤 끝내지 않고 실제로 말하고, 묻고, 설명하는 행동까지 연결합니다.",
-            "연습이 끝나면 다음 장면에서 시도할 한 문장을 정합니다. 사용 후 결과를 다음 수업의 첫 확인으로 가져와 교재 안의 성공과 실제 사용을 연결합니다.",
+            phase + " 연습이 끝나면 다음 장면에서 시도할 한 문장을 정해 실제 사용 결과와 연결합니다.",
         ]
     return [
         f"{title}에서는 처음부터 모든 도움을 없애지 않습니다. 성공할 수 있는 조건에서 시작한 뒤 메모, 준비 시간, 질문 순서를 하나씩 바꾸어 독립적인 재사용 범위를 확인합니다.",
-        "한 번 잘된 결과보다 조건이 달라졌을 때도 다시 할 수 있는지가 중요합니다. 흔들린 조건은 다음 수업 첫 장면으로 가져와 같은 문제가 반복되는지 확인합니다.",
+        phase + " 한 번의 성공보다 조건이 달라졌을 때도 다시 구성할 수 있는지를 마지막 기준으로 봅니다.",
     ]
 
 def variant_faqs(variation, profile):
@@ -479,7 +488,7 @@ def feedback_examples(variation, original, cards):
         two = f"최근 {a} 장면에서는 시작은 가능했지만 중간 조건이 바뀌자 반응이 늦었다고 가정합니다. 다음에는 같은 내용의 새 질문으로 바꿔 어느 지점부터 도움이 필요한지 기록합니다."
         three = f"{b}에서는 힌트를 주면 바로 처리됐다고 가정합니다. 다음에는 힌트 없이 먼저 시도하고 필요할 때만 단서를 하나씩 추가해 혼자 가능한 범위를 확인합니다."
     elif variation == "deadline":
-        two = f"다음 일정이 가까운 {a}을 기준으로 새 범위를 늘리기보다 현재 가능한 답을 제한 시간 안에 안정시키는 편이 우선이라고 가정합니다. 일정 뒤에는 실제로 흔들린 부분만 다음 기록으로 남깁니다."
+        two = f"다음 일정이 가까운 {josa(a,'을/를')} 기준으로 새 범위를 늘리기보다 현재 가능한 답을 제한 시간 안에 안정시키는 편이 우선이라고 가정합니다. 일정 뒤에는 실제로 흔들린 부분만 다음 기록으로 남깁니다."
         three = f"{b} 준비 시간이 부족한 상황을 가정해 핵심 행동 한 가지를 먼저 정합니다. 다음 확인에서는 준비 시간을 더 줄여도 같은 기준이 유지되는지 봅니다."
     elif variation == "error":
         two = f"{a}에서 같은 실수가 반복됐다고 가정해 결과보다 원인을 나눕니다. 힌트를 준 뒤 바로 수정되면 지식 부족보다 회수나 적용 문제 가능성을 기록하고 다음에는 조건을 바꿔 다시 확인합니다."
@@ -488,7 +497,7 @@ def feedback_examples(variation, original, cards):
         two = f"다음 실제 {a} 장면을 가정해 필요한 행동을 한 문장으로 정합니다. 수업에서는 그 행동이 가능한 최소 표현부터 연습하고 실제 사용 후 무엇이 부족했는지를 다음 시간 첫 기록으로 가져옵니다."
         three = f"{b}에서 사용할 표현을 많이 늘리기보다 첫 문장과 확인 질문을 먼저 남긴다고 가정합니다. 다음에는 장소나 상대가 달라도 같은 기능을 쓸 수 있는지 확인합니다."
     else:
-        two = f"{a}을 익숙한 조건에서는 처리했다고 가정합니다. 다음에는 질문 순서와 준비 시간을 바꿔 다시 시도하고 같은 기준이 유지되면 실제 재사용 범위가 넓어진 것으로 기록합니다."
+        two = f"{josa(a,'을/를')} 익숙한 조건에서는 처리했다고 가정합니다. 다음에는 질문 순서와 준비 시간을 바꿔 다시 시도하고 같은 기준이 유지되면 실제 재사용 범위가 넓어진 것으로 기록합니다."
         three = f"{b}에서 힌트가 없을 때 다시 멈췄다고 가정합니다. 새 표현을 추가하기보다 어느 단서가 필요했는지 확인하고 그 단서를 한 단계 줄여 다음 수업에서 재검사합니다."
     return [one, two, three]
 
@@ -534,7 +543,7 @@ def render_page(slug, loc, intent, profile, cards, steps, proofs, original_feedb
     }[loc["variation"]]
     flow = []
     for i, title in enumerate(steps, 1):
-        paras = flow_paras(loc["variation"], title)
+        paras = flow_paras(loc["variation"], title, i - 1)
         flow.append(f'<li><span>{i:02d}</span><div><b>{esc(title)}</b>'+''.join('<p>'+esc(p)+'</p>' for p in paras)+'</div></li>')
     proof_patterns = [
         "현재 어느 조건에서 가능한지 먼저 봅니다.",
@@ -631,6 +640,18 @@ def static_validate(generated):
         if not (4000 <= len(text) <= 7000): page_fail.append(f"visible_chars:{len(text)}")
         bad = [x for x in malformed if x in text]
         if bad: page_fail.append("malformed:" + ",".join(bad))
+        dynamic_labels = [html.unescape(re.sub(r"<.*?>", "", x)).strip() for x in re.findall(r"<b>(.*?)</b>", raw, re.S)]
+        dynamic_labels.append(profile["service_body"])
+        wrong_objects = []
+        for label in dynamic_labels:
+            if not label:
+                continue
+            has, _ = last_hangul(label)
+            wrong = label + ("를" if has else "을")
+            if wrong in text:
+                wrong_objects.append(wrong)
+        if wrong_objects:
+            page_fail.append("wrong_object_particle:" + ",".join(sorted(set(wrong_objects))))
         if canonical in reserved: page_fail.append("reserved_95_conflict")
         if page_fail: failures.append({"file": name, "failures": page_fail})
         checks.append({"file": name, "visible_chars": len(text), "status": "PASS" if not page_fail else "FAIL"})
@@ -652,7 +673,7 @@ def static_validate(generated):
         "page_count": len(generated),
         "static_failures": len(failures),
         "visible_chars": {"min": min(lengths.values()), "max": max(lengths.values()), "avg": round(sum(lengths.values()) / len(lengths), 1)},
-        "natural_korean": {"malformed_particle_failures": sum(1 for f in failures if "file" in f and any(str(x).startswith("malformed:") for x in f["failures"]))},
+        "natural_korean": {"malformed_particle_failures": sum(1 for f in failures if "file" in f and any(str(x).startswith(("malformed:", "wrong_object_particle:")) for x in f["failures"]))},
         "duplicate_gate": {"status": "PASS" if max_c < 0.82 and max_j < 0.24 else "FAIL", "same_intent_pairs": len(pairs), "max_cosine": round(max_c, 4), "max_5_shingle_jaccard": round(max_j, 4), "thresholds": {"cosine_lt": 0.82, "jaccard5_lt": 0.24}, "pairs": pairs},
         "page_checks": checks,
         "failures": failures,
