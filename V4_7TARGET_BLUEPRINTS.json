@@ -1,6 +1,6 @@
 {
   "version": "4.5",
-  "status": "APPROVED_FOR_GENERATOR_INPUT_NOT_PRODUCTION",
+  "status": "FROZEN_7TARGET_BLUEPRINTS_NOT_PRODUCTION",
   "standard": "CONVERSION_CONTENT_STANDARD_V4_CONVERSATIONAL_COMPACT.md",
   "locality": "서울특별시 종로구 사직동",
   "blueprints": {
@@ -154,44 +154,122 @@
       }
     },
     "univ": {
-      "id": "v4-univ-deadline-campus-v1",
+      "id": "v4-univ-campus-output-v2",
       "audience": "대학생",
       "intent": "univ-conv",
       "theme": "theme-univ",
-      "first_question": "영어 발표나 교환학생 준비가 생기면, 시험영어만 해왔다는 느낌이 드나요?",
+      "status": "APPROVED_FINAL_CONTENT",
+      "first_question": "발표 자료는 준비했는데, 질문을 받거나 팀원과 의견을 주고받을 때 영어가 갑자기 짧아지나요?",
       "flow": [
-        "Hero: 캠퍼스에서 쓰는 영어",
-        "지금 가장 가까운 일정은 무엇인가요?",
-        "대학생 영어가 필요한 5장면",
-        "발표/세미나가 막히는 이유",
-        "교환학생·캠퍼스 대화 준비",
-        "시험 점수와 실제 회화 분리",
-        "마감 기준 4주 플랜",
-        "실제 수업 장면",
-        "잘 맞는 경우",
-        "FAQ",
-        "다음 과정"
-      ]
+        "Hero: 가장 가까운 캠퍼스 영어 사용 장면",
+        "발표·세미나·팀프로젝트·교환학생·캠퍼스 대화 실제 상황",
+        "학기 일정과 마감 기준 우선순위",
+        "첫 반응→의견 근거→요약·바꿔 말하기→질문 대응 연결",
+        "실제 발표·토론·생활 장면을 바꿔 재사용하는 5단계 수업",
+        "공인시험 점수 준비와 실제 사용 영어의 경계",
+        "대학생 Decision Proof + 예시 피드백",
+        "대학생 FAQ",
+        "전화 + 상담 CTA"
+      ],
+      "hero_contract": "localized-minimal-keyword-v4.5",
+      "hero_display": {
+        "conversation": "대학생영어회화"
+      },
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "첫 반응",
+        "의견·근거",
+        "요약·바꿔 말하기",
+        "질문 대응",
+        "가까운 일정 우선순위",
+        "캠퍼스 장면 재사용"
+      ],
+      "sample_feedback_focus": [
+        "질문 직후 첫 문장",
+        "근거 1~2개 연결",
+        "모르는 표현 우회",
+        "상대 질문 되묻기",
+        "다음 발표·세미나 재사용"
+      ],
+      "boundary": [
+        "TOEIC·IELTS 등 점수 자체가 가장 급하면 시험영어 우선",
+        "영어면접이 가장 가까우면 취준생 영어면접 과정 우선"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ],
+      "hero_h1_templates": {
+        "conversation": "{dong_name} 대학생영어회화"
+      }
     },
     "job": {
-      "id": "v4-job-deadline-interview-v1",
+      "id": "v4-job-interview-evidence-v2",
       "audience": "취준생",
       "intent": "jobseeker-conv",
       "theme": "theme-job",
-      "first_question": "자기소개는 준비했는데, 꼬리질문이 나오면 답이 갑자기 짧아지나요?",
+      "status": "APPROVED_FINAL_CONTENT",
+      "first_question": "답변 내용은 준비했는데, 질문이 바뀌거나 근거를 더 묻는 순간 답이 길어지거나 끊기나요?",
       "flow": [
-        "Hero: 면접에서 흔들리는 순간",
-        "먼저 채용 마감부터 확인",
-        "답변이 약해지는 4가지 이유",
-        "STAR를 외우는 게 아니라 경험을 정리",
-        "지원동기와 직무 연결",
-        "꼬리질문 연습",
-        "시험과 면접 우선순위",
-        "모의면접 4단계",
-        "이런 분께 맞습니다",
-        "FAQ",
-        "다음 과정"
-      ]
+        "Hero: 가장 가까운 채용 일정과 영어면접 장면",
+        "자기소개·경험·지원동기·직무 질문·꼬리질문 실제 상황",
+        "채용 마감과 면접 일정 기준 우선순위",
+        "경험 근거 정리→짧은 답변 블록→직무 연결→꼬리질문 대응",
+        "질문 순서와 표현을 바꿔 재현하는 5단계 모의면접",
+        "TOEIC Speaking·OPIc 점수 준비와 영어면접의 경계",
+        "취준생 Decision Proof + 예시 피드백",
+        "취준생 FAQ",
+        "전화 + 상담 CTA"
+      ],
+      "hero_contract": "localized-minimal-keyword-v4.5",
+      "hero_display": {
+        "conversation": "취준생영어회화"
+      },
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "첫 답변",
+        "경험 근거",
+        "직무 연결",
+        "꼬리질문 회복",
+        "답변 길이 조절",
+        "다음 모의질문 기록"
+      ],
+      "sample_feedback_focus": [
+        "첫 20초 답변",
+        "STAR/경험 근거",
+        "회사·직무 연결",
+        "예상 밖 질문 회복",
+        "불필요하게 긴 문장 축소"
+      ],
+      "boundary": [
+        "공인 말하기시험 점수 제출이 가장 급하면 시험영어 우선",
+        "일상 회화가 목적이면 일반 성인 회화 과정 우선"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ],
+      "hero_h1_templates": {
+        "conversation": "{dong_name} 취준생영어회화"
+      }
     },
     "worker": {
       "id": "v4-worker-work-output-v2",
@@ -304,5 +382,11 @@
   "phone_cta": {
     "label": "전화 010-5006-8027",
     "href": "tel:+821050068027"
+  },
+  "freeze": {
+    "version": "V4.5-7TARGET-FINAL",
+    "frozen_at": "2026-09-21",
+    "production_deploy": false,
+    "rule": "All 7 audience blueprints are frozen for the 5-locality x 7-target pilot. Any content-structure change requires a new version."
   }
 }
