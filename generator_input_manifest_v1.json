@@ -74,7 +74,7 @@
       "intent_slug": "univ-conv",
       "theme": "theme-univ",
       "primary_keyword": "청운동 대학생영어회화",
-      "blueprint": "v4-univ-deadline-campus-v1",
+      "blueprint": "v4-univ-campus-output-v2",
       "url": "/seoul-jongno-cheongundong-univ-conv.html"
     },
     {
@@ -85,7 +85,7 @@
       "intent_slug": "jobseeker-conv",
       "theme": "theme-job",
       "primary_keyword": "청운동 취준생영어회화",
-      "blueprint": "v4-job-deadline-interview-v1",
+      "blueprint": "v4-job-interview-evidence-v2",
       "url": "/seoul-jongno-cheongundong-jobseeker-conv.html"
     },
     {
@@ -132,7 +132,9 @@
     "production_deploy": false,
     "version": "4.5",
     "presentation_standard": "V4_5_LOCALIZED_MINIMAL_HERO_STANDARD.md",
-    "hero_contract": "localized-minimal-keyword-v4.5"
+    "hero_contract": "localized-minimal-keyword-v4.5",
+    "freeze": "V4.5-7TARGET-FINAL",
+    "all_7_targets_final": true
   },
   "v5_proof_layer": {
     "status": "REVIEW_ONLY",
