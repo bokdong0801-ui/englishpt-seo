@@ -1,0 +1,37 @@
+name: V4.5 Full-depth 5x7 Generate
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'scripts/generate-v45-full-depth-pilot.py'
+      - 'V4_5_FULL_DEPTH_7TARGET_GOLD_STANDARD.md'
+      - '.github/workflows/v45-full-depth-generate.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate and static-QA 35 full-depth pages
+        run: python3 scripts/generate-v45-full-depth-pilot.py
+      - name: Commit generated pilot only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pilot-v45-5x7
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+          else
+            git commit -m "Regenerate V4.5 full-depth 5x7 pilot"
+            git push origin HEAD:reset-english-service-seo-v3
+          fi
