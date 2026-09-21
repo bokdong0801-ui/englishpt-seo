@@ -1,6 +1,6 @@
 {
-  "version": "1.4",
-  "status": "STRUCTURE_PASS_HIGH_V3_COMPACT_REVIEW",
+  "version": "1.5",
+  "status": "READY_FOR_V4_5_SAMPLE_GENERATION_NOT_PRODUCTION",
   "locality": {
     "locality_key": "서울특별시 종로구|사직동",
     "sido": "서울특별시",
@@ -29,64 +29,64 @@
       "page_id": "sajik_high_conv",
       "intent_slug": "high-conv",
       "theme": "theme-high",
-      "blueprint": "high-conversation-v1",
+      "blueprint": "v4-high-priority-deadline-v2",
       "primary_keyword": "사직동 고등학생영어회화",
       "url": "/seoul-jongno-sajikdong-high-conv.html",
-      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+      "generation_status": "READY_FOR_V4_5_GENERATION"
     },
     {
       "page_id": "sajik_mid_conv",
       "intent_slug": "mid-conv",
       "theme": "theme-mid",
-      "blueprint": "mid-conversation-v1",
+      "blueprint": "v4-mid-school-bridge-v2",
       "primary_keyword": "사직동 중학생영어회화",
       "url": "/seoul-jongno-sajikdong-mid-conv.html",
-      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+      "generation_status": "READY_FOR_V4_5_GENERATION"
     },
     {
       "page_id": "sajik_elem_tutor",
       "intent_slug": "elem-tutor",
       "theme": "theme-elem",
-      "blueprint": "elem-tutor-v1",
+      "blueprint": "v4-elem-parent-evidence-v2",
       "primary_keyword": "사직동 초등학생영어과외",
       "url": "/seoul-jongno-sajikdong-elem-tutor.html",
-      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+      "generation_status": "READY_FOR_V4_5_GENERATION"
     },
     {
       "page_id": "sajik_univ_conv",
       "intent_slug": "univ-conv",
       "theme": "theme-univ",
-      "blueprint": "univ-conversation-v1",
+      "blueprint": "v4-univ-deadline-campus-v1",
       "primary_keyword": "사직동 대학생영어회화",
       "url": "/seoul-jongno-sajikdong-univ-conv.html",
-      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+      "generation_status": "READY_FOR_V4_5_GENERATION"
     },
     {
       "page_id": "sajik_job_conv",
       "intent_slug": "jobseeker-conv",
       "theme": "theme-job",
-      "blueprint": "jobseeker-conversation-v1",
+      "blueprint": "v4-job-deadline-interview-v1",
       "primary_keyword": "사직동 취준생영어회화",
       "url": "/seoul-jongno-sajikdong-jobseeker-conv.html",
-      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+      "generation_status": "READY_FOR_V4_5_GENERATION"
     },
     {
       "page_id": "sajik_worker_biz",
       "intent_slug": "biz-business-conv",
       "theme": "theme-worker",
-      "blueprint": "worker-business-v1",
+      "blueprint": "v4-worker-work-output-v2",
       "primary_keyword": "사직동 직장인비즈니스영어",
       "url": "/seoul-jongno-sajikdong-biz-business-conv.html",
-      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+      "generation_status": "READY_FOR_V4_5_GENERATION"
     },
     {
       "page_id": "sajik_housewife_conv",
       "intent_slug": "housewife-conv",
       "theme": "theme-housewife",
-      "blueprint": "housewife-conversation-v1",
+      "blueprint": "v4-housewife-lifefit-v2",
       "primary_keyword": "사직동 주부영어회화",
       "url": "/seoul-jongno-sajikdong-housewife-conv.html",
-      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+      "generation_status": "READY_FOR_V4_5_GENERATION"
     }
   ],
   "required_before_html_generation": [
@@ -129,18 +129,16 @@
   ],
   "content_conversion_gate": {
     "required": true,
-    "status": "HOLD",
-    "reason": "Technical structure QA passed, but pages require deeper conversion-oriented content before production review.",
-    "reference_style": "EnglishUp information density and question-by-question depth, without copying wording or visual design.",
-    "promotion_requires": [
-      "clear user problem framing",
-      "specific diagnosis logic",
-      "deep explanation of why the problem occurs",
-      "concrete training method",
-      "proof/verification logic for progress",
-      "decision criteria for fit",
-      "contextual CTA after value is established",
-      "same-intent cross-locality duplicate gate"
+    "status": "CONTRACT_PASS_HTML_RENDER_PENDING",
+    "reason": "V4.5 audience blueprints, localized minimal Hero, V4.4 phone CTA and decision-proof contracts are approved. Final representative HTML files must still be generated and rendered on the safe branch before deploy preview.",
+    "required_before_promotion": [
+      "generate representative V4.5 HTML",
+      "same-intent cross-locality duplicate gate",
+      "desktop/mobile render QA",
+      "canonical/schema/internal-link QA",
+      "95 URL + redirects regression",
+      "deploy preview",
+      "explicit production approval"
     ]
   },
   "high_gold_v2": {
@@ -170,5 +168,10 @@
       "paragraphs": 49
     },
     "render_qa": "PASS"
+  },
+  "presentation_standard": "V4_5_LOCALIZED_MINIMAL_HERO_STANDARD.md",
+  "phone_cta": {
+    "label": "전화 010-5006-8027",
+    "href": "tel:+821050068027"
   }
 }
