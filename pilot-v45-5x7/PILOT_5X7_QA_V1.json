@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "status": "STATIC_QA_PASS_RENDER_QA_PENDING",
+  "status": "STATIC_AND_RENDER_QA_PASS_NOT_PRODUCTION",
   "page_count": 35,
   "static_failures": 0,
   "duplicate_gate": {
@@ -521,6 +521,18 @@
     "max": 1628,
     "avg": 1482
   },
-  "render_qa": "PENDING_LOCAL_BROWSER_RUN",
+  "render_qa": {
+    "status": "PASS",
+    "workflow_run_id": 35572824038,
+    "tested_head_sha": "85433012a76b850f254ace08137d024e2f92979d",
+    "render_cases": 70,
+    "desktop_cases": 35,
+    "mobile_cases": 35,
+    "failures": 0,
+    "horizontal_overflow_failures": 0,
+    "console_or_page_error_cases": 0,
+    "artifact_name": "v45-pilot-render-qa",
+    "note": "Chromium Playwright render QA executed on the safe branch. Production deploy remains false."
+  },
   "production_deploy": false
 }
