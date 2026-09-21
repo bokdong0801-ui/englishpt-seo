@@ -1,5 +1,5 @@
 {
-  "version": "4.4",
+  "version": "4.5",
   "status": "APPROVED_FOR_GENERATOR_INPUT_NOT_PRODUCTION",
   "standard": "V4_4_PHONE_DECISION_PROOF_STANDARD.md",
   "reject_unlisted_blueprints": true,
@@ -57,12 +57,16 @@
   ],
   "holds": [],
   "notes": [
-    "elem/mid/high/worker replaced with final audience-specific V4.2 content blueprints",
-    "housewife remains on content review hold until lifefit candidate is user-approved",
-    "univ/job remain on previous approved V4 blueprint pending future dedicated final review"
+    "elem/mid/high/worker use final audience-specific V4.2 content blueprints",
+    "housewife uses approved v4-housewife-lifefit-v2 blueprint",
+    "univ/job remain on previous approved V4 blueprint pending future dedicated final review",
+    "visible Hero H1 follows V4.5 localized minimal keyword contract",
+    "phone CTA and decision proof requirements inherit V4.4 contract"
   ],
   "phone_cta": {
     "label": "전화 010-5006-8027",
     "href": "tel:+821050068027"
-  }
+  },
+  "presentation_standard": "V4_5_LOCALIZED_MINIMAL_HERO_STANDARD.md",
+  "hero_contract": "localized-minimal-keyword-v4.5"
 }
