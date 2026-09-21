@@ -41,7 +41,7 @@
       "intent_slug": "high-conv",
       "theme": "theme-high",
       "primary_keyword": "청운동 고등학생영어회화",
-      "blueprint": "high-conversation-v1",
+      "blueprint": "v4-high-priority-deadline-v2",
       "url": "/seoul-jongno-cheongundong-high-conv.html"
     },
     {
@@ -52,7 +52,7 @@
       "intent_slug": "mid-conv",
       "theme": "theme-mid",
       "primary_keyword": "청운동 중학생영어회화",
-      "blueprint": "mid-conversation-v1",
+      "blueprint": "v4-mid-school-bridge-v2",
       "url": "/seoul-jongno-cheongundong-mid-conv.html"
     },
     {
@@ -63,7 +63,7 @@
       "intent_slug": "elem-tutor",
       "theme": "theme-elem",
       "primary_keyword": "청운동 초등학생영어과외",
-      "blueprint": "elem-tutor-v1",
+      "blueprint": "v4-elem-parent-evidence-v2",
       "url": "/seoul-jongno-cheongundong-elem-tutor.html"
     },
     {
@@ -74,7 +74,7 @@
       "intent_slug": "univ-conv",
       "theme": "theme-univ",
       "primary_keyword": "청운동 대학생영어회화",
-      "blueprint": "univ-conversation-v1",
+      "blueprint": "v4-univ-deadline-campus-v1",
       "url": "/seoul-jongno-cheongundong-univ-conv.html"
     },
     {
@@ -85,7 +85,7 @@
       "intent_slug": "jobseeker-conv",
       "theme": "theme-job",
       "primary_keyword": "청운동 취준생영어회화",
-      "blueprint": "jobseeker-conversation-v1",
+      "blueprint": "v4-job-deadline-interview-v1",
       "url": "/seoul-jongno-cheongundong-jobseeker-conv.html"
     },
     {
@@ -96,7 +96,7 @@
       "intent_slug": "biz-business-conv",
       "theme": "theme-worker",
       "primary_keyword": "청운동 직장인비즈니스영어",
-      "blueprint": "worker-business-v1",
+      "blueprint": "v4-worker-work-output-v2",
       "url": "/seoul-jongno-cheongundong-biz-business-conv.html"
     },
     {
@@ -107,7 +107,7 @@
       "intent_slug": "housewife-conv",
       "theme": "theme-housewife",
       "primary_keyword": "청운동 주부영어회화",
-      "blueprint": "housewife-conversation-v1",
+      "blueprint": "v4-housewife-lifefit-v2",
       "url": "/seoul-jongno-cheongundong-housewife-conv.html"
     }
   ],
@@ -129,7 +129,10 @@
     "allowlist_file": "V4_BLUEPRINT_GENERATOR_ALLOWLIST.json",
     "standard": "CONVERSION_CONTENT_STANDARD_V4_CONVERSATIONAL_COMPACT.md",
     "reject_unlisted_blueprints": true,
-    "production_deploy": false
+    "production_deploy": false,
+    "version": "4.5",
+    "presentation_standard": "V4_5_LOCALIZED_MINIMAL_HERO_STANDARD.md",
+    "hero_contract": "localized-minimal-keyword-v4.5"
   },
   "v5_proof_layer": {
     "status": "REVIEW_ONLY",
