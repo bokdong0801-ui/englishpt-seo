@@ -1,0 +1,396 @@
+{
+  "version": "2.0",
+  "status": "FULL_DEPTH_GENERATED_PILOT_ONLY_NOT_PRODUCTION",
+  "gold_standard": "V4_5_FULL_DEPTH_7TARGET_GOLD_STANDARD.md",
+  "blueprint_freeze": "V4.5-7TARGET-FINAL",
+  "generator": "scripts/generate-v45-full-depth-pilot.py",
+  "page_count": 35,
+  "localities": [
+    {
+      "full_name_ko": "서울특별시 서초구 내곡동",
+      "region_slug": "seoul-seocho-naegokdong",
+      "variation_pack": "scene"
+    },
+    {
+      "full_name_ko": "강원특별자치도 강릉시 내곡동",
+      "region_slug": "gangwon-gangneung-naegokdong",
+      "variation_pack": "deadline"
+    },
+    {
+      "full_name_ko": "강원특별자치도 강릉시 강남동",
+      "region_slug": "gangwon-gangneung-gangnamdong",
+      "variation_pack": "error"
+    },
+    {
+      "full_name_ko": "세종특별자치시 고운동",
+      "region_slug": "sejong-goundong",
+      "variation_pack": "use"
+    },
+    {
+      "full_name_ko": "부산광역시 해운대구 중동",
+      "region_slug": "busan-haeundae-jungdong",
+      "variation_pack": "reuse"
+    }
+  ],
+  "targets": [
+    {
+      "intent": "elem-tutor",
+      "blueprint": "v4-elem-parent-evidence-v2",
+      "hero_h1_template": "{dong_name} 초등학생영어과외"
+    },
+    {
+      "intent": "mid-conv",
+      "blueprint": "v4-mid-school-bridge-v2",
+      "hero_h1_template": "{dong_name} 중학생영어회화"
+    },
+    {
+      "intent": "high-conv",
+      "blueprint": "v4-high-priority-deadline-v2",
+      "hero_h1_template": "{dong_name} 고등학생영어회화"
+    },
+    {
+      "intent": "univ-conv",
+      "blueprint": "v4-univ-campus-output-v2",
+      "hero_h1_template": "{dong_name} 대학생영어회화"
+    },
+    {
+      "intent": "jobseeker-conv",
+      "blueprint": "v4-job-interview-evidence-v2",
+      "hero_h1_template": "{dong_name} 취준생영어회화"
+    },
+    {
+      "intent": "biz-business-conv",
+      "blueprint": "v4-worker-work-output-v2",
+      "hero_h1_template": "{dong_name} 직장인비즈니스영어"
+    },
+    {
+      "intent": "housewife-conv",
+      "blueprint": "v4-housewife-lifefit-v2",
+      "hero_h1_template": "{dong_name} 주부영어회화"
+    }
+  ],
+  "safety": {
+    "robots": "noindex,nofollow",
+    "live_lead_submission": false,
+    "sitemap": false,
+    "main_merge": false,
+    "production_deploy": false
+  },
+  "files": [
+    {
+      "path": "pilot-v45-5x7/busan-haeundae-jungdong-biz-business-conv.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-biz-business-conv.html",
+      "h1": "중동 직장인비즈니스영어",
+      "blueprint": "v4-worker-work-output-v2",
+      "locality": "busan-haeundae-jungdong",
+      "intent": "biz-business-conv",
+      "variation": "reuse"
+    },
+    {
+      "path": "pilot-v45-5x7/busan-haeundae-jungdong-elem-tutor.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-elem-tutor.html",
+      "h1": "중동 초등학생영어과외",
+      "blueprint": "v4-elem-parent-evidence-v2",
+      "locality": "busan-haeundae-jungdong",
+      "intent": "elem-tutor",
+      "variation": "reuse"
+    },
+    {
+      "path": "pilot-v45-5x7/busan-haeundae-jungdong-high-conv.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-high-conv.html",
+      "h1": "중동 고등학생영어회화",
+      "blueprint": "v4-high-priority-deadline-v2",
+      "locality": "busan-haeundae-jungdong",
+      "intent": "high-conv",
+      "variation": "reuse"
+    },
+    {
+      "path": "pilot-v45-5x7/busan-haeundae-jungdong-housewife-conv.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-housewife-conv.html",
+      "h1": "중동 주부영어회화",
+      "blueprint": "v4-housewife-lifefit-v2",
+      "locality": "busan-haeundae-jungdong",
+      "intent": "housewife-conv",
+      "variation": "reuse"
+    },
+    {
+      "path": "pilot-v45-5x7/busan-haeundae-jungdong-jobseeker-conv.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-jobseeker-conv.html",
+      "h1": "중동 취준생영어회화",
+      "blueprint": "v4-job-interview-evidence-v2",
+      "locality": "busan-haeundae-jungdong",
+      "intent": "jobseeker-conv",
+      "variation": "reuse"
+    },
+    {
+      "path": "pilot-v45-5x7/busan-haeundae-jungdong-mid-conv.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-mid-conv.html",
+      "h1": "중동 중학생영어회화",
+      "blueprint": "v4-mid-school-bridge-v2",
+      "locality": "busan-haeundae-jungdong",
+      "intent": "mid-conv",
+      "variation": "reuse"
+    },
+    {
+      "path": "pilot-v45-5x7/busan-haeundae-jungdong-univ-conv.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-univ-conv.html",
+      "h1": "중동 대학생영어회화",
+      "blueprint": "v4-univ-campus-output-v2",
+      "locality": "busan-haeundae-jungdong",
+      "intent": "univ-conv",
+      "variation": "reuse"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-gangnamdong-biz-business-conv.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-biz-business-conv.html",
+      "h1": "강남동 직장인비즈니스영어",
+      "blueprint": "v4-worker-work-output-v2",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "intent": "biz-business-conv",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-gangnamdong-elem-tutor.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-elem-tutor.html",
+      "h1": "강남동 초등학생영어과외",
+      "blueprint": "v4-elem-parent-evidence-v2",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "intent": "elem-tutor",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-gangnamdong-high-conv.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-high-conv.html",
+      "h1": "강남동 고등학생영어회화",
+      "blueprint": "v4-high-priority-deadline-v2",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "intent": "high-conv",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-gangnamdong-housewife-conv.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-housewife-conv.html",
+      "h1": "강남동 주부영어회화",
+      "blueprint": "v4-housewife-lifefit-v2",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "intent": "housewife-conv",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-gangnamdong-jobseeker-conv.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-jobseeker-conv.html",
+      "h1": "강남동 취준생영어회화",
+      "blueprint": "v4-job-interview-evidence-v2",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "intent": "jobseeker-conv",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-gangnamdong-mid-conv.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-mid-conv.html",
+      "h1": "강남동 중학생영어회화",
+      "blueprint": "v4-mid-school-bridge-v2",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "intent": "mid-conv",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-gangnamdong-univ-conv.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-univ-conv.html",
+      "h1": "강남동 대학생영어회화",
+      "blueprint": "v4-univ-campus-output-v2",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "intent": "univ-conv",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-naegokdong-biz-business-conv.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-biz-business-conv.html",
+      "h1": "내곡동 직장인비즈니스영어",
+      "blueprint": "v4-worker-work-output-v2",
+      "locality": "gangwon-gangneung-naegokdong",
+      "intent": "biz-business-conv",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-naegokdong-elem-tutor.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-elem-tutor.html",
+      "h1": "내곡동 초등학생영어과외",
+      "blueprint": "v4-elem-parent-evidence-v2",
+      "locality": "gangwon-gangneung-naegokdong",
+      "intent": "elem-tutor",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-naegokdong-high-conv.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-high-conv.html",
+      "h1": "내곡동 고등학생영어회화",
+      "blueprint": "v4-high-priority-deadline-v2",
+      "locality": "gangwon-gangneung-naegokdong",
+      "intent": "high-conv",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-naegokdong-housewife-conv.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-housewife-conv.html",
+      "h1": "내곡동 주부영어회화",
+      "blueprint": "v4-housewife-lifefit-v2",
+      "locality": "gangwon-gangneung-naegokdong",
+      "intent": "housewife-conv",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-naegokdong-jobseeker-conv.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-jobseeker-conv.html",
+      "h1": "내곡동 취준생영어회화",
+      "blueprint": "v4-job-interview-evidence-v2",
+      "locality": "gangwon-gangneung-naegokdong",
+      "intent": "jobseeker-conv",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-naegokdong-mid-conv.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-mid-conv.html",
+      "h1": "내곡동 중학생영어회화",
+      "blueprint": "v4-mid-school-bridge-v2",
+      "locality": "gangwon-gangneung-naegokdong",
+      "intent": "mid-conv",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-5x7/gangwon-gangneung-naegokdong-univ-conv.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-univ-conv.html",
+      "h1": "내곡동 대학생영어회화",
+      "blueprint": "v4-univ-campus-output-v2",
+      "locality": "gangwon-gangneung-naegokdong",
+      "intent": "univ-conv",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-5x7/sejong-goundong-biz-business-conv.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-biz-business-conv.html",
+      "h1": "고운동 직장인비즈니스영어",
+      "blueprint": "v4-worker-work-output-v2",
+      "locality": "sejong-goundong",
+      "intent": "biz-business-conv",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-5x7/sejong-goundong-elem-tutor.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-elem-tutor.html",
+      "h1": "고운동 초등학생영어과외",
+      "blueprint": "v4-elem-parent-evidence-v2",
+      "locality": "sejong-goundong",
+      "intent": "elem-tutor",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-5x7/sejong-goundong-high-conv.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-high-conv.html",
+      "h1": "고운동 고등학생영어회화",
+      "blueprint": "v4-high-priority-deadline-v2",
+      "locality": "sejong-goundong",
+      "intent": "high-conv",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-5x7/sejong-goundong-housewife-conv.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-housewife-conv.html",
+      "h1": "고운동 주부영어회화",
+      "blueprint": "v4-housewife-lifefit-v2",
+      "locality": "sejong-goundong",
+      "intent": "housewife-conv",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-5x7/sejong-goundong-jobseeker-conv.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-jobseeker-conv.html",
+      "h1": "고운동 취준생영어회화",
+      "blueprint": "v4-job-interview-evidence-v2",
+      "locality": "sejong-goundong",
+      "intent": "jobseeker-conv",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-5x7/sejong-goundong-mid-conv.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-mid-conv.html",
+      "h1": "고운동 중학생영어회화",
+      "blueprint": "v4-mid-school-bridge-v2",
+      "locality": "sejong-goundong",
+      "intent": "mid-conv",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-5x7/sejong-goundong-univ-conv.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-univ-conv.html",
+      "h1": "고운동 대학생영어회화",
+      "blueprint": "v4-univ-campus-output-v2",
+      "locality": "sejong-goundong",
+      "intent": "univ-conv",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-5x7/seoul-seocho-naegokdong-biz-business-conv.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-biz-business-conv.html",
+      "h1": "내곡동 직장인비즈니스영어",
+      "blueprint": "v4-worker-work-output-v2",
+      "locality": "seoul-seocho-naegokdong",
+      "intent": "biz-business-conv",
+      "variation": "scene"
+    },
+    {
+      "path": "pilot-v45-5x7/seoul-seocho-naegokdong-elem-tutor.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-elem-tutor.html",
+      "h1": "내곡동 초등학생영어과외",
+      "blueprint": "v4-elem-parent-evidence-v2",
+      "locality": "seoul-seocho-naegokdong",
+      "intent": "elem-tutor",
+      "variation": "scene"
+    },
+    {
+      "path": "pilot-v45-5x7/seoul-seocho-naegokdong-high-conv.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-high-conv.html",
+      "h1": "내곡동 고등학생영어회화",
+      "blueprint": "v4-high-priority-deadline-v2",
+      "locality": "seoul-seocho-naegokdong",
+      "intent": "high-conv",
+      "variation": "scene"
+    },
+    {
+      "path": "pilot-v45-5x7/seoul-seocho-naegokdong-housewife-conv.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-housewife-conv.html",
+      "h1": "내곡동 주부영어회화",
+      "blueprint": "v4-housewife-lifefit-v2",
+      "locality": "seoul-seocho-naegokdong",
+      "intent": "housewife-conv",
+      "variation": "scene"
+    },
+    {
+      "path": "pilot-v45-5x7/seoul-seocho-naegokdong-jobseeker-conv.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-jobseeker-conv.html",
+      "h1": "내곡동 취준생영어회화",
+      "blueprint": "v4-job-interview-evidence-v2",
+      "locality": "seoul-seocho-naegokdong",
+      "intent": "jobseeker-conv",
+      "variation": "scene"
+    },
+    {
+      "path": "pilot-v45-5x7/seoul-seocho-naegokdong-mid-conv.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-mid-conv.html",
+      "h1": "내곡동 중학생영어회화",
+      "blueprint": "v4-mid-school-bridge-v2",
+      "locality": "seoul-seocho-naegokdong",
+      "intent": "mid-conv",
+      "variation": "scene"
+    },
+    {
+      "path": "pilot-v45-5x7/seoul-seocho-naegokdong-univ-conv.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-univ-conv.html",
+      "h1": "내곡동 대학생영어회화",
+      "blueprint": "v4-univ-campus-output-v2",
+      "locality": "seoul-seocho-naegokdong",
+      "intent": "univ-conv",
+      "variation": "scene"
+    }
+  ]
+}
