@@ -680,6 +680,18 @@ def main():
     qa = static_validate(generated)
     if qa["status"] != "PASS":
         (OUT / "PILOT_5X7_QA_V2_FULL_DEPTH.json").write_text(json.dumps(qa, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
+        print(json.dumps({
+            "status": qa["status"],
+            "static_failures": qa["static_failures"],
+            "visible_chars": qa["visible_chars"],
+            "natural_korean": qa["natural_korean"],
+            "duplicate_gate": {
+                "status": qa["duplicate_gate"]["status"],
+                "max_cosine": qa["duplicate_gate"]["max_cosine"],
+                "max_5_shingle_jaccard": qa["duplicate_gate"]["max_5_shingle_jaccard"]
+            },
+            "failures": qa["failures"][:50]
+        }, ensure_ascii=False))
         raise SystemExit("Full-depth static QA failed; outputs were not overwritten.")
     for name, raw in generated.items():
         (OUT / name).write_text(raw, encoding="utf-8")
