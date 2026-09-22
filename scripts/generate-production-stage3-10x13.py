@@ -216,14 +216,14 @@ def scene_cards(titles,row,d):
  cards=[]
  for i,title in enumerate(titles[:4]):
   p1=f"'{title}' 항목에서는 {rhythm(d,i)} {guide(row,i+1)}"
-  p2=[DIAG[d["diagnosis_emphasis"]],CONTEXT[d["local_context_mode"]],CASE[d["case_frame"]],CTA[d["cta_frame"]]][i%4]+" "+guide(row,i+9)
+  p2=guide(row,i+9)+" "+guide(row,i+49)
   cards.append(f'<article class="card"><b>{esc(title)}</b><p>{esc(p1)}</p><p>{esc(p2)}</p></article>')
  return ''.join(cards)
 
 def priority_block(priority,row,d):
  items=[]
  for i,label in enumerate(priority[:4]):
-  note=[guide(row,i+3),DIAG[d["diagnosis_emphasis"]],CONTEXT[d["local_context_mode"]],CASE[d["case_frame"]]][i%4]
+  note=guide(row,i+3)
   items.append(f'<li><b>{esc(label)}</b><span>{esc(note)}</span></li>')
  return ''.join(items)
 
@@ -231,7 +231,7 @@ def flow_block(steps,row,d):
  items=[]
  for i,title in enumerate(steps):
   p=f"'{title}' 단계에서는 {rhythm(d,i)} {guide(row,i+12)}"
-  q=[INTRO[d["intro_pattern"]],DIAG[d["diagnosis_emphasis"]],CASE[d["case_frame"]],CTA[d["cta_frame"]]][i%4]
+  q=guide(row,i+60)
   items.append(f'<li><span>{i+1:02d}</span><div><b>{esc(title)}</b><p>{esc(p)}</p><p>{esc(q)}</p></div></li>')
  return ''.join(items)
 
@@ -276,20 +276,20 @@ def variation_story(row,d,service):
 
 def deep_block(scene_titles,priority,boundary,service,row,d):
  topics=[
-  (f"{scene_titles[0]}에서 시작점을 잡는 법",f"{guide(row,27)} {DIAG[d['diagnosis_emphasis']]}"),
-  (f"{priority[min(1,len(priority)-1)]}의 순서를 정하는 법",f"{guide(row,29)} {CONTEXT[d['local_context_mode']]}"),
-  (f"{scene_titles[-1]}을 다시 확인하는 법",f"{guide(row,31)} {CASE[d['case_frame']]}"),
-  ("다른 경로와 비교할 때",f"{boundary} {CTA[d['cta_frame']]}"),
+  (f"{scene_titles[0]}에서 시작점을 잡는 법",f"{guide(row,27)} {guide(row,77)}"),
+  (f"{priority[min(1,len(priority)-1)]}의 순서를 정하는 법",f"{guide(row,29)} {guide(row,79)}"),
+  (f"{scene_titles[-1]}을 다시 확인하는 법",f"{guide(row,31)} {guide(row,81)}"),
+  ("다른 경로와 비교할 때",f"{boundary} {guide(row,83)}"),
  ]
  return '<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>'+esc(service)+' 선택 전에 확인할 기준</h2><div class="grid4">'+''.join(f'<article class="card"><b>{esc(t)}</b><p>{esc(p)}</p></article>' for t,p in topics)+'</div></div></section>'
 
 def faq_block(scene_titles,priority,proof,boundary,row,d):
  qas=[
-  ("무엇부터 시작하면 되나요?",f"첫 우선순위는 '{priority[0]}'입니다. {guide(row,5)}"),
-  ("현재 상태는 어떻게 확인하나요?",f"{DIAG[d['diagnosis_emphasis']]} {guide(row,7)}"),
-  ("수업 뒤에는 무엇을 기록하나요?",f"'{proof[0]}'을 다음 확인 기준으로 남깁니다. {guide(row,11)}"),
-  ("다른 과정이나 시험이 더 맞을 수도 있나요?",f"{boundary} {guide(row,13)}"),
-  ("변화는 어떻게 다시 확인하나요?",f"'{scene_titles[-1]}'처럼 실제 장면을 다시 만들고 {rhythm(d,5)} {guide(row,17)}"),
+  ("무엇부터 시작하면 되나요?",f"첫 우선순위는 '{priority[0]}'입니다. {guide(row,85)}"),
+  ("현재 상태는 어떻게 확인하나요?",guide(row,87)),
+  ("수업 뒤에는 무엇을 기록하나요?",f"'{proof[0]}'을 다음 확인 기준으로 남깁니다. {guide(row,89)}"),
+  ("다른 과정이나 시험이 더 맞을 수도 있나요?",f"{boundary} {guide(row,91)}"),
+  ("변화는 어떻게 다시 확인하나요?",f"'{scene_titles[-1]}' 장면을 다시 만들고 {guide(row,93)}"),
  ]
  return '<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>선택 전에 확인할 질문</h2><div class="faq">'+''.join(f'<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>' for q,a in qas)+'</div></div></section>'
 
@@ -301,21 +301,21 @@ def render_page(row,d,intent,family,facts,svc,ex):
   cards,steps,_proofs,_feedback=svc.extract_source(ROOT/"pilot-v45-5x7"/f"seoul-seocho-naegokdong-{intent}.html")
   scene_titles=[x[0] for x in cards];proof=priority
   context_title="현재 영어를 한 수준으로 묶지 않습니다"
-  context_text=f"{DIAG[d['diagnosis_emphasis']]} {guide(row,20)}"
+  context_text=f"{guide(row,20)} {guide(row,72)}"
  else:
   e=facts
   service=e["service"];service_body=e["service"];question=e["first_question"];priority=e["priority"];boundary=e["boundary"]
   scene_titles=[x[0] for x in e["scenes"]];steps=e["flow"];proof=e["proof"]
   context_title="시험 구조와 개인 병목을 따로 봅니다"
-  context_text=f"{DIAG[d['diagnosis_emphasis']]} 확인 항목은 {' · '.join(e['diagnosis'])}입니다. {guide(row,20)}"
+  context_text=f"확인 항목은 {' · '.join(e['diagnosis'])}입니다. {guide(row,20)} {guide(row,72)}"
 
  h1=f"{dong} {service}"
  canonical=f"https://englishpt.kr/{slug}-{intent}.html"
  desc=f"{h1} 안내. 현재 상황과 우선순위, 실제 훈련, 재확인, 다른 선택 경로와 상담 전 준비 정보를 확인합니다."
  js=json.dumps(schema(canonical,h1,desc,row,service),ensure_ascii=False)
  intro1=f"{row['full_name_ko']}에서 {service_body}를 알아볼 때는 이름이나 홍보문구보다 현재 목표와 실제 장면을 먼저 확인합니다."
- intro2=f"{INTRO[d['intro_pattern']]} {CONTEXT[d['local_context_mode']]}"
- mid=f"{CTA[d['cta_frame']]} {guide(row,23)}"
+ intro2=f"{INTRO[d['intro_pattern']].split('.')[0]}. {guide(row,70)}"
+ mid=guide(row,23)
  related=links(row,intent,svc,ex)
 
  return f'''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
