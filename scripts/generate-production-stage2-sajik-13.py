@@ -84,25 +84,18 @@ def postprocess(raw,slug,current,service_profiles,exam_map):
  else:
   strip=[("시험 목표","제출 목적·시험일·목표 결과"),("현재 병목","영역·오답원인·시간을 분리"),("훈련","실제 문항·응답으로 재연습"),("다음 확인","새 문제·실전 조건에서 재검증")]
  strip_html='<section class="decision-strip" aria-label="빠른 판단 요약"><div class="wrap"><div class="decision-grid">'+''.join('<div><b>'+html.escape(a)+'</b><span>'+html.escape(b)+'</span></div>' for a,b in strip)+'</div></div></section>'
- if family=="service":
-  profile=service_profiles[current]
-  decision_items=[
-   ("이런 경우 잘 맞습니다","위 장면이 반복되고 다음 일정에서 같은 행동을 다시 확인해야 하는 경우"),
-   ("다른 선택이 나을 수 있습니다",profile["boundary"]),
-   ("상담에서 확인할 비용·일정 조건","횟수 · 시간 · 진행 방식 · 준비 범위를 확인하며 구체 비용은 상담에서 안내합니다."),
-   ("수업 계획은 이렇게 정합니다","현재 수행 → 우선순위 → 실제 연습 → 다음 수업 재확인"),
-   ("상담 전에 준비할 것","최근 자료 · 가장 막힌 장면 · 다음 일정 · 가능한 시간대")
-  ]
- else:
-  exam=next(e for e in exam_map.values() if e["intent"]==current)
-  decision_items=[
-   ("이런 경우 잘 맞습니다","목표 시험·일정은 정해졌지만 실제 병목을 나눠 준비해야 하는 경우"),
-   ("다른 선택이 나을 수 있습니다",exam["boundary"]),
-   ("상담에서 확인할 비용·일정 조건","횟수 · 시간 · 남은 기간 · 피드백 방식 · 준비 범위를 확인합니다."),
-   ("수업 계획은 이렇게 정합니다","최근 수행 → 병목 분리 → 문항·응답 훈련 → 새 문제 재검증"),
-   ("상담 전에 준비할 것","목표 결과 · 시험일/마감 · 최근 성적·답변 · 가장 어려운 영역")
-  ]
- decision_html='<section class="section decision-guide"><div class="wrap narrow"><p class="kicker">선택 기준</p><h2>광고 문구보다, 이 다섯 가지를 먼저 확인하세요</h2><div class="decision-list">'+''.join('<div><b>◆ '+html.escape(a)+'</b><p>'+html.escape(b)+'</p></div>' for a,b in decision_items)+'</div></div></section>'
+ ds_all=json.loads(DECISION_SUPPORT_PATH.read_text(encoding="utf-8"))["intents"]
+ ds=ds_all[current]
+ decision_items=[
+  ("이런 경우 잘 맞습니다",ds["fit"]),
+  ("이런 경우엔 다른 선택도 비교하세요",ds["alternative"]),
+  ("비용을 좌우하는 4가지",ds["cost_factors"]+" · 구체 금액은 상담에서 안내"),
+  ("선생님·수업은 이렇게 비교하세요",ds["teacher_or_class_selection"]),
+  ("상담 전에 준비하실 것",ds["consult_preparation"])
+ ]
+ h1_match=re.search(r"<h1>(.*?)</h1>",raw,re.S)
+ page_title=re.sub(r"<[^>]+>"," ",h1_match.group(1)).strip() if h1_match else "이 과정"
+ decision_html='<section class="section decision-guide"><div class="wrap narrow"><p class="kicker">선택 기준</p><h2>'+html.escape(page_title)+' 선택 전에, 이 다섯 가지를 먼저 확인하세요</h2><div class="decision-list">'+''.join('<div><b>◆ '+html.escape(a)+'</b><p>'+html.escape(b)+'</p></div>' for a,b in decision_items)+'</div></div></section>'
  hero_end=re.search(r'(</section>)(?=\s*<section id="detail")',raw)
  if not hero_end: raise RuntimeError(f"hero boundary not found for {current}")
  raw=raw[:hero_end.end()]+strip_html+raw[hero_end.end():]
