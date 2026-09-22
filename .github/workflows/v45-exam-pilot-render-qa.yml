@@ -4,7 +4,9 @@ on:
     branches:
       - reset-english-service-seo-v3
     paths:
-      - 'pilot-v45-exam-5x6/**'
+      - 'pilot-v45-exam-5x6/*.html'
+      - 'pilot-v45-exam-5x6/render-qa.mjs'
+      - 'pilot-v45-exam-5x6/PILOT_EXAM_5X6_MANIFEST_V1.json'
       - '.github/workflows/v45-exam-pilot-render-qa.yml'
   workflow_dispatch:
 permissions:
