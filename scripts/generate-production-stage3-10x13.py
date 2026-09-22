@@ -200,6 +200,46 @@ def finalize(raw,row,current,svc,ex,family):
  if n!=1:raise RuntimeError("related links")
  return raw
 
+FRAMES=["scene","deadline","error","use","reuse"]
+PERMS=[
+ (0,1,2,3,4),(1,0,3,4,2),(2,3,4,0,1),(3,4,1,2,0),(4,2,0,1,3),
+ (1,2,4,3,0),(1,3,0,2,4),(1,4,2,0,3),(0,2,3,4,1),(3,0,4,1,2),
+]
+SERVICE_GROUPS=[
+ ["__detail__","실제 장면"],
+ ["막히는 이유","우선순위"],
+ ["수업 흐름","판단 기준"],
+ ["피드백 예시","과정 선택"],
+ ["더 깊게 보기","자주 묻는 질문"],
+]
+EXAM_GROUPS=[
+ ["__detail__","실제 막힘"],
+ ["시험 구조와 개인 약점","우선순위"],
+ ["수업 흐름","판단 기준"],
+ ["피드백 예시","시험 선택"],
+ ["학습 프레임","더 깊게 보기","자주 묻는 질문"],
+]
+
+def section_html(raw,key):
+ if key=="__detail__":
+  m=re.search(r'<section id="detail" class="section">[\\s\\S]*?</section>',raw)
+ else:
+  m=re.search(r'<section[^>]*>[\\s\\S]*?<p class="kicker">'+re.escape(key)+r'</p>[\\s\\S]*?</section>',raw)
+ if not m:raise RuntimeError("section not found: "+key)
+ return m.group(0)
+
+def replace_section(raw,key,new):
+ old=section_html(raw,key)
+ return raw.replace(old,new,1)
+
+def compose_frames(raw_by_frame,perm,groups):
+ base=raw_by_frame[FRAMES[perm[0]]]
+ for gi,keys in enumerate(groups):
+  src=raw_by_frame[FRAMES[perm[gi]]]
+  for key in keys:
+   base=replace_section(base,key,section_html(src,key))
+ return base
+
 def main():
  rows=json.loads(INPUT.read_text(encoding="utf-8"))["rows"]
  if len(rows)!=10:raise RuntimeError("need 10 rows")
@@ -213,16 +253,29 @@ def main():
  with (OUT/"pilot.css").open("a",encoding="utf-8") as fp:fp.write(css_extra)
  shutil.copy2(ROOT/"pilot-v45-5x7/pilot.js",OUT/"pilot.js")
  generated={};files=[]
- for row in rows:
-  d=dims(row["variation_signature"]);frame=FRAME_BY_INTRO[d["intro_pattern"]];src=SOURCE_BY_FRAME[frame]
-  loc={"full_name":row["full_name_ko"],"jurisdiction":row["jurisdiction_full"],"dong":row["dong_name"],"variation":frame};slug=row["region_slug"]
+ for row_index,row in enumerate(rows):
+  d=dims(row["variation_signature"]);slug=row["region_slug"];perm=PERMS[row_index]
+  # Build each page only from already-frozen Gold frames, then compose five section groups
+  # with a locality-specific permutation. No unverified local fact is introduced.
   for intent in SERVICE_ORDER:
-   p=svc.PROFILES[intent];cards,steps,proofs,feedback=svc.extract_source(ROOT/"pilot-v45-5x7"/f"{src}-{intent}.html")
-   raw=svc.render_page(slug,loc,intent,p,cards,steps,proofs,feedback);raw=replace_service_variation(raw,row,d,p,cards,steps);raw=finalize(raw,row,intent,svc,ex,"service")
-   name=f"{slug}-{intent}.html";generated[name]=raw;files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"service","intent":intent,"h1":f"{row['dong_name']} {p['service_h1']}","canonical":f"https://englishpt.kr/{slug}-{intent}.html","locality":slug,"blueprint":p["blueprint"],"variation_signature":row["variation_signature"]})
+   p=svc.PROFILES[intent];raw_by_frame={}
+   for frame in FRAMES:
+    src=SOURCE_BY_FRAME[frame];locf={"full_name":row["full_name_ko"],"jurisdiction":row["jurisdiction_full"],"dong":row["dong_name"],"variation":frame}
+    cards,steps,proofs,feedback=svc.extract_source(ROOT/"pilot-v45-5x7"/f"{src}-{intent}.html")
+    raw_by_frame[frame]=svc.render_page(slug,locf,intent,p,cards,steps,proofs,feedback)
+   raw=compose_frames(raw_by_frame,perm,SERVICE_GROUPS)
+   raw=finalize(raw,row,intent,svc,ex,"service")
+   name=f"{slug}-{intent}.html";generated[name]=raw
+   files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"service","intent":intent,"h1":f"{row['dong_name']} {p['service_h1']}","canonical":f"https://englishpt.kr/{slug}-{intent}.html","locality":slug,"blueprint":p["blueprint"],"variation_signature":row["variation_signature"],"gold_frame_permutation":[FRAMES[x] for x in perm]})
   for key in EXAM_ORDER:
-   e=ex.EXAMS[key];intent=e["intent"];raw=ex.render(slug,loc,key,e);raw=replace_exam_variation(raw,row,d,e);raw=finalize(raw,row,intent,svc,ex,"exam")
-   name=f"{slug}-{intent}.html";generated[name]=raw;files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"exam","intent":intent,"exam":key,"h1":f"{row['dong_name']} {e['service']}","canonical":f"https://englishpt.kr/{slug}-{intent}.html","locality":slug,"blueprint":e["blueprint"],"variation_signature":row["variation_signature"]})
+   e=ex.EXAMS[key];intent=e["intent"];raw_by_frame={}
+   for frame in FRAMES:
+    locf={"full_name":row["full_name_ko"],"jurisdiction":row["jurisdiction_full"],"dong":row["dong_name"],"variation":frame}
+    raw_by_frame[frame]=ex.render(slug,locf,key,e)
+   raw=compose_frames(raw_by_frame,perm,EXAM_GROUPS)
+   raw=finalize(raw,row,intent,svc,ex,"exam")
+   name=f"{slug}-{intent}.html";generated[name]=raw
+   files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"exam","intent":intent,"exam":key,"h1":f"{row['dong_name']} {e['service']}","canonical":f"https://englishpt.kr/{slug}-{intent}.html","locality":slug,"blueprint":e["blueprint"],"variation_signature":row["variation_signature"],"gold_frame_permutation":[FRAMES[x] for x in perm]})
 
  failures=[];checks=[];lengths={};groups=defaultdict(list)
  reserved=set((ROOT/"sitemap_95_urls.txt").read_text(encoding="utf-8").splitlines()) if (ROOT/"sitemap_95_urls.txt").exists() else set()
@@ -266,7 +319,7 @@ def main():
  if failures:
   print(json.dumps({"status":"FAIL","visible":qa["visible_chars"],"duplicate":qa["duplicate_gate"],"failures":failures[:60]},ensure_ascii=False));raise SystemExit(1)
  for name,raw in generated.items():(OUT/name).write_text(raw,encoding="utf-8")
- manifest={"version":"1.0","status":"STAGE3_130_STATIC_DUPLICATE_PASS_RENDER_PENDING_HUMAN_REVIEW_REQUIRED_NOT_PRODUCTION","stage":"STAGE3_10_LOCALITIES_X_13_INTENTS","page_count":130,"locality_count":10,"intent_count":13,"input":"stage3_localities_10_v1.json","gold_sources":{"service":"V4_5_GOLD_SAMPLE_FREEZE_20260922.json","exam":"pilot-v45-exam-5x6/PILOT_EXAM_5X6_GOLD_FREEZE_V1.md","reference_analysis":"EXAM_REFERENCE_ANALYSIS_V1.md"},"localities":rows,"files":files,"safety":{"robots":"noindex,nofollow","live_lead_submission":False,"sitemap":False,"main_merge":False,"production_deploy":False}}
+ manifest={"version":"1.0","status":"STAGE3_130_STATIC_DUPLICATE_PASS_RENDER_PENDING_HUMAN_REVIEW_REQUIRED_NOT_PRODUCTION","stage":"STAGE3_10_LOCALITIES_X_13_INTENTS","page_count":130,"locality_count":10,"intent_count":13,"input":"stage3_localities_10_v1.json","gold_sources":{"service":"V4_5_GOLD_SAMPLE_FREEZE_20260922.json","exam":"pilot-v45-exam-5x6/PILOT_EXAM_5X6_GOLD_FREEZE_V1.md","reference_analysis":"EXAM_REFERENCE_ANALYSIS_V1.md"},"localities":[dict(r,gold_frame_permutation=[FRAMES[x] for x in PERMS[i]]) for i,r in enumerate(rows)],"files":files,"safety":{"robots":"noindex,nofollow","live_lead_submission":False,"sitemap":False,"main_merge":False,"production_deploy":False}}
  (OUT/"STAGE3_10X13_MANIFEST_V1.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
  print(json.dumps({"status":"PASS","pages":130,"visible":qa["visible_chars"],"max_cosine":qa["duplicate_gate"]["max_cosine"],"max_jaccard5":qa["duplicate_gate"]["max_5_shingle_jaccard"]},ensure_ascii=False))
 
