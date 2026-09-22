@@ -5,15 +5,16 @@ on:
       - reset-english-service-seo-v3
     paths:
       - 'scripts/generate-v45-full-depth-pilot.py'
+      - 'pilot-v45-5x7/render-qa.mjs'
       - 'V4_5_FULL_DEPTH_7TARGET_GOLD_STANDARD.md'
       - '.github/workflows/v45-full-depth-generate.yml'
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
-  generate:
+  generate-static-render:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,7 +25,53 @@ jobs:
           python-version: '3.12'
       - name: Generate and static-QA 35 full-depth pages
         run: python3 scripts/generate-v45-full-depth-pilot.py
-      - name: Commit generated pilot only
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Start local preview server
+        run: |
+          python3 -m http.server 8000 >/tmp/englishpt-http.log 2>&1 &
+          sleep 2
+      - name: Render-QA 35 pages on desktop and mobile
+        run: node pilot-v45-5x7/render-qa.mjs
+      - name: Record integrated QA result
+        env:
+          RUN_ID: ${{ github.run_id }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          qpath=Path('pilot-v45-5x7/PILOT_5X7_QA_V2_FULL_DEPTH.json')
+          rpath=Path('pilot-v45-5x7/PILOT_5X7_RENDER_QA_V2_FULL_DEPTH.json')
+          mpath=Path('pilot-v45-5x7/PILOT_5X7_MANIFEST_V2_FULL_DEPTH.json')
+          q=json.loads(qpath.read_text(encoding='utf-8'))
+          r=json.loads(rpath.read_text(encoding='utf-8'))
+          m=json.loads(mpath.read_text(encoding='utf-8'))
+          assert q['status']=='PASS'
+          assert r['status']=='PASS'
+          assert r['render_cases']==70 and r['failures']==0
+          q['status']='STATIC_AND_RENDER_PASS_HUMAN_REVIEW_REQUIRED'
+          q['render_qa']={
+            'status':'PASS',
+            'workflow_run_id':int(os.environ['RUN_ID']),
+            'source_sha':os.environ['SOURCE_SHA'],
+            'render_cases':r['render_cases'],
+            'desktop_cases':r['desktop_cases'],
+            'mobile_cases':r['mobile_cases'],
+            'failures':r['failures'],
+            'horizontal_overflow_failures':r['horizontal_overflow_failures'],
+            'console_or_page_error_cases':r['console_or_page_error_cases']
+          }
+          m['status']='FULL_DEPTH_STATIC_RENDER_PASS_HUMAN_REVIEW_REQUIRED_NOT_PRODUCTION'
+          qpath.write_text(json.dumps(q,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          mpath.write_text(json.dumps(m,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+      - name: Commit generated pilot and QA evidence
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -32,6 +79,14 @@ jobs:
           if git diff --cached --quiet; then
             echo "No generated changes"
           else
-            git commit -m "Regenerate V4.5 full-depth 5x7 pilot"
+            git commit -m "Regenerate and render-QA V4.5 full-depth 5x7 pilot"
             git push origin HEAD:reset-english-service-seo-v3
           fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v45-full-depth-5x7-qa
+          path: |
+            pilot-v45-5x7/PILOT_5X7_QA_V2_FULL_DEPTH.json
+            pilot-v45-5x7/PILOT_5X7_RENDER_QA_V2_FULL_DEPTH.json
+            pilot-v45-5x7/PILOT_5X7_MANIFEST_V2_FULL_DEPTH.json
