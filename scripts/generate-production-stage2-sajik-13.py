@@ -129,9 +129,16 @@ def postprocess(raw,slug,current,service_profiles,exam_map):
  if pos<0: raise RuntimeError(f"feedback boundary not found for {current}")
  raw=raw[:pos]+mid+raw[pos:]
  # Requested flow: FAQ -> Deep Guide -> internal links -> consultation pre-check.
- deep_faq=r'(<section[^>]*>[\s\S]*?<p class="kicker">더 깊게 보기</p>[\s\S]*?</section>)\s*(<section[^>]*>[\s\S]*?<p class="kicker">자주 묻는 질문</p>[\s\S]*?</section>)'
- raw,nswap=re.subn(deep_faq,lambda m:m.group(2)+m.group(1),raw,count=1)
- if nswap!=1: raise RuntimeError(f"FAQ/Deep Guide order not found for {current}")
+ deep_marker='<p class="kicker">더 깊게 보기</p>'
+ faq_marker='<p class="kicker">자주 묻는 질문</p>'
+ deep_k=raw.find(deep_marker); faq_k=raw.find(faq_marker)
+ if deep_k<0 or faq_k<0 or deep_k>faq_k: raise RuntimeError(f"FAQ/Deep Guide source order not found for {current}")
+ deep_s=raw.rfind("<section",0,deep_k); deep_e=raw.find("</section>",deep_k)+10
+ faq_s=raw.rfind("<section",0,faq_k); faq_e=raw.find("</section>",faq_k)+10
+ if min(deep_s,deep_e,faq_s,faq_e)<0: raise RuntimeError(f"FAQ/Deep Guide boundaries not found for {current}")
+ between=raw[deep_e:faq_s]
+ deep_block=raw[deep_s:deep_e]; faq_block=raw[faq_s:faq_e]
+ raw=raw[:deep_s]+faq_block+between+deep_block+raw[faq_e:]
  # Connect both frozen families: every page links to the other 12 Sajikdong intent pages.
  links=unified_links(slug,current,service_profiles,exam_map)
  raw,n=re.subn(r'(<div class="links">)[\s\S]*?(</div>)',lambda m:m.group(1)+links+m.group(2),raw,count=1)
