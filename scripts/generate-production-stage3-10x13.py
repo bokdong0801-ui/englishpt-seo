@@ -229,19 +229,6 @@ def variation_story(row,d,service):
  titles=["현재를 보는 관점","수업을 고르는 관점","지역과 생활 맥락","연습 전후 비교","설명 방식","진단 초점","다음 행동"]
  return '<section class="section variation-story"><div class="wrap narrow"><p class="kicker">판단 가이드</p><h2>'+esc(service)+'를 실제 일정에 연결하는 방법</h2>'+''.join(f'<article><b>{esc(t)}</b><p>{esc(p)}</p></article>' for t,p in zip(titles,parts))+'</div></section>'
 
-def variation_story(row,d,service):
- blocks=[
-  ("이번 페이지의 판단 순서",INTRO[d["intro_pattern"]]+" "+guide(row,32)+" "+rhythm(d,0)),
-  ("현재 장면을 해석하는 방식",CONTEXT[d["local_context_mode"]]+" "+guide(row,34)+" "+guide(row,35)),
-  ("실수와 병목을 다시 보는 방식",DIAG[d["diagnosis_emphasis"]]+" "+guide(row,36)+" "+CASE[d["case_frame"]]),
-  ("수업에서 행동으로 옮기는 방식",rhythm(d,2)+" "+guide(row,38)+" "+guide(row,39)),
-  ("기록을 남기는 방식",CTA[d["cta_frame"]]+" "+guide(row,40)+" "+rhythm(d,4)),
-  ("다음 조건에서 재사용하는 방식",CASE[d["case_frame"]]+" "+guide(row,42)+" "+guide(row,43)),
-  ("일정이 달라졌을 때 조정하는 방식",CONTEXT[d["local_context_mode"]]+" "+guide(row,44)+" "+CTA[d["cta_frame"]]),
-  ("상담 전 스스로 확인할 질문",guide(row,46)+" "+DIAG[d["diagnosis_emphasis"]]+" "+guide(row,47)),
- ]
- return '<section class="section variation-story"><div class="wrap narrow"><p class="kicker">판단 가이드</p><h2>'+esc(service)+'를 실제 일정에 연결하는 방법</h2>'+''.join(f'<article><b>{esc(t)}</b><p>{esc(p)}</p></article>' for t,p in blocks)+'</div></section>'
-
 def deep_block(scene_titles,priority,boundary,service,row,d):
  topics=[
   (f"{scene_titles[0]}에서 시작점을 잡는 법",f"{guide(row,27)} {DIAG[d['diagnosis_emphasis']]}"),
