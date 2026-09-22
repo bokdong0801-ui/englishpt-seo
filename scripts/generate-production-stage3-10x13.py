@@ -83,6 +83,22 @@ SEED_END=[
 "이미 안정된 부분은 반복을 줄이고 조건이 달라질 때 흔들리는 부분에 시간을 더 씁니다.",
 "한 번의 성공보다 자료와 질문이 달라져도 같은 기준을 다시 쓸 수 있는지를 봅니다.",
 "다음 일정이 가까울수록 새 범위를 넓히기보다 현재 병목을 실제 조건에서 줄이는 데 집중합니다.",
+"최근 한 주의 실제 수행에서 가장 자주 멈춘 순간을 다음 연습의 첫 기준으로 삼습니다.",
+"설명을 이해한 뒤에는 도움 없이 다시 처리되는지를 확인해 학습 범위를 조정합니다.",
+"잘되는 영역을 계속 반복하기보다 새 조건에서 흔들리는 행동을 따로 남겨 다음 순서를 정합니다.",
+"수업에서 다룬 내용을 다음 실제 장면에 한 번 적용하고 그 결과를 다음 점검 자료로 사용합니다.",
+"문제 수를 늘리기 전에 같은 원인이 다른 문제에서도 반복되는지부터 확인합니다.",
+"기간이 짧다면 새로운 범위를 넓히기보다 현재 가진 지식으로 실전 행동을 안정시키는 편이 먼저입니다.",
+"목표가 바뀌면 이전 계획을 버리기보다 유지할 행동과 새로 필요한 행동의 비중을 다시 나눕니다.",
+"힌트를 받아 해결한 항목은 다음 시도에서 힌트를 줄여도 같은 기준이 남는지 재확인합니다.",
+"정답이나 완성 답변만 남기지 않고 어떤 판단을 거쳐 결과를 만들었는지 짧게 기록합니다.",
+"다음 점검에서는 같은 자료를 반복하기보다 비슷한 기능을 요구하는 다른 자료로 재사용 범위를 확인합니다.",
+"한 번에 여러 약점을 고치려 하지 않고 현재 결과에 가장 직접적인 한 항목부터 처리합니다.",
+"학습량이 계획보다 많아지면 완료하지 못한 항목을 누적하지 않고 다음 주 범위를 다시 줄입니다.",
+"첫 반응이 늦다면 완벽한 문장을 기다리기보다 핵심부터 짧게 시작하고 뒤에 이유를 붙이는 연습을 합니다.",
+"이해가 흔들리면 어휘·문장 구조·정보 처리 중 어디에서 멈췄는지를 분리해 다시 봅니다.",
+"실전 조건에서 결과가 달라지면 지식 부족인지 시간과 순서 문제인지 따로 확인합니다.",
+"상담 전에는 최근 막힌 장면과 가장 가까운 일정만 정리해도 첫 우선순위를 정하는 데 충분합니다.",
 ]
 
 def load_module(name,path):
@@ -240,6 +256,49 @@ def compose_frames(raw_by_frame,perm,groups):
    base=replace_section(base,key,section_html(src,key))
  return base
 
+def first_sentence(text):
+ text=html.unescape(re.sub(r'<[^>]+>',' ',text)).strip()
+ m=re.search(r'^(.+?[.!?]|.+?다\\.)',text)
+ return (m.group(1) if m else text).strip()
+
+def row_line(row,slot):
+ base=int(row["content_seed"][:8],16)
+ return SEED_END[(base+slot*7)%len(SEED_END)]
+
+def rewrite_cards(section,row,start_slot=0):
+ slot=start_slot
+ def repl(m):
+  nonlocal slot
+  title=m.group(1);body=m.group(2)
+  ps=re.findall(r'<p>(.*?)</p>',body,re.S)
+  core=first_sentence(ps[0]) if ps else ""
+  line=row_line(row,slot);slot+=1
+  return '<article class="card"><b>'+title+'</b><p>'+html.escape(core)+'</p><p>'+html.escape(line)+'</p></article>'
+ return re.sub(r'<article class="card"><b>(.*?)</b>([\\s\\S]*?)</article>',repl,section)
+
+def rewrite_shared_blocks(raw,row):
+ # Deep Guide: preserve each card's first core sentence, replace copied tail with locality-variation guidance.
+ deep=section_html(raw,"더 깊게 보기");deep2=rewrite_cards(deep,row,0);raw=raw.replace(deep,deep2,1)
+ # Feedback examples: illustrative core + distinct recheck line.
+ fb=section_html(raw,"피드백 예시");fb2=rewrite_cards(fb,row,6);raw=raw.replace(fb,fb2,1)
+ # FAQ: preserve question and first answer sentence; rotate a complete recheck sentence.
+ faq=section_html(raw,"자주 묻는 질문");slot=11
+ def faq_repl(m):
+  nonlocal slot
+  q=m.group(1);a=m.group(2);core=first_sentence(a);line=row_line(row,slot);slot+=1
+  return '<details><summary>'+q+'</summary><p>'+html.escape(core)+'</p><p>'+html.escape(line)+'</p></details>'
+ faq2=re.sub(r'<details><summary>(.*?)</summary><p>([\\s\\S]*?)</p></details>',faq_repl,faq)
+ raw=raw.replace(faq,faq2,1)
+ # Decision-proof explanatory spans are process evidence, so make them vary by row without changing labels.
+ proof=section_html(raw,"판단 기준");slot=3
+ def proof_repl(m):
+  nonlocal slot
+  label=m.group(1);line=row_line(row,slot);slot+=1
+  return '<li><b>'+label+'</b><span>'+html.escape(line)+'</span></li>'
+ proof2=re.sub(r'<li><b>(.*?)</b><span>[\\s\\S]*?</span></li>',proof_repl,proof)
+ raw=raw.replace(proof,proof2,1)
+ return raw
+
 def main():
  rows=json.loads(INPUT.read_text(encoding="utf-8"))["rows"]
  if len(rows)!=10:raise RuntimeError("need 10 rows")
@@ -264,6 +323,7 @@ def main():
     cards,steps,proofs,feedback=svc.extract_source(ROOT/"pilot-v45-5x7"/f"{src}-{intent}.html")
     raw_by_frame[frame]=svc.render_page(slug,locf,intent,p,cards,steps,proofs,feedback)
    raw=compose_frames(raw_by_frame,perm,SERVICE_GROUPS)
+   raw=rewrite_shared_blocks(raw,row)
    raw=finalize(raw,row,intent,svc,ex,"service")
    name=f"{slug}-{intent}.html";generated[name]=raw
    files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"service","intent":intent,"h1":f"{row['dong_name']} {p['service_h1']}","canonical":f"https://englishpt.kr/{slug}-{intent}.html","locality":slug,"blueprint":p["blueprint"],"variation_signature":row["variation_signature"],"gold_frame_permutation":[FRAMES[x] for x in perm]})
@@ -273,6 +333,7 @@ def main():
     locf={"full_name":row["full_name_ko"],"jurisdiction":row["jurisdiction_full"],"dong":row["dong_name"],"variation":frame}
     raw_by_frame[frame]=ex.render(slug,locf,key,e)
    raw=compose_frames(raw_by_frame,perm,EXAM_GROUPS)
+   raw=rewrite_shared_blocks(raw,row)
    raw=finalize(raw,row,intent,svc,ex,"exam")
    name=f"{slug}-{intent}.html";generated[name]=raw
    files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"exam","intent":intent,"exam":key,"h1":f"{row['dong_name']} {e['service']}","canonical":f"https://englishpt.kr/{slug}-{intent}.html","locality":slug,"blueprint":e["blueprint"],"variation_signature":row["variation_signature"],"gold_frame_permutation":[FRAMES[x] for x in perm]})
