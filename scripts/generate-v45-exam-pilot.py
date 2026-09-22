@@ -1,0 +1,502 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+V4.5 Full-depth 5-locality x 6-exam pilot generator.
+Source contracts:
+- EXAM_REFERENCE_ANALYSIS_V1.md
+- V4_5_FULL_DEPTH_6_EXAM_GOLD_STANDARD.md
+- V4_5_EXAM_BLUEPRINTS.json
+- V4_5_EXAM_GENERATOR_ALLOWLIST.json
+
+Safety:
+- pilot only
+- noindex,nofollow
+- live form submission disabled by shared pilot.js
+- no production deploy
+- no standalone TOS page
+"""
+from __future__ import annotations
+import html, json, math, re
+from collections import Counter, defaultdict
+from itertools import combinations
+from pathlib import Path
+
+ROOT=Path(__file__).resolve().parents[1]
+OUT=ROOT/"pilot-v45-exam-5x6"
+OUT.mkdir(exist_ok=True)
+PHONE_LABEL="전화 010-5006-8027"
+PHONE_HREF="tel:+821050068027"
+GOLD="V4_5_FULL_DEPTH_6_EXAM_GOLD_STANDARD.md"
+
+LOCALITIES={
+ "seoul-seocho-naegokdong":{"full_name":"서울특별시 서초구 내곡동","jurisdiction":"서울특별시 서초구","dong":"내곡동","variation":"scene"},
+ "gangwon-gangneung-naegokdong":{"full_name":"강원특별자치도 강릉시 내곡동","jurisdiction":"강원특별자치도 강릉시","dong":"내곡동","variation":"deadline"},
+ "gangwon-gangneung-gangnamdong":{"full_name":"강원특별자치도 강릉시 강남동","jurisdiction":"강원특별자치도 강릉시","dong":"강남동","variation":"error"},
+ "sejong-goundong":{"full_name":"세종특별자치시 고운동","jurisdiction":"세종특별자치시","dong":"고운동","variation":"use"},
+ "busan-haeundae-jungdong":{"full_name":"부산광역시 해운대구 중동","jurisdiction":"부산광역시 해운대구","dong":"중동","variation":"reuse"},
+}
+
+EXAMS={
+ "toeic":{
+  "blueprint":"v45-exam-toeic-bottleneck-v1","name":"TOEIC","service":"토익과외","intent":"toeic",
+  "first_question":"LC와 RC를 계속 풀고 있는데, 정작 어느 파트와 시간 배분이 점수를 막는지는 알고 있나요?",
+  "goal":"목표 점수와 시험일을 기준으로 LC·RC 안에서 실제 점수를 막는 파트, 오답 원인, 시간 배분을 나눠 우선순위를 정하는 것",
+  "scenes":[
+   ("LC 처리","듣고 대략적인 내용은 이해했는데 문제 선택으로 연결할 때 근거가 흔들립니다."),
+   ("문법·어휘 근거","Part 5·6 문제를 많이 풀어도 틀린 이유를 문법, 어휘, 문맥 중 어디에서 찾을지 애매합니다."),
+   ("독해 근거","Part 7 지문에서 답의 근거는 찾지만 한 세트를 끝낼 때 시간이 계속 부족합니다."),
+   ("실전 점수 변동","연습 세트마다 점수가 달라지는데 어떤 파트와 시간 사용이 변동의 원인인지 설명하기 어렵습니다.")
+  ],
+  "diagnosis":["LC 처리","문법·어휘 근거","독해 근거","시간 배분","반복 오답 원인"],
+  "priority":["최근 점수와 시험일을 먼저 확인","LC·RC 전체보다 반복해서 흔들리는 파트부터 분리","오답을 문법·어휘·근거·시간 원인으로 태깅","시험이 가까울수록 제한 시간 적용 비중 확대"],
+  "flow":["최근 점수·마감 확인","파트별 병목 분리","오답 원인 태깅","제한 시간 적용","새 세트 재검증"],
+  "proof":["실제 병목 파트 설명","오답 근거 설명","시간 안에서 풀이 순서 유지","새 문제에 기준 적용","다음 세트 우선순위 기록"],
+  "boundary":"말하기 점수 제출이 목적이라면 TOEIC Speaking이나 OPIc가 더 직접적일 수 있습니다. 해외대학·유학 지원이 목적이라면 IELTS·TOEFL·DET처럼 지원기관이 요구하거나 인정하는 시험부터 확인해야 합니다.",
+  "deep":[
+   ("LC와 RC를 한 점수로만 보지 않는 이유","전체 점수만 보면 공부량을 늘리는 방향으로 가기 쉽습니다. 하지만 LC에서 질문을 놓치는 문제와 RC에서 근거를 찾지만 시간이 부족한 문제는 필요한 연습이 다릅니다. 최근 세트에서 어느 파트가 반복해서 흔들렸고, 정답을 맞힌 문제도 근거 없이 찍은 것은 없었는지 나누면 다음 학습시간을 더 구체적으로 배분할 수 있습니다."),
+   ("문제량과 오답 분석은 같은 공부가 아닙니다","문제를 많이 푸는 것은 시험 형식에 익숙해지는 데 도움이 되지만, 같은 이유로 틀리는 문제를 계속 쌓으면 실제 병목은 남을 수 있습니다. 오답마다 문법 지식 부족, 어휘 해석, 근거 위치, 시간 압박처럼 원인을 짧게 남기고 새 문제에서 같은 원인이 다시 나타나는지를 확인해야 복습 범위를 줄일 수 있습니다."),
+   ("시간 부족이 실력 문제인지 순서 문제인지 봅니다","Part 7을 끝까지 풀지 못한다고 모두 독해력이 부족한 것은 아닙니다. 앞 파트에서 오래 머무는지, 지문을 처음부터 모두 읽는지, 답의 근거가 보여도 다시 확인하느라 시간이 드는지에 따라 접근이 달라집니다. 제한 시간을 적용할 때는 정답률만 보지 않고 풀이 순서와 멈춘 지점도 함께 기록합니다."),
+   ("시험일이 가까울수록 새 범위를 줄입니다","기간이 충분할 때는 기초 문법과 어휘, 듣기 처리, 독해 근거를 넓게 보완할 수 있습니다. 반대로 시험이 가까우면 새로운 자료를 계속 추가하기보다 실제 세트에서 반복되는 병목과 시간 루틴을 우선합니다. 시험 후에는 실전에서 흔들린 조건을 다시 장기 학습 목록으로 돌려놓습니다.")
+  ],
+  "faq":[
+   ("목표 점수가 정해져 있어야 하나요?","가능하면 제출 기준과 시험일을 함께 확인하는 편이 좋습니다. 목표 결과가 있어야 LC·RC와 파트별 학습 비중을 현실적으로 조정할 수 있습니다."),
+   ("문제를 많이 풀면 점수가 오르나요?","문제량만으로는 부족할 수 있습니다. 같은 원인의 오답이 반복되는지, 시간 조건에서 실수가 늘어나는지를 함께 봐야 합니다."),
+   ("LC와 RC 중 약한 쪽만 공부하면 되나요?","가장 큰 병목에는 시간을 더 쓰되 다른 영역을 완전히 끊지는 않습니다. 목표 점수와 최근 수행을 기준으로 유지 영역과 집중 영역을 나눕니다."),
+   ("오답노트는 어떻게 활용하나요?","문제를 다시 옮겨 적기보다 틀린 이유와 다음에 확인할 기준을 짧게 남깁니다. 새 문제에서 같은 기준을 적용할 수 있어야 기록이 학습으로 이어집니다."),
+   ("시험 직전에는 무엇을 우선하나요?","새 범위를 크게 늘리기보다 최근 세트의 반복 오답과 시간 배분, 풀이 순서를 실전 조건에서 재확인하는 편이 직접적입니다."),
+   ("변화는 어떻게 확인하나요?","한 번의 점수보다 같은 유형의 오답이 줄었는지, 근거를 설명할 수 있는지, 제한 시간 안에서 풀이 흐름이 유지되는지를 함께 봅니다.")
+  ]
+ },
+ "toeic-speaking":{
+  "blueprint":"v45-exam-toeic-speaking-response-v1","name":"TOEIC Speaking","service":"토익스피킹과외","intent":"toeic-speaking",
+  "first_question":"답변 내용은 알고 있는데, 준비 시간이 끝나면 첫 문장을 바로 시작하고 제한 시간 안에 마무리할 수 있나요?",
+  "goal":"문항 요구를 빠르게 파악하고 첫 문장을 시작한 뒤 이유·예시를 붙여 제한 시간 안에 답변을 완결하는 것",
+  "scenes":[
+   ("질문 이해","문항을 읽거나 들은 뒤 무엇을 먼저 답해야 하는지 정리하는 데 시간이 오래 걸립니다."),
+   ("첫 반응","준비한 내용은 있는데 녹음이 시작되면 첫 문장을 꺼내기까지 공백이 생깁니다."),
+   ("답변 구조","결론은 말하지만 이유와 예시를 붙이는 과정에서 문장이 반복되거나 흐름이 끊깁니다."),
+   ("시간·변형 대응","외운 답변은 가능하지만 질문 표현이나 조건이 달라지면 제한 시간 안에 다시 구성하기 어렵습니다.")
+  ],
+  "diagnosis":["질문 이해","첫 반응","답변 구조","발화 명료성","시간 관리","질문 변형 대응"],
+  "priority":["목표 Level과 시험일 확인","문항 요구를 한 문장으로 요약하는 연습","첫 문장과 핵심 답을 먼저 안정","녹음으로 답변 길이·공백·반복 표현 확인","시험이 가까울수록 시간 제한과 질문 변형 비중 확대"],
+  "flow":["목표 Level·시험일","문항 요구 파악","첫 문장·핵심 답","이유·예시 확장","녹음 피드백","시간 제한·질문 변형 재답변"],
+  "proof":["첫 반응","결론·이유 구조","시간 내 완결","녹음 반복오류","질문 변형 재구성"],
+  "boundary":"자유로운 경험 스토리와 돌발 질문 대응이 핵심인 말하기시험을 준비한다면 OPIc가 더 직접적일 수 있습니다. 업무 회의·발표 자체가 목표라면 시험 대비보다 직장인 비즈니스영어가 더 가까운 선택일 수 있습니다.",
+  "deep":[
+   ("문항 요구를 먼저 읽는 습관이 답변 길이를 줄입니다","말하기 시험에서 오래 말하는 것보다 질문이 요구한 행동을 먼저 수행하는 것이 중요합니다. 의견을 묻는지, 설명을 요구하는지, 장면을 묘사해야 하는지에 따라 첫 문장의 역할이 달라집니다. 연습할 때는 문항을 본 뒤 핵심 요구를 짧게 말하고 그 다음 답변을 시작해 엉뚱한 방향으로 길어지는 일을 줄입니다."),
+   ("암기답변은 질문이 변형될 때 한계를 드러낼 수 있습니다","완성 문장을 그대로 외우면 익숙한 질문에서는 안정적으로 들릴 수 있습니다. 하지만 주어, 조건, 선택지가 달라지면 준비한 순서를 찾느라 첫 반응이 늦어질 수 있습니다. 결론, 이유, 예시처럼 의미 블록을 나누고 질문에 맞게 순서를 바꾸는 연습이 필요합니다."),
+   ("발음만 고치다가 답변 구조를 잃지 않도록 합니다","명료한 발화는 중요하지만 발음 하나에만 집중하면 결론과 이유가 사라질 수 있습니다. 녹음에서는 알아듣기 어려운 소리, 불필요한 공백, 같은 표현 반복, 답변 미완결을 함께 봅니다. 가장 큰 전달 방해 요소부터 줄이고 그 다음 세부 발음을 다룹니다."),
+   ("녹음 비교는 '좋아 보이는 느낌'을 줄여줍니다","같은 유형을 다시 답했을 때 첫 문장까지 걸린 시간, 답변 구조, 반복 표현, 마지막 문장 완결 여부를 비교하면 변화가 구체적으로 보입니다. 다음 연습에서는 잘된 표현을 외우는 것보다 질문을 바꾸고도 같은 구조를 다시 만들 수 있는지 확인합니다.")
+  ],
+  "faq":[
+   ("토스와 토익스피킹은 다른 과정인가요?","이 프로젝트에서는 토스/TOS를 TOEIC Speaking의 검색 alias로 처리합니다. 별도의 indexable 토스 페이지를 만들지 않고 같은 시험 대비 페이지에서 다룹니다."),
+   ("답변 스크립트를 외우면 안 되나요?","핵심 표현과 구조는 준비할 수 있지만 문장 전체를 고정하면 질문 변형에 약해질 수 있습니다. 의미 블록을 바꿔 재구성하는 연습을 함께 둡니다."),
+   ("발음이 좋지 않으면 먼저 발음만 해야 하나요?","알아듣기 어려운 발음은 교정할 수 있지만 답변 구조와 시간 관리도 함께 봅니다. 전달을 가장 크게 방해하는 요소부터 우선합니다."),
+   ("녹음은 왜 하나요?","말하는 동안에는 공백, 반복, 길이를 스스로 정확히 느끼기 어렵습니다. 녹음으로 같은 유형의 전후 답변을 비교하면 재연습 기준이 생깁니다."),
+   ("시험 직전에는 무엇을 하나요?","새 표현을 많이 늘리기보다 문항 요구 파악, 첫 반응, 제한 시간 안의 완결, 질문 변형 재답변을 실전 조건에 가깝게 확인합니다."),
+   ("변화는 어떻게 확인하나요?","첫 문장까지의 지연, 답변 구조, 시간 안의 완결, 질문 변형에서의 재구성, 반복 오류가 줄어드는지를 봅니다.")
+  ]
+ },
+ "opic":{
+  "blueprint":"v45-exam-opic-story-recovery-v1","name":"OPIc","service":"오픽과외","intent":"opic",
+  "first_question":"외운 답변은 있는데, 돌발 질문이나 표현이 조금 바뀌면 내 이야기로 다시 이어갈 수 있나요?",
+  "goal":"배경과 관심 주제에서 실제 경험 소재를 꺼내고 질문이 달라져도 자기 이야기로 답변을 이어가는 것",
+  "scenes":[
+   ("경험 소재","배경설문은 정했지만 실제로 말할 에피소드가 적어 답변 내용이 반복됩니다."),
+   ("답변 길이","첫 문장은 나오지만 이유와 상황 설명이 짧아 금방 끝나거나 반대로 같은 말을 반복합니다."),
+   ("구조·연결","표현은 많이 외웠는데 사건 순서와 이유가 섞여 듣는 사람이 핵심을 따라가기 어렵습니다."),
+   ("돌발 대응","익숙하지 않은 질문이 나오면 준비한 스크립트를 적용하지 못하고 답변이 급격히 짧아집니다.")
+  ],
+  "diagnosis":["경험 소재","첫 반응","답변 길이","구조·연결","돌발 대응","녹음 안정성"],
+  "priority":["목표 등급과 시험일 확인","배경설문보다 실제 말할 경험 소재 확보","짧은 스토리 블록으로 핵심 안정","질문 변형·돌발 회복 연습","녹음 비교로 반복 오류 확인"],
+  "flow":["목표 등급·시험일","실제 경험 소재","짧은 스토리 블록","질문 변형","돌발 회복","녹음 비교·재답변"],
+  "proof":["경험 재사용","답변 길이 조절","돌발 회복","스크립트 없이 핵심 유지","녹음 반복오류 감소"],
+  "boundary":"정해진 문항 요구와 제한 시간 안에서 구조화된 답변을 만드는 업무 제출용 말하기시험이 핵심이라면 TOEIC Speaking이 더 직접적일 수 있습니다.",
+  "deep":[
+   ("배경설문보다 실제로 말할 경험이 중요합니다","주제를 많이 선택해도 각 주제에서 말할 경험이 없으면 답변은 쉽게 비어버립니다. 장소, 사람, 자주 하는 행동, 기억나는 사건처럼 실제 에피소드를 몇 개 정리하고 한 경험을 여러 질문에 사용할 수 있게 만드는 편이 효율적입니다."),
+   ("외운 답변이 돌발 질문에서 무너지는 이유","스크립트는 익숙한 표현을 안정시키는 데 도움을 줄 수 있지만 질문이 달라지면 준비한 순서를 그대로 사용할 수 없습니다. 상황, 행동, 이유, 느낌처럼 스토리의 핵심 조각을 따로 갖고 있으면 예상 밖 질문에서도 필요한 부분만 꺼내 다시 구성하기 쉽습니다."),
+   ("답변 길이는 길수록 좋은 것이 아닙니다","짧아서 핵심이 부족한 답과 같은 내용을 반복해서 길어진 답은 모두 조정이 필요합니다. 질문에 대한 직접 답변을 먼저 말하고 한두 개의 구체적인 경험을 붙인 뒤 자연스럽게 마무리하는 흐름을 연습합니다."),
+   ("녹음에서는 자연스러움보다 반복 패턴을 먼저 찾습니다","매번 같은 연결어를 쓰는지, 첫 문장이 지나치게 길어지는지, 돌발에서 갑자기 한국어식 생각 시간이 길어지는지를 확인합니다. 한 번에 모든 오류를 고치기보다 반복되는 한두 가지를 다음 녹음의 체크포인트로 둡니다.")
+  ],
+  "faq":[
+   ("배경설문을 잘 고르면 시험이 쉬워지나요?","익숙한 주제를 고르는 것은 도움이 되지만 실제 경험 소재와 질문 변형 대응이 함께 준비되어야 합니다."),
+   ("스크립트를 외우면 안 되나요?","준비한 표현을 사용할 수는 있지만 문장 전체를 고정하면 돌발 질문에서 회복이 어려울 수 있습니다. 핵심 경험과 구조를 바꿔 쓰는 연습이 필요합니다."),
+   ("답변은 길수록 좋은가요?","길이 자체가 목표는 아닙니다. 질문에 직접 답하고 이유와 경험을 충분히 설명하되 같은 내용을 반복하지 않는 것이 중요합니다."),
+   ("돌발 질문은 어떻게 준비하나요?","모든 질문을 외우기보다 모르는 주제에서 시간을 벌고, 가까운 경험으로 연결하고, 답할 수 있는 범위를 정하는 회복 방식을 연습합니다."),
+   ("녹음은 어떻게 활용하나요?","첫 반응, 반복 표현, 답변 길이, 구조가 흔들리는 지점을 표시하고 질문을 바꿔 다시 답합니다."),
+   ("변화는 어떻게 확인하나요?","한 경험을 여러 질문에 재사용하고, 돌발에서도 답변을 이어가며, 녹음에서 반복 오류가 줄어드는지를 봅니다.")
+  ]
+ },
+ "ielts":{
+  "blueprint":"v45-exam-ielts-four-skill-band-v1","name":"IELTS","service":"아이엘츠과외","intent":"ielts",
+  "first_question":"Overall Band만 보고 있나요, 아니면 네 영역 중 어떤 영역이 목표 Band를 막는지 알고 있나요?",
+  "goal":"지원 목적과 시험일을 기준으로 Listening·Reading·Writing·Speaking 네 영역의 차이를 나눠 목표 Band를 막는 병목부터 조정하는 것",
+  "scenes":[
+   ("Listening","듣는 동안은 이해했는데 답안으로 옮기는 과정에서 세부 정보나 철자를 놓칩니다."),
+   ("Reading","답의 근거는 찾을 수 있지만 긴 지문과 시간 압박이 겹치면 마지막까지 안정적으로 풀기 어렵습니다."),
+   ("Writing","글을 많이 써도 논리, 구성, 표현 중 무엇을 먼저 고쳐야 하는지 피드백이 반복해서 남습니다."),
+   ("Speaking","익숙한 주제는 말하지만 질문이 확장되면 이유와 예시를 즉석에서 연결하기 어렵습니다.")
+  ],
+  "diagnosis":["Listening","Reading","Writing","Speaking","목표 Band와 영역별 차이","시험일·지원 마감"],
+  "priority":["지원 목적·시험 유형·마감 확인","4영역 현재 수행을 따로 확인","목표 Band와 가장 큰 차이부터 우선","Writing은 첨삭 후 재작성, Speaking은 새 질문 재답변","Listening·Reading은 오답 근거와 시간 조건 재확인"],
+  "flow":["지원 목적·시험 유형·마감","4영역 현재 수준","Band 병목 우선순위","Writing 첨삭·Speaking 재답변","Reading·Listening 오답 근거","실전 조건 재평가"],
+  "proof":["영역별 병목 설명","Writing 재작성","Speaking 새 질문 적용","Reading·Listening 근거 기록","시험일까지 비중 조정"],
+  "boundary":"지원기관이 TOEFL이나 Duolingo English Test 등 다른 시험을 인정한다면 요구조건과 제출 일정을 먼저 비교하는 편이 좋습니다. IELTS 세부 시험 유형과 최신 운영 정보는 공식 안내를 확인해야 합니다.",
+  "deep":[
+   ("Overall Band보다 영역별 차이를 먼저 봅니다","전체 목표만 보면 네 영역을 같은 시간으로 공부하기 쉽습니다. 하지만 Writing 수정에 시간이 많이 필요한 사람과 Reading 시간 압박이 큰 사람의 계획은 달라야 합니다. 최근 수행과 목표 사이의 차이를 영역별로 나누고 가장 큰 병목에 우선 시간을 배분합니다."),
+   ("Writing 첨삭은 고쳐준 문장을 읽는 데서 끝나지 않습니다","첨삭 결과를 이해해도 새 주제에서 같은 문제를 반복할 수 있습니다. 논리 전개, 문단 역할, 근거의 구체성, 표현 오류 중 반복되는 항목을 정하고 수정된 글을 다시 써본 뒤 다른 문제에서 같은 기준을 적용하는 과정이 필요합니다."),
+   ("Speaking은 준비한 주제와 새 질문을 함께 봅니다","익숙한 질문에 긴 답을 만드는 것만으로는 즉석 확장을 확인하기 어렵습니다. 첫 답변 뒤에 이유를 더 묻거나 다른 관점으로 바꾼 질문을 사용해 같은 기준으로 답을 이어갈 수 있는지 봅니다."),
+   ("Listening과 Reading 오답은 근거를 남겨야 합니다","정답만 확인하면 왜 틀렸는지가 사라질 수 있습니다. 듣기에서는 놓친 정보의 종류를, 읽기에서는 근거 위치와 시간 사용을 기록하고 비슷한 조건의 새 문제에서 다시 확인합니다."),
+   ("시험일까지 남은 기간에 따라 네 영역 비중을 바꿉니다","기간이 충분하면 기초와 약점을 넓게 보완할 수 있지만 마감이 가까우면 목표 Band에 직접 영향을 주는 병목과 실전 루틴을 우선해야 합니다. 새로운 자료를 계속 늘리기보다 이미 확인한 약점을 실제 조건에서 줄이는 데 집중합니다.")
+  ],
+  "faq":[
+   ("Overall 목표만 정하면 되나요?","전체 목표와 함께 영역별 현재 수준도 확인하는 편이 좋습니다. 같은 Overall 목표라도 병목 영역에 따라 공부 순서가 달라집니다."),
+   ("Writing 첨삭은 많이 받을수록 좋은가요?","횟수보다 같은 오류를 새 글에서 줄일 수 있는지가 중요합니다. 수정 이유를 이해하고 재작성하는 과정이 필요합니다."),
+   ("Speaking 답변을 외워도 되나요?","주제별 표현은 준비할 수 있지만 새 질문에 맞게 이유와 예시를 다시 구성하는 연습을 함께 둡니다."),
+   ("Listening과 Reading은 문제만 많이 풀면 되나요?","오답 근거와 시간 조건을 남기지 않으면 같은 실수가 반복될 수 있습니다. 틀린 이유를 구분해 새 문제에서 재확인합니다."),
+   ("시험 유형은 어떻게 정하나요?","지원 목적에 따라 필요한 시험 유형이 다를 수 있으므로 지원기관 요구조건과 공식 최신 안내를 먼저 확인해야 합니다."),
+   ("변화는 어떻게 확인하나요?","영역별 병목이 줄어드는지, Writing을 새 주제에 적용하는지, Speaking 새 질문에 대응하는지, Reading·Listening 근거가 안정되는지를 봅니다.")
+  ]
+ },
+ "duolingo":{
+  "blueprint":"v45-exam-det-adaptive-output-v1","name":"Duolingo English Test","service":"듀오링고영어테스트","intent":"duolingo",
+  "first_question":"DET 점수를 준비하기 전에, 지원 학교가 시험을 인정하는지와 어떤 영어 기능이 현재 결과를 막는지 확인했나요?",
+  "goal":"지원기관의 인정 여부와 제출 마감을 먼저 확인하고 Reading·Writing·Listening·Speaking 수행과 adaptive format 적응을 나눠 준비하는 것",
+  "scenes":[
+   ("지원기관 요구조건","시험 공부를 시작했지만 지원 학교나 프로그램에서 DET를 어떻게 인정하는지 아직 정확히 확인하지 못했습니다."),
+   ("Adaptive format","연습할 때 문제 난도와 흐름이 달라지면 결과 변동이 커서 현재 수준을 설명하기 어렵습니다."),
+   ("Writing·Speaking 응답","읽고 듣는 문제보다 직접 쓰거나 말하는 응답에서 내용이 짧고 발전이 부족해집니다."),
+   ("Skill별 병목","총점이나 practice 결과는 확인하지만 Reading·Writing·Listening·Speaking 중 무엇을 먼저 보완할지 애매합니다.")
+  ],
+  "diagnosis":["지원기관 요구조건","Reading","Writing","Listening","Speaking","adaptive format","productive response"],
+  "priority":["지원기관 인정 여부·마감 먼저 확인","skill별 현재 수행 분리","adaptive format에서 결과 변동 원인 확인","Writing·Speaking 응답 완결성 우선순위","공식 practice로 재점검"],
+  "flow":["지원기관·마감 확인","skill별 현재 수행","adaptive format 적응","Writing·Speaking 응답 확장","공식 practice 활용","새 practice 재점검"],
+  "proof":["지원조건 직접 확인","skill별 병목","open response 완결성","형식 변화에도 핵심 유지","공식 practice 재점검"],
+  "boundary":"지원기관이 IELTS나 TOEFL을 요구하거나 더 적합한 제출 조건을 두고 있다면 DET 준비 전에 해당 조건부터 비교해야 합니다. 학교·프로그램별 인정 여부와 최소 요구조건은 바뀔 수 있으므로 공식 admissions 안내를 직접 확인해야 합니다.",
+  "deep":[
+   ("시험 공부보다 지원기관 조건 확인이 먼저입니다","시험 점수를 만들어도 지원 학교나 프로그램에서 요구하는 조건과 맞지 않으면 제출 계획이 달라질 수 있습니다. 준비 시작 단계에서 인정 여부, 제출 마감, 필요한 결과를 공식 admissions 정보와 함께 확인하고 그 뒤 학습 범위를 정합니다."),
+   ("Adaptive format에서는 한 세트의 느낌만으로 판단하지 않습니다","문제 난도와 흐름이 달라질 수 있는 환경에서는 한 번의 practice 결과만 보고 약점을 단정하기 어렵습니다. 여러 번의 수행에서 반복되는 skill과 응답 문제를 기록해 현재 병목을 찾습니다."),
+   ("Writing과 Speaking은 내용을 발전시키는 연습이 필요합니다","직접 쓰고 말하는 응답이 짧으면 어려운 표현을 더하는 것보다 질문에 직접 답하고 이유와 구체적인 내용을 붙이는 구조가 먼저입니다. 새 prompt에서도 같은 구조를 다시 만들 수 있는지 확인합니다."),
+   ("Skill별 결과는 다음 학습 비중을 정하는 자료입니다","총점만 보지 않고 Reading·Writing·Listening·Speaking 중 반복해서 흔들리는 기능을 찾습니다. 이미 안정된 skill은 유지하고 productive response처럼 실제 결과를 막는 영역에 시간을 더 배분합니다."),
+   ("공식 practice는 형식 적응과 재점검에 활용합니다","연습 결과를 목표 그 자체로 보지 않고 이전에 확인한 병목이 줄었는지 재검증하는 자료로 사용합니다. 새로운 practice에서 같은 문제를 반복한다면 훈련 방식을 다시 조정합니다.")
+  ],
+  "faq":[
+   ("지원 학교에서 DET를 인정하는지 어떻게 확인하나요?","학교·프로그램별 조건은 달라질 수 있으므로 지원기관 공식 admissions 페이지와 시험기관의 최신 안내를 직접 확인해야 합니다."),
+   ("점수만 보면 약점을 알 수 있나요?","총점만으로는 부족할 수 있습니다. skill별 수행과 직접 쓰기·말하기 응답에서 반복되는 문제를 함께 봅니다."),
+   ("Adaptive 형식은 어떻게 연습하나요?","문제 순서를 외우기보다 다양한 난도와 흐름에서도 질문 요구를 파악하고 응답을 완결하는 연습을 합니다."),
+   ("Speaking과 Writing이 짧으면 표현을 많이 외워야 하나요?","표현량도 필요하지만 먼저 질문에 직접 답하고 이유와 구체적인 내용을 붙이는 구조를 안정시키는 편이 좋습니다."),
+   ("공식 practice는 얼마나 자주 해야 하나요?","고정 횟수를 약속하기보다 학습 중 확인한 병목을 재검증할 필요가 있을 때 사용합니다."),
+   ("변화는 어떻게 확인하나요?","skill별 병목이 줄고, open response가 더 완결되며, 형식이 달라져도 핵심 수행이 유지되는지를 봅니다.")
+  ]
+ },
+ "toefl":{
+  "blueprint":"v45-exam-toefl-integrated-academic-v1","name":"TOEFL iBT","service":"토플과외","intent":"toefl",
+  "first_question":"Reading과 Listening은 이해하는데, 그 정보를 Speaking이나 Writing 답변으로 연결할 때 흔들리나요?",
+  "goal":"Reading·Listening에서 얻은 정보를 짧게 정리하고 Speaking·Writing 답변으로 연결하는 학업 영어 수행과 실전 시간 관리를 함께 확인하는 것",
+  "scenes":[
+   ("Reading 핵심","지문 내용은 이해하지만 핵심 주장과 세부 근거를 짧게 분리해 남기는 데 시간이 오래 걸립니다."),
+   ("Listening 메모","메모는 많이 하는데 강의나 대화에서 어떤 관계가 중요한지 남지 않아 나중에 활용하기 어렵습니다."),
+   ("Speaking 연결","읽거나 들은 정보를 제한 시간 안에 정리해 말해야 할 때 첫 문장과 근거 연결이 흔들립니다."),
+   ("Writing 통합","Reading·Listening 내용을 글로 연결할 때 정보 나열이 많아지고 문단의 역할이 흐려집니다.")
+  ],
+  "diagnosis":["Reading","Listening","메모·요약","Speaking","Writing","통합형 연결","시험일·목표 점수"],
+  "priority":["지원 목적·목표 점수·시험일 확인","Reading·Listening 핵심 추출","메모량보다 관계 중심 구조 확인","Speaking·Writing에 입력정보 연결","실전 시간에서 다른 자료 재적용"],
+  "flow":["지원·시험일","Reading·Listening 핵심 추출","메모 구조","Speaking·Writing 답변 구성","통합형 적용","다른 자료 재적용"],
+  "proof":["입력 핵심 요약","관계 중심 메모","Speaking·Writing 연결","다른 자료 재적용","실전 시간 재확인"],
+  "boundary":"지원기관이 IELTS나 Duolingo English Test를 인정한다면 제출 조건과 자신의 강점을 함께 비교할 수 있습니다. 최신 시험 구조와 지원기관 요구조건은 공식 안내를 확인해야 합니다.",
+  "deep":[
+   ("Reading과 Listening은 출력으로 이어질 때 다시 확인해야 합니다","입력 내용을 이해한 것과 제한 시간 안에 핵심을 꺼내 답변으로 만드는 것은 다른 행동입니다. Reading에서 주장과 근거를, Listening에서 핵심 관계를 짧게 남기고 그 정보를 Speaking이나 Writing에 사용할 수 있는지 확인합니다."),
+   ("메모는 많이 적는 것보다 관계가 남아야 합니다","모든 문장을 적으려고 하면 다음 내용을 놓치거나 답변 준비 시간이 부족해질 수 있습니다. 원인과 결과, 주장과 예시, 대조 관계처럼 답변에 필요한 연결을 중심으로 기록하고 메모만 보고 핵심을 복원할 수 있는지 봅니다."),
+   ("Speaking에서는 입력정보를 다시 말하는 순서가 중요합니다","읽고 들은 내용을 그대로 나열하면 핵심이 흐려질 수 있습니다. 질문 요구를 먼저 확인하고 결론 또는 핵심 관계를 짧게 말한 뒤 필요한 근거를 붙이는 순서를 반복합니다."),
+   ("Writing에서는 정보 나열과 논리 연결을 구분합니다","관련 정보를 모두 넣는다고 글이 선명해지는 것은 아닙니다. 문단마다 어떤 관계를 설명하는지 정하고 Reading과 Listening 정보가 어떤 역할로 연결되는지를 확인합니다."),
+   ("실전세트는 새로운 공부가 아니라 재검증에 가깝습니다","시험이 가까울수록 새로운 자료를 계속 늘리기보다 핵심 추출, 메모, Speaking·Writing 연결이 제한 시간 안에서도 유지되는지를 다른 자료에서 확인합니다.")
+  ],
+  "faq":[
+   ("Reading과 Listening 점수가 괜찮으면 Speaking·Writing만 하면 되나요?","현재 병목에 시간을 더 쓸 수 있지만 통합형에서 입력정보를 사용하는 과정 때문에 Reading·Listening의 핵심 추출도 함께 확인하는 편이 좋습니다."),
+   ("메모를 많이 하면 더 안전하지 않나요?","많은 메모가 항상 도움이 되는 것은 아닙니다. 답변에 필요한 관계가 남고 다음 내용을 놓치지 않는 수준으로 조정해야 합니다."),
+   ("Speaking 답변은 외워도 되나요?","구조와 표현은 준비할 수 있지만 다른 읽기·듣기 자료에서도 핵심을 다시 구성할 수 있어야 합니다."),
+   ("Writing 첨삭은 어떻게 활용하나요?","수정된 문장을 보는 데서 끝내지 않고 정보 배치와 논리 연결의 이유를 이해한 뒤 다른 자료에서 다시 적용합니다."),
+   ("시험 직전에는 무엇을 확인하나요?","Reading·Listening 핵심 추출, 메모 구조, Speaking·Writing 연결이 실제 제한 시간 안에서도 유지되는지를 봅니다."),
+   ("변화는 어떻게 확인하나요?","다른 자료에서도 핵심을 짧게 요약하고, 관계 중심 메모를 만들며, 그 정보를 Speaking·Writing으로 다시 연결하는지를 확인합니다.")
+  ]
+ }
+}
+
+VAR={
+ "scene":{
+  "intro":"최근 풀었던 문제나 답변 중 가장 아쉬웠던 한 장면을 떠올리면 현재 병목을 더 빨리 좁힐 수 있습니다. 점수만 말하기보다 어디에서 멈췄고 어떤 도움을 받았을 때 다시 이어졌는지를 함께 봅니다.",
+  "diagnosis":"최근 장면을 기록하면 같은 시험 안에서도 지식 부족, 질문 이해, 시간 압박, 응답 구성 중 무엇이 실제 문제인지 나누기 쉬워집니다. 이미 안정된 부분은 반복을 줄이고 특정 조건에서만 흔들리는 행동에 시간을 더 씁니다.",
+  "priority":"최근 장면에서 반복된 문제와 다음 시험 일정이 겹치는 항목을 먼저 둡니다. 잘되는 영역을 처음부터 다시 돌기보다 실제 결과를 막는 조건을 좁혀 확인합니다.",
+  "flow":"각 단계에서 최근 장면과 비슷한 조건을 먼저 만들고, 그 다음 문항·자료·질문을 바꿔 같은 기준을 다시 적용합니다.",
+  "proof":"수업 기록에는 배운 목록보다 다음 시험에서 다시 확인할 행동을 남깁니다. 같은 장면에서만 되는지 다른 문제에서도 되는지를 비교합니다.",
+  "deep":"장면 기록형에서는 '무엇을 공부했는가'보다 '어느 순간에 왜 멈췄는가'를 남깁니다. 이 기록이 다음 세션의 출발점이 됩니다.",
+  "end":"최근 시험 문제나 답변에서 가장 답답했던 한 장면과 다음 시험일을 알려주면 무엇부터 확인할지 더 빠르게 좁힐 수 있습니다."
+ },
+ "deadline":{
+  "intro":"해야 할 시험 공부가 많아 보일수록 먼저 시험일과 제출 마감을 봅니다. 남은 기간 안에서 바꿀 수 있는 행동과 장기적으로 쌓아야 할 능력을 구분해야 우선순위가 선명해집니다.",
+  "diagnosis":"같은 약점도 시험까지 남은 시간에 따라 다르게 다룹니다. 기간이 충분하면 기초와 약점을 넓게 보완하고, 일정이 가까우면 실제 결과에 직접 연결되는 병목과 실전 루틴에 비중을 둡니다.",
+  "priority":"가장 가까운 시험일, 목표 결과, 최근 수행을 한 줄에 놓고 순서를 정합니다. 촉박할수록 새 범위를 늘리기보다 이미 확인한 약점을 실전 조건에서 줄이는 데 집중합니다.",
+  "flow":"시험일에서 역산해 각 단계의 시간을 정하고, 일정 직전에는 실제 시간 조건을 넣어 준비한 기준이 유지되는지 확인합니다.",
+  "proof":"시험이 끝난 뒤에는 결과만 기록하지 않고 예상과 달랐던 문항, 시간 사용, 응답 조건을 남겨 다음 준비의 첫 체크포인트로 사용합니다.",
+  "deep":"deadline형에서는 공부 범위를 넓히는 것보다 남은 연습 횟수 안에서 무엇을 끝낼지 결정하는 능력이 중요합니다.",
+  "end":"다음 시험 날짜와 목표 결과, 최근 가장 흔들린 영역을 알려주면 남은 시간에 어떤 순서로 볼지 정할 수 있습니다."
+ },
+ "error":{
+  "intro":"같은 오답이나 짧은 답변도 원인이 다를 수 있습니다. 개념을 몰랐는지, 질문을 잘못 읽었는지, 시간 때문에 놓쳤는지, 알고도 바로 꺼내지 못했는지를 분리해야 연습 방식이 달라집니다.",
+  "diagnosis":"정답 여부만 보지 않고 첫 시도, 힌트 뒤 변화, 다시 혼자 했을 때의 결과를 나눠봅니다. 한 번 설명하면 바로 수정되는 문제와 새 문제에서 다시 반복되는 문제는 같은 비중으로 다루지 않습니다.",
+  "priority":"가장 자주 반복되는 오류 원인부터 줄입니다. 실수 횟수가 많아도 스스로 수정할 수 있는 항목과 매번 같은 도움을 필요로 하는 항목을 구분합니다.",
+  "flow":"오류 원인을 한 단계씩 확인한 뒤 문항·자료·질문을 바꿔 같은 문제가 다시 나타나는지 봅니다. 정답을 외웠기 때문에 되는 것과 기준을 이해해 되는 것을 구분합니다.",
+  "proof":"스스로 오류를 알아차리고 수정하는 범위가 넓어지는지도 변화로 봅니다. 필요한 힌트가 줄어드는 과정까지 기록합니다.",
+  "deep":"오류 추적형은 문제량을 늘리기보다 같은 실수를 만드는 원인을 좁혀 다시 틀릴 가능성을 줄이는 데 목적이 있습니다.",
+  "end":"최근 틀렸거나 답변이 끊긴 장면을 알려주면 지식·이해·시간·응답 구성 중 어디에서 문제가 시작됐는지부터 나눠볼 수 있습니다."
+ },
+ "use":{
+  "intro":"과정 이름보다 다음 시험에서 실제로 해야 하는 행동을 먼저 정합니다. 문제 근거를 찾아야 하는지, 제한 시간 안에 말해야 하는지, 글을 다시 써야 하는지에 따라 필요한 연습은 달라집니다.",
+  "diagnosis":"실제 시험 행동이 정해지면 준비 범위가 줄어듭니다. 필요한 기초를 보더라도 다음 문항이나 응답에서 어떻게 쓸 것인지 연결할 수 있어야 합니다.",
+  "priority":"목표 점수·등급과 다음 시험 행동을 한 줄로 연결합니다. 직접 결과에 이어지지 않는 범위는 뒤로 미루고 우선 기능을 먼저 안정시킵니다.",
+  "flow":"설명을 들은 뒤 끝내지 않고 실제 문제를 풀거나 답변을 만들고, 조건을 바꿔 다시 사용합니다. 마지막에는 다음 practice에서 시도할 행동을 정합니다.",
+  "proof":"맞춤이라는 말 대신 실제 시험에서 확인할 행동을 공개합니다. 무엇이 가능해졌고 어떤 조건에서 다시 흔들리는지를 다음 학습의 기준으로 씁니다.",
+  "deep":"사용 장면형에서는 '얼마나 많이 공부했는가'보다 실제 시험에서 필요한 행동을 재현할 수 있는지가 더 직접적인 판단 자료가 됩니다.",
+  "end":"다음 시험에서 해야 하는 행동과 목표 결과를 알려주면 필요한 연습과 확인 기준을 실제 문항에서 역산할 수 있습니다."
+ },
+ "reuse":{
+  "intro":"익숙한 문제나 준비한 답변에서 한 번 잘했다고 끝내지 않습니다. 문항 표현, 자료, 순서, 준비 시간이 달라져도 같은 기준을 다시 쓸 수 있어야 실제 시험 대응 범위가 넓어집니다.",
+  "diagnosis":"처음에는 성공할 수 있는 조건을 만들고 그 다음 힌트와 준비 시간을 줄입니다. 어느 조건이 바뀌었을 때 다시 흔들리는지 확인하면 암기와 실제 적용을 구분하기 쉽습니다.",
+  "priority":"이미 익숙한 문제에서 되는 부분은 반복을 줄이고 조건이 달라지면 무너지는 행동을 우선합니다. 새 자료를 추가하기 전에 재사용 범위를 먼저 확인할 수 있습니다.",
+  "flow":"문항·자료·시간 조건을 한 번에 모두 바꾸지 않고 하나씩 조정해 어디까지 독립적으로 처리하는지 확인합니다.",
+  "proof":"한 번의 성공보다 다른 문제에서도 다시 할 수 있는지를 기록합니다. 끝까지 필요한 도움과 흔들린 조건이 다음 연습의 출발점이 됩니다.",
+  "deep":"재사용 확인형은 외운 답이나 익숙한 문제를 실제 실력으로 착각하지 않기 위한 안전장치입니다.",
+  "end":"이미 되는 문제와 조건이 바뀌면 흔들리는 장면을 알려주면 무엇을 더 배울지보다 무엇을 다시 적용할지부터 정할 수 있습니다."
+ }
+}
+
+def esc(x): return html.escape(str(x),quote=True)
+def visible(raw):
+ raw=re.sub(r"<script[\s\S]*?</script>"," ",raw,flags=re.I)
+ raw=re.sub(r"<style[\s\S]*?</style>"," ",raw,flags=re.I)
+ raw=re.sub(r"<[^>]+>"," ",raw)
+ return re.sub(r"\s+"," ",html.unescape(raw)).strip()
+def toks(t): return re.findall(r"[가-힣A-Za-z0-9]+",t.lower())
+def cosine(a,b):
+ ca,cb=Counter(toks(a)),Counter(toks(b)); dot=sum(ca[k]*cb.get(k,0) for k in ca)
+ na=math.sqrt(sum(v*v for v in ca.values())); nb=math.sqrt(sum(v*v for v in cb.values()))
+ return dot/(na*nb) if na and nb else 0.0
+def jacc(a,b,n=5):
+ ta,tb=toks(a),toks(b)
+ sa={tuple(ta[i:i+n]) for i in range(max(0,len(ta)-n+1))}
+ sb={tuple(tb[i:i+n]) for i in range(max(0,len(tb)-n+1))}
+ return len(sa&sb)/len(sa|sb) if sa|sb else 0.0
+
+def scene_blocks(exam,var):
+ out=[]
+ for i,(title,symptom) in enumerate(exam["scenes"]):
+  if var=="scene":
+   extra=[f"최근 {title} 장면에서 처음부터 어려웠는지, 중간 조건이 달라졌을 때 흔들렸는지를 따로 봅니다.",
+          f"같은 {title} 문제를 바로 반복하기보다 어떤 도움을 줬을 때 다시 이어졌는지 확인하고 새 문항에서 같은 기준을 적용합니다."]
+  elif var=="deadline":
+   extra=[f"{title}이 다음 시험에서 중요한 영역이라면 남은 연습 횟수 안에서 직접 바꿀 수 있는 행동부터 정합니다.",
+          f"시험 직전에는 {title}의 새 범위를 크게 늘리기보다 실제 시간 조건에서 현재 기준을 유지하는지 확인합니다."]
+  elif var=="error":
+   extra=[f"{title}에서 문제가 보였다고 같은 유형만 반복하지 않습니다. 지식, 질문 이해, 시간, 응답 구성 중 원인을 먼저 나눕니다.",
+          f"힌트 뒤 바로 수정되는지와 새 문제에서 혼자 다시 처리하는지를 비교해 {title}의 실제 약점을 좁힙니다."]
+  elif var=="use":
+   extra=[f"다음 시험에서 {title}을 어떻게 처리해야 하는지 실제 행동으로 먼저 정합니다. 결과가 보이면 필요한 연습 범위도 줄어듭니다.",
+          f"연습 뒤에는 다음 {title} 문제나 응답에서 시도할 한 가지 행동을 정하고 실제 결과를 다시 가져옵니다."]
+  else:
+   extra=[f"익숙한 {title} 문제에서 가능했다고 끝내지 않고 문항 표현, 자료, 시간 중 한 조건을 바꿔 다시 확인합니다.",
+          f"새 조건에서 {title}이 흔들리면 새 내용을 추가하기 전에 어떤 단서가 사라졌을 때 문제가 생겼는지부터 봅니다."]
+  out.append((title,[symptom]+extra))
+ return out
+
+def flow_blocks(exam,var):
+ descs={
+  "scene":[
+   "최근 실제 수행을 기준으로 목표와 현재 차이를 확인합니다.",
+   "반복해서 막힌 기능과 이미 안정된 기능을 나눕니다.",
+   "원인을 설명할 수 있는 작은 기준으로 다시 연습합니다.",
+   "실제 시간이나 질문 조건을 넣어 같은 행동을 적용합니다.",
+   "새 문제에서 다시 확인하고 다음 세션 우선순위를 남깁니다.",
+   "마지막 단계가 여섯 개인 시험은 재답변·재작성 결과까지 별도로 비교합니다."
+  ],
+  "deadline":[
+   "시험일과 제출 마감에서 역산해 이번에 다룰 범위를 정합니다.",
+   "가장 가까운 결과에 직접 영향을 주는 기능을 먼저 안정시킵니다.",
+   "남은 기간에 바꿀 수 있는 작은 행동으로 연습량을 조정합니다.",
+   "실전 시간과 비슷한 조건에서 준비한 기준이 유지되는지 봅니다.",
+   "시험 직전 확인할 항목과 이후 보완할 항목을 나눕니다.",
+   "마지막에는 새 응답을 실전 조건으로 다시 만들어 마감 전 변동을 확인합니다."
+  ],
+  "error":[
+   "처음 오류가 나타난 조건을 확인해 원인 후보를 좁힙니다.",
+   "필요한 만큼만 힌트를 주고 어느 단서에서 수정되는지 봅니다.",
+   "같은 정답이 아니라 다른 예시에서 원인이 줄었는지 확인합니다.",
+   "시간과 질문을 바꿔도 같은 오류가 반복되는지 비교합니다.",
+   "스스로 수정 가능한 오류와 다음에 다시 볼 오류를 구분합니다.",
+   "끝까지 남은 반복 오류는 다음 연습의 첫 항목으로 넘깁니다."
+  ],
+  "use":[
+   "다음 시험에서 해야 할 행동을 구체적으로 정해 수업 목표를 좁힙니다.",
+   "그 행동에 필요한 지식과 표현만 골라 바로 적용할 형태로 정리합니다.",
+   "설명을 직접 문제풀이·말하기·쓰기 행동으로 바꿔봅니다.",
+   "다른 문항과 자료에서도 같은 기능을 다시 적용합니다.",
+   "다음 practice에서 시도할 행동을 정하고 실제 결과를 기록합니다.",
+   "마지막에는 새 자료에서도 결과가 유지되는지 확인해 다음 방향을 정합니다."
+  ],
+  "reuse":[
+   "익숙한 조건에서 성공할 수 있게 한 뒤 어떤 단서에 의존하는지 봅니다.",
+   "메모·예시·준비 시간을 조금 줄여도 같은 기준이 남는지 확인합니다.",
+   "문항 표현과 자료를 바꿔 외운 순서 없이 다시 처리합니다.",
+   "시간과 상대 조건까지 달라졌을 때 재사용 범위를 비교합니다.",
+   "끝까지 필요한 도움과 흔들린 조건을 다음 테스트의 시작점으로 남깁니다.",
+   "새 문제에서도 다시 성공할 때까지 같은 기준을 조금씩 변형합니다."
+  ]
+ }[var]
+ return [(title,descs[i]) for i,title in enumerate(exam["flow"])]
+
+def feedbacks(exam,var):
+ a,b=exam["scenes"][0][0],exam["scenes"][1][0]
+ if var=="scene":
+  return [
+   f"{a}에서는 익숙한 문제는 처리했지만 조건이 달라지면 근거 확인이 늦어짐. 다음에는 같은 기준을 새 문항에 적용해보기.",
+   f"{b}에서 설명을 들으면 수정되지만 혼자 새 문제를 풀 때 같은 실수가 반복됨. 다음에는 힌트를 줄이고 원인을 먼저 말한 뒤 답 선택하기.",
+   "시험일 전에는 새 범위를 늘리기보다 최근 두 번의 수행에서 반복된 병목만 다시 확인하기."
+  ]
+ if var=="deadline":
+  return [
+   f"시험일까지 남은 기간을 고려해 {a} 새 유형보다 현재 오답 원인을 먼저 정리. 다음 세트에서 제한 시간 안에 같은 기준 유지 여부 확인.",
+   f"{b}은 정확도보다 시간 사용이 더 큰 병목으로 확인됨. 다음에는 풀이 순서를 고정하고 종료 시점을 기록해보기.",
+   "마감 직전에는 학습량보다 실전 조건에서 흔들리는 두 항목만 재점검하기."
+  ]
+ if var=="error":
+  return [
+   f"{a} 오답은 지식 부족보다 질문 해석 뒤 근거 선택 과정에서 반복됨. 다음에는 정답 확인 전에 근거 위치를 먼저 설명하기.",
+   f"{b}은 힌트 뒤 바로 수정되므로 새 내용을 더하기보다 힌트 없이 다시 처리하는 연습을 우선.",
+   "같은 오류가 새 문제에서도 반복되는지 확인하고 스스로 수정되는 항목은 다음 목록에서 제외하기."
+  ]
+ if var=="use":
+  return [
+   f"다음 시험에서 {a}을 안정시키는 것을 첫 목표로 정함. 수업에서는 실제 문항에서 필요한 행동만 연습하고 다음 practice에서 다시 확인.",
+   f"{b}은 설명을 듣는 것보다 직접 답을 만들 때 흔들림. 다음에는 같은 기준을 다른 문제에 적용하고 결과를 기록하기.",
+   "학습 항목 목록보다 다음 시험에서 실제로 해야 할 행동 두 가지를 정해 연습하기."
+  ]
+ return [
+  f"익숙한 {a} 문제에서는 가능하지만 자료가 달라지면 처리 속도가 늦어짐. 다음에는 준비 시간을 줄이고 새 문항에서 재확인.",
+  f"{b}은 예시가 있을 때는 안정적이지만 도움을 없애면 구조가 흔들림. 다음에는 예시 없이 핵심 기준부터 다시 구성하기.",
+  "한 번의 성공보다 다른 문제에서도 같은 기준을 다시 사용할 수 있는지를 다음 평가 기준으로 두기."
+ ]
+
+def render(slug,loc,key,exam):
+ var=loc["variation"]; vf=VAR[var]
+ h1=f"{loc['dong']} {exam['service']}"
+ canonical=f"https://englishpt.kr/{slug}-{exam['intent']}.html"
+ description=f"{h1} 안내. 목표와 시험일, 현재 병목, 실제 훈련, 재점검 기준을 나눠 시험 준비 방향을 확인합니다."
+ scenes=scene_blocks(exam,var)
+ flow=flow_blocks(exam,var)
+ related=[]
+ for k,e in EXAMS.items():
+  if k!=key: related.append(f'<a href="{slug}-{e["intent"]}.html">{esc(loc["dong"]+" "+e["service"])}</a>')
+ scene_html="".join('<article class="card"><b>'+esc(t)+'</b>'+''.join('<p>'+esc(p)+'</p>' for p in ps)+'</article>' for t,ps in scenes)
+ flow_html="".join(f'<li><span>{i:02d}</span><div><b>{esc(t)}</b><p>{esc(d)}</p><p>{esc(vf["flow"])}</p></div></li>' for i,(t,d) in enumerate(flow,1))
+ proof_html="".join(f'<li><b>{esc(p)}</b><span>{esc(["현재 조건에서 가능한 범위를 확인합니다.","도움이 있을 때와 없을 때 차이를 봅니다.","새 문제나 새 질문에서도 같은 기준이 남는지 봅니다.","실전 시간 안에서 다시 확인합니다.","다음 세션에서 재검증할 항목으로 기록합니다."][i%5])}</span></li>' for i,p in enumerate(exam["proof"]))
+ feedback_html="".join(f'<article class="card"><b>예시 {i}</b><p>{esc(x)}</p></article>' for i,x in enumerate(feedbacks(exam,var),1))
+ deep_html="".join(f'<article class="card"><b>{esc(t)}</b><p>{esc(p)}</p><p>{esc(vf["deep"])}</p></article>' for t,p in exam["deep"])
+ faq_html="".join(f'<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>' for q,a in exam["faq"])
+ schema={
+  "@context":"https://schema.org","@graph":[
+   {"@type":"EducationalOrganization","@id":"https://englishpt.kr/#organization","name":"ENGLISH PT","url":"https://englishpt.kr/englishpt.html","telephone":"+82-10-5006-8027","areaServed":{"@type":"AdministrativeArea","name":loc["full_name"]}},
+   {"@type":"WebPage","@id":canonical+"#webpage","url":canonical,"name":h1+" | ENGLISH PT","description":description,"inLanguage":"ko-KR"},
+   {"@type":"Service","@id":canonical+"#service","name":exam["service"],"serviceType":"영어시험 과외","provider":{"@id":"https://englishpt.kr/#organization"},"areaServed":loc["full_name"],"url":canonical}
+  ]
+ }
+ return f'''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{esc(h1)} | ENGLISH PT</title><meta name="description" content="{esc(description)}"><meta name="robots" content="noindex,nofollow">
+<link rel="canonical" href="{canonical}"><meta property="og:title" content="{esc(h1)} | ENGLISH PT"><meta property="og:url" content="{canonical}">
+<link rel="stylesheet" href="../pilot-v45-5x7/pilot.css"><script type="application/ld+json">{json.dumps(schema,ensure_ascii=False)}</script><script defer src="../pilot-v45-5x7/pilot.js"></script></head>
+<body class="theme-test" data-blueprint="{exam["blueprint"]}" data-production-deploy="false">
+<header><div class="wrap header"><a href="../englishpt.html" class="brand">ENGLISH PT</a><span>V4.5 EXAM FULL-DEPTH PILOT · noindex</span></div></header><main>
+<section class="hero"><div class="wrap"><p class="eyebrow">{esc(loc["jurisdiction"])} · ENGLISH PT</p><h1>{esc(h1)}</h1><div class="hero-actions"><a class="btn primary" href="{PHONE_HREF}">{PHONE_LABEL}</a><a class="btn ghost" href="#detail">내용 보기</a><a class="btn ghost" href="#consultation-preview">상담 신청</a></div></div></section>
+<section id="detail" class="section"><div class="wrap narrow"><p class="kicker">시험 목표</p><h2>{esc(exam["first_question"])}</h2><p>{esc(loc["full_name"])}에서 {esc(exam["service"])}를 알아볼 때는 과정 이름보다 제출 목적, 다음 시험일, 현재 반복해서 흔들리는 행동을 먼저 확인하는 편이 좋습니다.</p><p>{esc(exam["goal"])}이 이 페이지의 핵심 기준입니다. 전체 점수 하나로 묶지 않고 실제 시험에서 다시 확인할 행동을 나눕니다.</p><p>{esc(vf["intro"])}</p></div></section>
+<section class="section soft"><div class="wrap"><p class="kicker">실제 막힘</p><h2>점수보다 먼저, 어디에서 흔들리는지 나눠봅니다</h2><div class="grid4">{scene_html}</div></div></section>
+<section class="section"><div class="wrap narrow"><p class="kicker">시험 구조와 개인 약점</p><h2>공식 시험 구조와 내 병목은 같은 정보가 아닙니다</h2><p>시험 형식과 평가 기준은 응시자에게 공통이지만 현재 학습 순서는 개인마다 다릅니다. 같은 목표 결과를 준비해도 어떤 사람은 입력 이해에서, 다른 사람은 시간 관리나 답변 구성에서 더 크게 흔들릴 수 있습니다.</p><p>{esc(vf["diagnosis"])}</p><p>이 페이지에서는 {esc(" · ".join(exam["diagnosis"]))} 항목을 나눠 보고 이미 안정된 부분과 다시 확인할 부분을 구분합니다.</p></div></section>
+<section class="section soft"><div class="wrap narrow"><p class="kicker">우선순위</p><h2>시험일과 목표 결과에서 거꾸로 순서를 정합니다</h2><p>{esc(vf["priority"])}</p><ul>{''.join("<li>"+esc(x)+"</li>" for x in exam["priority"])}</ul><p>{esc(exam["boundary"])}</p></div></section>
+<section class="section dark"><div class="wrap"><p class="kicker">수업 흐름</p><h2>설명에서 끝내지 않고 새 문제에서 다시 확인합니다</h2><p class="lead">현재 상태를 확인한 뒤 실제 문항·응답으로 적용하고, 조건을 바꿔 같은 기준이 남는지 재검증합니다.</p><ol class="steps">{flow_html}</ol></div></section>
+<section class="section"><div class="wrap"><p class="kicker">판단 기준</p><h2>점수 상승 약속 대신 확인할 행동을 공개합니다</h2><p class="lead">{esc(vf["proof"])}</p><ul class="proofs">{proof_html}</ul></div></section>
+<section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p><h2>실제 후기나 성과 수치가 아니라 기록 형식을 보여주는 예시입니다</h2><p>아래 문장은 특정 수강생의 결과나 점수 상승 사례가 아닙니다. 어떤 행동을 관찰하고 다음에 무엇을 다시 확인하는지 보여주기 위한 예시입니다.</p><div class="grid4">{feedback_html}</div></div></section>
+<section class="section"><div class="wrap narrow"><p class="kicker">시험 선택</p><h2>이 시험이 지금 목표와 맞는지 먼저 확인하세요</h2><p>{esc(exam["boundary"])}</p><p>시험 이름이 익숙하다는 이유만으로 바로 시작하지 않습니다. 제출처, 마감, 목표 결과, 현재 가장 흔들리는 영역을 함께 놓고 보면 다른 시험이나 일반 영어 과정이 더 직접적인 경우도 구분할 수 있습니다.</p></div></section>
+<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>{esc(exam["service"])} 선택 전에 확인할 기준</h2><div class="grid4">{deep_html}</div></div></section>
+<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>시험 준비 전에 많이 확인하는 질문</h2><div class="faq">{faq_html}</div></div></section>
+<section class="section soft"><div class="wrap narrow"><p class="kicker">공식정보 확인</p><h2>시험 구조와 제출 요건은 최신 공식 안내를 다시 확인해야 합니다</h2><p>시험 형식, 점수 체계, 접수 정책, 지원기관 인정 여부와 제출 기준은 변경될 수 있습니다. 이 파일럿은 학습 구조를 검수하기 위한 페이지이며, 실제 지원이나 응시 전에는 시험 주관기관과 지원기관의 최신 공식 안내를 직접 확인해야 합니다.</p></div></section>
+<section class="section related"><div class="wrap"><p class="kicker">다른 시험</p><h2>{esc(loc["dong"])}에서 다른 시험 준비도 비교해보세요</h2><div class="links">{''.join(related)}</div></div></section>
+<section id="consultation-preview" class="section consult"><div class="wrap narrow"><p class="kicker">상담 안내</p><h2>시험명보다 목표와 마감, 가장 흔들리는 장면부터 알려주세요</h2><p>{esc(vf["end"])}</p><p>현재 페이지는 5×6 시험형 검수용이라 상담 폼의 실제 전송은 비활성화되어 있습니다. 전화 상담은 아래 번호로 연결할 수 있습니다.</p><form id="pilotForm"><label>시험일·제출 마감<input name="deadline" placeholder="예: 시험 날짜, 지원 마감"></label><label>가장 막히는 문제·응답<textarea name="difficulty" rows="3" placeholder="최근 가장 어려웠던 장면"></textarea></label><button class="btn primary" type="submit">상담 신청</button><a class="btn phone" href="{PHONE_HREF}">{PHONE_LABEL}</a><p class="pilot-status" aria-live="polite"></p></form></div></section>
+<section class="final"><div class="wrap"><h2>{esc(h1)}, 점수보다 현재 병목부터 확인하세요.</h2><p>{esc(vf["end"])}</p><a class="btn light" href="{PHONE_HREF}">{PHONE_LABEL}</a></div></section>
+</main><footer><div class="wrap"><strong>ENGLISH PT</strong><p>{esc(loc["full_name"])} · 시험형 Full-depth 검수용 · production 미배포</p></div></footer></body></html>'''
+
+def validate(generated):
+ allow=json.loads((ROOT/"V4_5_EXAM_GENERATOR_ALLOWLIST.json").read_text(encoding="utf-8"))
+ allowed=set(allow["blueprint_ids"])
+ failures=[]; lengths={}; groups=defaultdict(list); checks=[]
+ forbidden=["점수 상승 보장","합격 보장","등급 보장","몇 주 만에","무조건 오릅니다","CHECK /","TRAIN /","RECHECK /"]
+ for name,raw in generated.items():
+  m=re.match(r"(.+)-(toeic-speaking|duolingo|toeic|opic|ielts|toefl)\.html$",name)
+  if not m: failures.append({"file":name,"failures":["filename_contract"]}); continue
+  slug,intent=m.group(1),m.group(2)
+  loc=LOCALITIES[slug]; exam=next(e for e in EXAMS.values() if e["intent"]==intent)
+  text=visible(raw); lengths[name]=len(text); f=[]
+  h1=f"{loc['dong']} {exam['service']}"; canonical=f"https://englishpt.kr/{slug}-{intent}.html"
+  if len(re.findall(r"<h1\b",raw))!=1:f.append("h1_count")
+  if f"<h1>{esc(h1)}</h1>" not in raw:f.append("h1_exact")
+  if f'rel="canonical" href="{canonical}"' not in raw:f.append("canonical")
+  if 'name="robots" content="noindex,nofollow"' not in raw:f.append("noindex")
+  if exam["blueprint"] not in allowed:f.append("blueprint_not_allowlisted")
+  if "실제 후기나 성과 수치가 아니라 기록 형식을 보여주는 예시입니다" not in raw:f.append("sample_label")
+  if "시험 구조와 제출 요건은 최신 공식 안내를 다시 확인해야 합니다" not in raw:f.append("official_verification")
+  if any(x in text for x in forbidden):f.append("forbidden_copy")
+  if re.search(r"(토익스피킹과외을|오픽과외을|아이엘츠과외을|토플과외을|토익과외을)",text):f.append("malformed_particle")
+  if not (4500<=len(text)<=7500):f.append(f"visible_chars:{len(text)}")
+  if "tos.html" in raw.lower() or re.search(r'-tos\.html',raw,re.I):f.append("standalone_tos_link")
+  checks.append({"file":name,"visible_chars":len(text),"status":"PASS" if not f else "FAIL","failures":f})
+  if f:failures.append({"file":name,"failures":f})
+  groups[intent].append((slug,text))
+ if len(generated)!=30:failures.append({"global":["page_count",len(generated)]})
+ pairs=[]; maxc=maxj=0
+ for intent,docs in groups.items():
+  for (a,ta),(b,tb) in combinations(docs,2):
+   c,j=cosine(ta,tb),jacc(ta,tb); maxc=max(maxc,c); maxj=max(maxj,j)
+   pairs.append({"intent":intent,"a":a,"b":b,"cosine":round(c,4),"jaccard5":round(j,4)})
+   if c>=0.82 or j>=0.24:failures.append({"pair":[intent,a,b],"failures":[f"duplicate:{c:.4f}/{j:.4f}"]})
+ return {
+  "version":"1.0","status":"PASS" if not failures else "FAIL","page_count":len(generated),
+  "visible_chars":{"min":min(lengths.values()),"max":max(lengths.values()),"avg":round(sum(lengths.values())/len(lengths),1)},
+  "static_failures":len([x for x in failures if "file" in x or "global" in x]),
+  "duplicate_gate":{"status":"PASS" if maxc<0.82 and maxj<0.24 else "FAIL","same_exam_pairs":len(pairs),"max_cosine":round(maxc,4),"max_5_shingle_jaccard":round(maxj,4),"thresholds":{"cosine_lt":0.82,"jaccard5_lt":0.24},"pairs":pairs},
+  "tos_standalone_pages":0,
+  "page_checks":checks,"failures":failures,"production_deploy":False
+ }
+
+def main():
+ generated={}; files=[]
+ for slug,loc in LOCALITIES.items():
+  for key,exam in EXAMS.items():
+   name=f"{slug}-{exam['intent']}.html"
+   raw=render(slug,loc,key,exam); generated[name]=raw
+   files.append({"path":f"pilot-v45-exam-5x6/{name}","canonical":f"https://englishpt.kr/{slug}-{exam['intent']}.html","h1":f"{loc['dong']} {exam['service']}","blueprint":exam["blueprint"],"exam":key,"locality":slug,"variation":loc["variation"]})
+ qa=validate(generated)
+ (OUT/"PILOT_EXAM_5X6_QA_V1.json").write_text(json.dumps(qa,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+ if qa["status"]!="PASS":
+  print(json.dumps({"status":qa["status"],"visible":qa["visible_chars"],"dup":qa["duplicate_gate"],"failures":qa["failures"][:30]},ensure_ascii=False))
+  raise SystemExit(1)
+ for name,raw in generated.items():(OUT/name).write_text(raw,encoding="utf-8")
+ manifest={
+  "version":"1.0","status":"FULL_DEPTH_EXAM_PILOT_STATIC_DUPLICATE_PASS_HUMAN_REVIEW_REQUIRED_NOT_PRODUCTION",
+  "gold_standard":GOLD,"blueprints":"V4_5_EXAM_BLUEPRINTS.json","allowlist":"V4_5_EXAM_GENERATOR_ALLOWLIST.json",
+  "generator":"scripts/generate-v45-exam-pilot.py","page_count":30,
+  "localities":[{"full_name_ko":v["full_name"],"region_slug":k,"variation_pack":v["variation"]} for k,v in LOCALITIES.items()],
+  "exams":[{"exam":k,"intent_slug":v["intent"],"blueprint":v["blueprint"],"h1_template":"{dong_name} "+v["service"]} for k,v in EXAMS.items()],
+  "tos_policy":{"standalone_page":False,"canonical_exam":"toeic-speaking","aliases":["토스","TOS"]},
+  "safety":{"robots":"noindex,nofollow","live_lead_submission":False,"sitemap":False,"main_merge":False,"production_deploy":False},
+  "files":files
+ }
+ (OUT/"PILOT_EXAM_5X6_MANIFEST_V1.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+ print(json.dumps({"status":"PASS","pages":30,"visible":qa["visible_chars"],"max_cosine":qa["duplicate_gate"]["max_cosine"],"max_jaccard5":qa["duplicate_gate"]["max_5_shingle_jaccard"]},ensure_ascii=False))
+
+if __name__=="__main__":main()
