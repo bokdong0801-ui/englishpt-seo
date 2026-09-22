@@ -79,7 +79,7 @@ def postprocess(raw,slug,current,service_profiles,exam_map):
  raw=raw.replace('../pilot-v45-5x7/pilot.css','pilot.css').replace('../pilot-v45-5x7/pilot.js','pilot.js')
  family="service" if current in service_profiles else "exam"
  if family=="service":
-  strip=[("현재 장면","최근 영어가 멈춘 순간"),("원인","지식·이해·회수·적용을 분리"),("훈련","실제 사용 행동으로 연습"),("다음 확인","조건을 바꿔 다시 사용")]
+  strip=[("현재 장면","최근 막힌 순간"),("원인","원인 분리"),("훈련","실제 행동 연습"),("다음 확인","새 조건 재확인")]
  else:
   strip=[("시험 목표","제출 목적·시험일·목표 결과"),("현재 병목","영역·오답원인·시간을 분리"),("훈련","실제 문항·응답으로 재연습"),("다음 확인","새 문제·실전 조건에서 재검증")]
  strip_html='<section class="decision-strip" aria-label="빠른 판단 요약"><div class="wrap"><div class="decision-grid">'+''.join('<div><b>'+html.escape(a)+'</b><span>'+html.escape(b)+'</span></div>' for a,b in strip)+'</div></div></section>'
@@ -94,7 +94,7 @@ def postprocess(raw,slug,current,service_profiles,exam_map):
  raw=raw.replace('시험형 Full-depth 검수용 · production 미배포','시험형 Production preview · noindex · 미배포')
  raw=raw.replace('파일럿 폼','검수용 폼').replace('파일럿의 상담 폼','검수용 상담 폼').replace('이 파일럿은','이 배포 전 검수 페이지는').replace('이 파일럿','이 배포 전 검수 페이지')
  # EnglishUp benchmark reinterpretation: one compact CTA after value/decision proof.
- mid_copy="최근 막힌 장면과 다음 일정을 기준으로 우선순위를 확인해보세요." if family=="service" else "최근 시험에서 반복된 병목과 다음 응시일을 기준으로 우선순위를 확인해보세요."
+ mid_copy="최근 장면과 다음 일정으로 우선순위를 확인하세요." if family=="service" else "최근 병목과 다음 응시일로 우선순위를 확인하세요."
  mid='<section class="mid-cta"><div class="wrap"><div><p class="kicker">다음 단계</p><h2>'+html.escape(mid_copy)+'</h2></div><div class="mid-actions"><a class="btn primary" href="#consultation-preview">상담 전 확인하기</a><a class="btn phone" href="'+PHONE_HREF+'">'+PHONE_LABEL+'</a></div></div></section>'
  marker='<section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p>'
  pos=raw.find(marker)
