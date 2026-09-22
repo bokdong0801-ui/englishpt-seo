@@ -86,20 +86,20 @@ def postprocess(raw,slug,current,service_profiles,exam_map):
  if family=="service":
   profile=service_profiles[current]
   decision_items=[
-   ("이런 경우 잘 맞습니다","위 실제 장면이 반복되고, 다음 일정에서 같은 영어 행동을 다시 확인해야 하는 경우"),
+   ("이런 경우 잘 맞습니다","위 장면이 반복되고 다음 일정에서 같은 행동을 다시 확인해야 하는 경우"),
    ("다른 선택이 나을 수 있습니다",profile["boundary"]),
-   ("상담에서 확인할 비용·일정 조건","주당 횟수 · 회당 시간 · 진행 방식 · 준비 범위를 함께 확인합니다. 구체 비용은 상담에서 안내합니다."),
-   ("수업 계획은 이렇게 정합니다","현재 수행 확인 → 우선순위 설정 → 실제 사용 연습 → 다음 수업 재확인"),
-   ("상담 전에 준비할 것","최근 사용한 교재·자료 · 가장 막힌 장면 · 다음 일정 · 가능한 시간대")
+   ("상담에서 확인할 비용·일정 조건","횟수 · 시간 · 진행 방식 · 준비 범위를 확인하며 구체 비용은 상담에서 안내합니다."),
+   ("수업 계획은 이렇게 정합니다","현재 수행 → 우선순위 → 실제 연습 → 다음 수업 재확인"),
+   ("상담 전에 준비할 것","최근 자료 · 가장 막힌 장면 · 다음 일정 · 가능한 시간대")
   ]
  else:
   exam=next(e for e in exam_map.values() if e["intent"]==current)
   decision_items=[
-   ("이런 경우 잘 맞습니다","목표 시험과 일정은 정해졌지만, 전체 점수보다 실제 병목을 나눠 준비해야 하는 경우"),
+   ("이런 경우 잘 맞습니다","목표 시험·일정은 정해졌지만 실제 병목을 나눠 준비해야 하는 경우"),
    ("다른 선택이 나을 수 있습니다",exam["boundary"]),
-   ("상담에서 확인할 비용·일정 조건","주당 횟수 · 회당 시간 · 시험까지 남은 기간 · 피드백 방식과 준비 범위를 함께 확인합니다."),
-   ("수업 계획은 이렇게 정합니다","최근 수행 확인 → 병목 분리 → 실제 문항·응답 훈련 → 새 문제에서 재검증"),
-   ("상담 전에 준비할 것","목표 점수·등급 · 시험일/제출 마감 · 최근 성적 또는 답변 · 가장 어려운 영역")
+   ("상담에서 확인할 비용·일정 조건","횟수 · 시간 · 남은 기간 · 피드백 방식 · 준비 범위를 확인합니다."),
+   ("수업 계획은 이렇게 정합니다","최근 수행 → 병목 분리 → 문항·응답 훈련 → 새 문제 재검증"),
+   ("상담 전에 준비할 것","목표 결과 · 시험일/마감 · 최근 성적·답변 · 가장 어려운 영역")
   ]
  decision_html='<section class="section decision-guide"><div class="wrap narrow"><p class="kicker">선택 기준</p><h2>광고 문구보다, 이 다섯 가지를 먼저 확인하세요</h2><div class="decision-list">'+''.join('<div><b>◆ '+html.escape(a)+'</b><p>'+html.escape(b)+'</p></div>' for a,b in decision_items)+'</div></div></section>'
  hero_end=re.search(r'(</section>)(?=\s*<section id="detail")',raw)
@@ -188,7 +188,7 @@ def main():
   if 'name="robots" content="noindex,nofollow"' not in raw:f.append("noindex")
   if 'data-production-deploy="false"' not in raw:f.append("production_flag")
   if 'class="decision-strip"' not in raw:f.append("decision_strip")
-  if 'class="decision-guide"' not in raw:f.append("decision_guide")
+  if 'decision-guide' not in raw:f.append("decision_guide")
   if raw.count("◆ ")<5:f.append("decision_guide_items")
   if 'class="mid-cta"' not in raw:f.append("mid_cta")
   if any(x in text for x in ["최고의 강사진","성적 향상을 책임","지금 바로 상담 신청"]):f.append("generic_marketing_copy")
