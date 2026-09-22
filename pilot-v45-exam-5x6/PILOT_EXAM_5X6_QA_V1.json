@@ -5,13 +5,13 @@
   "visible_chars": {
     "min": 6290,
     "max": 7102,
-    "avg": 6753.3
+    "avg": 6750.4
   },
   "static_failures": 0,
   "duplicate_gate": {
     "status": "PASS",
     "same_exam_pairs": 60,
-    "max_cosine": 0.7815,
+    "max_cosine": 0.7821,
     "max_5_shingle_jaccard": 0.2397,
     "thresholds": {
       "cosine_lt": 0.82,
@@ -92,71 +92,71 @@
         "intent": "toeic-speaking",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-naegokdong",
-        "cosine": 0.7449,
-        "jaccard5": 0.2282
+        "cosine": 0.7457,
+        "jaccard5": 0.2276
       },
       {
         "intent": "toeic-speaking",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.7815,
-        "jaccard5": 0.2236
+        "cosine": 0.7821,
+        "jaccard5": 0.223
       },
       {
         "intent": "toeic-speaking",
         "a": "seoul-seocho-naegokdong",
         "b": "sejong-goundong",
-        "cosine": 0.7168,
-        "jaccard5": 0.2267
+        "cosine": 0.7174,
+        "jaccard5": 0.2261
       },
       {
         "intent": "toeic-speaking",
         "a": "seoul-seocho-naegokdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7744,
-        "jaccard5": 0.2259
+        "cosine": 0.7748,
+        "jaccard5": 0.2253
       },
       {
         "intent": "toeic-speaking",
         "a": "gangwon-gangneung-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.7293,
-        "jaccard5": 0.2294
+        "cosine": 0.7306,
+        "jaccard5": 0.2288
       },
       {
         "intent": "toeic-speaking",
         "a": "gangwon-gangneung-naegokdong",
         "b": "sejong-goundong",
-        "cosine": 0.7449,
-        "jaccard5": 0.2296
+        "cosine": 0.7457,
+        "jaccard5": 0.229
       },
       {
         "intent": "toeic-speaking",
         "a": "gangwon-gangneung-naegokdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7245,
-        "jaccard5": 0.2279
+        "cosine": 0.7253,
+        "jaccard5": 0.2273
       },
       {
         "intent": "toeic-speaking",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "sejong-goundong",
-        "cosine": 0.6968,
-        "jaccard5": 0.2304
+        "cosine": 0.6976,
+        "jaccard5": 0.2298
       },
       {
         "intent": "toeic-speaking",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7622,
-        "jaccard5": 0.2305
+        "cosine": 0.7628,
+        "jaccard5": 0.2299
       },
       {
         "intent": "toeic-speaking",
         "a": "sejong-goundong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7013,
-        "jaccard5": 0.2322
+        "cosine": 0.7019,
+        "jaccard5": 0.2316
       },
       {
         "intent": "opic",
@@ -450,7 +450,7 @@
     },
     {
       "file": "seoul-seocho-naegokdong-toeic-speaking.html",
-      "visible_chars": 6738,
+      "visible_chars": 6721,
       "status": "PASS",
       "failures": []
     },
@@ -486,7 +486,7 @@
     },
     {
       "file": "gangwon-gangneung-naegokdong-toeic-speaking.html",
-      "visible_chars": 6740,
+      "visible_chars": 6723,
       "status": "PASS",
       "failures": []
     },
@@ -522,7 +522,7 @@
     },
     {
       "file": "gangwon-gangneung-gangnamdong-toeic-speaking.html",
-      "visible_chars": 6639,
+      "visible_chars": 6622,
       "status": "PASS",
       "failures": []
     },
@@ -558,7 +558,7 @@
     },
     {
       "file": "sejong-goundong-toeic-speaking.html",
-      "visible_chars": 6620,
+      "visible_chars": 6603,
       "status": "PASS",
       "failures": []
     },
@@ -594,7 +594,7 @@
     },
     {
       "file": "busan-haeundae-jungdong-toeic-speaking.html",
-      "visible_chars": 6598,
+      "visible_chars": 6581,
       "status": "PASS",
       "failures": []
     },
