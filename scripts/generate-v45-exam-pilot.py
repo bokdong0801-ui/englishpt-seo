@@ -451,6 +451,14 @@ VAR_GUIDE_FINAL={
  ]
 }
 
+VAR_GUIDE_LAST={
+ "scene":["한 장면을 고를 때 가장 어려운 문제만 찾을 필요는 없습니다. 평소에는 되는데 특정 조건에서만 흔들리는 문제도 좋은 자료입니다. 예를 들어 시간이 줄었을 때, 질문 표현이 달라졌을 때, 긴 자료 뒤에 집중력이 떨어졌을 때처럼 조건이 바뀌는 순간을 기록하면 실제 시험에서 재현될 가능성이 높은 병목을 더 구체적으로 다룰 수 있습니다."],
+ "deadline":["계획을 세운 뒤에는 매주 목표를 새로 만드는 대신 남은 일정표에서 완료된 항목을 지우고 미완료 항목의 우선순위만 다시 조정합니다. 이렇게 하면 시험이 가까워질수록 계획이 복잡해지는 것을 막고, 지금 해야 할 행동과 시험 후로 넘길 행동을 계속 구분할 수 있습니다."],
+ "error":["오류를 다시 확인할 때는 같은 문제를 그대로 풀기보다 비슷한 판단을 요구하는 새 문제를 사용하는 편이 좋습니다. 같은 지문이나 같은 답을 기억해서 맞힌 것인지, 실제로 근거를 찾고 질문을 해석하는 기준이 남은 것인지 구분할 수 있기 때문입니다."],
+ "use":["시험 행동을 구체적으로 정하면 수업 뒤 복습도 간단해집니다. 오늘 배운 내용을 모두 다시 보는 대신 다음 문제에서 바로 써볼 기준 한두 개만 정하고 실제로 적용합니다. 적용이 되면 유지하고, 안 되면 어떤 조건에서 막혔는지를 다음 수업의 첫 질문으로 가져옵니다."],
+ "reuse":["재사용 확인은 일부러 새로운 유형만 고르는 방식이 아닙니다. 익숙한 기능을 조금 다른 조건에서 다시 써보는 것이 핵심입니다. 이렇게 조건을 한 단계씩 바꾸면 실패했을 때 원인을 찾기 쉽고, 성공했을 때도 어떤 도움 없이 가능했는지 분명하게 기록할 수 있습니다."]
+}
+
 def vtext(text,var):
  # Keep exam-specific source copy natural. Duplicate separation comes from full variation sections,
  # not blind token substitution.
@@ -621,7 +629,7 @@ def render(slug,loc,key,exam):
 <section class="section"><div class="wrap"><p class="kicker">판단 기준</p><h2>{esc(STATIC[var]["proof_h"])}</h2><p class="lead">{esc(STATIC[var]["proof_p"])} {esc(vf["proof"])}</p><ul class="proofs">{proof_html}</ul></div></section>
 <section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p><h2>{esc(STATIC[var]["feedback_h"])}</h2><p>{esc(STATIC[var]["feedback_p"])}</p><div class="grid4">{feedback_html}</div></div></section>
 <section class="section"><div class="wrap narrow"><p class="kicker">시험 선택</p><h2>{esc(STATIC[var]["fit_h"])}</h2><p>{esc(exam["boundary"])}</p><p>{esc(STATIC[var]["fit_p"])}</p></div></section>
-<section class="section"><div class="wrap narrow"><p class="kicker">학습 프레임</p><h2>{esc(STATIC[var]["deep_h"])}</h2>{''.join("<p>"+esc(p)+"</p>" for p in (VAR_GUIDE[var]+VAR_GUIDE_EXTRA[var]+VAR_GUIDE_FINAL[var]))}</div></section>
+<section class="section"><div class="wrap narrow"><p class="kicker">학습 프레임</p><h2>{esc(STATIC[var]["deep_h"])}</h2>{''.join("<p>"+esc(p)+"</p>" for p in (VAR_GUIDE[var]+VAR_GUIDE_EXTRA[var]+VAR_GUIDE_FINAL[var]+VAR_GUIDE_LAST[var]))}</div></section>
 <section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>{esc(exam["service"])} 선택 전에 확인할 시험별 기준</h2><div class="grid4">{deep_html}</div></div></section>
 <section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>{esc(STATIC[var]["faq_h"])}</h2><div class="faq">{faq_html}</div></div></section>
 <section class="section soft"><div class="wrap narrow"><p class="kicker">공식정보 확인</p><h2>{esc(STATIC[var]["official_h"])}</h2><p>{esc(STATIC[var]["official_p"])}</p></div></section>
