@@ -171,8 +171,8 @@ def rewrite_deep_faq(raw,row,d,deep,faq,service_label):
  cards=[]
  for i,(title,text) in enumerate(deep):
   ft,fp=FOCUS_NOTES[(start+i*3)%len(FOCUS_NOTES)]
-  body=first_sentence(text)+" "+fp+" "+seed_pick(row,(i+9)%12)
-  cards.append('<article class="card"><b>'+html.escape(title)+'</b><p>'+html.escape(body)+'</p><p><strong>'+html.escape(ft)+'</strong> '+html.escape(CONTEXT[d["local_context_mode"]])+'</p></article>')
+  body=first_sentence(text)+" "+fp
+  cards.append('<article class="card"><b>'+html.escape(title)+'</b><p>'+html.escape(body)+'</p></article>')
  nt,items=DECISION_NOTES[seeded(row,len(DECISION_NOTES),4)]
  cards.append('<article class="card"><b>'+html.escape(nt)+'</b><p>'+html.escape(" ".join(items))+'</p><p>'+html.escape(CTA[d["cta_frame"]])+'</p></article>')
  deep_block='<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>'+html.escape(service_label)+' 선택 전에 확인할 기준</h2><div class="grid4">'+''.join(cards)+'</div></div></section>'
@@ -220,35 +220,56 @@ def all_links(row,current,svc,ex):
   if e["intent"]!=current:items.append(f'<a href="{slug}-{e["intent"]}.html">{html.escape(dn+" "+e["service"])}</a>')
  return "".join(items)
 
-def benchmark_blocks(raw,family):
- strip=[("현재","막힌 순간"),("원인","원인 분리"),("훈련","행동 연습"),("재확인","새 조건")] if family=="service" else [("시험 목표","목적·시험일"),("현재 병목","영역·시간"),("훈련","문항·응답"),("재확인","실전 조건")]
+STRIP_INTRO={
+"problem-first":"최근 막힌 장면","scene-first":"실제 사용 순간","parent-view":"최근 학습 행동","learner-view":"직접 필요한 장면",
+"timeline-first":"가장 가까운 일정","routine-first":"유지 가능한 루틴","assessment-first":"평가 장면",
+"diagnosis-first":"현재 병목","mistake-first":"반복 오류","goal-first":"목표 행동","question-first":"필요한 영어",
+"use-case-first":"실제 사용 목적","decision-first":"선택 순서","comparison-first":"비교 기준","contrast-first":"대상별 차이","transition-first":"다음 목표"
+}
+STRIP_DIAG={
+"current-level":"되는 것/막히는 것","usage-goal":"실제 사용 행동","deadline":"남은 기간","error-pattern":"반복 원인",
+"study-volume":"반복 가능한 분량","output-skill":"말·글 출력","comprehension-skill":"읽기·듣기 병목","priority":"가장 큰 병목"
+}
+STRIP_CASE={
+"single-learner":"한 목표 집중","before-after-process":"전후 비교","three-moments":"전·중·후 연결","week-plan":"주간 운영",
+"mistake-repair":"오류 교정","decision-tree":"선택 트리","deadline-scenario":"마감 역산","routine-rebuild":"루틴 복구",
+"usage-scene":"사용 장면 반복","assessment-scene":"평가 조건 재현"
+}
+
+def benchmark_blocks(raw,family,row,d):
+ strip=[
+  ("출발점",STRIP_INTRO[d["intro_pattern"]]),
+  ("먼저 볼 것",STRIP_DIAG[d["diagnosis_emphasis"]]),
+  ("연습 방식",STRIP_CASE[d["case_frame"]]),
+  ("다음 확인",CTA[d["cta_frame"]].split(" ")[0]+" 재점검"),
+ ]
  sh='<section class="decision-strip" aria-label="빠른 판단 요약"><div class="wrap"><div class="decision-grid">'+''.join('<div><b>'+html.escape(a)+'</b><span>'+html.escape(b)+'</span></div>' for a,b in strip)+'</div></div></section>'
  m=re.search(r'(</section>)(?=\s*<section id="detail")',raw)
  if not m:raise RuntimeError("hero boundary")
  raw=raw[:m.end()]+sh+raw[m.end():]
- mid_copy="최근 장면과 다음 일정으로 우선순위를 확인하세요." if family=="service" else "최근 병목과 다음 응시일로 우선순위를 확인하세요."
- mid='<section class="mid-cta"><div class="wrap"><div><p class="kicker">다음 단계</p><h2>'+mid_copy+'</h2></div><div class="mid-actions"><a class="btn primary" href="#consultation-preview">상담 전 확인하기</a><a class="btn phone" href="'+PHONE_HREF+'">'+PHONE_LABEL+'</a></div></div></section>'
+ mid_copy=CTA[d["cta_frame"]]+" "+seed_pick(row,2)
+ mid='<section class="mid-cta"><div class="wrap"><div><p class="kicker">다음 단계</p><h2>'+html.escape(mid_copy)+'</h2></div><div class="mid-actions"><a class="btn primary" href="#consultation-preview">상담 전 확인하기</a><a class="btn phone" href="'+PHONE_HREF+'">'+PHONE_LABEL+'</a></div></div></section>'
  marker='<section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p>';pos=raw.find(marker)
  if pos<0:raise RuntimeError("feedback boundary")
  return raw[:pos]+mid+raw[pos:]
 
-def decision_block(raw,family,current,svc,ex):
+def decision_block(raw,family,current,svc,ex,row,d):
  if family=="service":
   p=svc.PROFILES[current]
   items=[
-   ("이런 경우 잘 맞습니다","위 실제 장면이 반복되고 다음 일정에서 같은 영어 행동을 다시 확인해야 하는 경우"),
+   ("이런 경우 잘 맞습니다",STRIP_INTRO[d["intro_pattern"]]+"이 반복되고 "+STRIP_DIAG[d["diagnosis_emphasis"]]+"을 따로 확인해야 하는 경우"),
    ("다른 선택이 나을 수 있습니다",p["boundary"]),
    ("상담에서 확인할 비용·일정 조건","횟수 · 시간 · 진행 방식 · 준비 범위를 확인하며 구체 비용은 상담에서 안내합니다."),
-   ("수업 계획은 이렇게 정합니다","현재 수행 → 우선순위 → 실제 연습 → 다음 수업 재확인"),
-   ("상담 전에 준비할 것","최근 자료 · 가장 막힌 장면 · 다음 일정 · 가능한 시간대"),
+   ("수업 계획은 이렇게 정합니다",STRIP_INTRO[d["intro_pattern"]]+" → "+STRIP_DIAG[d["diagnosis_emphasis"]]+" → "+STRIP_CASE[d["case_frame"]]+" → 재확인"),
+   ("상담 전에 준비할 것","최근 자료 · "+STRIP_INTRO[d["intro_pattern"]]+" · 다음 일정 · 가능한 시간대"),
   ]
  else:
   e=next(v for v in ex.EXAMS.values() if v["intent"]==current)
   items=[
-   ("이런 경우 잘 맞습니다","목표 시험·일정은 정해졌지만 실제 병목을 나눠 준비해야 하는 경우"),
+   ("이런 경우 잘 맞습니다","목표 시험·일정은 정해졌지만 "+STRIP_DIAG[d["diagnosis_emphasis"]]+"을 구분해 준비해야 하는 경우"),
    ("다른 선택이 나을 수 있습니다",e["boundary"]),
    ("상담에서 확인할 비용·일정 조건","횟수 · 시간 · 남은 기간 · 피드백 방식 · 준비 범위를 확인합니다."),
-   ("수업 계획은 이렇게 정합니다","최근 수행 → 병목 분리 → 문항·응답 훈련 → 새 문제 재검증"),
+   ("수업 계획은 이렇게 정합니다","최근 수행 → "+STRIP_DIAG[d["diagnosis_emphasis"]]+" → "+STRIP_CASE[d["case_frame"]]+" → 실전 재검증"),
    ("상담 전에 준비할 것","목표 결과 · 시험일/마감 · 최근 성적·답변 · 가장 어려운 영역"),
   ]
  block='<section class="section decision-guide"><div class="wrap narrow"><p class="kicker">선택 기준</p><h2>광고 문구보다, 이 다섯 가지를 먼저 확인하세요</h2><div class="decision-list">'+''.join('<div><b>◆ '+html.escape(a)+'</b><p>'+html.escape(b)+'</p></div>' for a,b in items)+'</div></div></section>'
@@ -319,14 +340,43 @@ def replace_exam_variation(raw,row,d,exam):
  if n!=1:raise RuntimeError("exam learning frame")
  return raw
 
-def finalize(raw,row,current,svc,ex,family):
+def rewrite_mid_sections(raw,row,d,priority,proof_labels,scene_titles,family):
+ extras=[DIAG[d["diagnosis_emphasis"]],CONTEXT[d["local_context_mode"]],CASE[d["case_frame"]],CTA[d["cta_frame"]]]
+ pri=[]
+ for i,label in enumerate(priority[:4]):
+  pri.append('<li><b>'+html.escape(label)+'</b><span>'+html.escape(extras[i%len(extras)])+'</span></li>')
+ pblock='<section class="section soft"><div class="wrap narrow"><p class="kicker">우선순위</p><h2>'+html.escape(STRIP_INTRO[d["intro_pattern"]])+'에서 무엇부터 볼지 정합니다</h2><p>'+html.escape(INTRO[d["intro_pattern"]])+'</p><ul class="proofs">'+''.join(pri)+'</ul></div></section>'
+ raw,n=re.subn(r'<section class="section soft"><div class="wrap narrow"><p class="kicker">우선순위</p>[\s\S]*?</section>',pblock,raw,count=1)
+ if n!=1:raise RuntimeError("priority rewrite")
+
+ pitems=[]
+ labels=(proof_labels or priority)[:5]
+ for i,label in enumerate(labels):
+  note=[seed_pick(row,i),FOCUS_NOTES[(seeded(row,len(FOCUS_NOTES),5)+i*2)%len(FOCUS_NOTES)][1],extras[i%4]][i%3]
+  pitems.append('<li><b>'+html.escape(label)+'</b><span>'+html.escape(note)+'</span></li>')
+ proof='<section class="section"><div class="wrap"><p class="kicker">판단 기준</p><h2>'+html.escape(STRIP_DIAG[d["diagnosis_emphasis"]])+'이 실제로 달라졌는지 확인합니다</h2><p class="lead">'+html.escape(CASE[d["case_frame"]])+'</p><ul class="proofs">'+''.join(pitems)+'</ul></div></section>'
+ raw,n=re.subn(r'<section class="section"><div class="wrap"><p class="kicker">판단 기준</p>[\s\S]*?</section>',proof,raw,count=1)
+ if n!=1:raise RuntimeError("proof rewrite")
+
+ fcards=[]
+ for i,title in enumerate(scene_titles[:3]):
+  if i==0: msg=f"'{title}' 항목은 첫 시도와 도움 뒤 결과를 나눠 기록합니다. "+DIAG[d["diagnosis_emphasis"]]
+  elif i==1: msg=f"'{title}' 항목은 조건을 바꿔 다시 확인합니다. "+CASE[d["case_frame"]]
+  else: msg=f"'{title}' 항목은 다음 일정에서 다시 볼 한 가지를 남깁니다. "+CTA[d["cta_frame"]]
+  fcards.append('<article class="card"><b>기록 예시 '+str(i+1)+'</b><p>'+html.escape(msg)+'</p></article>')
+ feedback='<section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p><h2>성과를 약속하지 않고, 다음에 확인할 행동을 기록합니다</h2><p>아래는 특정 수강생의 후기나 점수 변화가 아니라 수업 기록 형식을 보여주는 예시입니다.</p><div class="grid4">'+''.join(fcards)+'</div></div></section>'
+ raw,n=re.subn(r'<section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p>[\s\S]*?</section>',feedback,raw,count=1)
+ if n!=1:raise RuntimeError("feedback rewrite")
+ return raw
+
+def finalize(raw,row,d,current,svc,ex,family):
  raw=raw.replace('../pilot-v45-5x7/pilot.css','pilot.css').replace('../pilot-v45-5x7/pilot.js','pilot.js')
  raw=raw.replace('V4.5 FULL-DEPTH PILOT · noindex','V4.5 PRODUCTION DRY-RUN · noindex').replace('V4.5 EXAM FULL-DEPTH PILOT · noindex','V4.5 EXAM PRODUCTION DRY-RUN · noindex')
  raw=raw.replace('현재 페이지는 5×7 소규모 검수용이라 폼의 실제 전송은 비활성화되어 있습니다.','현재 페이지는 배포 전 production dry-run이라 폼의 실제 전송은 비활성화되어 있습니다.')
  raw=raw.replace('Full-depth 검수용 페이지 · production 미배포','Production dry-run · noindex · 미배포').replace('시험형 Full-depth 검수용 · production 미배포','시험형 Production dry-run · noindex · 미배포')
  raw=raw.replace('파일럿 폼','검수용 폼').replace('파일럿의 상담 폼','검수용 상담 폼').replace('이 파일럿은','이 배포 전 검수 페이지는').replace('이 파일럿','이 배포 전 검수 페이지')
- raw=benchmark_blocks(raw,family)
- raw=decision_block(raw,family,current,svc,ex)
+ raw=benchmark_blocks(raw,family,row,d)
+ raw=decision_block(raw,family,current,svc,ex,row,d)
  links=all_links(row,current,svc,ex)
  raw,n=re.subn(r'(<div class="links">)[\s\S]*?(</div>)',lambda m:m.group(1)+links+m.group(2),raw,count=1)
  if n!=1:raise RuntimeError("related links")
@@ -441,7 +491,7 @@ def main():
     raw_by_frame[frame]=replace_service_variation(raw0,row,d,p,cards,steps)
    raw=compose_frames(raw_by_frame,perm,SERVICE_GROUPS)
    raw=rewrite_shared_blocks(raw,row)
-   raw=finalize(raw,row,intent,svc,ex,"service")
+   raw=finalize(raw,row,d,intent,svc,ex,"service")
    name=f"{slug}-{intent}.html";generated[name]=raw
    files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"service","intent":intent,"h1":f"{row['dong_name']} {p['service_h1']}","canonical":f"https://englishpt.kr/{slug}-{intent}.html","locality":slug,"blueprint":p["blueprint"],"variation_signature":row["variation_signature"],"gold_frame_permutation":[FRAMES[x] for x in perm]})
   for key in EXAM_ORDER:
@@ -452,7 +502,7 @@ def main():
     raw_by_frame[frame]=replace_exam_variation(raw0,row,d,e)
    raw=compose_frames(raw_by_frame,perm,EXAM_GROUPS)
    raw=rewrite_shared_blocks(raw,row)
-   raw=finalize(raw,row,intent,svc,ex,"exam")
+   raw=finalize(raw,row,d,intent,svc,ex,"exam")
    name=f"{slug}-{intent}.html";generated[name]=raw
    files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"exam","intent":intent,"exam":key,"h1":f"{row['dong_name']} {e['service']}","canonical":f"https://englishpt.kr/{slug}-{intent}.html","locality":slug,"blueprint":e["blueprint"],"variation_signature":row["variation_signature"],"gold_frame_permutation":[FRAMES[x] for x in perm]})
 
