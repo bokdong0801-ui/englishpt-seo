@@ -428,6 +428,29 @@ VAR_GUIDE_EXTRA={
  ]
 }
 
+VAR_GUIDE_FINAL={
+ "scene":[
+  "기록을 비교할 때는 최근 한 번의 결과만 보지 않습니다. 비슷한 장면이 두세 번 있었는지, 그때 같은 종류의 도움을 필요로 했는지를 봅니다. 반복 조건이 보이면 다음 수업에서는 그 조건을 먼저 재현하고, 새 자료에서도 같은 행동이 유지되는지 확인합니다.",
+  "상담 전에는 점수표 전체를 정리하지 않아도 됩니다. 최근 풀었던 세트에서 시간을 많이 쓴 부분, 답을 고른 근거가 애매했던 문제, 말하기나 쓰기에서 멈춘 질문처럼 기억나는 장면을 두세 개만 준비해도 현재 방향을 잡는 데 충분한 정보가 됩니다."
+ ],
+ "deadline":[
+  "마감형 계획은 시험 전날까지 모든 약점을 없애는 것을 목표로 하지 않습니다. 이번 일정에서 반드시 지켜야 할 행동과 시험 뒤에 이어서 보완할 행동을 나누는 것이 더 현실적입니다. 이렇게 나누면 촉박한 기간에도 학습 범위를 통제할 수 있습니다.",
+  "여러 시험 일정이 겹치는 경우에는 가장 가까운 마감만 보는 것도 위험할 수 있습니다. 제출 중요도, 실제 응시 가능 횟수, 현재 준비 수준을 함께 놓고 우선순위를 정하고 공통으로 필요한 영어 기능이 있다면 한 번의 연습을 여러 일정에 연결합니다."
+ ],
+ "error":[
+  "오류 원인을 기록할 때는 정답 설명을 길게 옮기지 않습니다. 왜 그 선택을 했는지 한 문장, 다음에는 무엇을 확인할지 한 문장 정도면 충분합니다. 기록이 길어질수록 다시 보기 어려워지므로 실제 재검사에 필요한 단서만 남깁니다.",
+  "같은 오류가 줄지 않을 때는 난도를 올리기 전에 연습 방식을 바꿉니다. 설명을 더 듣는 대신 근거를 직접 말하게 하거나, 시간을 제한하거나, 질문 표현을 바꾸는 식으로 조건을 조정하면 지식 부족과 적용 문제를 더 분명하게 구분할 수 있습니다."
+ ],
+ "use":[
+  "실제 행동을 기준으로 계획하면 학습자료를 고르는 기준도 달라집니다. 많은 문제를 제공하는 자료보다 내가 다음 시험에서 해야 할 행동을 반복해서 연습하고 결과를 확인할 수 있는 자료가 더 직접적일 수 있습니다. 자료 선택도 목표 행동과 연결해 결정합니다.",
+  "상담에서는 '어떤 책을 써야 하나요'보다 '다음 시험에서 무엇이 되어야 하나요'를 먼저 정합니다. 그 답이 정해지면 문제풀이, 녹음, 첨삭, 시간 연습 중 어떤 방식에 더 많은 비중을 둘지 구체적으로 이야기할 수 있습니다."
+ ],
+ "reuse":[
+  "재사용 범위가 넓어졌다는 것은 완전히 새로운 문제를 모두 맞힌다는 뜻이 아닙니다. 익숙하지 않은 자료에서도 이전에 배운 판단 순서나 답변 구조를 다시 꺼내고, 막혔을 때 스스로 회복할 수 있는 범위가 커지는지를 봅니다.",
+  "상담에서는 '외웠는데 시험에서 안 됐다', '연습문제에서는 되는데 새 문제에서 흔들린다' 같은 경험이 중요한 정보입니다. 이런 차이를 알려주면 새로운 내용을 더할지, 기존 내용을 다른 조건에서 다시 적용할지 우선순위를 정하기 쉽습니다."
+ ]
+}
+
 def vtext(text,var):
  # Keep exam-specific source copy natural. Duplicate separation comes from full variation sections,
  # not blind token substitution.
@@ -598,7 +621,7 @@ def render(slug,loc,key,exam):
 <section class="section"><div class="wrap"><p class="kicker">판단 기준</p><h2>{esc(STATIC[var]["proof_h"])}</h2><p class="lead">{esc(STATIC[var]["proof_p"])} {esc(vf["proof"])}</p><ul class="proofs">{proof_html}</ul></div></section>
 <section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p><h2>{esc(STATIC[var]["feedback_h"])}</h2><p>{esc(STATIC[var]["feedback_p"])}</p><div class="grid4">{feedback_html}</div></div></section>
 <section class="section"><div class="wrap narrow"><p class="kicker">시험 선택</p><h2>{esc(STATIC[var]["fit_h"])}</h2><p>{esc(exam["boundary"])}</p><p>{esc(STATIC[var]["fit_p"])}</p></div></section>
-<section class="section"><div class="wrap narrow"><p class="kicker">학습 프레임</p><h2>{esc(STATIC[var]["deep_h"])}</h2>{''.join("<p>"+esc(p)+"</p>" for p in (VAR_GUIDE[var]+VAR_GUIDE_EXTRA[var]))}</div></section>
+<section class="section"><div class="wrap narrow"><p class="kicker">학습 프레임</p><h2>{esc(STATIC[var]["deep_h"])}</h2>{''.join("<p>"+esc(p)+"</p>" for p in (VAR_GUIDE[var]+VAR_GUIDE_EXTRA[var]+VAR_GUIDE_FINAL[var]))}</div></section>
 <section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>{esc(exam["service"])} 선택 전에 확인할 시험별 기준</h2><div class="grid4">{deep_html}</div></div></section>
 <section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>{esc(STATIC[var]["faq_h"])}</h2><div class="faq">{faq_html}</div></div></section>
 <section class="section soft"><div class="wrap narrow"><p class="kicker">공식정보 확인</p><h2>{esc(STATIC[var]["official_h"])}</h2><p>{esc(STATIC[var]["official_p"])}</p></div></section>
