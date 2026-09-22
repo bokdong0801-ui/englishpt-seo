@@ -400,6 +400,34 @@ STATIC={
  }
 }
 
+VAR_GUIDE_EXTRA={
+ "scene":[
+  "최근 장면을 기준으로 보면 시험 준비가 불필요하게 커지는 것을 막을 수 있습니다. 예를 들어 전체 점수가 아쉽다고 해서 모든 파트를 같은 비중으로 다시 시작할 필요는 없습니다. 최근 두세 번의 수행에서 같은 조건이 반복됐는지, 그 장면에서 어떤 판단을 놓쳤는지 확인하면 실제로 다시 볼 범위를 더 좁게 정할 수 있습니다.",
+  "장면 기록은 상담에서도 유용합니다. '전체적으로 부족하다'고 말하는 것보다 최근 틀린 문제 하나, 답변이 끊긴 질문 하나, 시간이 부족했던 구간 하나를 알려주면 현재 학습 순서를 훨씬 구체적으로 이야기할 수 있습니다. 자료를 많이 준비하지 않아도 최근 경험이 출발점이 됩니다.",
+  "장면 중심 접근은 잘하는 부분을 남겨두는 데도 도움이 됩니다. 이미 혼자 안정적으로 처리하는 행동은 계속 반복하지 않고, 조건이 바뀌면 흔들리는 부분만 다시 확인합니다. 이렇게 해야 수업량을 늘리는 방식이 아니라 실제 병목을 줄이는 방식으로 계획을 유지할 수 있습니다."
+ ],
+ "deadline":[
+  "남은 기간을 계산할 때는 달력의 날짜보다 실제 학습 가능 횟수를 보는 편이 현실적입니다. 시험일까지 3주가 남아 있어도 실제로 집중해서 연습할 수 있는 시간이 적다면 계획은 달라져야 합니다. 반대로 시간이 충분하면 단기 점수 대응과 함께 기초 병목을 넓게 보완할 여유가 생깁니다.",
+  "마감이 가까우면 모든 약점을 동시에 고치려는 계획을 피합니다. 목표 결과에 가장 큰 영향을 주는 한두 항목을 먼저 안정시키고, 이미 유지되는 영역은 최소 확인으로 넘깁니다. 새 교재나 새 유형을 계속 추가하기보다 이미 본 문제에서 드러난 병목을 실제 시간 조건에서 줄이는 편이 우선입니다.",
+  "시험 직전과 시험 이후의 계획도 분리합니다. 직전에는 실전 루틴과 제한 시간, 답변 완결성을 확인하고, 시험이 끝난 뒤에는 단기 대비 때문에 미뤄둔 기초 영역을 다시 꺼냅니다. 이렇게 하면 한 번의 시험 준비가 다음 일정과 단절되지 않고 누적됩니다."
+ ],
+ "error":[
+  "오류를 분류할 때는 맞고 틀림 외에도 '왜 그런 선택을 했는지'를 짧게 말해보게 합니다. 근거가 잘못된 것인지, 질문을 다르게 읽은 것인지, 시간이 부족해 추측한 것인지가 드러나면 같은 정답률이라도 필요한 학습은 달라집니다.",
+  "반복 오류는 교사가 설명하는 횟수보다 학습자가 스스로 수정하는 과정이 중요합니다. 처음에는 구체적인 힌트가 필요하더라도 다음에는 짧은 질문 하나로 수정되고, 나중에는 스스로 멈춰 고칠 수 있다면 도움 의존도가 줄고 있다는 뜻입니다.",
+  "오류 기록은 계속 쌓기만 하지 않습니다. 새 문제에서 더 이상 반복되지 않거나 혼자 수정 가능한 항목은 목록에서 지웁니다. 끝까지 남아 있는 원인만 다음 세션으로 넘기면 오답노트가 과거 기록이 아니라 실제 우선순위 도구가 됩니다."
+ ],
+ "use":[
+  "시험 준비를 행동으로 바꾸면 상담 질문도 구체적이 됩니다. '점수를 올리고 싶다' 대신 'Reading 근거를 시간 안에 찾고 싶다', '질문을 듣고 바로 첫 문장을 시작하고 싶다'처럼 말하면 무엇을 연습해야 하는지 훨씬 선명하게 정할 수 있습니다.",
+  "실제 수행을 기준으로 하면 기초 학습도 목적 없이 길어지지 않습니다. 문법이나 어휘를 다시 보더라도 다음 문항에서 어떻게 사용할지, 말하기나 쓰기 응답에서 어떤 역할을 하는지 연결합니다. 이 연결이 없으면 아는 내용은 늘어도 시험 행동은 그대로일 수 있습니다.",
+  "다음 practice에서 시도할 행동은 많을 필요가 없습니다. 한두 가지를 정해 실제로 적용해보고, 성공한 조건과 다시 흔들린 조건을 기록하면 그 결과가 다음 수업의 가장 구체적인 자료가 됩니다. 계획을 매번 처음부터 다시 세울 필요도 줄어듭니다."
+ ],
+ "reuse":[
+  "재사용 범위를 확인할 때는 난도를 갑자기 높이지 않습니다. 같은 기능을 쓰되 질문 표현만 바꾸거나 자료만 교체하는 식으로 한 조건씩 바꿉니다. 그래야 어느 변화에서 다시 흔들렸는지 정확히 알 수 있고, 필요한 도움도 단계적으로 줄일 수 있습니다.",
+  "준비한 답을 외운 학생에게도 재사용 확인은 필요합니다. 문장 순서를 그대로 떠올리지 못해도 핵심 의미를 다른 표현으로 다시 만들 수 있다면 실제 대응 범위가 넓어진 것입니다. 반대로 표현 하나가 사라졌을 때 전체 답변이 멈춘다면 암기 의존이 아직 큰 편일 수 있습니다.",
+  "재사용 테스트에서 실패했다고 새로운 자료를 바로 추가하지 않습니다. 어떤 단서가 사라졌을 때 문제가 생겼는지를 확인하고 그 조건을 다시 연습합니다. 같은 기능을 다른 자료에서 두세 번 재현한 뒤 새로운 범위를 더하면 학습량보다 실제 활용 범위를 넓히는 데 집중할 수 있습니다."
+ ]
+}
+
 def vtext(text,var):
  # Keep exam-specific source copy natural. Duplicate separation comes from full variation sections,
  # not blind token substitution.
@@ -570,7 +598,7 @@ def render(slug,loc,key,exam):
 <section class="section"><div class="wrap"><p class="kicker">판단 기준</p><h2>{esc(STATIC[var]["proof_h"])}</h2><p class="lead">{esc(STATIC[var]["proof_p"])} {esc(vf["proof"])}</p><ul class="proofs">{proof_html}</ul></div></section>
 <section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p><h2>{esc(STATIC[var]["feedback_h"])}</h2><p>{esc(STATIC[var]["feedback_p"])}</p><div class="grid4">{feedback_html}</div></div></section>
 <section class="section"><div class="wrap narrow"><p class="kicker">시험 선택</p><h2>{esc(STATIC[var]["fit_h"])}</h2><p>{esc(exam["boundary"])}</p><p>{esc(STATIC[var]["fit_p"])}</p></div></section>
-<section class="section"><div class="wrap narrow"><p class="kicker">학습 프레임</p><h2>{esc(STATIC[var]["deep_h"])}</h2>{''.join("<p>"+esc(p)+"</p>" for p in VAR_GUIDE[var])}</div></section>
+<section class="section"><div class="wrap narrow"><p class="kicker">학습 프레임</p><h2>{esc(STATIC[var]["deep_h"])}</h2>{''.join("<p>"+esc(p)+"</p>" for p in (VAR_GUIDE[var]+VAR_GUIDE_EXTRA[var]))}</div></section>
 <section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>{esc(exam["service"])} 선택 전에 확인할 시험별 기준</h2><div class="grid4">{deep_html}</div></div></section>
 <section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>{esc(STATIC[var]["faq_h"])}</h2><div class="faq">{faq_html}</div></div></section>
 <section class="section soft"><div class="wrap narrow"><p class="kicker">공식정보 확인</p><h2>{esc(STATIC[var]["official_h"])}</h2><p>{esc(STATIC[var]["official_p"])}</p></div></section>
