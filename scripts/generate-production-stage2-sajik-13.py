@@ -79,7 +79,7 @@ def postprocess(raw,slug,current,service_profiles,exam_map):
  raw=raw.replace('../pilot-v45-5x7/pilot.css','pilot.css').replace('../pilot-v45-5x7/pilot.js','pilot.js')
  family="service" if current in service_profiles else "exam"
  if family=="service":
-  strip=[("현재 장면","최근 막힌 순간"),("원인","원인 분리"),("훈련","실제 행동 연습"),("다음 확인","새 조건 재확인")]
+  strip=[("현재","막힌 순간"),("원인","원인 분리"),("훈련","행동 연습"),("재확인","새 조건")]
  else:
   strip=[("시험 목표","제출 목적·시험일·목표 결과"),("현재 병목","영역·오답원인·시간을 분리"),("훈련","실제 문항·응답으로 재연습"),("다음 확인","새 문제·실전 조건에서 재검증")]
  strip_html='<section class="decision-strip" aria-label="빠른 판단 요약"><div class="wrap"><div class="decision-grid">'+''.join('<div><b>'+html.escape(a)+'</b><span>'+html.escape(b)+'</span></div>' for a,b in strip)+'</div></div></section>'
