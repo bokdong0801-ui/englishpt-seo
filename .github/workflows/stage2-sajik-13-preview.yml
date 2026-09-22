@@ -72,6 +72,7 @@ jobs:
             echo "No Stage 2 output changes"
           else
             git commit -m "Generate Stage 2 Sajikdong 13-intent production preview"
+            git pull --rebase origin reset-english-service-seo-v3
             git push origin HEAD:reset-english-service-seo-v3
           fi
       - uses: actions/upload-artifact@v4
