@@ -83,7 +83,7 @@ def postprocess(raw,slug,current,service_profiles,exam_map):
  raw=raw.replace('현재 페이지는 5×7 소규모 검수용이라 폼의 실제 전송은 비활성화되어 있습니다.','현재 페이지는 배포 전 production preview라 폼의 실제 전송은 비활성화되어 있습니다.')
  raw=raw.replace('Full-depth 검수용 페이지 · production 미배포','Production preview · noindex · 미배포')
  raw=raw.replace('시험형 Full-depth 검수용 · production 미배포','시험형 Production preview · noindex · 미배포')
- raw=raw.replace('파일럿 폼','검수용 폼').replace('파일럿의 상담 폼','검수용 상담 폼').replace('이 파일럿','이 배포 전 검수 페이지')
+ raw=raw.replace('파일럿 폼','검수용 폼').replace('파일럿의 상담 폼','검수용 상담 폼').replace('이 파일럿은','이 배포 전 검수 페이지는').replace('이 파일럿','이 배포 전 검수 페이지')
  # Connect both frozen families: every page links to the other 12 Sajikdong intent pages.
  links=unified_links(slug,current,service_profiles,exam_map)
  raw,n=re.subn(r'(<div class="links">)[\s\S]*?(</div>)',lambda m:m.group(1)+links+m.group(2),raw,count=1)
@@ -132,7 +132,7 @@ def main():
  all_names=set(generated)
  failures=[]; checks=[]; lengths={}
  forbidden_visible=["V4.5 FULL-DEPTH PILOT","V4.5 EXAM FULL-DEPTH PILOT","5×7 소규모 검수용","이 프로젝트에서는"]
- malformed=["영어회화을","영어과외을","비즈니스영어을","문항를","질의을","응시이","근거이","근거은","제한 제한","'질문 이해'과"]
+ malformed=["영어회화을","영어과외을","비즈니스영어을","문항를","질의을","응시이","근거이","근거은","제한 제한","'질문 이해'과","페이지은"]
  reserved=set()
  rp=ROOT/"sitemap_95_urls.txt"
  if rp.exists(): reserved={x.strip() for x in rp.read_text(encoding="utf-8").splitlines() if x.strip()}
