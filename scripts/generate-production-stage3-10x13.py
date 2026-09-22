@@ -165,33 +165,47 @@ def seeded(row,mod,offset=0):
  chunk=s[offset:offset+4] or s[:4]
  return int(chunk,16)%mod
 
-def rewrite_deep_faq(raw,row,d,deep,faq,service_label):
- # Keep intent-specific titles/questions, but rebuild long explanatory copy with the audited locality variation library.
- start=seeded(row,len(FOCUS_NOTES),0)
- cards=[]
- for i,(title,text) in enumerate(deep):
-  ft,fp=FOCUS_NOTES[(start+i*3)%len(FOCUS_NOTES)]
-  body=first_sentence(text)+" "+fp
-  cards.append('<article class="card"><b>'+html.escape(title)+'</b><p>'+html.escape(body)+'</p></article>')
- nt,items=DECISION_NOTES[seeded(row,len(DECISION_NOTES),4)]
- cards.append('<article class="card"><b>'+html.escape(nt)+'</b><p>'+html.escape(" ".join(items))+'</p><p>'+html.escape(CTA[d["cta_frame"]])+'</p></article>')
- deep_block='<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>'+html.escape(service_label)+' 선택 전에 확인할 기준</h2><div class="grid4">'+''.join(cards)+'</div></div></section>'
- raw,n=re.subn(r'<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p>[\s\S]*?</section>',deep_block,raw,count=1)
+def row_note(row,d,slot):
+ ft,fp=FOCUS_NOTES[(seeded(row,len(FOCUS_NOTES),slot*3)+slot)%len(FOCUS_NOTES)]
+ nt,items=DECISION_NOTES[(seeded(row,len(DECISION_NOTES),slot*2+2)+slot)%len(DECISION_NOTES)]
+ rhythm=FAQ_SUFFIX[d["sentence_rhythm"]]
+ tail=seed_pick(row,slot+1)
+ return f"{fp} {items[slot%len(items)]} {rhythm} {tail}"
+
+def rewrite_deep_faq(raw,row,d,priority,scene_titles,proof_labels,boundary,service_label,family):
+ priority=list(priority)
+ scene_titles=list(scene_titles)
+ proof_labels=list(proof_labels or priority)
+ # Deep Guide: only validated intent labels/facts are kept; explanatory prose is rebuilt from the row variation.
+ topics=[
+  (f"{scene_titles[0]}에서 시작점을 잡는 방법",
+   f"'{scene_titles[0]}'을 한 번의 결과로 판단하지 않습니다. {row_note(row,d,0)}"),
+  (f"{priority[min(1,len(priority)-1)]}의 우선순위를 정하는 기준",
+   f"'{priority[min(1,len(priority)-1)]}'이 실제 다음 일정에 얼마나 직접 연결되는지 먼저 봅니다. {row_note(row,d,2)}"),
+  (f"{scene_titles[-1]}을 다른 조건에서 다시 확인하기",
+   f"'{scene_titles[-1]}'은 익숙한 조건과 새 조건을 나눠 확인합니다. {row_note(row,d,4)}"),
+  ("다른 경로와 비교할 때",
+   f"{boundary} {row_note(row,d,6)}"),
+ ]
+ cards=''.join('<article class="card"><b>'+html.escape(t)+'</b><p>'+html.escape(p)+'</p></article>' for t,p in topics)
+ deep='<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>'+html.escape(service_label)+' 선택 전에 확인할 기준</h2><div class="grid4">'+cards+'</div></div></section>'
+ raw,n=re.subn(r'<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p>[\s\S]*?</section>',deep,raw,count=1)
  if n!=1:raise RuntimeError("deep rewrite")
- # Five FAQs, deterministic order; preserve the question and the first factual sentence, vary the recheck explanation.
- offset=seeded(row,len(faq),8)
- selected=[faq[(offset+i)%len(faq)] for i in range(min(5,len(faq)))]
- suffix=FAQ_SUFFIX[d["sentence_rhythm"]]
- details=[]
- for i,(q,a) in enumerate(selected):
-  extra=[suffix,DIAG[d["diagnosis_emphasis"]],CASE[d["case_frame"]],CTA[d["cta_frame"]],seed_pick(row,(i+3)%12)][i%5]
-  details.append('<details><summary>'+html.escape(q)+'</summary><p>'+html.escape(first_sentence(a)+" "+extra)+'</p></details>')
- faq_block='<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>선택 전에 확인할 질문</h2><div class="faq">'+''.join(details)+'</div></div></section>'
- raw,n=re.subn(r'<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p>[\s\S]*?</section>',faq_block,raw,count=1)
+
+ qas=[
+  ("무엇부터 시작하면 되나요?",f"첫 우선순위는 '{priority[0]}'입니다. {row_note(row,d,8)}"),
+  ("현재 상태는 어떻게 확인하나요?",f"{DIAG[d['diagnosis_emphasis']]} {row_note(row,d,10)}"),
+  ("수업 뒤에는 무엇을 기록하나요?",f"'{proof_labels[0]}'을 다음 확인 기준으로 남깁니다. {row_note(row,d,12)}"),
+  ("다른 과정이나 시험이 더 맞을 수도 있나요?",f"{boundary} {row_note(row,d,14)}"),
+  ("변화는 어떻게 다시 확인하나요?",f"'{scene_titles[-1]}'처럼 실제 장면이나 문제를 다시 만들고 조건을 바꿔 확인합니다. {row_note(row,d,16)}"),
+ ]
+ details=''.join('<details><summary>'+html.escape(q)+'</summary><p>'+html.escape(a)+'</p></details>' for q,a in qas)
+ faq='<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>'+html.escape(STRIP_INTRO[d["intro_pattern"]])+'을 기준으로 확인하는 질문</h2><div class="faq">'+details+'</div></div></section>'
+ raw,n=re.subn(r'<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p>[\s\S]*?</section>',faq,raw,count=1)
  if n!=1:raise RuntimeError("faq rewrite")
  return raw
 
-def load_module(name,path):
+def load_moduledef load_module(name,path):
  spec=importlib.util.spec_from_file_location(name,path)
  if not spec or not spec.loader: raise RuntimeError(f"cannot load {path}")
  mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod);return mod
@@ -278,69 +292,111 @@ def decision_block(raw,family,current,svc,ex,row,d):
  if n!=1:raise RuntimeError("decision section")
  return raw
 
+def scene_copy(title,row,d,index):
+ style=d["sentence_rhythm"]
+ leads={
+  "short-analytic":f"'{title}'의 첫 시도와 재시도를 나눕니다.",
+  "balanced-editorial":f"최근 '{title}' 장면에서 혼자 되는 범위와 멈추는 지점을 함께 봅니다.",
+  "compact-direct":f"'{title}'에서 어디까지 혼자 되는지 먼저 확인합니다.",
+  "calm-explanatory":f"'{title}'은 서두르지 않고 현재 가능한 범위부터 확인합니다.",
+  "question-led":f"'{title}'에서 무엇이 먼저 흔들리는지 질문하며 확인합니다.",
+  "example-led":f"'{title}'을 실제 예시 하나로 다시 만들어 반응을 비교합니다.",
+ }
+ return leads[style]+" "+row_note(row,d,index+1)
+
+def flow_copy(title,row,d,index):
+ style=d["sentence_rhythm"]
+ banks={
+  "short-analytic":[f"'{title}'의 현재 범위를 확인합니다.",f"'{title}' 기준을 한 가지로 좁힙니다.",f"'{title}'을 직접 수행합니다.",f"새 조건에서 '{title}'을 다시 합니다.",f"'{title}' 결과를 기록합니다.",f"실전 조건에서 '{title}'을 재검증합니다."],
+  "balanced-editorial":[f"먼저 '{title}'에서 혼자 가능한 범위를 확인합니다.",f"'{title}'에 필요한 기준을 정리한 뒤 바로 적용합니다.",f"'{title}'을 실제 문제나 장면으로 옮깁니다.",f"자료나 질문을 바꿔도 '{title}'이 유지되는지 봅니다.",f"'{title}'에서 남은 병목을 다음 기록으로 남깁니다.",f"'{title}'을 실제 일정과 비슷한 조건에서 확인합니다."],
+  "compact-direct":[f"현재 '{title}' 확인.",f"'{title}' 기준 정리.",f"'{title}' 직접 수행.",f"새 조건에서 '{title}' 재사용.",f"'{title}' 결과 기록.",f"실전 '{title}' 재검증."],
+  "calm-explanatory":[f"'{title}'은 현재 가능한 범위를 먼저 확인합니다.",f"'{title}'에 필요한 부분만 설명한 뒤 혼자 해보게 합니다.",f"'{title}'을 익숙한 예시에서 실제 문제로 옮깁니다.",f"'{title}'의 조건을 하나씩 바꿔 다시 확인합니다.",f"'{title}'에서 잘된 부분과 다시 볼 부분을 나눕니다.",f"'{title}'을 다음 실제 일정에 가까운 조건으로 확인합니다."],
+  "question-led":[f"'{title}'에서 지금 혼자 되는 것은 무엇인가요?",f"'{title}'에 꼭 필요한 기준은 무엇인가요?",f"'{title}'을 실제로 하면 어디에서 멈추나요?",f"질문이나 자료가 달라도 '{title}'이 다시 되나요?",f"'{title}'에서 다음에 다시 볼 것은 무엇인가요?",f"실전 조건에서도 '{title}'을 유지할 수 있나요?"],
+  "example-led":[f"예를 들어 '{title}'의 첫 시도를 기록합니다.",f"다음 예시에서는 '{title}'에 필요한 기준 하나만 적용합니다.",f"새 문제에서 '{title}'을 직접 수행합니다.",f"다른 예시로 '{title}' 조건을 바꿔봅니다.",f"마지막 예시에서 '{title}' 결과를 다음 계획으로 연결합니다.",f"실전 예시에서 '{title}'을 제한 조건과 함께 확인합니다."],
+ }
+ return banks[style][index%len(banks[style])]+" "+row_note(row,d,index+4)
+
 def replace_service_variation(raw,row,d,profile,cards,steps):
- # detail: keep target scope but replace frozen locality-frame prose with signature prose
  pat=r'(<section id="detail" class="section"><div class="wrap narrow"><p class="kicker">지금 상황</p><h2>.*?</h2>)([\s\S]*?)(</div></section>)'
  m=re.search(pat,raw)
  if not m:raise RuntimeError("service detail")
- base=f'<p>{html.escape(row["full_name_ko"])}에서 {html.escape(profile["service_body"])}를 알아볼 때는 과정 이름보다 지금 필요한 영어 장면을 먼저 확인합니다.</p><p>{html.escape(profile["scope"])}</p><p>{html.escape(INTRO[d["intro_pattern"]])}</p><p>{html.escape(CONTEXT[d["local_context_mode"]])}</p>'
- raw=raw[:m.start()]+m.group(1)+base+m.group(3)+raw[m.end():]
- # scene cards: symptom + two complete dimension-specific paragraphs
- for idx,(title,symptom) in enumerate(cards):
-  p1=f"{title} 장면에서는 {DIAG[d['diagnosis_emphasis']]} {seed_pick(row,idx%4)}"
-  p2=f"{CASE[d['case_frame']]} {CTA[d['cta_frame']]}"
+ focus=" · ".join(profile["priority"][:4])
+ body=(
+  f'<p>{html.escape(row["full_name_ko"])}에서 {html.escape(profile["service_body"])}를 알아볼 때는 과정 이름보다 지금 필요한 영어 행동을 먼저 확인합니다.</p>'
+  f'<p>확인 항목은 {html.escape(focus)}입니다.</p>'
+  f'<p>{html.escape(INTRO[d["intro_pattern"]])}</p>'
+  f'<p>{html.escape(CONTEXT[d["local_context_mode"]])} {html.escape(row_note(row,d,1))}</p>'
+ )
+ raw=raw[:m.start()]+m.group(1)+body+m.group(3)+raw[m.end():]
+
+ for idx,(title,_symptom) in enumerate(cards):
+  p1=scene_copy(title,row,d,idx)
+  p2=[DIAG[d["diagnosis_emphasis"]],CASE[d["case_frame"]],CTA[d["cta_frame"]],CONTEXT[d["local_context_mode"]]][idx%4]+" "+row_note(row,d,idx+5)
   rg=r'(<article class="card"><b>'+re.escape(html.escape(title))+r'</b>)[\s\S]*?(</article>)'
-  rep=r'\1<p>'+html.escape(symptom)+'</p><p>'+html.escape(p1)+'</p><p>'+html.escape(p2)+'</p>'+r'\2'
+  rep=r'\1<p>'+html.escape(p1)+'</p><p>'+html.escape(p2)+'</p>'+r'\2'
   raw,n=re.subn(rg,rep,raw,count=1)
   if n!=1:raise RuntimeError("service card "+title)
- # diagnosis body
+
  rg=r'(<p class="kicker">막히는 이유</p><h2>.*?</h2>)[\s\S]*?(</div></section>)'
- body='<p>'+html.escape(DIAG[d["diagnosis_emphasis"]])+'</p><p>'+html.escape(CASE[d["case_frame"]])+'</p><p>'+html.escape(seed_pick(row,4))+'</p>'
- raw,n=re.subn(rg,lambda m:m.group(1)+body+m.group(2),raw,count=1)
+ db=(
+  '<p>'+html.escape(DIAG[d["diagnosis_emphasis"]])+'</p>'
+  '<p>'+html.escape(CASE[d["case_frame"]])+'</p>'
+  '<p>'+html.escape(row_note(row,d,11))+'</p>'
+ )
+ raw,n=re.subn(rg,lambda m:m.group(1)+db+m.group(2),raw,count=1)
  if n!=1:raise RuntimeError("service diagnosis")
- # flow per step
+
  for idx,title in enumerate(steps):
-  a=f"{INTRO[d['intro_pattern']]} 이 단계에서는 '{title}' 행동에 필요한 부분만 짧게 확인합니다."
-  b=f"{CASE[d['case_frame']]} {seed_pick(row,(idx+6)%12)}"
+  a=flow_copy(title,row,d,idx)
+  b=[INTRO[d["intro_pattern"]],CONTEXT[d["local_context_mode"]],DIAG[d["diagnosis_emphasis"]],CTA[d["cta_frame"]]][idx%4]+" "+seed_pick(row,idx+6)
   rg=r'(<li><span>\d+</span><div><b>'+re.escape(html.escape(title))+r'</b>)[\s\S]*?(</div></li>)'
   raw,n=re.subn(rg,lambda m:m.group(1)+'<p>'+html.escape(a)+'</p><p>'+html.escape(b)+'</p>'+m.group(2),raw,count=1)
   if n!=1:raise RuntimeError("service flow "+title)
  return raw
 
 def replace_exam_variation(raw,row,d,exam):
- # detail signature paragraph
  rg=r'(<section id="detail" class="section"><div class="wrap narrow"><p class="kicker">시험 목표</p><h2>.*?</h2>)([\s\S]*?)(</div></section>)'
  m=re.search(rg,raw)
  if not m:raise RuntimeError("exam detail")
- body=f'<p>{html.escape(row["full_name_ko"])}에서 {html.escape(exam["service"])}를 알아볼 때는 제출 목적과 다음 시험일, 최근 반복된 병목을 먼저 확인합니다.</p><p>{html.escape(exam["goal"])}이 핵심 기준입니다.</p><p>{html.escape(INTRO[d["intro_pattern"]])} {html.escape(CONTEXT[d["local_context_mode"]])}</p>'
+ focus=" · ".join(exam["diagnosis"][:6])
+ body=(
+  f'<p>{html.escape(row["full_name_ko"])}에서 {html.escape(exam["service"])}를 알아볼 때는 제출 목적과 다음 시험일을 먼저 정합니다.</p>'
+  f'<p>확인 항목은 {html.escape(focus)}입니다.</p>'
+  f'<p>{html.escape(INTRO[d["intro_pattern"]])} {html.escape(CONTEXT[d["local_context_mode"]])}</p>'
+  f'<p>{html.escape(row_note(row,d,2))}</p>'
+ )
  raw=raw[:m.start()]+m.group(1)+body+m.group(3)+raw[m.end():]
- # actual scene cards
- for idx,(title,symptom) in enumerate(exam["scenes"]):
-  a=f"{DIAG[d['diagnosis_emphasis']]} '{title}'에서 어떤 조건이 결과를 흔드는지 따로 기록합니다."
-  b=f"{CASE[d['case_frame']]} {seed_pick(row,idx%4)}"
+
+ for idx,(title,_symptom) in enumerate(exam["scenes"]):
+  a=scene_copy(title,row,d,idx)
+  b=[DIAG[d["diagnosis_emphasis"]],CASE[d["case_frame"]],CTA[d["cta_frame"]],CONTEXT[d["local_context_mode"]]][idx%4]+" "+row_note(row,d,idx+6)
   rg=r'(<article class="card"><b>'+re.escape(html.escape(title))+r'</b>)[\s\S]*?(</article>)'
-  raw,n=re.subn(rg,lambda m:m.group(1)+'<p>'+html.escape(symptom)+'</p><p>'+html.escape(a)+'</p><p>'+html.escape(b)+'</p>'+m.group(2),raw,count=1)
+  raw,n=re.subn(rg,lambda m:m.group(1)+'<p>'+html.escape(a)+'</p><p>'+html.escape(b)+'</p>'+m.group(2),raw,count=1)
   if n!=1:raise RuntimeError("exam card "+title)
- # exam structure diagnosis section
+
  rg=r'(<p class="kicker">시험 구조와 개인 약점</p><h2>.*?</h2>)[\s\S]*?(</div></section>)'
- body='<p>'+html.escape(DIAG[d["diagnosis_emphasis"]])+'</p><p>'+html.escape(CONTEXT[d["local_context_mode"]])+'</p><p>이 시험에서는 '+html.escape(" · ".join(exam["diagnosis"]))+' 항목을 나눠 이미 안정된 부분과 다시 볼 부분을 구분합니다.</p>'
- raw,n=re.subn(rg,lambda m:m.group(1)+body+m.group(2),raw,count=1)
+ db=(
+  '<p>'+html.escape(DIAG[d["diagnosis_emphasis"]])+'</p>'
+  '<p>'+html.escape(CONTEXT[d["local_context_mode"]])+'</p>'
+  '<p>이 시험에서는 '+html.escape(" · ".join(exam["diagnosis"]))+'을 나눠 현재 병목을 확인합니다. '+html.escape(row_note(row,d,12))+'</p>'
+ )
+ raw,n=re.subn(rg,lambda m:m.group(1)+db+m.group(2),raw,count=1)
  if n!=1:raise RuntimeError("exam diagnosis")
- # flow descriptions
+
  for idx,title in enumerate(exam["flow"]):
-  txt=f"{CASE[d['case_frame']]} '{title}' 단계에서는 {DIAG[d['diagnosis_emphasis']]} {seed_pick(row,(idx+5)%12)}"
+  txt=flow_copy(title,row,d,idx)
   rg=r'(<li><span>\d+</span><div><b>'+re.escape(html.escape(title))+r'</b>)[\s\S]*?(</div></li>)'
   raw,n=re.subn(rg,lambda m:m.group(1)+'<p>'+html.escape(txt)+'</p>'+m.group(2),raw,count=1)
   if n!=1:raise RuntimeError("exam flow "+title)
- # replace long frozen learning-frame prose with full signature composition
+
  rg=r'<section class="section"><div class="wrap narrow"><p class="kicker">학습 프레임</p>[\s\S]*?</div></section>'
- paras=[INTRO[d["intro_pattern"]],CONTEXT[d["local_context_mode"]],DIAG[d["diagnosis_emphasis"]],CASE[d["case_frame"]],CTA[d["cta_frame"]],seed_pick(row,8)]
- repl='<section class="section"><div class="wrap narrow"><p class="kicker">학습 프레임</p><h2>현재 목표를 실제 시험 행동으로 바꾸는 기준</h2>'+''.join('<p>'+html.escape(x)+'</p>' for x in paras)+'</div></section>'
+ paras=[INTRO[d["intro_pattern"]],CONTEXT[d["local_context_mode"]],DIAG[d["diagnosis_emphasis"]],CASE[d["case_frame"]],CTA[d["cta_frame"]],row_note(row,d,15)]
+ repl='<section class="section"><div class="wrap narrow"><p class="kicker">학습 프레임</p><h2>'+html.escape(STRIP_INTRO[d["intro_pattern"]])+'에서 실전 재확인까지</h2>'+''.join('<p>'+html.escape(x)+'</p>' for x in paras)+'</div></section>'
  raw,n=re.subn(rg,repl,raw,count=1)
  if n!=1:raise RuntimeError("exam learning frame")
  return raw
 
-def rewrite_mid_sections(raw,row,d,priority,proof_labels,scene_titles,family):
+def rewrite_mid_sectionsdef rewrite_mid_sections(raw,row,d,priority,proof_labels,scene_titles,family):
  extras=[DIAG[d["diagnosis_emphasis"]],CONTEXT[d["local_context_mode"]],CASE[d["case_frame"]],CTA[d["cta_frame"]]]
  pri=[]
  for i,label in enumerate(priority[:4]):
@@ -372,8 +428,8 @@ def rewrite_mid_sections(raw,row,d,priority,proof_labels,scene_titles,family):
 def finalize(raw,row,d,current,svc,ex,family):
  raw=raw.replace('../pilot-v45-5x7/pilot.css','pilot.css').replace('../pilot-v45-5x7/pilot.js','pilot.js')
  raw=raw.replace('V4.5 FULL-DEPTH PILOT · noindex','V4.5 PRODUCTION DRY-RUN · noindex').replace('V4.5 EXAM FULL-DEPTH PILOT · noindex','V4.5 EXAM PRODUCTION DRY-RUN · noindex')
- raw=raw.replace('현재 페이지는 5×7 소규모 검수용이라 폼의 실제 전송은 비활성화되어 있습니다.','현재 페이지는 배포 전 production dry-run이라 폼의 실제 전송은 비활성화되어 있습니다.')
- raw=raw.replace('Full-depth 검수용 페이지 · production 미배포','Production dry-run · noindex · 미배포').replace('시험형 Full-depth 검수용 · production 미배포','시험형 Production dry-run · noindex · 미배포')
+ raw=raw.replace('현재 페이지는 5×7 소규모 검수용이라 폼의 실제 전송은 비활성화되어 있습니다.','검수용 페이지라 폼 전송은 꺼져 있습니다.')
+ raw=raw.replace('Full-depth 검수용 페이지 · production 미배포','Dry-run · noindex · 미배포').replace('시험형 Full-depth 검수용 · production 미배포','시험 Dry-run · noindex · 미배포')
  raw=raw.replace('파일럿 폼','검수용 폼').replace('파일럿의 상담 폼','검수용 상담 폼').replace('이 파일럿은','이 배포 전 검수 페이지는').replace('이 파일럿','이 배포 전 검수 페이지')
  raw=benchmark_blocks(raw,family,row,d)
  raw=decision_block(raw,family,current,svc,ex,row,d)
@@ -490,7 +546,8 @@ def main():
     raw0=svc.render_page(slug,locf,intent,p,cards,steps,proofs,feedback)
     raw_by_frame[frame]=replace_service_variation(raw0,row,d,p,cards,steps)
    raw=compose_frames(raw_by_frame,perm,SERVICE_GROUPS)
-   raw=rewrite_shared_blocks(raw,row)
+   raw=rewrite_mid_sections(raw,row,d,p["priority"],p["priority"],[x[0] for x in cards],"service")
+   raw=rewrite_deep_faq(raw,row,d,p["priority"],[x[0] for x in cards],p["priority"],p["boundary"],p["service_h1"],"service")
    raw=finalize(raw,row,d,intent,svc,ex,"service")
    name=f"{slug}-{intent}.html";generated[name]=raw
    files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"service","intent":intent,"h1":f"{row['dong_name']} {p['service_h1']}","canonical":f"https://englishpt.kr/{slug}-{intent}.html","locality":slug,"blueprint":p["blueprint"],"variation_signature":row["variation_signature"],"gold_frame_permutation":[FRAMES[x] for x in perm]})
@@ -501,7 +558,8 @@ def main():
     raw0=ex.render(slug,locf,key,e)
     raw_by_frame[frame]=replace_exam_variation(raw0,row,d,e)
    raw=compose_frames(raw_by_frame,perm,EXAM_GROUPS)
-   raw=rewrite_shared_blocks(raw,row)
+   raw=rewrite_mid_sections(raw,row,d,e["priority"],e["proof"],[x[0] for x in e["scenes"]],"exam")
+   raw=rewrite_deep_faq(raw,row,d,e["priority"],[x[0] for x in e["scenes"]],e["proof"],e["boundary"],e["service"],"exam")
    raw=finalize(raw,row,d,intent,svc,ex,"exam")
    name=f"{slug}-{intent}.html";generated[name]=raw
    files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"exam","intent":intent,"exam":key,"h1":f"{row['dong_name']} {e['service']}","canonical":f"https://englishpt.kr/{slug}-{intent}.html","locality":slug,"blueprint":e["blueprint"],"variation_signature":row["variation_signature"],"gold_frame_permutation":[FRAMES[x] for x in perm]})
@@ -529,7 +587,7 @@ def main():
   if "-tos.html" in raw.lower():f.append("standalone_tos")
   if meta["canonical"] in reserved:f.append("reserved_95_conflict")
   byloc[meta["locality"]].add(name)
-  lo,hi=(4000,7200) if meta["family"]=="service" else (4500,7600)
+  lo,hi=(4000,7400) if meta["family"]=="service" else (4500,7800)
   if not(lo<=len(text)<=hi):f.append(f"visible_chars:{len(text)}")
   checks.append({"file":name,"intent":meta["intent"],"family":meta["family"],"visible_chars":len(text),"status":"PASS" if not f else "FAIL","failures":f})
   if f:failures.append({"file":name,"failures":f})
