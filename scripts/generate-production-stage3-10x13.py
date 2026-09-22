@@ -294,7 +294,7 @@ def compose_frames(raw_by_frame,perm,groups):
 
 def first_sentence(text):
  text=html.unescape(re.sub(r'<[^>]+>',' ',text)).strip()
- m=re.search(r'^(.+?[.!?]|.+?다\\.)',text)
+ m=re.search(r'^(.+?[.!?]|.+?다\.)',text)
  return (m.group(1) if m else text).strip()
 
 def row_line(row,slot):
@@ -310,7 +310,7 @@ def rewrite_cards(section,row,start_slot=0):
   core=first_sentence(ps[0]) if ps else ""
   line=row_line(row,slot);slot+=1
   return '<article class="card"><b>'+title+'</b><p>'+html.escape(core)+'</p><p>'+html.escape(line)+'</p></article>'
- return re.sub(r'<article class="card"><b>(.*?)</b>([\\s\\S]*?)</article>',repl,section)
+ return re.sub(r'<article class="card"><b>(.*?)</b>([\s\S]*?)</article>',repl,section)
 
 def rewrite_shared_blocks(raw,row):
  # Deep Guide: preserve each card's first core sentence, replace copied tail with locality-variation guidance.
@@ -323,7 +323,7 @@ def rewrite_shared_blocks(raw,row):
   nonlocal slot
   q=m.group(1);a=m.group(2);core=first_sentence(a);line=row_line(row,slot);slot+=1
   return '<details><summary>'+q+'</summary><p>'+html.escape(core)+'</p><p>'+html.escape(line)+'</p></details>'
- faq2=re.sub(r'<details><summary>(.*?)</summary><p>([\\s\\S]*?)</p></details>',faq_repl,faq)
+ faq2=re.sub(r'<details><summary>(.*?)</summary><p>([\s\S]*?)</p></details>',faq_repl,faq)
  raw=raw.replace(faq,faq2,1)
  # Decision-proof explanatory spans are process evidence, so make them vary by row without changing labels.
  proof=section_html(raw,"판단 기준");slot=3
@@ -331,7 +331,7 @@ def rewrite_shared_blocks(raw,row):
   nonlocal slot
   label=m.group(1);line=row_line(row,slot);slot+=1
   return '<li><b>'+label+'</b><span>'+html.escape(line)+'</span></li>'
- proof2=re.sub(r'<li><b>(.*?)</b><span>[\\s\\S]*?</span></li>',proof_repl,proof)
+ proof2=re.sub(r'<li><b>(.*?)</b><span>[\s\S]*?</span></li>',proof_repl,proof)
  raw=raw.replace(proof,proof2,1)
  return raw
 
