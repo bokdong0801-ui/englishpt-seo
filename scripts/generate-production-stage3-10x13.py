@@ -230,13 +230,19 @@ def variation_story(row,d,service):
  seed=row["content_seed"]
  ia=int(seed[0:2],16)%len(n["seed_perspective_a"])
  ib=int(seed[2:4],16)%len(n["seed_perspective_b"])
- parts.append(n["seed_perspective_a"][ia])
- parts.append(n["seed_perspective_b"][ib])
- ic=int(seed[4:6],16)%len(n["seed_perspective_c"])
- idd=int(seed[6:8],16)%len(n["seed_perspective_d"])
- parts.append(n["seed_perspective_c"][ic])
- parts.append(n["seed_perspective_d"][idd])
- titles=["현재를 보는 관점","수업을 고르는 관점","지역과 생활 맥락","연습 전후 비교","설명 방식","진단 초점","정보를 배열하는 순서","선택을 좁히는 순서","상담으로 연결하는 기준","독립 검토 관점 A","독립 검토 관점 B","독립 검토 관점 C","독립 검토 관점 D"]
+ voice=n["voice_packs"]
+ ids=[
+  int(seed[0:2],16)%len(voice),
+  int(seed[2:4],16)%len(voice),
+  int(seed[4:6],16)%len(voice)
+ ]
+ # Keep three different lexical packs for each locality where possible.
+ chosen=[]
+ for idx in ids:
+  while idx in chosen: idx=(idx+1)%len(voice)
+  chosen.append(idx)
+ parts.extend(voice[idx] for idx in chosen)
+ titles=["현재를 보는 관점","수업을 고르는 관점","지역과 생활 맥락","연습 전후 비교","설명 방식","진단 초점","정보를 배열하는 순서","선택을 좁히는 순서","상담으로 연결하는 기준","독립 서술 관점 1","독립 서술 관점 2","독립 서술 관점 3"]
  return '<section class="section variation-story"><div class="wrap narrow"><p class="kicker">판단 가이드</p><h2>'+esc(service)+'를 실제 일정에 연결하는 방법</h2>'+''.join(f'<article><b>{esc(t)}</b><p>{esc(p)}</p></article>' for t,p in zip(titles,parts))+'</div></section>'
 
 def deep_block(scene_titles,priority,boundary,service,row,d):
@@ -356,7 +362,7 @@ def main():
   if "-tos.html" in raw.lower():f.append("standalone_tos")
   linked=set(re.findall(r'href="([^"]+\.html)"',raw));missing=byloc[m["locality"]]-{name}-linked
   if missing:f.append("cluster_links")
-  lo,hi=(6500,10500)
+  lo,hi=(7000,11000)
   if not lo<=len(txt)<=hi:f.append(f"visible_chars:{len(txt)}")
   checks.append({"file":name,"family":m["family"],"intent":m["intent"],"visible_chars":len(txt),"status":"PASS" if not f else "FAIL","failures":f})
   if f:failures.append({"file":name,"failures":f})
