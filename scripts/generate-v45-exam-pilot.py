@@ -577,7 +577,8 @@ def validate(generated):
   if f'rel="canonical" href="{canonical}"' not in raw:f.append("canonical")
   if 'name="robots" content="noindex,nofollow"' not in raw:f.append("noindex")
   if exam["blueprint"] not in allowed:f.append("blueprint_not_allowlisted")
-  if '<p class="kicker">피드백 예시</p>' not in raw or ("실제" not in visible(raw.split('<p class="kicker">피드백 예시</p>',1)[1].split('</section>',1)[0])):f.append("sample_label")
+  feedback_section=visible(raw.split('<p class="kicker">피드백 예시</p>',1)[1].split('</section>',1)[0]) if '<p class="kicker">피드백 예시</p>' in raw else ""
+  if not feedback_section or not any(x in feedback_section for x in ["실제 후기","특정 수강생","특정 학생","성과 수치가 아닙니다","성과가 아닙니다"]):f.append("sample_label")
   if '<p class="kicker">공식정보 확인</p>' not in raw or "공식" not in visible(raw.split('<p class="kicker">공식정보 확인</p>',1)[1].split('</section>',1)[0]):f.append("official_verification")
   if any(x in text for x in forbidden):f.append("forbidden_copy")
   if re.search(r"(토익스피킹과외을|오픽과외을|아이엘츠과외을|토플과외을|토익과외을)",text):f.append("malformed_particle")
