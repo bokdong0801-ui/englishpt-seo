@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "status": "FULL_DEPTH_EXAM_PILOT_STATIC_DUPLICATE_PASS_HUMAN_REVIEW_REQUIRED_NOT_PRODUCTION",
+  "status": "STATIC_DUPLICATE_HUMAN_PASS_RENDER_PENDING_NOT_PRODUCTION",
   "gold_standard": "V4_5_FULL_DEPTH_6_EXAM_GOLD_STANDARD.md",
   "blueprints": "V4_5_EXAM_BLUEPRINTS.json",
   "allowlist": "V4_5_EXAM_GENERATOR_ALLOWLIST.json",
@@ -357,5 +357,9 @@
       "locality": "busan-haeundae-jungdong",
       "variation": "reuse"
     }
-  ]
+  ],
+  "human_review": {
+    "status": "PASS",
+    "review_file": "pilot-v45-exam-5x6/PILOT_EXAM_5X6_HUMAN_REVIEW_V1.md"
+  }
 }
