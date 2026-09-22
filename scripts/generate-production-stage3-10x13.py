@@ -221,12 +221,12 @@ EXAM_GROUPS=[
 ]
 
 def section_html(raw,key):
- if key=="__detail__":
-  m=re.search(r'<section id="detail" class="section">[\s\S]*?</section>',raw)
- else:
-  m=re.search(r'<section[^>]*>[\s\S]*?<p class="kicker">'+re.escape(key)+r'</p>[\s\S]*?</section>',raw)
- if not m:raise RuntimeError("section not found: "+key)
- return m.group(0)
+ marker='id="detail"' if key=="__detail__" else '<p class="kicker">'+key+'</p>'
+ for m in re.finditer(r'<section\\b[^>]*>[\\s\\S]*?</section>',raw):
+  block=m.group(0)
+  if marker in block:
+   return block
+ raise RuntimeError("section not found: "+key)
 
 def replace_section(raw,key,new):
  old=section_html(raw,key)
