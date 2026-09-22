@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "status": "PASS",
+  "status": "STATIC_DUPLICATE_HUMAN_PASS_RENDER_PENDING_NOT_PRODUCTION",
   "page_count": 30,
   "visible_chars": {
     "min": 6299,
@@ -624,5 +624,17 @@
     }
   ],
   "failures": [],
-  "production_deploy": false
+  "production_deploy": false,
+  "human_content_qa": {
+    "status": "PASS",
+    "review_file": "pilot-v45-exam-5x6/PILOT_EXAM_5X6_HUMAN_REVIEW_V1.md",
+    "representative_pages": [
+      "pilot-v45-exam-5x6/seoul-seocho-naegokdong-toeic.html",
+      "pilot-v45-exam-5x6/gangwon-gangneung-naegokdong-ielts.html",
+      "pilot-v45-exam-5x6/gangwon-gangneung-gangnamdong-opic.html",
+      "pilot-v45-exam-5x6/sejong-goundong-toeic-speaking.html"
+    ],
+    "production_deploy": false
+  },
+  "render_qa": "PENDING"
 }
