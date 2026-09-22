@@ -89,7 +89,7 @@ EXAMS={
    ("녹음 비교는 '좋아 보이는 느낌'을 줄여줍니다","같은 유형을 다시 답했을 때 첫 문장까지 걸린 시간, 답변 구조, 반복 표현, 마지막 문장 완결 여부를 비교하면 변화가 구체적으로 보입니다. 다음 연습에서는 잘된 표현을 외우는 것보다 질문을 바꾸고도 같은 구조를 다시 만들 수 있는지 확인합니다.")
   ],
   "faq":[
-   ("토스와 토익스피킹은 다른 과정인가요?","이 프로젝트에서는 토스/TOS를 TOEIC Speaking의 검색 alias로 처리합니다. 별도의 indexable 토스 페이지를 만들지 않고 같은 시험 대비 페이지에서 다룹니다."),
+   ("토스와 토익스피킹은 다른 과정인가요?","토스/TOS는 TOEIC Speaking을 가리키는 표현으로 보고 같은 시험 대비 페이지에서 안내합니다. 별도의 토스 시험 페이지로 나누지 않습니다."),
    ("답변 스크립트를 외우면 안 되나요?","핵심 표현과 구조는 준비할 수 있지만 문장 전체를 고정하면 질문 변형에 약해질 수 있습니다. 의미 블록을 바꿔 재구성하는 연습을 함께 둡니다."),
    ("발음이 좋지 않으면 먼저 발음만 해야 하나요?","알아듣기 어려운 발음은 교정할 수 있지만 답변 구조와 시간 관리도 함께 봅니다. 전달을 가장 크게 방해하는 요소부터 우선합니다."),
    ("녹음은 왜 하나요?","말하는 동안에는 공백, 반복, 길이를 스스로 정확히 느끼기 어렵습니다. 녹음으로 같은 유형의 전후 답변을 비교하면 재연습 기준이 생깁니다."),
@@ -513,7 +513,7 @@ def scene_blocks(exam,var):
           f"힌트 뒤 바로 수정되는지와 새 문제에서 혼자 다시 처리하는지를 비교해 {title}의 실제 약점을 좁힙니다."]
   elif var=="use":
    extra=[f"다음 시험에서는 '{title}' 장면을 어떻게 처리해야 하는지 실제 행동으로 먼저 정합니다. 결과가 보이면 필요한 연습 범위도 줄어듭니다.",
-          f"연습 뒤에는 '{title}'과 연결된 새 문제나 응답에서 시도할 한 가지 행동을 정하고 실제 결과를 다시 가져옵니다."]
+          f"연습 뒤에는 '{title}'에 연결된 새 문제나 응답에서 시도할 한 가지 행동을 정하고 실제 결과를 다시 가져옵니다."]
   else:
    extra=[f"익숙한 {title} 문제에서 가능했다고 끝내지 않고 문항 표현, 자료, 시간 중 한 조건을 바꿔 다시 확인합니다.",
           f"새 조건에서 '{title}' 관련 수행이 흔들리면 새 내용을 추가하기 전에 어떤 단서가 사라졌을 때 문제가 생겼는지부터 봅니다."]
@@ -665,7 +665,9 @@ def validate(generated):
   if not feedback_section or not any(x in feedback_section for x in ["실제 후기","특정 수강생","특정 학생","성과 수치가 아닙니다","성과가 아닙니다"]):f.append("sample_label")
   if '<p class="kicker">공식정보 확인</p>' not in raw or "공식" not in visible(raw.split('<p class="kicker">공식정보 확인</p>',1)[1].split('</section>',1)[0]):f.append("official_verification")
   if any(x in text for x in forbidden):f.append("forbidden_copy")
-  if re.search(r"(토익스피킹과외을|오픽과외을|아이엘츠과외을|토플과외을|토익과외을)",text):f.append("malformed_particle")
+  if re.search(r"(토익스피킹과외을|오픽과외을|아이엘츠과외을|토플과외을|토익과외을|문항를|질의을|응시이|근거이|근거은|제한 제한)",text):f.append("malformed_particle")
+  if re.search(r"'[^']+'과 연결된",text):f.append("malformed_connective_particle")
+  if "이 프로젝트에서는" in text:f.append("internal_project_language")
   if not (4500<=len(text)<=7500):f.append(f"visible_chars:{len(text)}")
   if "tos.html" in raw.lower() or re.search(r'-tos\.html',raw,re.I):f.append("standalone_tos_link")
   checks.append({"file":name,"visible_chars":len(text),"status":"PASS" if not f else "FAIL","failures":f})
