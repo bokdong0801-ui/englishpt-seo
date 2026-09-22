@@ -222,7 +222,7 @@ EXAM_GROUPS=[
 
 def section_html(raw,key):
  marker='id="detail"' if key=="__detail__" else '<p class="kicker">'+key+'</p>'
- for m in re.finditer(r'<section\\b[^>]*>[\\s\\S]*?</section>',raw):
+ for m in re.finditer(r'<section\b[^>]*>[\s\S]*?</section>',raw):
   block=m.group(0)
   if marker in block:
    return block
