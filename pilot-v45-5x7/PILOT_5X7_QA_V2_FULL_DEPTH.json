@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "status": "PASS",
+  "status": "STATIC_AND_RENDER_PASS_HUMAN_REVIEW_REQUIRED",
   "gold_standard": "V4_5_FULL_DEPTH_7TARGET_GOLD_STANDARD.md",
   "page_count": 35,
   "static_failures": 0,
@@ -692,6 +692,16 @@
     }
   ],
   "failures": [],
-  "render_qa": "PENDING_GITHUB_ACTIONS",
+  "render_qa": {
+    "status": "PASS",
+    "workflow_run_id": 35679447273,
+    "source_sha": "a2e11172a2ae20ca5e82099e43b652fdaa80536b",
+    "render_cases": 70,
+    "desktop_cases": 35,
+    "mobile_cases": 35,
+    "failures": 0,
+    "horizontal_overflow_failures": 0,
+    "console_or_page_error_cases": 0
+  },
   "production_deploy": false
 }

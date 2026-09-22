@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "status": "FULL_DEPTH_GENERATED_PILOT_ONLY_NOT_PRODUCTION",
+  "status": "FULL_DEPTH_STATIC_RENDER_PASS_HUMAN_REVIEW_REQUIRED_NOT_PRODUCTION",
   "gold_standard": "V4_5_FULL_DEPTH_7TARGET_GOLD_STANDARD.md",
   "blueprint_freeze": "V4.5-7TARGET-FINAL",
   "generator": "scripts/generate-v45-full-depth-pilot.py",
