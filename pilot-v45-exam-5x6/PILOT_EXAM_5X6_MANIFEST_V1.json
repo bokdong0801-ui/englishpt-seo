@@ -1,0 +1,361 @@
+{
+  "version": "1.0",
+  "status": "FULL_DEPTH_EXAM_PILOT_STATIC_DUPLICATE_PASS_HUMAN_REVIEW_REQUIRED_NOT_PRODUCTION",
+  "gold_standard": "V4_5_FULL_DEPTH_6_EXAM_GOLD_STANDARD.md",
+  "blueprints": "V4_5_EXAM_BLUEPRINTS.json",
+  "allowlist": "V4_5_EXAM_GENERATOR_ALLOWLIST.json",
+  "generator": "scripts/generate-v45-exam-pilot.py",
+  "page_count": 30,
+  "localities": [
+    {
+      "full_name_ko": "서울특별시 서초구 내곡동",
+      "region_slug": "seoul-seocho-naegokdong",
+      "variation_pack": "scene"
+    },
+    {
+      "full_name_ko": "강원특별자치도 강릉시 내곡동",
+      "region_slug": "gangwon-gangneung-naegokdong",
+      "variation_pack": "deadline"
+    },
+    {
+      "full_name_ko": "강원특별자치도 강릉시 강남동",
+      "region_slug": "gangwon-gangneung-gangnamdong",
+      "variation_pack": "error"
+    },
+    {
+      "full_name_ko": "세종특별자치시 고운동",
+      "region_slug": "sejong-goundong",
+      "variation_pack": "use"
+    },
+    {
+      "full_name_ko": "부산광역시 해운대구 중동",
+      "region_slug": "busan-haeundae-jungdong",
+      "variation_pack": "reuse"
+    }
+  ],
+  "exams": [
+    {
+      "exam": "toeic",
+      "intent_slug": "toeic",
+      "blueprint": "v45-exam-toeic-bottleneck-v1",
+      "h1_template": "{dong_name} 토익과외"
+    },
+    {
+      "exam": "toeic-speaking",
+      "intent_slug": "toeic-speaking",
+      "blueprint": "v45-exam-toeic-speaking-response-v1",
+      "h1_template": "{dong_name} 토익스피킹과외"
+    },
+    {
+      "exam": "opic",
+      "intent_slug": "opic",
+      "blueprint": "v45-exam-opic-story-recovery-v1",
+      "h1_template": "{dong_name} 오픽과외"
+    },
+    {
+      "exam": "ielts",
+      "intent_slug": "ielts",
+      "blueprint": "v45-exam-ielts-four-skill-band-v1",
+      "h1_template": "{dong_name} 아이엘츠과외"
+    },
+    {
+      "exam": "duolingo",
+      "intent_slug": "duolingo",
+      "blueprint": "v45-exam-det-adaptive-output-v1",
+      "h1_template": "{dong_name} 듀오링고영어테스트"
+    },
+    {
+      "exam": "toefl",
+      "intent_slug": "toefl",
+      "blueprint": "v45-exam-toefl-integrated-academic-v1",
+      "h1_template": "{dong_name} 토플과외"
+    }
+  ],
+  "tos_policy": {
+    "standalone_page": false,
+    "canonical_exam": "toeic-speaking",
+    "aliases": [
+      "토스",
+      "TOS"
+    ]
+  },
+  "safety": {
+    "robots": "noindex,nofollow",
+    "live_lead_submission": false,
+    "sitemap": false,
+    "main_merge": false,
+    "production_deploy": false
+  },
+  "files": [
+    {
+      "path": "pilot-v45-exam-5x6/seoul-seocho-naegokdong-toeic.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-toeic.html",
+      "h1": "내곡동 토익과외",
+      "blueprint": "v45-exam-toeic-bottleneck-v1",
+      "exam": "toeic",
+      "locality": "seoul-seocho-naegokdong",
+      "variation": "scene"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/seoul-seocho-naegokdong-toeic-speaking.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-toeic-speaking.html",
+      "h1": "내곡동 토익스피킹과외",
+      "blueprint": "v45-exam-toeic-speaking-response-v1",
+      "exam": "toeic-speaking",
+      "locality": "seoul-seocho-naegokdong",
+      "variation": "scene"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/seoul-seocho-naegokdong-opic.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-opic.html",
+      "h1": "내곡동 오픽과외",
+      "blueprint": "v45-exam-opic-story-recovery-v1",
+      "exam": "opic",
+      "locality": "seoul-seocho-naegokdong",
+      "variation": "scene"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/seoul-seocho-naegokdong-ielts.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-ielts.html",
+      "h1": "내곡동 아이엘츠과외",
+      "blueprint": "v45-exam-ielts-four-skill-band-v1",
+      "exam": "ielts",
+      "locality": "seoul-seocho-naegokdong",
+      "variation": "scene"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/seoul-seocho-naegokdong-duolingo.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-duolingo.html",
+      "h1": "내곡동 듀오링고영어테스트",
+      "blueprint": "v45-exam-det-adaptive-output-v1",
+      "exam": "duolingo",
+      "locality": "seoul-seocho-naegokdong",
+      "variation": "scene"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/seoul-seocho-naegokdong-toefl.html",
+      "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-toefl.html",
+      "h1": "내곡동 토플과외",
+      "blueprint": "v45-exam-toefl-integrated-academic-v1",
+      "exam": "toefl",
+      "locality": "seoul-seocho-naegokdong",
+      "variation": "scene"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/gangwon-gangneung-naegokdong-toeic.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-toeic.html",
+      "h1": "내곡동 토익과외",
+      "blueprint": "v45-exam-toeic-bottleneck-v1",
+      "exam": "toeic",
+      "locality": "gangwon-gangneung-naegokdong",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/gangwon-gangneung-naegokdong-toeic-speaking.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-toeic-speaking.html",
+      "h1": "내곡동 토익스피킹과외",
+      "blueprint": "v45-exam-toeic-speaking-response-v1",
+      "exam": "toeic-speaking",
+      "locality": "gangwon-gangneung-naegokdong",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/gangwon-gangneung-naegokdong-opic.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-opic.html",
+      "h1": "내곡동 오픽과외",
+      "blueprint": "v45-exam-opic-story-recovery-v1",
+      "exam": "opic",
+      "locality": "gangwon-gangneung-naegokdong",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/gangwon-gangneung-naegokdong-ielts.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-ielts.html",
+      "h1": "내곡동 아이엘츠과외",
+      "blueprint": "v45-exam-ielts-four-skill-band-v1",
+      "exam": "ielts",
+      "locality": "gangwon-gangneung-naegokdong",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/gangwon-gangneung-naegokdong-duolingo.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-duolingo.html",
+      "h1": "내곡동 듀오링고영어테스트",
+      "blueprint": "v45-exam-det-adaptive-output-v1",
+      "exam": "duolingo",
+      "locality": "gangwon-gangneung-naegokdong",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/gangwon-gangneung-naegokdong-toefl.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-toefl.html",
+      "h1": "내곡동 토플과외",
+      "blueprint": "v45-exam-toefl-integrated-academic-v1",
+      "exam": "toefl",
+      "locality": "gangwon-gangneung-naegokdong",
+      "variation": "deadline"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/gangwon-gangneung-gangnamdong-toeic.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-toeic.html",
+      "h1": "강남동 토익과외",
+      "blueprint": "v45-exam-toeic-bottleneck-v1",
+      "exam": "toeic",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/gangwon-gangneung-gangnamdong-toeic-speaking.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-toeic-speaking.html",
+      "h1": "강남동 토익스피킹과외",
+      "blueprint": "v45-exam-toeic-speaking-response-v1",
+      "exam": "toeic-speaking",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/gangwon-gangneung-gangnamdong-opic.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-opic.html",
+      "h1": "강남동 오픽과외",
+      "blueprint": "v45-exam-opic-story-recovery-v1",
+      "exam": "opic",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/gangwon-gangneung-gangnamdong-ielts.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-ielts.html",
+      "h1": "강남동 아이엘츠과외",
+      "blueprint": "v45-exam-ielts-four-skill-band-v1",
+      "exam": "ielts",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/gangwon-gangneung-gangnamdong-duolingo.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-duolingo.html",
+      "h1": "강남동 듀오링고영어테스트",
+      "blueprint": "v45-exam-det-adaptive-output-v1",
+      "exam": "duolingo",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/gangwon-gangneung-gangnamdong-toefl.html",
+      "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-toefl.html",
+      "h1": "강남동 토플과외",
+      "blueprint": "v45-exam-toefl-integrated-academic-v1",
+      "exam": "toefl",
+      "locality": "gangwon-gangneung-gangnamdong",
+      "variation": "error"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/sejong-goundong-toeic.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-toeic.html",
+      "h1": "고운동 토익과외",
+      "blueprint": "v45-exam-toeic-bottleneck-v1",
+      "exam": "toeic",
+      "locality": "sejong-goundong",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/sejong-goundong-toeic-speaking.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-toeic-speaking.html",
+      "h1": "고운동 토익스피킹과외",
+      "blueprint": "v45-exam-toeic-speaking-response-v1",
+      "exam": "toeic-speaking",
+      "locality": "sejong-goundong",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/sejong-goundong-opic.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-opic.html",
+      "h1": "고운동 오픽과외",
+      "blueprint": "v45-exam-opic-story-recovery-v1",
+      "exam": "opic",
+      "locality": "sejong-goundong",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/sejong-goundong-ielts.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-ielts.html",
+      "h1": "고운동 아이엘츠과외",
+      "blueprint": "v45-exam-ielts-four-skill-band-v1",
+      "exam": "ielts",
+      "locality": "sejong-goundong",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/sejong-goundong-duolingo.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-duolingo.html",
+      "h1": "고운동 듀오링고영어테스트",
+      "blueprint": "v45-exam-det-adaptive-output-v1",
+      "exam": "duolingo",
+      "locality": "sejong-goundong",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/sejong-goundong-toefl.html",
+      "canonical": "https://englishpt.kr/sejong-goundong-toefl.html",
+      "h1": "고운동 토플과외",
+      "blueprint": "v45-exam-toefl-integrated-academic-v1",
+      "exam": "toefl",
+      "locality": "sejong-goundong",
+      "variation": "use"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/busan-haeundae-jungdong-toeic.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-toeic.html",
+      "h1": "중동 토익과외",
+      "blueprint": "v45-exam-toeic-bottleneck-v1",
+      "exam": "toeic",
+      "locality": "busan-haeundae-jungdong",
+      "variation": "reuse"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/busan-haeundae-jungdong-toeic-speaking.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-toeic-speaking.html",
+      "h1": "중동 토익스피킹과외",
+      "blueprint": "v45-exam-toeic-speaking-response-v1",
+      "exam": "toeic-speaking",
+      "locality": "busan-haeundae-jungdong",
+      "variation": "reuse"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/busan-haeundae-jungdong-opic.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-opic.html",
+      "h1": "중동 오픽과외",
+      "blueprint": "v45-exam-opic-story-recovery-v1",
+      "exam": "opic",
+      "locality": "busan-haeundae-jungdong",
+      "variation": "reuse"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/busan-haeundae-jungdong-ielts.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-ielts.html",
+      "h1": "중동 아이엘츠과외",
+      "blueprint": "v45-exam-ielts-four-skill-band-v1",
+      "exam": "ielts",
+      "locality": "busan-haeundae-jungdong",
+      "variation": "reuse"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/busan-haeundae-jungdong-duolingo.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-duolingo.html",
+      "h1": "중동 듀오링고영어테스트",
+      "blueprint": "v45-exam-det-adaptive-output-v1",
+      "exam": "duolingo",
+      "locality": "busan-haeundae-jungdong",
+      "variation": "reuse"
+    },
+    {
+      "path": "pilot-v45-exam-5x6/busan-haeundae-jungdong-toefl.html",
+      "canonical": "https://englishpt.kr/busan-haeundae-jungdong-toefl.html",
+      "h1": "중동 토플과외",
+      "blueprint": "v45-exam-toefl-integrated-academic-v1",
+      "exam": "toefl",
+      "locality": "busan-haeundae-jungdong",
+      "variation": "reuse"
+    }
+  ]
+}
