@@ -1,6 +1,6 @@
 {
-  "version": "1.5",
-  "status": "READY_FOR_V4_5_SAMPLE_GENERATION_NOT_PRODUCTION",
+  "version": "1.6",
+  "status": "LEGACY_SAJIK_REFERENCE_SYNCED_TO_V4_5_GOLD_SAMPLE_NOT_PRODUCTION",
   "locality": {
     "locality_key": "서울특별시 종로구|사직동",
     "sido": "서울특별시",
@@ -56,7 +56,7 @@
       "page_id": "sajik_univ_conv",
       "intent_slug": "univ-conv",
       "theme": "theme-univ",
-      "blueprint": "v4-univ-deadline-campus-v1",
+      "blueprint": "v4-univ-campus-output-v2",
       "primary_keyword": "사직동 대학생영어회화",
       "url": "/seoul-jongno-sajikdong-univ-conv.html",
       "generation_status": "READY_FOR_V4_5_GENERATION"
@@ -65,7 +65,7 @@
       "page_id": "sajik_job_conv",
       "intent_slug": "jobseeker-conv",
       "theme": "theme-job",
-      "blueprint": "v4-job-deadline-interview-v1",
+      "blueprint": "v4-job-interview-evidence-v2",
       "primary_keyword": "사직동 취준생영어회화",
       "url": "/seoul-jongno-sajikdong-jobseeker-conv.html",
       "generation_status": "READY_FOR_V4_5_GENERATION"
@@ -173,5 +173,21 @@
   "phone_cta": {
     "label": "전화 010-5006-8027",
     "href": "tel:+821050068027"
+  },
+  "gold_sample_sync": {
+    "synced_at": "2026-09-22",
+    "gold_sample_freeze": "V4_5_GOLD_SAMPLE_FREEZE_20260922.json",
+    "hero_standard": "V4_5_LOCALIZED_MINIMAL_HERO_STANDARD.md",
+    "hero_h1s": [
+      "사직동 초등학생영어과외",
+      "사직동 중학생영어회화",
+      "사직동 고등학생영어회화",
+      "사직동 대학생영어회화",
+      "사직동 취준생영어회화",
+      "사직동 직장인비즈니스영어",
+      "사직동 주부영어회화"
+    ],
+    "repository_html_state": "NOT_PRESENT",
+    "note": "This file is a legacy locality reference contract only. No Sajikdong HTML is currently committed on the safe branch. Use the frozen V4.5 Gold Sample generator/production batch system for future generation."
   }
 }
