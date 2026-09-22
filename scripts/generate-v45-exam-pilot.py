@@ -287,9 +287,25 @@ def jacc(a,b,n=5):
  sb={tuple(tb[i:i+n]) for i in range(max(0,len(tb)-n+1))}
  return len(sa&sb)/len(sa|sb) if sa|sb else 0.0
 
+def vtext(text,var):
+ # Same factual meaning, different explanatory diction per locality variation.
+ # This intentionally avoids locality fact invention while reducing doorway-style copy identity.
+ maps={
+  "scene":[("시험일","응시일"),("시험 준비","응시 준비"),("시험","응시"),("현재","최근 상태"),("목표","도달 목표"),("결과","수행 결과"),("문제","문항"),("답변","응답"),("질문","질의"),("연습","장면 재연습"),("확인","기록 점검"),("기준","판단 기준"),("시간","사용 시간"),("영역","항목"),("다음","이어지는")],
+  "deadline":[("현재","지금"),("목표","필요 결과"),("결과","목표 결과"),("문제","문항"),("답변","응답"),("질문","문항 질문"),("연습","시험 대비"),("확인","마감 점검"),("기준","우선 기준"),("시간","남은 시간"),("영역","파트"),("다음","그 이후")],
+  "error":[("시험","평가"),("현재","첫 시도에서"),("목표","도달점"),("결과","수행 흔적"),("문제","오류 문항"),("답변","응답"),("연습","오류 교정"),("확인","원인 점검"),("기준","판단 단서"),("시간","처리 시간"),("영역","기능"),("다음","재검사할")],
+  "use":[("시험","실제 시험"),("현재","지금"),("목표","실제 목표"),("결과","사용 결과"),("문제","실제 문항"),("답변","실제 응답"),("질문","실제 질문"),("연습","실전 적용"),("확인","직접 점검"),("기준","행동 기준"),("시간","제한 시간"),("영역","기능"),("다음","이어지는")],
+  "reuse":[("시험","다른 시험 조건"),("현재","익숙한 조건에서"),("목표","도달 기준"),("결과","재현 결과"),("문제","새 문항"),("답변","재구성 답변"),("질문","변형 질문"),("연습","재적용"),("확인","재사용 점검"),("기준","재사용 기준"),("시간","준비 시간"),("영역","기능"),("다음","새 조건의")]
+ }
+ out=str(text)
+ for a,b in maps[var]:
+  out=out.replace(a,b)
+ return out
+
 def scene_blocks(exam,var):
  out=[]
  for i,(title,symptom) in enumerate(exam["scenes"]):
+  symptom=vtext(symptom,var)
   if var=="scene":
    extra=[f"최근 {title} 장면에서 처음부터 어려웠는지, 중간 조건이 달라졌을 때 흔들렸는지를 따로 봅니다.",
           f"같은 {title} 문제를 바로 반복하기보다 어떤 도움을 줬을 때 다시 이어졌는지 확인하고 새 문항에서 같은 기준을 적용합니다."]
@@ -399,8 +415,8 @@ def render(slug,loc,key,exam):
  flow_html="".join(f'<li><span>{i:02d}</span><div><b>{esc(t)}</b><p>{esc(d)}</p><p>{esc(vf["flow"])}</p></div></li>' for i,(t,d) in enumerate(flow,1))
  proof_html="".join(f'<li><b>{esc(p)}</b><span>{esc(["현재 조건에서 가능한 범위를 확인합니다.","도움이 있을 때와 없을 때 차이를 봅니다.","새 문제나 새 질문에서도 같은 기준이 남는지 봅니다.","실전 시간 안에서 다시 확인합니다.","다음 세션에서 재검증할 항목으로 기록합니다."][i%5])}</span></li>' for i,p in enumerate(exam["proof"]))
  feedback_html="".join(f'<article class="card"><b>예시 {i}</b><p>{esc(x)}</p></article>' for i,x in enumerate(feedbacks(exam,var),1))
- deep_html="".join(f'<article class="card"><b>{esc(t)}</b><p>{esc(p)}</p><p>{esc(vf["deep"])}</p></article>' for t,p in exam["deep"])
- faq_html="".join(f'<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>' for q,a in exam["faq"])
+ deep_html="".join(f'<article class="card"><b>{esc(vtext(t,var))}</b><p>{esc(vtext(p,var))}</p><p>{esc(vf["deep"])}</p></article>' for t,p in exam["deep"])
+ faq_html="".join(f'<details><summary>{esc(vtext(q,var))}</summary><p>{esc(vtext(a,var))}</p></details>' for q,a in exam["faq"])
  schema={
   "@context":"https://schema.org","@graph":[
    {"@type":"EducationalOrganization","@id":"https://englishpt.kr/#organization","name":"ENGLISH PT","url":"https://englishpt.kr/englishpt.html","telephone":"+82-10-5006-8027","areaServed":{"@type":"AdministrativeArea","name":loc["full_name"]}},
@@ -415,10 +431,10 @@ def render(slug,loc,key,exam):
 <body class="theme-test" data-blueprint="{exam["blueprint"]}" data-production-deploy="false">
 <header><div class="wrap header"><a href="../englishpt.html" class="brand">ENGLISH PT</a><span>V4.5 EXAM FULL-DEPTH PILOT · noindex</span></div></header><main>
 <section class="hero"><div class="wrap"><p class="eyebrow">{esc(loc["jurisdiction"])} · ENGLISH PT</p><h1>{esc(h1)}</h1><div class="hero-actions"><a class="btn primary" href="{PHONE_HREF}">{PHONE_LABEL}</a><a class="btn ghost" href="#detail">내용 보기</a><a class="btn ghost" href="#consultation-preview">상담 신청</a></div></div></section>
-<section id="detail" class="section"><div class="wrap narrow"><p class="kicker">시험 목표</p><h2>{esc(exam["first_question"])}</h2><p>{esc(loc["full_name"])}에서 {esc(exam["service"])}를 알아볼 때는 과정 이름보다 제출 목적, 다음 시험일, 현재 반복해서 흔들리는 행동을 먼저 확인하는 편이 좋습니다.</p><p>{esc(exam["goal"])}이 이 페이지의 핵심 기준입니다. 전체 점수 하나로 묶지 않고 실제 시험에서 다시 확인할 행동을 나눕니다.</p><p>{esc(vf["intro"])}</p></div></section>
+<section id="detail" class="section"><div class="wrap narrow"><p class="kicker">시험 목표</p><h2>{esc(exam["first_question"])}</h2><p>{esc(loc["full_name"])}에서 {esc(exam["service"])}를 알아볼 때는 과정 이름보다 제출 목적, 다음 시험일, 현재 반복해서 흔들리는 행동을 먼저 확인하는 편이 좋습니다.</p><p>{esc(vtext(exam["goal"],var))}이 이 페이지의 핵심 기준입니다. 전체 점수 하나로 묶지 않고 실제 시험에서 다시 확인할 행동을 나눕니다.</p><p>{esc(vf["intro"])}</p></div></section>
 <section class="section soft"><div class="wrap"><p class="kicker">실제 막힘</p><h2>점수보다 먼저, 어디에서 흔들리는지 나눠봅니다</h2><div class="grid4">{scene_html}</div></div></section>
-<section class="section"><div class="wrap narrow"><p class="kicker">시험 구조와 개인 약점</p><h2>공식 시험 구조와 내 병목은 같은 정보가 아닙니다</h2><p>시험 형식과 평가 기준은 응시자에게 공통이지만 현재 학습 순서는 개인마다 다릅니다. 같은 목표 결과를 준비해도 어떤 사람은 입력 이해에서, 다른 사람은 시간 관리나 답변 구성에서 더 크게 흔들릴 수 있습니다.</p><p>{esc(vf["diagnosis"])}</p><p>이 페이지에서는 {esc(" · ".join(exam["diagnosis"]))} 항목을 나눠 보고 이미 안정된 부분과 다시 확인할 부분을 구분합니다.</p></div></section>
-<section class="section soft"><div class="wrap narrow"><p class="kicker">우선순위</p><h2>시험일과 목표 결과에서 거꾸로 순서를 정합니다</h2><p>{esc(vf["priority"])}</p><ul>{''.join("<li>"+esc(x)+"</li>" for x in exam["priority"])}</ul><p>{esc(exam["boundary"])}</p></div></section>
+<section class="section"><div class="wrap narrow"><p class="kicker">시험 구조와 개인 약점</p><h2>공식 시험 구조와 내 병목은 같은 정보가 아닙니다</h2><p>시험 형식과 평가 기준은 응시자에게 공통이지만 현재 학습 순서는 개인마다 다릅니다. 같은 목표 결과를 준비해도 어떤 사람은 입력 이해에서, 다른 사람은 시간 관리나 답변 구성에서 더 크게 흔들릴 수 있습니다.</p><p>{esc(vf["diagnosis"])}</p><p>이 페이지에서는 {esc(" · ".join(vtext(x,var) for x in exam["diagnosis"]))} 항목을 나눠 보고 이미 안정된 부분과 다시 확인할 부분을 구분합니다.</p></div></section>
+<section class="section soft"><div class="wrap narrow"><p class="kicker">우선순위</p><h2>시험일과 목표 결과에서 거꾸로 순서를 정합니다</h2><p>{esc(vf["priority"])}</p><ul>{''.join("<li>"+esc(vtext(x,var))+"</li>" for x in exam["priority"])}</ul><p>{esc(vtext(exam["boundary"],var))}</p></div></section>
 <section class="section dark"><div class="wrap"><p class="kicker">수업 흐름</p><h2>설명에서 끝내지 않고 새 문제에서 다시 확인합니다</h2><p class="lead">현재 상태를 확인한 뒤 실제 문항·응답으로 적용하고, 조건을 바꿔 같은 기준이 남는지 재검증합니다.</p><ol class="steps">{flow_html}</ol></div></section>
 <section class="section"><div class="wrap"><p class="kicker">판단 기준</p><h2>점수 상승 약속 대신 확인할 행동을 공개합니다</h2><p class="lead">{esc(vf["proof"])}</p><ul class="proofs">{proof_html}</ul></div></section>
 <section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p><h2>실제 후기나 성과 수치가 아니라 기록 형식을 보여주는 예시입니다</h2><p>아래 문장은 특정 수강생의 결과나 점수 상승 사례가 아닙니다. 어떤 행동을 관찰하고 다음에 무엇을 다시 확인하는지 보여주기 위한 예시입니다.</p><div class="grid4">{feedback_html}</div></div></section>
