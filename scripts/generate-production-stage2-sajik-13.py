@@ -25,6 +25,7 @@ PHONE_LABEL="전화 010-5006-8027"
 
 SERVICE_ORDER=["elem-tutor","mid-conv","high-conv","univ-conv","jobseeker-conv","biz-business-conv","housewife-conv"]
 EXAM_ORDER=["toeic","toeic-speaking","opic","ielts","duolingo","toefl"]
+DECISION_SUPPORT_PATH=ROOT/"PRODUCTION_DECISION_SUPPORT_13INTENT_V1.json"
 
 # Frozen production-locality variation intro pattern -> frozen Gold locality frame.
 # This is an adapter only; no Gold copy is edited.
