@@ -83,6 +83,25 @@ def postprocess(raw,slug,current,service_profiles,exam_map):
  else:
   strip=[("시험 목표","제출 목적·시험일·목표 결과"),("현재 병목","영역·오답원인·시간을 분리"),("훈련","실제 문항·응답으로 재연습"),("다음 확인","새 문제·실전 조건에서 재검증")]
  strip_html='<section class="decision-strip" aria-label="빠른 판단 요약"><div class="wrap"><div class="decision-grid">'+''.join('<div><b>'+html.escape(a)+'</b><span>'+html.escape(b)+'</span></div>' for a,b in strip)+'</div></div></section>'
+ if family=="service":
+  profile=service_profiles[current]
+  decision_items=[
+   ("이런 경우 잘 맞습니다","위 실제 장면이 반복되고, 다음 일정에서 같은 영어 행동을 다시 확인해야 하는 경우"),
+   ("다른 선택이 나을 수 있습니다",profile["boundary"]),
+   ("상담에서 확인할 비용·일정 조건","주당 횟수 · 회당 시간 · 진행 방식 · 준비 범위를 함께 확인합니다. 구체 비용은 상담에서 안내합니다."),
+   ("수업 계획은 이렇게 정합니다","현재 수행 확인 → 우선순위 설정 → 실제 사용 연습 → 다음 수업 재확인"),
+   ("상담 전에 준비할 것","최근 사용한 교재·자료 · 가장 막힌 장면 · 다음 일정 · 가능한 시간대")
+  ]
+ else:
+  exam=next(e for e in exam_map.values() if e["intent"]==current)
+  decision_items=[
+   ("이런 경우 잘 맞습니다","목표 시험과 일정은 정해졌지만, 전체 점수보다 실제 병목을 나눠 준비해야 하는 경우"),
+   ("다른 선택이 나을 수 있습니다",exam["boundary"]),
+   ("상담에서 확인할 비용·일정 조건","주당 횟수 · 회당 시간 · 시험까지 남은 기간 · 피드백 방식과 준비 범위를 함께 확인합니다."),
+   ("수업 계획은 이렇게 정합니다","최근 수행 확인 → 병목 분리 → 실제 문항·응답 훈련 → 새 문제에서 재검증"),
+   ("상담 전에 준비할 것","목표 점수·등급 · 시험일/제출 마감 · 최근 성적 또는 답변 · 가장 어려운 영역")
+  ]
+ decision_html='<section class="section decision-guide"><div class="wrap narrow"><p class="kicker">선택 기준</p><h2>광고 문구보다, 이 다섯 가지를 먼저 확인하세요</h2><div class="decision-list">'+''.join('<div><b>◆ '+html.escape(a)+'</b><p>'+html.escape(b)+'</p></div>' for a,b in decision_items)+'</div></div></section>'
  hero_end=re.search(r'(</section>)(?=\s*<section id="detail")',raw)
  if not hero_end: raise RuntimeError(f"hero boundary not found for {current}")
  raw=raw[:hero_end.end()]+strip_html+raw[hero_end.end():]
@@ -90,12 +109,18 @@ def postprocess(raw,slug,current,service_profiles,exam_map):
  raw=raw.replace('V4.5 FULL-DEPTH PILOT · noindex','V4.5 PRODUCTION PREVIEW · noindex')
  raw=raw.replace('V4.5 EXAM FULL-DEPTH PILOT · noindex','V4.5 EXAM PRODUCTION PREVIEW · noindex')
  raw=raw.replace('현재 페이지는 5×7 소규모 검수용이라 폼의 실제 전송은 비활성화되어 있습니다.','현재 페이지는 배포 전 production preview라 폼의 실제 전송은 비활성화되어 있습니다.')
- raw=raw.replace('Full-depth 검수용 페이지 · production 미배포','Production preview · noindex · 미배포')
- raw=raw.replace('시험형 Full-depth 검수용 · production 미배포','시험형 Production preview · noindex · 미배포')
+ raw=raw.replace('Full-depth 검수용 페이지 · production 미배포','Preview · noindex · 미배포')
+ raw=raw.replace('시험형 Full-depth 검수용 · production 미배포','시험 Preview · noindex · 미배포')
+ raw=raw.replace('현재 페이지는 배포 전 production preview라 폼의 실제 전송은 비활성화되어 있습니다. 전화 상담은 아래 번호로 바로 연결할 수 있습니다.','검수용 페이지라 폼 전송은 꺼져 있습니다. 전화 상담은 아래 번호로 연결됩니다.')
+ raw=raw.replace('이 검수용 상담 폼 전송은 꺼져 있습니다. 최근 문제나 답변에서 가장 답답했던 장면과 다음 응시일을 정리한 뒤 전화 상담으로 연결할 수 있습니다.','검수용 폼은 전송되지 않습니다. 최근 병목과 다음 응시일을 정리해 전화 상담에서 확인할 수 있습니다.')
  raw=raw.replace('파일럿 폼','검수용 폼').replace('파일럿의 상담 폼','검수용 상담 폼').replace('이 파일럿은','이 배포 전 검수 페이지는').replace('이 파일럿','이 배포 전 검수 페이지')
  # EnglishUp benchmark reinterpretation: one compact CTA after value/decision proof.
  mid_copy="최근 장면과 다음 일정으로 우선순위를 확인하세요." if family=="service" else "최근 병목과 다음 응시일로 우선순위를 확인하세요."
  mid='<section class="mid-cta"><div class="wrap"><div><p class="kicker">다음 단계</p><h2>'+html.escape(mid_copy)+'</h2></div><div class="mid-actions"><a class="btn primary" href="#consultation-preview">상담 전 확인하기</a><a class="btn phone" href="'+PHONE_HREF+'">'+PHONE_LABEL+'</a></div></div></section>'
+ # Replace the generic fit/other-path section with a concrete decision block inspired by the user's corrected example.
+ fit_pattern=r'<section class="section"><div class="wrap narrow"><p class="kicker">(과정 선택|시험 선택)</p>[\s\S]*?</section>'
+ raw,nfit=re.subn(fit_pattern,decision_html,raw,count=1)
+ if nfit!=1: raise RuntimeError(f"fit/decision section not found for {current}")
  marker='<section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p>'
  pos=raw.find(marker)
  if pos<0: raise RuntimeError(f"feedback boundary not found for {current}")
@@ -122,7 +147,7 @@ def main():
  slug=row["region_slug"]
  OUT.mkdir(parents=True,exist_ok=True)
  shutil.copy2(ROOT/"pilot-v45-5x7/pilot.css",OUT/"pilot.css")
- css_extra='''\n.decision-strip{background:#fff;border-bottom:1px solid #e6e2d9}.decision-grid{display:grid;grid-template-columns:repeat(4,1fr)}.decision-grid>div{padding:20px 18px;border-right:1px solid #e6e2d9}.decision-grid>div:last-child{border-right:0}.decision-grid b{display:block;font-size:13px;margin-bottom:4px}.decision-grid span{font-size:14px;color:#53605a}.mid-cta{padding:30px 0;background:#edeae2}.mid-cta .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}.mid-cta h2{font-size:clamp(22px,3vw,32px);margin:6px 0}.mid-actions{display:flex;gap:10px;flex-wrap:wrap}@media(max-width:760px){.decision-grid{grid-template-columns:1fr 1fr}.decision-grid>div:nth-child(2){border-right:0}.decision-grid>div{border-bottom:1px solid #e6e2d9}.mid-cta .wrap{display:block}.mid-actions{margin-top:16px}}\n'''
+ css_extra='''\n.decision-strip{background:#fff;border-bottom:1px solid #e6e2d9}.decision-grid{display:grid;grid-template-columns:repeat(4,1fr)}.decision-grid>div{padding:20px 18px;border-right:1px solid #e6e2d9}.decision-grid>div:last-child{border-right:0}.decision-grid b{display:block;font-size:13px;margin-bottom:4px}.decision-grid span{font-size:14px;color:#53605a}.mid-cta{padding:30px 0;background:#edeae2}.mid-cta .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}.mid-cta h2{font-size:clamp(22px,3vw,32px);margin:6px 0}.mid-actions{display:flex;gap:10px;flex-wrap:wrap}.decision-guide{background:#f4f8f5}.decision-list{display:grid;gap:14px}.decision-list>div{padding:16px 18px;background:#fff;border:1px solid #dce7e0;border-radius:14px}.decision-list b{display:block;margin-bottom:6px}.decision-list p{margin:0;color:#41574d}@media(max-width:760px){.decision-grid{grid-template-columns:1fr 1fr}.decision-grid>div:nth-child(2){border-right:0}.decision-grid>div{border-bottom:1px solid #e6e2d9}.mid-cta .wrap{display:block}.mid-actions{margin-top:16px}}\n'''
  with (OUT/"pilot.css").open("a",encoding="utf-8") as fp: fp.write(css_extra)
  shutil.copy2(ROOT/"pilot-v45-5x7/pilot.js",OUT/"pilot.js")
 
@@ -163,7 +188,10 @@ def main():
   if 'name="robots" content="noindex,nofollow"' not in raw:f.append("noindex")
   if 'data-production-deploy="false"' not in raw:f.append("production_flag")
   if 'class="decision-strip"' not in raw:f.append("decision_strip")
+  if 'class="decision-guide"' not in raw:f.append("decision_guide")
+  if raw.count("◆ ")<5:f.append("decision_guide_items")
   if 'class="mid-cta"' not in raw:f.append("mid_cta")
+  if any(x in text for x in ["최고의 강사진","성적 향상을 책임","지금 바로 상담 신청"]):f.append("generic_marketing_copy")
   if PHONE_HREF not in raw or PHONE_LABEL not in raw:f.append("phone")
   if 'application/ld+json' not in raw:f.append("schema_missing")
   else:
