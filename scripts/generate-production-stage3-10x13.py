@@ -205,7 +205,7 @@ def rewrite_deep_faq(raw,row,d,priority,scene_titles,proof_labels,boundary,servi
  if n!=1:raise RuntimeError("faq rewrite")
  return raw
 
-def load_moduledef load_module(name,path):
+def load_module(name,path):
  spec=importlib.util.spec_from_file_location(name,path)
  if not spec or not spec.loader: raise RuntimeError(f"cannot load {path}")
  mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod);return mod
@@ -396,7 +396,7 @@ def replace_exam_variation(raw,row,d,exam):
  if n!=1:raise RuntimeError("exam learning frame")
  return raw
 
-def rewrite_mid_sectionsdef rewrite_mid_sections(raw,row,d,priority,proof_labels,scene_titles,family):
+def rewrite_mid_sections(raw,row,d,priority,proof_labels,scene_titles,family):
  extras=[DIAG[d["diagnosis_emphasis"]],CONTEXT[d["local_context_mode"]],CASE[d["case_frame"]],CTA[d["cta_frame"]]]
  pri=[]
  for i,label in enumerate(priority[:4]):
