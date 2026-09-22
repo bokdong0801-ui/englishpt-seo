@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "status": "STATIC_DUPLICATE_HUMAN_PASS_RENDER_PENDING_NOT_PRODUCTION",
+  "status": "GOLD_SAMPLE_FROZEN_ALL_GATES_PASS_NOT_PRODUCTION",
   "gold_standard": "V4_5_FULL_DEPTH_6_EXAM_GOLD_STANDARD.md",
   "blueprints": "V4_5_EXAM_BLUEPRINTS.json",
   "allowlist": "V4_5_EXAM_GENERATOR_ALLOWLIST.json",
@@ -361,5 +361,25 @@
   "human_review": {
     "status": "PASS",
     "review_file": "pilot-v45-exam-5x6/PILOT_EXAM_5X6_HUMAN_REVIEW_V1.md"
+  },
+  "render_qa": {
+    "status": "PASS",
+    "file": "pilot-v45-exam-5x6/PILOT_EXAM_5X6_RENDER_QA_V1.json",
+    "workflow_run_id": 35693687847,
+    "render_cases": 60,
+    "failures": 0
+  },
+  "freeze": {
+    "status": "FROZEN",
+    "freeze_id": "V4.5-EXAM-5X6-GOLD-SAMPLE-FROZEN",
+    "frozen_artifacts": [
+      "30 generated exam pages",
+      "V4_5_EXAM_BLUEPRINTS.json",
+      "V4_5_EXAM_GENERATOR_ALLOWLIST.json",
+      "V4_5_FULL_DEPTH_6_EXAM_GOLD_STANDARD.md",
+      "scripts/generate-v45-exam-pilot.py"
+    ],
+    "production_deploy": false,
+    "main_merge": false
   }
 }
