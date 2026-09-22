@@ -3,16 +3,16 @@
   "status": "PASS",
   "page_count": 30,
   "visible_chars": {
-    "min": 6290,
-    "max": 7102,
-    "avg": 6750.4
+    "min": 6299,
+    "max": 7137,
+    "avg": 6769.8
   },
   "static_failures": 0,
   "duplicate_gate": {
     "status": "PASS",
     "same_exam_pairs": 60,
-    "max_cosine": 0.7821,
-    "max_5_shingle_jaccard": 0.2397,
+    "max_cosine": 0.7873,
+    "max_5_shingle_jaccard": 0.2391,
     "thresholds": {
       "cosine_lt": 0.82,
       "jaccard5_lt": 0.24
@@ -22,421 +22,421 @@
         "intent": "toeic",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-naegokdong",
-        "cosine": 0.7436,
-        "jaccard5": 0.2354
+        "cosine": 0.7443,
+        "jaccard5": 0.2358
       },
       {
         "intent": "toeic",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.7796,
-        "jaccard5": 0.2307
+        "cosine": 0.7833,
+        "jaccard5": 0.2319
       },
       {
         "intent": "toeic",
         "a": "seoul-seocho-naegokdong",
         "b": "sejong-goundong",
-        "cosine": 0.7148,
-        "jaccard5": 0.2343
+        "cosine": 0.7175,
+        "jaccard5": 0.2356
       },
       {
         "intent": "toeic",
         "a": "seoul-seocho-naegokdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7717,
-        "jaccard5": 0.2324
+        "cosine": 0.7722,
+        "jaccard5": 0.2329
       },
       {
         "intent": "toeic",
         "a": "gangwon-gangneung-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.7198,
+        "cosine": 0.7189,
+        "jaccard5": 0.2359
+      },
+      {
+        "intent": "toeic",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "sejong-goundong",
+        "cosine": 0.7413,
+        "jaccard5": 0.2357
+      },
+      {
+        "intent": "toeic",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "busan-haeundae-jungdong",
+        "cosine": 0.7179,
+        "jaccard5": 0.2344
+      },
+      {
+        "intent": "toeic",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "sejong-goundong",
+        "cosine": 0.6881,
         "jaccard5": 0.2371
       },
       {
         "intent": "toeic",
-        "a": "gangwon-gangneung-naegokdong",
-        "b": "sejong-goundong",
-        "cosine": 0.74,
-        "jaccard5": 0.2364
-      },
-      {
-        "intent": "toeic",
-        "a": "gangwon-gangneung-naegokdong",
-        "b": "busan-haeundae-jungdong",
-        "cosine": 0.7186,
-        "jaccard5": 0.2354
-      },
-      {
-        "intent": "toeic",
-        "a": "gangwon-gangneung-gangnamdong",
-        "b": "sejong-goundong",
-        "cosine": 0.6853,
-        "jaccard5": 0.238
-      },
-      {
-        "intent": "toeic",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7544,
-        "jaccard5": 0.2384
+        "cosine": 0.7575,
+        "jaccard5": 0.2373
       },
       {
         "intent": "toeic",
         "a": "sejong-goundong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.6962,
-        "jaccard5": 0.2397
+        "cosine": 0.695,
+        "jaccard5": 0.2391
       },
       {
         "intent": "toeic-speaking",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-naegokdong",
-        "cosine": 0.7457,
-        "jaccard5": 0.2276
+        "cosine": 0.7468,
+        "jaccard5": 0.2275
       },
       {
         "intent": "toeic-speaking",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.7821,
-        "jaccard5": 0.223
+        "cosine": 0.7873,
+        "jaccard5": 0.2239
       },
       {
         "intent": "toeic-speaking",
         "a": "seoul-seocho-naegokdong",
         "b": "sejong-goundong",
-        "cosine": 0.7174,
-        "jaccard5": 0.2261
+        "cosine": 0.7204,
+        "jaccard5": 0.2268
       },
       {
         "intent": "toeic-speaking",
         "a": "seoul-seocho-naegokdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7748,
+        "cosine": 0.7757,
         "jaccard5": 0.2253
       },
       {
         "intent": "toeic-speaking",
         "a": "gangwon-gangneung-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.7306,
+        "cosine": 0.7301,
+        "jaccard5": 0.2277
+      },
+      {
+        "intent": "toeic-speaking",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "sejong-goundong",
+        "cosine": 0.747,
+        "jaccard5": 0.2283
+      },
+      {
+        "intent": "toeic-speaking",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "busan-haeundae-jungdong",
+        "cosine": 0.7245,
+        "jaccard5": 0.2263
+      },
+      {
+        "intent": "toeic-speaking",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "sejong-goundong",
+        "cosine": 0.7014,
+        "jaccard5": 0.2289
+      },
+      {
+        "intent": "toeic-speaking",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "busan-haeundae-jungdong",
+        "cosine": 0.7668,
         "jaccard5": 0.2288
-      },
-      {
-        "intent": "toeic-speaking",
-        "a": "gangwon-gangneung-naegokdong",
-        "b": "sejong-goundong",
-        "cosine": 0.7457,
-        "jaccard5": 0.229
-      },
-      {
-        "intent": "toeic-speaking",
-        "a": "gangwon-gangneung-naegokdong",
-        "b": "busan-haeundae-jungdong",
-        "cosine": 0.7253,
-        "jaccard5": 0.2273
-      },
-      {
-        "intent": "toeic-speaking",
-        "a": "gangwon-gangneung-gangnamdong",
-        "b": "sejong-goundong",
-        "cosine": 0.6976,
-        "jaccard5": 0.2298
-      },
-      {
-        "intent": "toeic-speaking",
-        "a": "gangwon-gangneung-gangnamdong",
-        "b": "busan-haeundae-jungdong",
-        "cosine": 0.7628,
-        "jaccard5": 0.2299
       },
       {
         "intent": "toeic-speaking",
         "a": "sejong-goundong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7019,
-        "jaccard5": 0.2316
+        "cosine": 0.701,
+        "jaccard5": 0.231
       },
       {
         "intent": "opic",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-naegokdong",
-        "cosine": 0.6871,
+        "cosine": 0.6892,
         "jaccard5": 0.2059
       },
       {
         "intent": "opic",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.7297,
-        "jaccard5": 0.201
+        "cosine": 0.7359,
+        "jaccard5": 0.2018
       },
       {
         "intent": "opic",
         "a": "seoul-seocho-naegokdong",
         "b": "sejong-goundong",
-        "cosine": 0.6654,
-        "jaccard5": 0.2039
+        "cosine": 0.6692,
+        "jaccard5": 0.2047
       },
       {
         "intent": "opic",
         "a": "seoul-seocho-naegokdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7305,
-        "jaccard5": 0.203
+        "cosine": 0.732,
+        "jaccard5": 0.2031
       },
       {
         "intent": "opic",
         "a": "gangwon-gangneung-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.6603,
-        "jaccard5": 0.2068
+        "cosine": 0.6612,
+        "jaccard5": 0.2057
       },
       {
         "intent": "opic",
         "a": "gangwon-gangneung-naegokdong",
         "b": "sejong-goundong",
-        "cosine": 0.6966,
-        "jaccard5": 0.2069
+        "cosine": 0.6987,
+        "jaccard5": 0.2063
       },
       {
         "intent": "opic",
         "a": "gangwon-gangneung-naegokdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.6681,
-        "jaccard5": 0.205
+        "cosine": 0.668,
+        "jaccard5": 0.2041
       },
       {
         "intent": "opic",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "sejong-goundong",
-        "cosine": 0.6365,
-        "jaccard5": 0.2073
+        "cosine": 0.6413,
+        "jaccard5": 0.2065
       },
       {
         "intent": "opic",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7114,
-        "jaccard5": 0.2069
+        "cosine": 0.7166,
+        "jaccard5": 0.2058
       },
       {
         "intent": "opic",
         "a": "sejong-goundong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.6514,
-        "jaccard5": 0.2089
+        "cosine": 0.6504,
+        "jaccard5": 0.2084
       },
       {
         "intent": "ielts",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-naegokdong",
-        "cosine": 0.7285,
-        "jaccard5": 0.2284
+        "cosine": 0.7298,
+        "jaccard5": 0.2279
       },
       {
         "intent": "ielts",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.7644,
-        "jaccard5": 0.2237
+        "cosine": 0.7694,
+        "jaccard5": 0.2236
       },
       {
         "intent": "ielts",
         "a": "seoul-seocho-naegokdong",
         "b": "sejong-goundong",
-        "cosine": 0.6969,
-        "jaccard5": 0.2273
+        "cosine": 0.7,
+        "jaccard5": 0.2276
       },
       {
         "intent": "ielts",
         "a": "seoul-seocho-naegokdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7598,
-        "jaccard5": 0.2258
+        "cosine": 0.7608,
+        "jaccard5": 0.2254
       },
       {
         "intent": "ielts",
         "a": "gangwon-gangneung-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.7092,
+        "cosine": 0.7094,
+        "jaccard5": 0.228
+      },
+      {
+        "intent": "ielts",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "sejong-goundong",
+        "cosine": 0.7291,
+        "jaccard5": 0.2287
+      },
+      {
+        "intent": "ielts",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "busan-haeundae-jungdong",
+        "cosine": 0.7074,
+        "jaccard5": 0.2265
+      },
+      {
+        "intent": "ielts",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "sejong-goundong",
+        "cosine": 0.6756,
         "jaccard5": 0.2292
       },
       {
         "intent": "ielts",
-        "a": "gangwon-gangneung-naegokdong",
-        "b": "sejong-goundong",
-        "cosine": 0.7275,
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "busan-haeundae-jungdong",
+        "cosine": 0.7491,
         "jaccard5": 0.2294
-      },
-      {
-        "intent": "ielts",
-        "a": "gangwon-gangneung-naegokdong",
-        "b": "busan-haeundae-jungdong",
-        "cosine": 0.7079,
-        "jaccard5": 0.2275
-      },
-      {
-        "intent": "ielts",
-        "a": "gangwon-gangneung-gangnamdong",
-        "b": "sejong-goundong",
-        "cosine": 0.6716,
-        "jaccard5": 0.2301
-      },
-      {
-        "intent": "ielts",
-        "a": "gangwon-gangneung-gangnamdong",
-        "b": "busan-haeundae-jungdong",
-        "cosine": 0.7448,
-        "jaccard5": 0.2305
       },
       {
         "intent": "ielts",
         "a": "sejong-goundong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.6816,
-        "jaccard5": 0.2317
+        "cosine": 0.6804,
+        "jaccard5": 0.2311
       },
       {
         "intent": "duolingo",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-naegokdong",
-        "cosine": 0.7149,
+        "cosine": 0.7161,
         "jaccard5": 0.2154
       },
       {
         "intent": "duolingo",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.7528,
-        "jaccard5": 0.2107
+        "cosine": 0.7577,
+        "jaccard5": 0.2115
       },
       {
         "intent": "duolingo",
         "a": "seoul-seocho-naegokdong",
         "b": "sejong-goundong",
-        "cosine": 0.6904,
-        "jaccard5": 0.2141
+        "cosine": 0.6939,
+        "jaccard5": 0.2149
       },
       {
         "intent": "duolingo",
         "a": "seoul-seocho-naegokdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.748,
-        "jaccard5": 0.2129
+        "cosine": 0.749,
+        "jaccard5": 0.213
       },
       {
         "intent": "duolingo",
         "a": "gangwon-gangneung-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
         "cosine": 0.6925,
-        "jaccard5": 0.2165
+        "jaccard5": 0.2154
       },
       {
         "intent": "duolingo",
         "a": "gangwon-gangneung-naegokdong",
         "b": "sejong-goundong",
-        "cosine": 0.7219,
-        "jaccard5": 0.2166
+        "cosine": 0.7239,
+        "jaccard5": 0.2159
       },
       {
         "intent": "duolingo",
         "a": "gangwon-gangneung-naegokdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.693,
-        "jaccard5": 0.2149
+        "cosine": 0.6925,
+        "jaccard5": 0.214
       },
       {
         "intent": "duolingo",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "sejong-goundong",
-        "cosine": 0.6665,
-        "jaccard5": 0.2172
+        "cosine": 0.671,
+        "jaccard5": 0.2164
       },
       {
         "intent": "duolingo",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7319,
-        "jaccard5": 0.2178
+        "cosine": 0.7363,
+        "jaccard5": 0.2168
       },
       {
         "intent": "duolingo",
         "a": "sejong-goundong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.6737,
-        "jaccard5": 0.219
+        "cosine": 0.673,
+        "jaccard5": 0.2184
       },
       {
         "intent": "toefl",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-naegokdong",
-        "cosine": 0.7218,
-        "jaccard5": 0.2175
+        "cosine": 0.7234,
+        "jaccard5": 0.2174
       },
       {
         "intent": "toefl",
         "a": "seoul-seocho-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.7568,
-        "jaccard5": 0.2127
+        "cosine": 0.7623,
+        "jaccard5": 0.2136
       },
       {
         "intent": "toefl",
         "a": "seoul-seocho-naegokdong",
         "b": "sejong-goundong",
-        "cosine": 0.6977,
-        "jaccard5": 0.2158
+        "cosine": 0.7011,
+        "jaccard5": 0.2165
       },
       {
         "intent": "toefl",
         "a": "seoul-seocho-naegokdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.7595,
-        "jaccard5": 0.2149
+        "cosine": 0.7613,
+        "jaccard5": 0.215
       },
       {
         "intent": "toefl",
         "a": "gangwon-gangneung-naegokdong",
         "b": "gangwon-gangneung-gangnamdong",
-        "cosine": 0.6981,
-        "jaccard5": 0.2181
+        "cosine": 0.6979,
+        "jaccard5": 0.217
       },
       {
         "intent": "toefl",
         "a": "gangwon-gangneung-naegokdong",
         "b": "sejong-goundong",
-        "cosine": 0.7282,
+        "cosine": 0.7296,
+        "jaccard5": 0.2176
+      },
+      {
+        "intent": "toefl",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "busan-haeundae-jungdong",
+        "cosine": 0.7065,
+        "jaccard5": 0.216
+      },
+      {
+        "intent": "toefl",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "sejong-goundong",
+        "cosine": 0.6752,
+        "jaccard5": 0.218
+      },
+      {
+        "intent": "toefl",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "busan-haeundae-jungdong",
+        "cosine": 0.7481,
         "jaccard5": 0.2183
-      },
-      {
-        "intent": "toefl",
-        "a": "gangwon-gangneung-naegokdong",
-        "b": "busan-haeundae-jungdong",
-        "cosine": 0.7072,
-        "jaccard5": 0.2169
-      },
-      {
-        "intent": "toefl",
-        "a": "gangwon-gangneung-gangnamdong",
-        "b": "sejong-goundong",
-        "cosine": 0.6713,
-        "jaccard5": 0.2188
-      },
-      {
-        "intent": "toefl",
-        "a": "gangwon-gangneung-gangnamdong",
-        "b": "busan-haeundae-jungdong",
-        "cosine": 0.7436,
-        "jaccard5": 0.2194
       },
       {
         "intent": "toefl",
         "a": "sejong-goundong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.6872,
-        "jaccard5": 0.2211
+        "cosine": 0.6862,
+        "jaccard5": 0.2204
       }
     ]
   },
@@ -444,181 +444,181 @@
   "page_checks": [
     {
       "file": "seoul-seocho-naegokdong-toeic.html",
-      "visible_chars": 6772,
+      "visible_chars": 6784,
       "status": "PASS",
       "failures": []
     },
     {
       "file": "seoul-seocho-naegokdong-toeic-speaking.html",
-      "visible_chars": 6721,
+      "visible_chars": 6733,
       "status": "PASS",
       "failures": []
     },
     {
       "file": "seoul-seocho-naegokdong-opic.html",
-      "visible_chars": 6430,
+      "visible_chars": 6442,
       "status": "PASS",
       "failures": []
     },
     {
       "file": "seoul-seocho-naegokdong-ielts.html",
-      "visible_chars": 6977,
+      "visible_chars": 6989,
       "status": "PASS",
       "failures": []
     },
     {
       "file": "seoul-seocho-naegokdong-duolingo.html",
-      "visible_chars": 7100,
+      "visible_chars": 7112,
       "status": "PASS",
       "failures": []
     },
     {
       "file": "seoul-seocho-naegokdong-toefl.html",
-      "visible_chars": 6926,
+      "visible_chars": 6938,
       "status": "PASS",
       "failures": []
     },
     {
       "file": "gangwon-gangneung-naegokdong-toeic.html",
-      "visible_chars": 6773,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "gangwon-gangneung-naegokdong-toeic-speaking.html",
-      "visible_chars": 6723,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "gangwon-gangneung-naegokdong-opic.html",
-      "visible_chars": 6432,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "gangwon-gangneung-naegokdong-ielts.html",
-      "visible_chars": 6979,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "gangwon-gangneung-naegokdong-duolingo.html",
-      "visible_chars": 7102,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "gangwon-gangneung-naegokdong-toefl.html",
-      "visible_chars": 6928,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "gangwon-gangneung-gangnamdong-toeic.html",
-      "visible_chars": 6681,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "gangwon-gangneung-gangnamdong-toeic-speaking.html",
-      "visible_chars": 6622,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "gangwon-gangneung-gangnamdong-opic.html",
-      "visible_chars": 6331,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "gangwon-gangneung-gangnamdong-ielts.html",
-      "visible_chars": 6878,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "gangwon-gangneung-gangnamdong-duolingo.html",
-      "visible_chars": 7001,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "gangwon-gangneung-gangnamdong-toefl.html",
-      "visible_chars": 6827,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "sejong-goundong-toeic.html",
-      "visible_chars": 6655,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "sejong-goundong-toeic-speaking.html",
-      "visible_chars": 6603,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "sejong-goundong-opic.html",
-      "visible_chars": 6312,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "sejong-goundong-ielts.html",
-      "visible_chars": 6859,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "sejong-goundong-duolingo.html",
-      "visible_chars": 6982,
-      "status": "PASS",
-      "failures": []
-    },
-    {
-      "file": "sejong-goundong-toefl.html",
       "visible_chars": 6808,
       "status": "PASS",
       "failures": []
     },
     {
+      "file": "gangwon-gangneung-naegokdong-toeic-speaking.html",
+      "visible_chars": 6758,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-opic.html",
+      "visible_chars": 6467,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-ielts.html",
+      "visible_chars": 7014,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-duolingo.html",
+      "visible_chars": 7137,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-toefl.html",
+      "visible_chars": 6963,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-toeic.html",
+      "visible_chars": 6720,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-toeic-speaking.html",
+      "visible_chars": 6661,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-opic.html",
+      "visible_chars": 6370,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-ielts.html",
+      "visible_chars": 6917,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-duolingo.html",
+      "visible_chars": 7040,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-toefl.html",
+      "visible_chars": 6866,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "sejong-goundong-toeic.html",
+      "visible_chars": 6657,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "sejong-goundong-toeic-speaking.html",
+      "visible_chars": 6605,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "sejong-goundong-opic.html",
+      "visible_chars": 6314,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "sejong-goundong-ielts.html",
+      "visible_chars": 6861,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "sejong-goundong-duolingo.html",
+      "visible_chars": 6984,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "sejong-goundong-toefl.html",
+      "visible_chars": 6810,
+      "status": "PASS",
+      "failures": []
+    },
+    {
       "file": "busan-haeundae-jungdong-toeic.html",
-      "visible_chars": 6637,
+      "visible_chars": 6646,
       "status": "PASS",
       "failures": []
     },
     {
       "file": "busan-haeundae-jungdong-toeic-speaking.html",
-      "visible_chars": 6581,
+      "visible_chars": 6590,
       "status": "PASS",
       "failures": []
     },
     {
       "file": "busan-haeundae-jungdong-opic.html",
-      "visible_chars": 6290,
+      "visible_chars": 6299,
       "status": "PASS",
       "failures": []
     },
     {
       "file": "busan-haeundae-jungdong-ielts.html",
-      "visible_chars": 6837,
+      "visible_chars": 6846,
       "status": "PASS",
       "failures": []
     },
     {
       "file": "busan-haeundae-jungdong-duolingo.html",
-      "visible_chars": 6960,
+      "visible_chars": 6969,
       "status": "PASS",
       "failures": []
     },
     {
       "file": "busan-haeundae-jungdong-toefl.html",
-      "visible_chars": 6786,
+      "visible_chars": 6795,
       "status": "PASS",
       "failures": []
     }
