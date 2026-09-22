@@ -199,9 +199,14 @@ def main():
   if raw.count("◆ ")<5:f.append("decision_guide_items")
   if 'class="mid-cta"' not in raw:f.append("mid_cta")
   if '<section id="consultation-preview"' not in raw:f.append("consultation_precheck")
-  order_tokens=['decision-strip','id="detail"','decision-guide','mid-cta','자주 묻는 질문','더 깊게 보기','class="section related"','id="consultation-preview"']
-  positions=[raw.find(x) for x in order_tokens]
-  if any(x<0 for x in positions) or positions!=sorted(positions):f.append("conversion_flow_order")
+  kickers=re.findall(r'<p class="kicker">(.*?)</p>',raw)
+  first_label="시험 목표" if meta["family"]=="exam" else "지금 상황"
+  scene_label="실제 막힘" if meta["family"]=="exam" else "실제 장면"
+  related_label="다른 시험" if meta["family"]=="exam" else "다른 목적"
+  required_order=[first_label,scene_label,"선택 기준","우선순위","수업 흐름","판단 기준","다음 단계","피드백 예시","자주 묻는 질문","더 깊게 보기",related_label,"상담 안내"]
+  try: flow_positions=[kickers.index(x) for x in required_order]
+  except ValueError: flow_positions=[]
+  if not flow_positions or flow_positions!=sorted(flow_positions):f.append("conversion_flow_order")
   if any(x in text for x in ["최고의 강사진","성적 향상을 책임","지금 바로 상담 신청"]):f.append("generic_marketing_copy")
   if PHONE_HREF not in raw or PHONE_LABEL not in raw:f.append("phone")
   if 'application/ld+json' not in raw:f.append("schema_missing")
