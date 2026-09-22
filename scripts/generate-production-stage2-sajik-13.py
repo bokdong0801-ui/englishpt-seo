@@ -129,7 +129,7 @@ def postprocess(raw,slug,current,service_profiles,exam_map):
  if pos<0: raise RuntimeError(f"feedback boundary not found for {current}")
  raw=raw[:pos]+mid+raw[pos:]
  # Requested flow: FAQ -> Deep Guide -> internal links -> consultation pre-check.
- deep_faq=r'(<section[^>]*>[\s\S]*?<p class="kicker">더 깊게 보기</p>[\s\S]*?</section>)\\s*(<section[^>]*>[\s\S]*?<p class="kicker">자주 묻는 질문</p>[\s\S]*?</section>)'
+ deep_faq=r'(<section[^>]*>[\s\S]*?<p class="kicker">더 깊게 보기</p>[\s\S]*?</section>)\s*(<section[^>]*>[\s\S]*?<p class="kicker">자주 묻는 질문</p>[\s\S]*?</section>)'
  raw,nswap=re.subn(deep_faq,lambda m:m.group(2)+m.group(1),raw,count=1)
  if nswap!=1: raise RuntimeError(f"FAQ/Deep Guide order not found for {current}")
  # Connect both frozen families: every page links to the other 12 Sajikdong intent pages.
