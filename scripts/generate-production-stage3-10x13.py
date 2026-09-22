@@ -23,6 +23,7 @@ PHONE_LABEL="전화 010-5006-8027"
 PHONE_HREF="tel:+821050068027"
 SERVICE_ORDER=["elem-tutor","mid-conv","high-conv","univ-conv","jobseeker-conv","biz-business-conv","housewife-conv"]
 EXAM_ORDER=["toeic","toeic-speaking","opic","ielts","duolingo","toefl"]
+DECISION_SUPPORT_PATH=ROOT/"PRODUCTION_DECISION_SUPPORT_13INTENT_V1.json"
 
 INTRO={
 "parent-view":"학생 영어를 볼 때는 진도량보다 최근 혼자 처리되는 범위와 도움이 필요한 장면을 먼저 나눕니다.",
@@ -203,13 +204,29 @@ def feedback_block(titles,row,d):
   out.append(f'<article class="card"><b>기록 예시 {i+1}</b><p>{esc(msg)}</p></article>')
  return ''.join(out)
 
-def decision_guide(boundary,row,d,family):
- fit=(f"{INTRO[d['intro_pattern']]} {guide(row,25)}" if family=="service" else f"목표 시험과 일정은 정해졌지만 {DIAG[d['diagnosis_emphasis']]} {guide(row,25)}")
- plan=f"{INTRO[d['intro_pattern']]} → {DIAG[d['diagnosis_emphasis']]} → {CASE[d['case_frame']]} → 재확인"
- cost=("횟수 · 시간 · 진행 방식 · 준비 범위를 확인하며 구체 비용은 상담에서 안내합니다." if family=="service" else "횟수 · 시간 · 남은 기간 · 피드백 방식 · 준비 범위를 확인합니다.")
- prep=("최근 자료 · 가장 막힌 장면 · 다음 일정 · 가능한 시간대" if family=="service" else "목표 결과 · 시험일/마감 · 최근 성적·답변 · 가장 어려운 영역")
- vals=[("이런 경우 잘 맞습니다",fit),("다른 선택이 나을 수 있습니다",boundary),("상담에서 확인할 비용·일정 조건",cost),("수업 계획은 이렇게 정합니다",plan),("상담 전에 준비할 것",prep)]
- return '<section class="section decision-guide"><div class="wrap narrow"><p class="kicker">선택 기준</p><h2>광고 문구보다, 이 다섯 가지를 먼저 확인하세요</h2><div class="decision-list">'+''.join(f'<div><b>◆ {esc(a)}</b><p>{esc(b)}</p></div>' for a,b in vals)+'</div></div></section>'
+def decision_guide(intent,service):
+ ds=json.loads(DECISION_SUPPORT_PATH.read_text(encoding="utf-8"))["intents"][intent]
+ vals=[
+  ("이런 경우 잘 맞습니다",ds["fit"]),
+  ("이런 경우엔 다른 선택도 비교하세요",ds["alternative"]),
+  ("비용을 좌우하는 4가지",ds["cost_factors"]+" · 구체 금액은 상담에서 안내"),
+  ("선생님·수업은 이렇게 비교하세요",ds["teacher_or_class_selection"]),
+  ("상담 전에 준비하실 것",ds["consult_preparation"]),
+ ]
+ return '<section class="section decision-guide"><div class="wrap narrow"><p class="kicker">선택 기준</p><h2>'+esc(service)+' 선택 전에, 이 다섯 가지를 먼저 확인하세요</h2><div class="decision-list">'+''.join(f'<div><b>◆ {esc(a)}</b><p>{esc(b)}</p></div>' for a,b in vals)+'</div></div></section>'
+
+def variation_story(row,d,service):
+ blocks=[
+  ("이번 페이지의 판단 순서",INTRO[d["intro_pattern"]]+" "+guide(row,32)+" "+rhythm(d,0)),
+  ("현재 장면을 해석하는 방식",CONTEXT[d["local_context_mode"]]+" "+guide(row,34)+" "+guide(row,35)),
+  ("실수와 병목을 다시 보는 방식",DIAG[d["diagnosis_emphasis"]]+" "+guide(row,36)+" "+CASE[d["case_frame"]]),
+  ("수업에서 행동으로 옮기는 방식",rhythm(d,2)+" "+guide(row,38)+" "+guide(row,39)),
+  ("기록을 남기는 방식",CTA[d["cta_frame"]]+" "+guide(row,40)+" "+rhythm(d,4)),
+  ("다음 조건에서 재사용하는 방식",CASE[d["case_frame"]]+" "+guide(row,42)+" "+guide(row,43)),
+  ("일정이 달라졌을 때 조정하는 방식",CONTEXT[d["local_context_mode"]]+" "+guide(row,44)+" "+CTA[d["cta_frame"]]),
+  ("상담 전 스스로 확인할 질문",guide(row,46)+" "+DIAG[d["diagnosis_emphasis"]]+" "+guide(row,47)),
+ ]
+ return '<section class="section variation-story"><div class="wrap narrow"><p class="kicker">판단 가이드</p><h2>'+esc(service)+'를 실제 일정에 연결하는 방법</h2>'+''.join(f'<article><b>{esc(t)}</b><p>{esc(p)}</p></article>' for t,p in blocks)+'</div></section>'
 
 def deep_block(scene_titles,priority,boundary,service,row,d):
  topics=[
@@ -265,15 +282,16 @@ def render_page(row,d,intent,family,facts,svc,ex):
 {decision_strip(d,family)}
 <section id="detail" class="section"><div class="wrap narrow"><p class="kicker">{'시험 목표' if family=='exam' else '지금 상황'}</p><h2>{esc(question)}</h2><p>{esc(intro1)}</p><p>{esc(intro2)}</p><p>{esc(guide(row,0))}</p></div></section>
 <section class="section soft"><div class="wrap"><p class="kicker">자기상황 식별</p><h2>내 상황과 가까운 장면부터 확인합니다</h2><div class="grid4">{scene_cards(scene_titles,row,d)}</div></div></section>
+{decision_guide(intent,service)}
 <section class="section"><div class="wrap narrow"><p class="kicker">{'시험 맥락 이해' if family=='exam' else '학습 맥락 이해'}</p><h2>{esc(context_title)}</h2><p>{esc(context_text)}</p><p>{esc(CASE[d["case_frame"]])}</p></div></section>
+{variation_story(row,d,service)}
 <section class="section soft"><div class="wrap"><p class="kicker">우선순위</p><h2>{esc(INTRO[d["intro_pattern"]].split(".")[0])}에서 무엇부터 볼지 정합니다</h2><ul class="proofs">{priority_block(priority,row,d)}</ul></div></section>
 <section class="section dark"><div class="wrap"><p class="kicker">수업 흐름</p><h2>설명에서 끝내지 않고 실제 행동으로 다시 확인합니다</h2><ol class="steps">{flow_block(steps,row,d)}</ol></div></section>
 <section class="mid-cta"><div class="wrap"><div><p class="kicker">중간 확인</p><h2>{esc(mid)}</h2></div><div class="mid-actions"><a class="btn primary" href="#consultation-preview">상담 전 확인하기</a><a class="btn phone" href="{PHONE_HREF}">{PHONE_LABEL}</a></div></div></section>
 <section class="section"><div class="wrap"><p class="kicker">판단 기준</p><h2>변화를 추상적인 표현 대신 행동으로 확인합니다</h2><ul class="proofs">{proof_block(proof,row,d)}</ul></div></section>
 <section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p><h2>성과를 약속하지 않고 다음 재확인 행동을 남깁니다</h2><p>아래 문장은 특정 수강생 후기나 점수 상승 사례가 아니라 기록 형식을 보여주는 예시입니다.</p><div class="grid4">{feedback_block(scene_titles,row,d)}</div></div></section>
-{decision_guide(boundary,row,d,family)}
-{deep_block(scene_titles,priority,boundary,service,row,d)}
 {faq_block(scene_titles,priority,proof,boundary,row,d)}
+{deep_block(scene_titles,priority,boundary,service,row,d)}
 <section class="section related"><div class="wrap"><p class="kicker">관련 과정</p><h2>{esc(dong)}에서 다른 목표도 비교해보세요</h2><div class="links">{related}</div></div></section>
 <section id="consultation-preview" class="section consult"><div class="wrap narrow"><p class="kicker">상담 전 체크</p><h2>최근 자료와 가장 막힌 장면, 다음 일정을 먼저 준비하세요</h2><p>{esc(CTA[d["cta_frame"]])} {esc(guide(row,30))}</p><form id="pilotForm"><label>가장 가까운 일정<input name="deadline" placeholder="시험·발표·면접·사용 일정"></label><label>가장 막히는 장면<textarea name="difficulty" rows="3" placeholder="최근 어려웠던 문제·응답·상황"></textarea></label><button class="btn primary" type="submit">상담 신청</button><a class="btn phone" href="{PHONE_HREF}">{PHONE_LABEL}</a><p class="pilot-status" aria-live="polite"></p></form></div></section>
 <section class="final"><div class="wrap"><h2>{esc(h1)}, 등록보다 현재 기준부터 확인하세요.</h2><p>{esc(guide(row,31))}</p><a class="btn light" href="{PHONE_HREF}">{PHONE_LABEL}</a></div></section>
@@ -288,7 +306,7 @@ def main():
  OUT.mkdir(parents=True,exist_ok=True)
  shutil.copy2(ROOT/"pilot-v45-5x7/pilot.css",OUT/"pilot.css")
  with (OUT/"pilot.css").open("a",encoding="utf-8") as fp:
-  fp.write('''\n.decision-strip{background:#fff;border-bottom:1px solid #e6e2d9}.decision-grid{display:grid;grid-template-columns:repeat(4,1fr)}.decision-grid>div{padding:20px 18px;border-right:1px solid #e6e2d9}.decision-grid>div:last-child{border-right:0}.decision-grid b{display:block;font-size:13px;margin-bottom:4px}.decision-grid span{font-size:14px;color:#53605a}.mid-cta{padding:30px 0;background:#edeae2}.mid-cta .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}.mid-cta h2{font-size:clamp(22px,3vw,32px);margin:6px 0}.mid-actions{display:flex;gap:10px;flex-wrap:wrap}.decision-guide{background:#f4f8f5}.decision-list{display:grid;gap:14px}.decision-list>div{padding:16px 18px;background:#fff;border:1px solid #dce7e0;border-radius:14px}.decision-list b{display:block;margin-bottom:6px}.decision-list p{margin:0;color:#41574d}@media(max-width:760px){.decision-grid{grid-template-columns:1fr 1fr}.decision-grid>div:nth-child(2){border-right:0}.decision-grid>div{border-bottom:1px solid #e6e2d9}.mid-cta .wrap{display:block}.mid-actions{margin-top:16px}}\n''')
+  fp.write('''\n.decision-strip{background:#fff;border-bottom:1px solid #e6e2d9}.decision-grid{display:grid;grid-template-columns:repeat(4,1fr)}.decision-grid>div{padding:20px 18px;border-right:1px solid #e6e2d9}.decision-grid>div:last-child{border-right:0}.decision-grid b{display:block;font-size:13px;margin-bottom:4px}.decision-grid span{font-size:14px;color:#53605a}.mid-cta{padding:30px 0;background:#edeae2}.mid-cta .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}.mid-cta h2{font-size:clamp(22px,3vw,32px);margin:6px 0}.mid-actions{display:flex;gap:10px;flex-wrap:wrap}.decision-guide{background:#f4f8f5}.decision-list{display:grid;gap:14px}.decision-list>div{padding:16px 18px;background:#fff;border:1px solid #dce7e0;border-radius:14px}.decision-list b{display:block;margin-bottom:6px}.decision-list p{margin:0;color:#41574d}.variation-story article{padding:16px 0;border-bottom:1px solid #e6e2d9}.variation-story article:last-child{border-bottom:0}.variation-story b{display:block;margin-bottom:6px}.variation-story p{margin:0;color:#41574d;line-height:1.8}@media(max-width:760px){.decision-grid{grid-template-columns:1fr 1fr}.decision-grid>div:nth-child(2){border-right:0}.decision-grid>div{border-bottom:1px solid #e6e2d9}.mid-cta .wrap{display:block}.mid-actions{margin-top:16px}}\n''')
  shutil.copy2(ROOT/"pilot-v45-5x7/pilot.js",OUT/"pilot.js")
 
  generated={};files=[]
@@ -313,7 +331,12 @@ def main():
   if f'rel="canonical" href="{m["canonical"]}"' not in raw:f.append("canonical")
   if 'name="robots" content="noindex,nofollow"' not in raw:f.append("noindex")
   if 'data-production-deploy="false"' not in raw:f.append("production_flag")
-  if raw.count("◆ ")<5 or 'decision-strip' not in raw or 'mid-cta' not in raw:f.append("conversion_blocks")
+  if raw.count("◆ ")<5 or 'decision-strip' not in raw or 'mid-cta' not in raw or 'variation-story' not in raw:f.append("conversion_blocks")
+  kickers=re.findall(r'<p class="kicker">(.*?)</p>',raw)
+  expected=["자기상황 식별","선택 기준","우선순위","수업 흐름","중간 확인","판단 기준","피드백 예시","자주 묻는 질문","더 깊게 보기","관련 과정","상담 전 체크"]
+  try: pp=[kickers.index(x) for x in expected]
+  except ValueError: pp=[]
+  if not pp or pp!=sorted(pp):f.append("conversion_flow_order")
   try:json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>',raw,re.S).group(1))
   except Exception:f.append("schema")
   if any(x in txt for x in malformed):f.append("malformed_korean")
@@ -322,7 +345,7 @@ def main():
   if "-tos.html" in raw.lower():f.append("standalone_tos")
   linked=set(re.findall(r'href="([^"]+\.html)"',raw));missing=byloc[m["locality"]]-{name}-linked
   if missing:f.append("cluster_links")
-  lo,hi=(4800,7600)
+  lo,hi=(5200,9000)
   if not lo<=len(txt)<=hi:f.append(f"visible_chars:{len(txt)}")
   checks.append({"file":name,"family":m["family"],"intent":m["intent"],"visible_chars":len(txt),"status":"PASS" if not f else "FAIL","failures":f})
   if f:failures.append({"file":name,"failures":f})
