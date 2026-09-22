@@ -1,0 +1,32 @@
+{
+  "version": "1.0",
+  "status": "COUNT_LOCKED_WAITING_FOR_5149_ROW_MANIFEST_NOT_PRODUCTION",
+  "created_at": "2026-09-22",
+  "locality_count": 5149,
+  "intent_count": 13,
+  "page_count": 66937,
+  "region_hubs_excluded": 5149,
+  "service_family": {
+    "count": 7,
+    "gold_freeze": "V4_5_GOLD_SAMPLE_FREEZE_20260922.json",
+    "pages_per_locality": 7,
+    "total_pages": 36043
+  },
+  "exam_family": {
+    "count": 6,
+    "gold_freeze": "pilot-v45-exam-5x6/PILOT_EXAM_5X6_GOLD_FREEZE_V1.md",
+    "pages_per_locality": 6,
+    "total_pages": 30894,
+    "tos_standalone": false
+  },
+  "next_required_gate": "MATERIALIZE_5149_LOCALITY_ROWS",
+  "after_row_manifest": [
+    "generate 1 locality x 13 intent preview",
+    "generate 10 locality x 13 intent dry-run",
+    "generate 100 locality x 13 intent pre-production batch",
+    "generate all 66,937 pages"
+  ],
+  "example_review_policy": "PRODUCTION_SAMPLE_REVIEW_POLICY_V1.json",
+  "production_deploy": false,
+  "main_merge": false
+}
