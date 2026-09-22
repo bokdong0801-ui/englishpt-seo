@@ -206,7 +206,8 @@ def main():
   required_order=[first_label,scene_label,"선택 기준","우선순위","수업 흐름","판단 기준","다음 단계","피드백 예시","자주 묻는 질문","더 깊게 보기",related_label,"상담 안내"]
   try: flow_positions=[kickers.index(x) for x in required_order]
   except ValueError: flow_positions=[]
-  if not flow_positions or flow_positions!=sorted(flow_positions):f.append("conversion_flow_order")
+  if not flow_positions or flow_positions!=sorted(flow_positions):
+   f.append("conversion_flow_order:"+">".join(kickers))
   if any(x in text for x in ["최고의 강사진","성적 향상을 책임","지금 바로 상담 신청"]):f.append("generic_marketing_copy")
   if PHONE_HREF not in raw or PHONE_LABEL not in raw:f.append("phone")
   if 'application/ld+json' not in raw:f.append("schema_missing")
