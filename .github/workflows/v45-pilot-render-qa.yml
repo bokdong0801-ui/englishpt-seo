@@ -27,4 +27,4 @@ jobs:
         if: always()
         with:
           name: v45-pilot-render-qa
-          path: pilot-v45-5x7/PILOT_5X7_RENDER_QA_V1.json
+          path: pilot-v45-5x7/PILOT_5X7_RENDER_QA_V2_FULL_DEPTH.json
