@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "status": "STATIC_DUPLICATE_HUMAN_PASS_RENDER_PENDING_NOT_PRODUCTION",
+  "status": "STATIC_DUPLICATE_HUMAN_RENDER_PASS_GOLD_SAMPLE_FROZEN_NOT_PRODUCTION",
   "page_count": 30,
   "visible_chars": {
     "min": 6299,
@@ -636,5 +636,27 @@
     ],
     "production_deploy": false
   },
-  "render_qa": "PENDING"
+  "render_qa": {
+    "status": "PASS",
+    "file": "pilot-v45-exam-5x6/PILOT_EXAM_5X6_RENDER_QA_V1.json",
+    "workflow_run_id": 35693687847,
+    "source_sha": "3b97a559ddaaecd4b746c3ba380c7684bbac830f",
+    "render_cases": 60,
+    "desktop_cases": 30,
+    "mobile_cases": 30,
+    "failures": 0,
+    "horizontal_overflow_failures": 0,
+    "console_or_page_error_cases": 0,
+    "h1_visibility_failures": 0,
+    "hero_phone_visibility_failures": 0,
+    "hero_detail_cta_visibility_failures": 0,
+    "hero_consult_cta_visibility_failures": 0,
+    "production_deploy": false
+  },
+  "freeze": {
+    "status": "FROZEN",
+    "freeze_id": "V4.5-EXAM-5X6-GOLD-SAMPLE-FROZEN",
+    "scope": "5 localities x 6 exams = 30 full-depth exam Gold Sample pages",
+    "production_deploy": false
+  }
 }
