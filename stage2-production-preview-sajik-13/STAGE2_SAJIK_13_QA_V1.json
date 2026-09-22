@@ -1,0 +1,157 @@
+{
+  "version": "1.0",
+  "status": "STATIC_RENDER_PASS_USER_REVIEW_REQUIRED_NOT_PRODUCTION",
+  "stage": "STAGE2_ONE_LOCALITY_X_13_INTENTS_PREVIEW",
+  "locality": "서울특별시 종로구 사직동",
+  "region_slug": "seoul-jongno-sajikdong",
+  "page_count": 13,
+  "families": {
+    "service": 7,
+    "exam": 6
+  },
+  "visible_chars": {
+    "min": 6541,
+    "max": 7211,
+    "avg": 6874.2
+  },
+  "variation_adapter": {
+    "variation_pack_id": "Ve4a779a721",
+    "variation_signature": "parent-view|scene-check-train-report-fit|schedule-context|three-moments|goal-check|compact-direct|comprehension-skill",
+    "dimensions": {
+      "intro_pattern": "parent-view",
+      "section_order": "scene-check-train-report-fit",
+      "local_context_mode": "schedule-context",
+      "case_frame": "three-moments",
+      "cta_frame": "goal-check",
+      "sentence_rhythm": "compact-direct",
+      "diagnosis_emphasis": "comprehension-skill"
+    },
+    "base_gold_frame": "scene",
+    "source_gold_locality": "seoul-seocho-naegokdong"
+  },
+  "checks": [
+    {
+      "file": "seoul-jongno-sajikdong-elem-tutor.html",
+      "family": "service",
+      "intent": "elem-tutor",
+      "visible_chars": 6818,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "seoul-jongno-sajikdong-mid-conv.html",
+      "family": "service",
+      "intent": "mid-conv",
+      "visible_chars": 6794,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "seoul-jongno-sajikdong-high-conv.html",
+      "family": "service",
+      "intent": "high-conv",
+      "visible_chars": 6835,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "seoul-jongno-sajikdong-univ-conv.html",
+      "family": "service",
+      "intent": "univ-conv",
+      "visible_chars": 6900,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "seoul-jongno-sajikdong-jobseeker-conv.html",
+      "family": "service",
+      "intent": "jobseeker-conv",
+      "visible_chars": 6807,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "seoul-jongno-sajikdong-biz-business-conv.html",
+      "family": "service",
+      "intent": "biz-business-conv",
+      "visible_chars": 6723,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "seoul-jongno-sajikdong-housewife-conv.html",
+      "family": "service",
+      "intent": "housewife-conv",
+      "visible_chars": 6896,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "seoul-jongno-sajikdong-toeic.html",
+      "family": "exam",
+      "intent": "toeic",
+      "visible_chars": 6883,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "seoul-jongno-sajikdong-toeic-speaking.html",
+      "family": "exam",
+      "intent": "toeic-speaking",
+      "visible_chars": 6832,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "seoul-jongno-sajikdong-opic.html",
+      "family": "exam",
+      "intent": "opic",
+      "visible_chars": 6541,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "seoul-jongno-sajikdong-ielts.html",
+      "family": "exam",
+      "intent": "ielts",
+      "visible_chars": 7088,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "seoul-jongno-sajikdong-duolingo.html",
+      "family": "exam",
+      "intent": "duolingo",
+      "visible_chars": 7211,
+      "status": "PASS",
+      "failures": []
+    },
+    {
+      "file": "seoul-jongno-sajikdong-toefl.html",
+      "family": "exam",
+      "intent": "toefl",
+      "visible_chars": 7037,
+      "status": "PASS",
+      "failures": []
+    }
+  ],
+  "failures": [],
+  "render_qa": {
+    "status": "PASS",
+    "file": "stage2-production-preview-sajik-13/STAGE2_SAJIK_13_RENDER_QA_V1.json",
+    "render_cases": 26,
+    "desktop_cases": 13,
+    "mobile_cases": 13,
+    "failures": 0,
+    "horizontal_overflow_failures": 0,
+    "console_or_page_error_cases": 0,
+    "production_deploy": false
+  },
+  "safety": {
+    "robots": "noindex,nofollow",
+    "live_lead_submission": false,
+    "sitemap": false,
+    "main_merge": false,
+    "production_deploy": false
+  }
+}
