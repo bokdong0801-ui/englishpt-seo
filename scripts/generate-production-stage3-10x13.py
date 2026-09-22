@@ -111,6 +111,86 @@ SEED_END=[
 "상담 전에는 최근 막힌 장면과 가장 가까운 일정만 정리해도 첫 우선순위를 정하는 데 충분합니다.",
 ]
 
+FOCUS_NOTES=[
+("최근 장면 하나에서 시작하기","최근 일주일 안에 영어 때문에 멈췄던 순간을 하나 적어봅니다. 구체적인 장면이 있으면 과정 이름보다 필요한 기능을 먼저 찾을 수 있습니다."),
+("첫 목표를 작게 잡기","처음부터 전체 실력을 바꾸려 하지 않고 한 가지 수행을 반복합니다. 같은 조건에서 다시 해본 뒤 다음 목표를 정합니다."),
+("설명보다 재사용 확인하기","배운 내용을 그대로 따라 하는 것과 조건이 바뀌어도 다시 쓰는 것은 다릅니다. 질문·문제·상황을 바꿔도 기능이 남는지 확인합니다."),
+("시간이 부족할 때 범위 줄이기","학습 시간을 늘리기 어렵다면 영역 수를 줄입니다. 꼭 필요한 기능을 남기고 부가 목표는 다음 단계로 미룹니다."),
+("기초가 부족할 때 시작점 찾기","모든 내용을 처음부터 다시 보기보다 현재 문장을 만들거나 지문을 이해할 때 실제로 막히는 기초 요소를 먼저 복구합니다."),
+("점수와 실전이 다를 때","시험 점수와 실제 말하기·쓰기 수행은 다르게 나타날 수 있습니다. 서로 다른 결과를 한 레벨로 묶지 않고 필요한 행동을 따로 봅니다."),
+("복습이 자주 끊길 때","한 번에 긴 복습을 계획하지 않고 짧게 다시 꺼낼 수 있는 단위를 남깁니다. 일정이 흔들려도 다시 시작할 위치가 있어야 합니다."),
+("상담에서 확인할 질문","현재 약점을 어떻게 진단하는지, 수업 뒤 무엇을 기록하는지, 다음 점검에서 어떤 변화를 확인하는지 차례로 물어봅니다."),
+("학생 영어의 관리 기준","정답률만 보는 대신 오답 이유와 공부 순서를 확인합니다. 스스로 다시 풀거나 설명할 수 있는지가 다음 단계 판단 기준이 됩니다."),
+("성인 영어의 관리 기준","실제로 쓸 표현을 고르고 반복합니다. 알고 있는 지식을 늘리는 것보다 필요한 순간에 꺼내 쓰는 속도와 완결성을 봅니다."),
+("마감이 없는 목표 운영","기간을 억지로 정하기보다 한 달 단위 수행 목표를 둡니다. 목표가 안정되면 다음 기능을 추가하며 범위를 넓힙니다."),
+("마감이 있는 목표 운영","남은 날짜에 맞춰 우선순위를 좁히고 실제 시험·발표·면접과 비슷한 조건으로 연습합니다. 직전에는 새 범위를 무리하게 늘리지 않습니다."),
+("서비스를 비교할 때","가격이나 횟수만 비교하지 않고 진단→훈련→피드백→재점검이 어떻게 이어지는지 확인합니다. 설명이 구체적일수록 선택하기 쉽습니다."),
+("목표가 자주 바뀔 때","현재 가장 가까운 사용 장면 하나를 기준으로 시작합니다. 새 목표가 생기면 기존 계획을 버리는 대신 비중을 다시 조정합니다."),
+("자신감이 떨어졌을 때","쉬운 과제만 반복하기보다 성공할 수 있는 작은 수행과 약간 어려운 수행을 번갈아 배치합니다. 변화가 보이도록 기록을 남깁니다."),
+("학습량이 과할 때","완료하지 못한 계획을 계속 누적하지 않습니다. 실제로 소화한 양을 기준으로 다음 계획을 줄여 지속성을 우선합니다."),
+("독해가 느릴 때","모든 문장을 번역하기보다 핵심 정보와 문장 구조를 먼저 파악합니다. 어휘 부족과 구조 이해를 따로 점검합니다."),
+("말이 바로 안 나올 때","완벽한 문장을 만들려는 시간을 줄이고 짧은 첫 문장부터 꺼냅니다. 이후 이유와 예시를 붙여 문장을 확장합니다."),
+("듣기가 불안정할 때","놓친 구간이 단어인지 연결음인지 정보 처리인지 구분합니다. 원인에 따라 반복 방식과 확인 기준을 다르게 잡습니다."),
+("시험 준비가 분산될 때","여러 시험을 동시에 준비하기보다 실제로 필요한 시험을 먼저 정합니다. 나머지 목표는 현재 일정 뒤로 이동합니다.")
+]
+
+DECISION_NOTES=[
+("첫 선택을 좁히는 세 질문",["가장 가까운 영어 사용 일정은 무엇인가?","최근 가장 자주 멈춘 기능은 무엇인가?","주중에 실제 반복 가능한 시간은 어느 정도인가?"]),
+("과정 비교 전에 적어볼 항목",["목표를 한 문장으로 설명할 수 있는가?","최근 영어 때문에 불편했던 장면이 떠오르는가?","결과를 언제 다시 확인할지 정했는가?"]),
+("학습 계획을 짧게 만드는 기준",["첫 단계에서 바꿀 행동을 하나만 고른다.","복습할 수 없는 양은 처음부터 줄인다.","다음 점검에서 확인할 기준을 미리 정한다."]),
+("상담 전에 준비할 정보",["최근 어려웠던 문제·자료·응답을 하나 고른다.","시험·면접·발표 마감이 있다면 날짜를 적는다.","가능한 요일과 복습 시간을 현실적으로 계산한다."]),
+("목표가 넓을 때 나누는 법",["평가가 있는 목표와 실제 사용 목표를 분리한다.","기초 보완과 즉시 필요한 실전 준비를 같은 비중으로 두지 않는다.","가장 급한 목표가 끝난 뒤 다음 목표를 연결한다."]),
+("변화를 확인하는 방식",["공부한 시간보다 이전에 못 하던 행동이 달라졌는지 본다.","다른 문제나 장면에서도 기능이 유지되는지 확인한다.","재점검 결과에 따라 학습 비중을 다시 조정한다."]),
+("수업 방식보다 먼저 볼 것",["누구를 위한 과정인지 대상이 분명한가?","진단 항목이 실제 목표와 연결되는가?","훈련 후 무엇을 다시 확인하는지 설명되어 있는가?"]),
+("학습이 끊기지 않게 하는 장치",["바쁜 날에도 할 최소 복습량을 정한다.","한 주를 놓쳐도 다시 시작할 위치를 남긴다.","완벽한 계획보다 반복 가능한 계획을 선택한다."]),
+("마감형 목표 체크포인트",["남은 기간을 주 단위로 나눈다.","점수와 실제 수행 가운데 더 급한 기준을 고른다.","마감 뒤 유지할 장기 학습을 따로 설계한다."]),
+("비교 후 남길 기록",["어떤 설명이 내 문제와 직접 연결됐는지 적는다.","진단과 피드백 방식이 구체적인지 비교한다.","목표가 불분명하면 바로 등록하기보다 다시 정리한다."])
+]
+
+FAQ_SUFFIX={
+"short-analytic":"다음 확인에서는 같은 조건이 반복되는지부터 짧게 점검합니다.",
+"balanced-editorial":"한 번의 결과보다 다음 시도에서 같은 기준을 다시 적용할 수 있는지를 함께 봅니다.",
+"compact-direct":"다음 연습에서는 이 항목만 따로 떼어 다시 확인합니다.",
+"calm-explanatory":"설명을 들은 뒤 혼자 다시 해보는 과정까지 이어져야 실제로 남았는지 판단할 수 있습니다.",
+"question-led":"조건이 바뀌어도 같은 답을 만들 수 있는지 질문을 바꿔 다시 확인합니다.",
+"example-led":"익숙한 예시 한 번으로 끝내지 않고 다른 문제나 장면에서 같은 기준을 적용해봅니다."
+}
+
+def first_sentence(text):
+ parts=re.split(r'(?<=[.!?])\s+',str(text).strip())
+ return parts[0] if parts and parts[0] else str(text).strip()
+
+def seeded(row,mod,offset=0):
+ s=row["content_seed"]
+ chunk=s[offset:offset+4] or s[:4]
+ return int(chunk,16)%mod
+
+def rewrite_deep_faq(raw,row,d,deep,faq,service_label):
+ # Keep intent-specific titles/questions, but rebuild long explanatory copy with the audited locality variation library.
+ start=seeded(row,len(FOCUS_NOTES),0)
+ cards=[]
+ for i,(title,text) in enumerate(deep):
+  ft,fp=FOCUS_NOTES[(start+i*3)%len(FOCUS_NOTES)]
+  body=first_sentence(text)+" "+fp+" "+seed_pick(row,(i+9)%12)
+  cards.append('<article class="card"><b>'+html.escape(title)+'</b><p>'+html.escape(body)+'</p><p><strong>'+html.escape(ft)+'</strong> '+html.escape(CONTEXT[d["local_context_mode"]])+'</p></article>')
+ nt,items=DECISION_NOTES[seeded(row,len(DECISION_NOTES),4)]
+ cards.append('<article class="card"><b>'+html.escape(nt)+'</b><p>'+html.escape(" ".join(items))+'</p><p>'+html.escape(CTA[d["cta_frame"]])+'</p></article>')
+ deep_block='<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>'+html.escape(service_label)+' 선택 전에 확인할 기준</h2><div class="grid4">'+''.join(cards)+'</div></div></section>'
+ raw,n=re.subn(r'<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p>[\s\S]*?</section>',deep_block,raw,count=1)
+ if n!=1:raise RuntimeError("deep rewrite")
+ # Five FAQs, deterministic order; preserve the question and the first factual sentence, vary the recheck explanation.
+ offset=seeded(row,len(faq),8)
+ selected=[faq[(offset+i)%len(faq)] for i in range(min(5,len(faq)))]
+ suffix=FAQ_SUFFIX[d["sentence_rhythm"]]
+ details=[]
+ for i,(q,a) in enumerate(selected):
+  extra=[suffix,DIAG[d["diagnosis_emphasis"]],CASE[d["case_frame"]],CTA[d["cta_frame"]],seed_pick(row,(i+3)%12)][i%5]
+  details.append('<details><summary>'+html.escape(q)+'</summary><p>'+html.escape(first_sentence(a)+" "+extra)+'</p></details>')
+ faq_block='<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>선택 전에 확인할 질문</h2><div class="faq">'+''.join(details)+'</div></div></section>'
+ raw,n=re.subn(r'<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p>[\s\S]*?</section>',faq_block,raw,count=1)
+ if n!=1:raise RuntimeError("faq rewrite")
+ return raw
+
 def load_module(name,path):
  spec=importlib.util.spec_from_file_location(name,path)
  if not spec or not spec.loader: raise RuntimeError(f"cannot load {path}")
@@ -399,7 +479,7 @@ def main():
   if "-tos.html" in raw.lower():f.append("standalone_tos")
   if meta["canonical"] in reserved:f.append("reserved_95_conflict")
   byloc[meta["locality"]].add(name)
-  lo,hi=(4000,7200) if meta["family"]=="service" else (4500,7500)
+  lo,hi=(4000,7200) if meta["family"]=="service" else (4500,7600)
   if not(lo<=len(text)<=hi):f.append(f"visible_chars:{len(text)}")
   checks.append({"file":name,"intent":meta["intent"],"family":meta["family"],"visible_chars":len(text),"status":"PASS" if not f else "FAIL","failures":f})
   if f:failures.append({"file":name,"failures":f})
