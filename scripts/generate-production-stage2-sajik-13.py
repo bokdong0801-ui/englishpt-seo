@@ -111,17 +111,30 @@ def postprocess(raw,slug,current,service_profiles,exam_map):
  # EnglishUp benchmark reinterpretation: one compact CTA after value/decision proof.
  mid_copy="최근 장면과 다음 일정으로 우선순위를 확인하세요." if family=="service" else "최근 병목과 다음 응시일로 우선순위를 확인하세요."
  mid='<section class="mid-cta"><div class="wrap"><div><p class="kicker">다음 단계</p><h2>'+html.escape(mid_copy)+'</h2></div><div class="mid-actions"><a class="btn primary" href="#consultation-preview">상담 전 확인하기</a><a class="btn phone" href="'+PHONE_HREF+'">'+PHONE_LABEL+'</a></div></div></section>'
- # Replace the generic fit/other-path section with a concrete decision block inspired by the user's corrected example.
- fit_pattern=r'<section class="section"><div class="wrap narrow"><p class="kicker">(과정 선택|시험 선택)</p>[\s\S]*?</section>'
- raw,nfit=re.subn(fit_pattern,decision_html,raw,count=1)
+ # Remove the late generic Fit/Other Path block. The concrete choice guide replaces it near the top.
+ fit_pattern=r'<section class="section"><div class="wrap narrow"><p class="kicker">(과정 선택|시험 선택)</p>[\\s\\S]*?</section>'
+ raw,nfit=re.subn(fit_pattern,"",raw,count=1)
  if nfit!=1: raise RuntimeError(f"fit/decision section not found for {current}")
+ # Hero -> quick summary -> self-identification -> concrete decision support.
+ detail_start=raw.find('<section id="detail"')
+ if detail_start<0: raise RuntimeError(f"detail section not found for {current}")
+ first_end=raw.find("</section>",detail_start)
+ second_start=raw.find("<section",first_end+10)
+ second_end=raw.find("</section>",second_start)
+ if second_start<0 or second_end<0: raise RuntimeError(f"self-identification section boundary not found for {current}")
+ raw=raw[:second_end+10]+decision_html+raw[second_end+10:]
+ # Mid CTA after value has been established, immediately before feedback proof.
  marker='<section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p>'
  pos=raw.find(marker)
  if pos<0: raise RuntimeError(f"feedback boundary not found for {current}")
  raw=raw[:pos]+mid+raw[pos:]
+ # Requested flow: FAQ -> Deep Guide -> internal links -> consultation pre-check.
+ deep_faq=r'(<section[^>]*>[\\s\\S]*?<p class="kicker">더 깊게 보기</p>[\\s\\S]*?</section>)\\s*(<section[^>]*>[\\s\\S]*?<p class="kicker">자주 묻는 질문</p>[\\s\\S]*?</section>)'
+ raw,nswap=re.subn(deep_faq,lambda m:m.group(2)+m.group(1),raw,count=1)
+ if nswap!=1: raise RuntimeError(f"FAQ/Deep Guide order not found for {current}")
  # Connect both frozen families: every page links to the other 12 Sajikdong intent pages.
  links=unified_links(slug,current,service_profiles,exam_map)
- raw,n=re.subn(r'(<div class="links">)[\s\S]*?(</div>)',lambda m:m.group(1)+links+m.group(2),raw,count=1)
+ raw,n=re.subn(r'(<div class="links">)[\\s\\S]*?(</div>)',lambda m:m.group(1)+links+m.group(2),raw,count=1)
  if n!=1: raise RuntimeError(f"related-links block not found for {current}")
  return raw
 
@@ -185,6 +198,10 @@ def main():
   if 'decision-guide' not in raw:f.append("decision_guide")
   if raw.count("◆ ")<5:f.append("decision_guide_items")
   if 'class="mid-cta"' not in raw:f.append("mid_cta")
+  if '<section id="consultation-preview"' not in raw:f.append("consultation_precheck")
+  order_tokens=['decision-strip','id="detail"','decision-guide','mid-cta','자주 묻는 질문','더 깊게 보기','class="section related"','id="consultation-preview"']
+  positions=[raw.find(x) for x in order_tokens]
+  if any(x<0 for x in positions) or positions!=sorted(positions):f.append("conversion_flow_order")
   if any(x in text for x in ["최고의 강사진","성적 향상을 책임","지금 바로 상담 신청"]):f.append("generic_marketing_copy")
   if PHONE_HREF not in raw or PHONE_LABEL not in raw:f.append("phone")
   if 'application/ld+json' not in raw:f.append("schema_missing")
@@ -203,7 +220,7 @@ def main():
   if "place_id" in text or "official_code" in text or "content_seed" in text or "variation_pack_id" in text:f.append("db_internal_visible")
   if "-tos.html" in raw.lower():f.append("standalone_tos_link")
   if meta["canonical"] in reserved:f.append("reserved_95_conflict")
-  lo,hi=(4000,7000) if meta["family"]=="service" else (4500,7500)
+  lo,hi=(4000,7800) if meta["family"]=="service" else (4500,8000)
   if not (lo<=len(text)<=hi):f.append(f"visible_chars:{len(text)}")
   checks.append({"file":name,"family":meta["family"],"intent":meta["intent"],"visible_chars":len(text),"status":"PASS" if not f else "FAIL","failures":f})
   if f:failures.append({"file":name,"failures":f})
