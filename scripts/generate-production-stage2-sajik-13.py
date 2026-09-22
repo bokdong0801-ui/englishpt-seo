@@ -122,6 +122,8 @@ def main():
  slug=row["region_slug"]
  OUT.mkdir(parents=True,exist_ok=True)
  shutil.copy2(ROOT/"pilot-v45-5x7/pilot.css",OUT/"pilot.css")
+ css_extra='''\n.decision-strip{background:#fff;border-bottom:1px solid #e6e2d9}.decision-grid{display:grid;grid-template-columns:repeat(4,1fr)}.decision-grid>div{padding:20px 18px;border-right:1px solid #e6e2d9}.decision-grid>div:last-child{border-right:0}.decision-grid b{display:block;font-size:13px;margin-bottom:4px}.decision-grid span{font-size:14px;color:#53605a}.mid-cta{padding:30px 0;background:#edeae2}.mid-cta .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}.mid-cta h2{font-size:clamp(22px,3vw,32px);margin:6px 0}.mid-actions{display:flex;gap:10px;flex-wrap:wrap}@media(max-width:760px){.decision-grid{grid-template-columns:1fr 1fr}.decision-grid>div:nth-child(2){border-right:0}.decision-grid>div{border-bottom:1px solid #e6e2d9}.mid-cta .wrap{display:block}.mid-actions{margin-top:16px}}\n'''
+ with (OUT/"pilot.css").open("a",encoding="utf-8") as fp: fp.write(css_extra)
  shutil.copy2(ROOT/"pilot-v45-5x7/pilot.js",OUT/"pilot.js")
 
  generated={}
