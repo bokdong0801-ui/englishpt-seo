@@ -287,6 +287,119 @@ def jacc(a,b,n=5):
  sb={tuple(tb[i:i+n]) for i in range(max(0,len(tb)-n+1))}
  return len(sa&sb)/len(sa|sb) if sa|sb else 0.0
 
+STATIC={
+ "scene":{
+  "situ_h":"최근 풀었던 문제를 네 장면으로 나눠봅니다",
+  "context_h":"최근 장면을 보면 공식 구조와 개인 병목이 분리됩니다",
+  "context_p":"시험 형식은 같아도 실제로 멈춘 순간은 사람마다 다릅니다. 최근 수행에서 어디까지 혼자 됐고 어느 조건에서 도움이 필요했는지를 기록하면 같은 시험 안에서도 학습 순서를 다르게 잡을 수 있습니다.",
+  "priority_h":"최근 반복된 막힘과 다음 응시 장면이 겹치는 것부터 봅니다",
+  "flow_h":"기록한 장면을 다시 만들고 조건을 바꿔 확인합니다",
+  "flow_p":"한 번의 정답이나 응답을 그대로 반복하지 않습니다. 최근 장면을 재현한 뒤 문항과 자료를 바꿔도 같은 판단을 다시 할 수 있는지를 봅니다.",
+  "proof_h":"수업 기록에 남아야 할 행동을 먼저 공개합니다",
+  "proof_p":"배운 목록보다 혼자 된 조건, 도움이 필요했던 조건, 다음에 다시 볼 행동이 남아야 이후 수업을 짧게 이어갈 수 있습니다.",
+  "feedback_h":"다음 수업 기록이 어떤 모습인지 예시로 보여드립니다",
+  "feedback_p":"아래는 실제 수강후기나 성과 수치가 아닙니다. 최근 장면에서 무엇을 관찰하고 다음에 어떤 조건을 바꿔볼지 보여주는 기록 예시입니다.",
+  "fit_h":"최근 장면의 목적과 이 시험이 맞는지 비교합니다",
+  "fit_p":"시험 이름이 익숙하다는 이유보다 최근 막힌 장면과 제출 목적이 이 시험의 평가 방식과 맞는지를 먼저 봅니다. 다른 시험이 더 직접적이라면 경로를 바꿀 수 있습니다.",
+  "deep_h":"최근 장면을 기준으로 더 깊게 확인할 내용",
+  "faq_h":"최근 문제를 떠올리며 많이 묻는 질문",
+  "official_h":"응시 전에 공식 최신 안내를 다시 확인하세요",
+  "official_p":"시험 형식과 접수, 점수 체계, 제출기관 요구조건은 달라질 수 있습니다. 이 파일럿은 학습 판단 구조를 검수하는 페이지이므로 실제 응시와 지원 전에는 주관기관과 제출기관의 최신 공지를 직접 확인해야 합니다.",
+  "related_h":"같은 지역에서 다른 시험 경로도 비교할 수 있습니다",
+  "consult_h":"최근 막힌 문제와 다음 응시일을 먼저 알려주세요",
+  "consult_p":"이 파일럿의 상담 폼 전송은 꺼져 있습니다. 최근 문제나 답변에서 가장 답답했던 장면과 다음 응시일을 정리한 뒤 전화 상담으로 연결할 수 있습니다.",
+  "final_suffix":"최근 막힌 장면부터 확인하세요."
+ },
+ "deadline":{
+  "situ_h":"가까운 시험일에 따라 네 가지 병목을 정리합니다",
+  "context_h":"공식 시험 구조보다 남은 기간 안의 우선순위가 더 중요할 수 있습니다",
+  "context_p":"같은 시험을 준비해도 남은 기간과 목표 결과에 따라 공부 순서는 달라집니다. 시험일까지 실제로 확보할 수 있는 연습 횟수를 계산하고 그 안에서 바꿀 수 있는 행동을 중심으로 범위를 줄입니다.",
+  "priority_h":"시험일에서 거꾸로 계산해 공부 순서를 정합니다",
+  "flow_h":"남은 기간 안에서 필요한 단계만 실전 조건으로 연결합니다",
+  "flow_p":"마감이 가까워질수록 새 내용을 크게 늘리지 않습니다. 목표 결과에 직접 영향을 주는 기능을 먼저 안정시키고 실제 제한 시간에서도 유지되는지를 확인합니다.",
+  "proof_h":"시험 직전에 확인해야 할 수행 기준을 남깁니다",
+  "proof_p":"연습량 자체보다 남은 기간 안에 무엇이 안정됐고 무엇이 아직 흔들리는지 기록해야 시험 직전의 우선순위를 다시 조정할 수 있습니다.",
+  "feedback_h":"시험일까지 남은 기간을 반영한 기록 예시입니다",
+  "feedback_p":"아래 문장은 특정 수강생 성과가 아닙니다. 마감이 가까운 상황에서 어떤 항목을 유지하고 어떤 병목을 다시 볼지 보여주는 일정형 피드백 예시입니다.",
+  "fit_h":"제출 마감과 목표 결과에 맞는 시험인지 확인합니다",
+  "fit_p":"여러 시험 중 어떤 것을 택할지는 익숙함보다 제출처의 요구조건과 마감이 우선입니다. 남은 기간에 현실적으로 준비할 수 있는 시험인지까지 함께 비교합니다.",
+  "deep_h":"마감에서 역산할 때 놓치기 쉬운 시험 준비 기준",
+  "faq_h":"시험일이 가까울수록 자주 묻는 질문",
+  "official_h":"접수와 제출 일정은 공식 최신 공지로 재확인하세요",
+  "official_p":"시험 일정, 형식, 점수 체계, 접수 정책과 제출처 기준은 바뀔 수 있습니다. 실제 응시 일정과 지원 마감을 정하기 전에는 주관기관 및 제출기관의 최신 공식 정보를 다시 확인해야 합니다.",
+  "related_h":"마감 조건에 맞는 다른 시험도 함께 비교합니다",
+  "consult_h":"시험일·제출 마감·목표 결과부터 알려주세요",
+  "consult_p":"현재 폼은 검수용이라 실제 전송되지 않습니다. 시험 날짜와 제출 마감, 목표 결과, 최근 가장 흔들린 영역을 정리해 전화 상담에서 우선순위를 확인할 수 있습니다.",
+  "final_suffix":"시험일까지 남은 시간을 기준으로 확인하세요."
+ },
+ "error":{
+  "situ_h":"같은 점수 저하도 원인은 다르게 나눠봅니다",
+  "context_h":"공식 구조와 반복 오류의 원인을 따로 봅니다",
+  "context_p":"시험 형식이 같아도 틀리는 이유는 지식 부족, 질문 해석, 시간 압박, 응답 구성처럼 달라질 수 있습니다. 정답 여부만 보지 않고 첫 시도와 힌트 뒤 수정, 새 문제에서의 재현을 비교합니다.",
+  "priority_h":"가장 자주 반복되는 오류 원인부터 줄입니다",
+  "flow_h":"오류 원인을 찾고 다른 문제에서 다시 시험합니다",
+  "flow_p":"정답을 알려준 직후의 성공을 변화로 보지 않습니다. 어떤 단서에서 수정됐는지 기록한 뒤 비슷하지만 다른 문항에서 같은 오류가 다시 나타나는지 확인합니다.",
+  "proof_h":"스스로 오류를 알아차리는 범위도 판단 기준입니다",
+  "proof_p":"처음에는 설명이 필요했던 항목이 짧은 힌트만으로 수정되는지, 나중에는 스스로 고칠 수 있는지를 기록하면 도움 의존도가 줄었는지 볼 수 있습니다.",
+  "feedback_h":"오류 원인과 수정 과정을 남기는 예시입니다",
+  "feedback_p":"실제 후기나 점수 변화 사례가 아닙니다. 어떤 오류가 반복됐고 어떤 단서에서 수정됐으며 새 문제에서 무엇을 다시 볼지를 보여주는 예시입니다.",
+  "fit_h":"현재 오류가 이 시험 대비로 해결할 문제인지 구분합니다",
+  "fit_p":"같은 영어 약점처럼 보여도 시험 형식과 제출 목적이 다르면 준비 경로도 달라집니다. 반복 오류가 해당 시험 평가와 직접 연결되는지부터 확인합니다.",
+  "deep_h":"반복 오류의 원인을 좁힐 때 필요한 추가 기준",
+  "faq_h":"같은 실수가 반복될 때 자주 묻는 질문",
+  "official_h":"오류 분석과 별개로 시험 공식 정보는 최신 기준을 봅니다",
+  "official_p":"문항 형식, 점수 체계, 접수와 제출 요건은 학습자가 바꿀 수 있는 영역이 아니며 변경될 수도 있습니다. 실제 응시 전에는 주관기관과 제출기관 공식 안내를 최신 기준으로 다시 확인해야 합니다.",
+  "related_h":"오류 유형이 다른 시험 목적과 더 가까운지도 비교합니다",
+  "consult_h":"최근 틀린 문제와 수정되지 않는 오류부터 알려주세요",
+  "consult_p":"검수용 폼은 전송되지 않습니다. 최근 반복된 오류, 힌트를 받아도 남는 문제, 다음 시험일을 정리하면 전화 상담에서 원인을 나누기 쉽습니다.",
+  "final_suffix":"반복 오류의 원인부터 확인하세요."
+ },
+ "use":{
+  "situ_h":"다음 시험에서 해야 할 행동을 네 장면으로 봅니다",
+  "context_h":"시험 구조를 실제 수행 행동으로 바꿔 이해합니다",
+  "context_p":"공식 안내를 읽는 것만으로는 현재 무엇을 연습해야 하는지 정하기 어렵습니다. 다음 시험에서 직접 풀고, 말하고, 쓰고, 시간을 관리해야 하는 행동으로 바꾸면 필요한 준비 범위가 선명해집니다.",
+  "priority_h":"다음 시험에서 필요한 행동부터 역산합니다",
+  "flow_h":"설명보다 직접 수행하고 새 조건에서 다시 적용합니다",
+  "flow_p":"알고 있는 내용을 실제 문항과 응답으로 바꿔보는 것이 중심입니다. 한 번 적용한 뒤 자료와 질문을 바꾸고 같은 기능을 다시 쓸 수 있는지를 확인합니다.",
+  "proof_h":"실제 시험에서 확인할 행동을 구체적으로 공개합니다",
+  "proof_p":"맞춤이라는 말 대신 다음 시험에서 무엇을 해야 하고, 어느 조건에서 다시 흔들리며, 어떤 결과를 다음 연습에 가져올지를 행동 단위로 봅니다.",
+  "feedback_h":"실제 수행 행동을 다음 연습으로 연결하는 예시입니다",
+  "feedback_p":"아래 내용은 실제 후기나 점수 수치가 아닙니다. 한 번의 수업에서 확인한 행동을 다음 practice에서 어떻게 다시 써볼지 보여주는 적용형 기록 예시입니다.",
+  "fit_h":"내가 실제로 제출해야 할 결과와 이 시험을 연결합니다",
+  "fit_p":"시험명 자체보다 지원·취업·학업에서 요구하는 실제 제출 결과를 먼저 확인합니다. 다른 시험이 같은 목적을 더 직접적으로 충족한다면 그 경로를 비교할 수 있습니다.",
+  "deep_h":"실제 시험 행동에서 역산할 때 필요한 추가 정보",
+  "faq_h":"실전 적용을 시작하기 전에 많이 묻는 질문",
+  "official_h":"실제 응시 행동은 최신 공식 형식을 기준으로 준비해야 합니다",
+  "official_p":"시험 형식, 점수 체계, 접수 방법, 제출기관 인정 조건은 변경될 수 있습니다. 실제 연습 조건을 정하기 전 주관기관과 지원기관의 최신 공식 정보를 직접 확인해야 합니다.",
+  "related_h":"같은 제출 목적을 충족하는 다른 시험도 살펴봅니다",
+  "consult_h":"다음 시험에서 해야 할 행동과 목표 결과를 알려주세요",
+  "consult_p":"파일럿 폼은 실제 전송되지 않습니다. 다음 시험에서 해야 하는 행동, 목표 결과, 현재 가장 어려운 기능을 정리해 전화 상담에서 준비 범위를 좁힐 수 있습니다.",
+  "final_suffix":"다음 시험에서 필요한 행동부터 확인하세요."
+ },
+ "reuse":{
+  "situ_h":"익숙한 문제와 새 조건에서의 차이를 네 장면으로 봅니다",
+  "context_h":"한 번의 성공과 다른 문제에서도 되는 능력을 구분합니다",
+  "context_p":"준비한 답이나 익숙한 문제에서 잘한 결과만으로는 실제 시험 대응 범위를 알기 어렵습니다. 자료, 질문, 순서, 준비 시간을 하나씩 바꾸어도 같은 판단과 응답을 다시 만들 수 있는지를 확인합니다.",
+  "priority_h":"새 조건에서 무너지는 행동을 우선순위로 둡니다",
+  "flow_h":"도움을 줄이고 조건을 바꾸며 재사용 범위를 넓힙니다",
+  "flow_p":"처음에는 성공 가능한 조건을 만들고 그 뒤 메모, 예시, 준비 시간, 문항 표현을 단계적으로 바꿉니다. 어디까지 독립적으로 다시 처리하는지가 핵심입니다.",
+  "proof_h":"다시 할 수 있는 범위와 끝까지 필요한 도움을 기록합니다",
+  "proof_p":"한 번 맞거나 한 번 잘 말한 것보다 다른 자료에서도 같은 기준을 재현할 수 있는지가 중요합니다. 끝까지 남는 도움은 다음 재사용 연습의 출발점이 됩니다.",
+  "feedback_h":"조건을 바꿔 다시 적용한 결과를 보여주는 예시입니다",
+  "feedback_p":"특정 학생 후기나 성과 수치가 아닙니다. 익숙한 조건에서의 성공과 새 조건에서 흔들린 지점을 비교해 다음 재적용 방향을 보여주는 예시입니다.",
+  "fit_h":"이 시험의 수행 방식을 다른 조건에서도 재사용할 수 있는지 봅니다",
+  "fit_p":"지원 목적이 같아도 시험별 요구 행동은 다릅니다. 현재 강점을 다양한 조건에서 다시 쓸 수 있는 시험인지, 다른 시험 형식이 더 맞는지도 비교합니다.",
+  "deep_h":"익숙한 문제를 넘어 재사용 범위를 넓히는 추가 기준",
+  "faq_h":"조건을 바꿔 연습할 때 자주 묻는 질문",
+  "official_h":"재사용 연습도 최신 공식 시험 조건 안에서 해야 합니다",
+  "official_p":"문항 형식, 시간, 점수 체계와 지원기관 정책은 변경될 수 있습니다. 다른 조건으로 연습하더라도 실제 응시 전에 주관기관과 제출기관의 최신 공식 기준을 다시 확인해야 합니다.",
+  "related_h":"다른 시험 형식에서 강점을 더 잘 쓸 수 있는지도 비교합니다",
+  "consult_h":"익숙한 문제에서는 되지만 새 조건에서 흔들리는 장면을 알려주세요",
+  "consult_p":"현재 파일럿 폼은 전송되지 않습니다. 익숙한 문제에서 되는 부분과 자료·질문이 달라지면 흔들리는 부분을 정리해 전화 상담에서 재사용 범위를 확인할 수 있습니다.",
+  "final_suffix":"다른 문제에서도 다시 되는지 확인하세요."
+ }
+}
+
 def vtext(text,var):
  # Same factual meaning, different explanatory diction per locality variation.
  # This intentionally avoids locality fact invention while reducing doorway-style copy identity.
@@ -432,19 +545,19 @@ def render(slug,loc,key,exam):
 <header><div class="wrap header"><a href="../englishpt.html" class="brand">ENGLISH PT</a><span>V4.5 EXAM FULL-DEPTH PILOT · noindex</span></div></header><main>
 <section class="hero"><div class="wrap"><p class="eyebrow">{esc(loc["jurisdiction"])} · ENGLISH PT</p><h1>{esc(h1)}</h1><div class="hero-actions"><a class="btn primary" href="{PHONE_HREF}">{PHONE_LABEL}</a><a class="btn ghost" href="#detail">내용 보기</a><a class="btn ghost" href="#consultation-preview">상담 신청</a></div></div></section>
 <section id="detail" class="section"><div class="wrap narrow"><p class="kicker">시험 목표</p><h2>{esc(exam["first_question"])}</h2><p>{esc(loc["full_name"])}에서 {esc(exam["service"])}를 알아볼 때는 과정 이름보다 제출 목적, 다음 시험일, 현재 반복해서 흔들리는 행동을 먼저 확인하는 편이 좋습니다.</p><p>{esc(vtext(exam["goal"],var))}이 이 페이지의 핵심 기준입니다. 전체 점수 하나로 묶지 않고 실제 시험에서 다시 확인할 행동을 나눕니다.</p><p>{esc(vf["intro"])}</p></div></section>
-<section class="section soft"><div class="wrap"><p class="kicker">실제 막힘</p><h2>점수보다 먼저, 어디에서 흔들리는지 나눠봅니다</h2><div class="grid4">{scene_html}</div></div></section>
-<section class="section"><div class="wrap narrow"><p class="kicker">시험 구조와 개인 약점</p><h2>공식 시험 구조와 내 병목은 같은 정보가 아닙니다</h2><p>시험 형식과 평가 기준은 응시자에게 공통이지만 현재 학습 순서는 개인마다 다릅니다. 같은 목표 결과를 준비해도 어떤 사람은 입력 이해에서, 다른 사람은 시간 관리나 답변 구성에서 더 크게 흔들릴 수 있습니다.</p><p>{esc(vf["diagnosis"])}</p><p>이 페이지에서는 {esc(" · ".join(vtext(x,var) for x in exam["diagnosis"]))} 항목을 나눠 보고 이미 안정된 부분과 다시 확인할 부분을 구분합니다.</p></div></section>
-<section class="section soft"><div class="wrap narrow"><p class="kicker">우선순위</p><h2>시험일과 목표 결과에서 거꾸로 순서를 정합니다</h2><p>{esc(vf["priority"])}</p><ul>{''.join("<li>"+esc(vtext(x,var))+"</li>" for x in exam["priority"])}</ul><p>{esc(vtext(exam["boundary"],var))}</p></div></section>
-<section class="section dark"><div class="wrap"><p class="kicker">수업 흐름</p><h2>설명에서 끝내지 않고 새 문제에서 다시 확인합니다</h2><p class="lead">현재 상태를 확인한 뒤 실제 문항·응답으로 적용하고, 조건을 바꿔 같은 기준이 남는지 재검증합니다.</p><ol class="steps">{flow_html}</ol></div></section>
-<section class="section"><div class="wrap"><p class="kicker">판단 기준</p><h2>점수 상승 약속 대신 확인할 행동을 공개합니다</h2><p class="lead">{esc(vf["proof"])}</p><ul class="proofs">{proof_html}</ul></div></section>
-<section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p><h2>실제 후기나 성과 수치가 아니라 기록 형식을 보여주는 예시입니다</h2><p>아래 문장은 특정 수강생의 결과나 점수 상승 사례가 아닙니다. 어떤 행동을 관찰하고 다음에 무엇을 다시 확인하는지 보여주기 위한 예시입니다.</p><div class="grid4">{feedback_html}</div></div></section>
-<section class="section"><div class="wrap narrow"><p class="kicker">시험 선택</p><h2>이 시험이 지금 목표와 맞는지 먼저 확인하세요</h2><p>{esc(exam["boundary"])}</p><p>시험 이름이 익숙하다는 이유만으로 바로 시작하지 않습니다. 제출처, 마감, 목표 결과, 현재 가장 흔들리는 영역을 함께 놓고 보면 다른 시험이나 일반 영어 과정이 더 직접적인 경우도 구분할 수 있습니다.</p></div></section>
-<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>{esc(exam["service"])} 선택 전에 확인할 기준</h2><div class="grid4">{deep_html}</div></div></section>
-<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>시험 준비 전에 많이 확인하는 질문</h2><div class="faq">{faq_html}</div></div></section>
-<section class="section soft"><div class="wrap narrow"><p class="kicker">공식정보 확인</p><h2>시험 구조와 제출 요건은 최신 공식 안내를 다시 확인해야 합니다</h2><p>시험 형식, 점수 체계, 접수 정책, 지원기관 인정 여부와 제출 기준은 변경될 수 있습니다. 이 파일럿은 학습 구조를 검수하기 위한 페이지이며, 실제 지원이나 응시 전에는 시험 주관기관과 지원기관의 최신 공식 안내를 직접 확인해야 합니다.</p></div></section>
-<section class="section related"><div class="wrap"><p class="kicker">다른 시험</p><h2>{esc(loc["dong"])}에서 다른 시험 준비도 비교해보세요</h2><div class="links">{''.join(related)}</div></div></section>
-<section id="consultation-preview" class="section consult"><div class="wrap narrow"><p class="kicker">상담 안내</p><h2>시험명보다 목표와 마감, 가장 흔들리는 장면부터 알려주세요</h2><p>{esc(vf["end"])}</p><p>현재 페이지는 5×6 시험형 검수용이라 상담 폼의 실제 전송은 비활성화되어 있습니다. 전화 상담은 아래 번호로 연결할 수 있습니다.</p><form id="pilotForm"><label>시험일·제출 마감<input name="deadline" placeholder="예: 시험 날짜, 지원 마감"></label><label>가장 막히는 문제·응답<textarea name="difficulty" rows="3" placeholder="최근 가장 어려웠던 장면"></textarea></label><button class="btn primary" type="submit">상담 신청</button><a class="btn phone" href="{PHONE_HREF}">{PHONE_LABEL}</a><p class="pilot-status" aria-live="polite"></p></form></div></section>
-<section class="final"><div class="wrap"><h2>{esc(h1)}, 점수보다 현재 병목부터 확인하세요.</h2><p>{esc(vf["end"])}</p><a class="btn light" href="{PHONE_HREF}">{PHONE_LABEL}</a></div></section>
+<section class="section soft"><div class="wrap"><p class="kicker">실제 막힘</p><h2>{esc(STATIC[var]["situ_h"])}</h2><div class="grid4">{scene_html}</div></div></section>
+<section class="section"><div class="wrap narrow"><p class="kicker">시험 구조와 개인 약점</p><h2>{esc(STATIC[var]["context_h"])}</h2><p>{esc(STATIC[var]["context_p"])}</p><p>{esc(vf["diagnosis"])}</p><p>이 페이지에서는 {esc(" · ".join(vtext(x,var) for x in exam["diagnosis"]))} 항목을 나눠 보고 이미 안정된 부분과 다시 확인할 부분을 구분합니다.</p></div></section>
+<section class="section soft"><div class="wrap narrow"><p class="kicker">우선순위</p><h2>{esc(STATIC[var]["priority_h"])}</h2><p>{esc(vf["priority"])}</p><ul>{''.join("<li>"+esc(vtext(x,var))+"</li>" for x in exam["priority"])}</ul><p>{esc(vtext(exam["boundary"],var))}</p></div></section>
+<section class="section dark"><div class="wrap"><p class="kicker">수업 흐름</p><h2>{esc(STATIC[var]["flow_h"])}</h2><p class="lead">{esc(STATIC[var]["flow_p"])}</p><ol class="steps">{flow_html}</ol></div></section>
+<section class="section"><div class="wrap"><p class="kicker">판단 기준</p><h2>{esc(STATIC[var]["proof_h"])}</h2><p class="lead">{esc(STATIC[var]["proof_p"])} {esc(vf["proof"])}</p><ul class="proofs">{proof_html}</ul></div></section>
+<section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p><h2>{esc(STATIC[var]["feedback_h"])}</h2><p>{esc(STATIC[var]["feedback_p"])}</p><div class="grid4">{feedback_html}</div></div></section>
+<section class="section"><div class="wrap narrow"><p class="kicker">시험 선택</p><h2>{esc(STATIC[var]["fit_h"])}</h2><p>{esc(exam["boundary"])}</p><p>{esc(STATIC[var]["fit_p"])}</p></div></section>
+<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>{esc(STATIC[var]["deep_h"])}</h2><div class="grid4">{deep_html}</div></div></section>
+<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>{esc(STATIC[var]["faq_h"])}</h2><div class="faq">{faq_html}</div></div></section>
+<section class="section soft"><div class="wrap narrow"><p class="kicker">공식정보 확인</p><h2>{esc(STATIC[var]["official_h"])}</h2><p>{esc(STATIC[var]["official_p"])}</p></div></section>
+<section class="section related"><div class="wrap"><p class="kicker">다른 시험</p><h2>{esc(STATIC[var]["related_h"])}</h2><div class="links">{''.join(related)}</div></div></section>
+<section id="consultation-preview" class="section consult"><div class="wrap narrow"><p class="kicker">상담 안내</p><h2>{esc(STATIC[var]["consult_h"])}</h2><p>{esc(vf["end"])}</p><p>{esc(STATIC[var]["consult_p"])}</p><form id="pilotForm"><label>시험일·제출 마감<input name="deadline" placeholder="예: 시험 날짜, 지원 마감"></label><label>가장 막히는 문제·응답<textarea name="difficulty" rows="3" placeholder="최근 가장 어려웠던 장면"></textarea></label><button class="btn primary" type="submit">상담 신청</button><a class="btn phone" href="{PHONE_HREF}">{PHONE_LABEL}</a><p class="pilot-status" aria-live="polite"></p></form></div></section>
+<section class="final"><div class="wrap"><h2>{esc(h1)}, {esc(STATIC[var]["final_suffix"])}</h2><p>{esc(vf["end"])}</p><a class="btn light" href="{PHONE_HREF}">{PHONE_LABEL}</a></div></section>
 </main><footer><div class="wrap"><strong>ENGLISH PT</strong><p>{esc(loc["full_name"])} · 시험형 Full-depth 검수용 · production 미배포</p></div></footer></body></html>'''
 
 def validate(generated):
@@ -464,8 +577,8 @@ def validate(generated):
   if f'rel="canonical" href="{canonical}"' not in raw:f.append("canonical")
   if 'name="robots" content="noindex,nofollow"' not in raw:f.append("noindex")
   if exam["blueprint"] not in allowed:f.append("blueprint_not_allowlisted")
-  if "실제 후기나 성과 수치가 아니라 기록 형식을 보여주는 예시입니다" not in raw:f.append("sample_label")
-  if "시험 구조와 제출 요건은 최신 공식 안내를 다시 확인해야 합니다" not in raw:f.append("official_verification")
+  if '<p class="kicker">피드백 예시</p>' not in raw or ("실제" not in visible(raw.split('<p class="kicker">피드백 예시</p>',1)[1].split('</section>',1)[0])):f.append("sample_label")
+  if '<p class="kicker">공식정보 확인</p>' not in raw or "공식" not in visible(raw.split('<p class="kicker">공식정보 확인</p>',1)[1].split('</section>',1)[0]):f.append("official_verification")
   if any(x in text for x in forbidden):f.append("forbidden_copy")
   if re.search(r"(토익스피킹과외을|오픽과외을|아이엘츠과외을|토플과외을|토익과외을)",text):f.append("malformed_particle")
   if not (4500<=len(text)<=7500):f.append(f"visible_chars:{len(text)}")
