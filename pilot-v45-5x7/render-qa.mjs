@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 
-const manifest = JSON.parse(fs.readFileSync('pilot-v45-5x7/PILOT_5X7_MANIFEST_V1.json','utf8'));
+const manifest = JSON.parse(fs.readFileSync('pilot-v45-5x7/PILOT_5X7_MANIFEST_V2_FULL_DEPTH.json','utf8'));
 const browser = await chromium.launch({headless:true});
 const viewports = [
   {name:'desktop', width:1440, height:1000},
@@ -44,7 +44,7 @@ for (const item of manifest.files) {
 await browser.close();
 
 const summary = {
-  version:'1.0',
+  version:'2.0',
   page_count: manifest.files.length,
   render_cases: results.length,
   failures,
@@ -53,9 +53,10 @@ const summary = {
   horizontal_overflow_failures: results.filter(x=>x.overflow).length,
   console_or_page_error_cases: results.filter(x=>x.errors?.length).length,
   status: failures===0 ? 'PASS' : 'FAIL',
+  gold_standard:'V4_5_FULL_DEPTH_7TARGET_GOLD_STANDARD.md',
   production_deploy:false,
   results
 };
-fs.writeFileSync('pilot-v45-5x7/PILOT_5X7_RENDER_QA_V1.json', JSON.stringify(summary,null,2)+'\n');
+fs.writeFileSync('pilot-v45-5x7/PILOT_5X7_RENDER_QA_V2_FULL_DEPTH.json', JSON.stringify(summary,null,2)+'\n');
 console.log(JSON.stringify({status:summary.status,render_cases:summary.render_cases,failures:summary.failures,horizontal_overflow_failures:summary.horizontal_overflow_failures,console_or_page_error_cases:summary.console_or_page_error_cases}));
 if (failures) process.exit(1);
