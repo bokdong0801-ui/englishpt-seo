@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "status": "COUNT_LOCKED_WAITING_FOR_5149_ROW_MANIFEST_NOT_PRODUCTION",
+  "status": "STAGE1_5149_ROW_MANIFEST_PASS_READY_FOR_1X13_PREVIEW_NOT_PRODUCTION",
   "created_at": "2026-09-22",
   "locality_count": 5149,
   "intent_count": 13,
@@ -19,7 +19,7 @@
     "total_pages": 30894,
     "tos_standalone": false
   },
-  "next_required_gate": "MATERIALIZE_5149_LOCALITY_ROWS",
+  "next_required_gate": "STAGE2_ONE_LOCALITY_X_13_INTENTS_PREVIEW",
   "after_row_manifest": [
     "generate 1 locality x 13 intent preview",
     "generate 10 locality x 13 intent dry-run",
@@ -28,5 +28,15 @@
   ],
   "example_review_policy": "PRODUCTION_SAMPLE_REVIEW_POLICY_V1.json",
   "production_deploy": false,
-  "main_merge": false
+  "main_merge": false,
+  "locality_manifest": {
+    "status": "PASS",
+    "stage1_record": "PRODUCTION_LOCALITY_ROWS_5149_STAGE1_V1.json",
+    "rows": 5149,
+    "source_candidates": 5213,
+    "holds": 64,
+    "slug_unique": 5149,
+    "locality_key_unique": 5149,
+    "package_sha256": "c3d2fd8f52d08442cedef18d5bb2b610b5c1131561f2dce40f36c9c2b770da60"
+  }
 }
