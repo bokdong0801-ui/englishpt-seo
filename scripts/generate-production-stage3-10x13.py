@@ -142,8 +142,58 @@ def dims(sig):
  return dict(zip(keys,vals))
 def seed_int(row,slot):
  return int(row["content_seed"][slot%12:slot%12+4] or row["content_seed"][:4],16)
+GSTART=[
+ "최근 기록을 기준으로","첫 시도 결과를 놓고","가까운 일정을 기준으로","실제 사용 장면에서",
+ "새 문제를 보기 전에","지난 답변을 다시 듣고","현재 자료를 펼쳐","혼자 했던 범위에서",
+ "가장 막힌 순간부터","다음 일정을 생각하며","한 번 성공한 뒤에도","도움을 줄이기 전에",
+ "최근 두 번의 수행을 비교해","익숙한 조건을 먼저 만들고","시간 제한을 넣기 전에","상담 전 자료를 보며"
+]
+GACTION=[
+ "혼자 되는 부분을 나누고","반복되는 막힘을 좁히고","우선순위를 한두 개로 줄이고","필요한 기능을 따로 보고",
+ "근거가 남는지 살피고","첫 반응의 위치를 찾고","시간 사용을 함께 적고","도움이 필요한 지점을 표시하고",
+ "이미 안정된 부분을 제외하고","다시 볼 항목을 고르고","현재 수준을 행동으로 나누고","목표와 현재 차이를 적고",
+ "실수 원인을 분리하고","재사용 가능한 범위를 찾고","다음 확인 기준을 정하고","준비할 자료를 최소화하고"
+]
+GCHANGE=[
+ "자료와 질문을 바꿔","준비 시간을 줄여","힌트를 한 단계 줄여","새 예시를 사용해",
+ "실전 순서를 적용해","다른 표현을 써서","비슷한 난도로 옮겨","제한 시간을 넣어",
+ "도움 없이 다시 시도해","문항 순서를 바꿔","상대 역할을 바꿔","새 주제로 옮겨",
+ "다음 날 다시 꺼내","다른 자료에서","실제 일정에 맞춰","한 단계 높은 조건에서"
+]
+GCHECK=[
+ "같은 기준이 남는지 확인합니다","혼자 다시 되는 범위를 봅니다","반복 오류가 줄었는지 비교합니다","첫 반응이 유지되는지 살핍니다",
+ "근거를 설명할 수 있는지 봅니다","시간 안에 마무리되는지 확인합니다","새 조건에서도 재구성되는지 봅니다","도움 의존이 줄었는지 기록합니다",
+ "다음 단계로 넘어갈지 결정합니다","실제 일정에 쓸 수 있는지 봅니다","다른 문제에도 적용되는지 확인합니다","같은 실수가 재현되는지 점검합니다",
+ "복습 범위를 다시 조정합니다","우선순위를 바꿀지 판단합니다","다음 기록에 남길 항목을 고릅니다","수업 밖에서도 이어지는지 봅니다"
+]
+GSECOND_A=[
+ "이후에는 결과만 남기지 않고","다음 확인에서는 점수만 보지 않고","수업 뒤에는 분량보다","한 번의 성공 뒤에는",
+ "새 자료를 시작할 때는","일정이 바뀌면 처음부터 다시 짜지 않고","도움이 줄어들면","실전 연습 뒤에는",
+ "복습할 때는 전체를 반복하지 않고","다음 상담에서는 막연한 수준 대신","시험이나 발표가 끝난 뒤에는","같은 문제가 다시 나오면",
+ "목표가 달라지면 기존 기록을 버리지 않고","잘되는 영역은 오래 붙잡지 않고","새로운 표현을 늘리기 전에","다음 주 계획을 세울 때는"
+]
+GSECOND_B=[
+ "막힌 조건을 한 줄로 적습니다","다시 쓸 행동을 하나 정합니다","필요한 도움의 종류를 기록합니다","다음 자료에서 볼 근거를 남깁니다",
+ "실제 사용 순서를 메모합니다","반복되는 실수만 추립니다","혼자 된 범위를 표시합니다","시간 사용을 비교합니다",
+ "새 조건에서의 결과를 남깁니다","가장 가까운 일정을 연결합니다","유지할 부분과 바꿀 부분을 나눕니다","다음 질문을 미리 정합니다",
+ "학습량보다 배분을 조정합니다","자료보다 판단 기준을 남깁니다","다음 재확인 날짜를 정합니다","상담에서 물어볼 항목을 적습니다"
+]
+GSECOND_C=[
+ "그래야 다음 수업이 이전 기록에서 이어집니다","그래야 같은 설명을 처음부터 반복하지 않습니다","그래야 계획이 실제 수행과 연결됩니다","그래야 익숙한 문제의 성공에 머물지 않습니다",
+ "그래야 필요한 범위만 다시 볼 수 있습니다","그래야 일정 변화에도 시작점을 잃지 않습니다","그래야 도움을 줄이는 순서를 정할 수 있습니다","그래야 실전과 연습의 차이를 비교할 수 있습니다",
+ "그래야 복습량이 불필요하게 커지지 않습니다","그래야 상담에서 우선순위를 빠르게 좁힐 수 있습니다","그래야 다음 일정에 같은 실수를 덜 가져갑니다","그래야 새 문제에서 기준이 남는지 볼 수 있습니다",
+ "그래야 목표가 바뀌어도 계획을 이어갈 수 있습니다","그래야 이미 되는 부분의 반복을 줄일 수 있습니다","그래야 표현량과 실제 사용을 구분할 수 있습니다","그래야 다음 주에도 실행 가능한 계획이 됩니다"
+]
+def _pick(arr,n,shift):
+ return arr[(n//(shift+1)+shift*7)%len(arr)]
+def microguide(row,slot):
+ n=seed_int(row,slot)+slot*997
+ return f"{_pick(GSTART,n,1)}, {_pick(GACTION,n,3)}, {_pick(GCHANGE,n,5)}, {_pick(GCHECK,n,7)}."
 def guide(row,slot):
- return GUIDES[(seed_int(row,slot)+slot*7)%len(GUIDES)]
+ n=seed_int(row,slot)+slot*1597
+ first=microguide(row,slot)
+ second=f"{_pick(GSECOND_A,n,2)} {_pick(GSECOND_B,n,4)}. {_pick(GSECOND_C,n,6)}."
+ return first+" "+second
 def rhythm(d,slot):
  arr=RHYTHM[d["sentence_rhythm"]]
  return arr[slot%len(arr)]
@@ -204,14 +254,14 @@ def feedback_block(titles,row,d):
   out.append(f'<article class="card"><b>기록 예시 {i+1}</b><p>{esc(msg)}</p></article>')
  return ''.join(out)
 
-def decision_guide(intent,service):
+def decision_guide(intent,service,row):
  ds=json.loads(DECISION_SUPPORT_PATH.read_text(encoding="utf-8"))["intents"][intent]
  vals=[
-  ("이런 경우 잘 맞습니다",ds["fit"]),
-  ("이런 경우엔 다른 선택도 비교하세요",ds["alternative"]),
-  ("비용을 좌우하는 4가지",ds["cost_factors"]+" · 구체 금액은 상담에서 안내"),
-  ("선생님·수업은 이렇게 비교하세요",ds["teacher_or_class_selection"]),
-  ("상담 전에 준비하실 것",ds["consult_preparation"]),
+  ("이런 경우 잘 맞습니다",ds["fit"]+" "+microguide(row,50)),
+  ("이런 경우엔 다른 선택도 비교하세요",ds["alternative"]+" "+microguide(row,51)),
+  ("비용을 좌우하는 4가지",ds["cost_factors"]+" · 구체 금액은 상담에서 안내. "+microguide(row,52)),
+  ("선생님·수업은 이렇게 비교하세요",ds["teacher_or_class_selection"]+" "+microguide(row,53)),
+  ("상담 전에 준비하실 것",ds["consult_preparation"]+" "+microguide(row,54)),
  ]
  return '<section class="section decision-guide"><div class="wrap narrow"><p class="kicker">선택 기준</p><h2>'+esc(service)+' 선택 전에, 이 다섯 가지를 먼저 확인하세요</h2><div class="decision-list">'+''.join(f'<div><b>◆ {esc(a)}</b><p>{esc(b)}</p></div>' for a,b in vals)+'</div></div></section>'
 
@@ -282,7 +332,7 @@ def render_page(row,d,intent,family,facts,svc,ex):
 {decision_strip(d,family)}
 <section id="detail" class="section"><div class="wrap narrow"><p class="kicker">{'시험 목표' if family=='exam' else '지금 상황'}</p><h2>{esc(question)}</h2><p>{esc(intro1)}</p><p>{esc(intro2)}</p><p>{esc(guide(row,0))}</p></div></section>
 <section class="section soft"><div class="wrap"><p class="kicker">자기상황 식별</p><h2>내 상황과 가까운 장면부터 확인합니다</h2><div class="grid4">{scene_cards(scene_titles,row,d)}</div></div></section>
-{decision_guide(intent,service)}
+{decision_guide(intent,service,row)}
 <section class="section"><div class="wrap narrow"><p class="kicker">{'시험 맥락 이해' if family=='exam' else '학습 맥락 이해'}</p><h2>{esc(context_title)}</h2><p>{esc(context_text)}</p><p>{esc(CASE[d["case_frame"]])}</p></div></section>
 {variation_story(row,d,service)}
 <section class="section soft"><div class="wrap"><p class="kicker">우선순위</p><h2>{esc(INTRO[d["intro_pattern"]].split(".")[0])}에서 무엇부터 볼지 정합니다</h2><ul class="proofs">{priority_block(priority,row,d)}</ul></div></section>
@@ -345,7 +395,7 @@ def main():
   if "-tos.html" in raw.lower():f.append("standalone_tos")
   linked=set(re.findall(r'href="([^"]+\.html)"',raw));missing=byloc[m["locality"]]-{name}-linked
   if missing:f.append("cluster_links")
-  lo,hi=(5200,9000)
+  lo,hi=(5200,10500)
   if not lo<=len(txt)<=hi:f.append(f"visible_chars:{len(txt)}")
   checks.append({"file":name,"family":m["family"],"intent":m["intent"],"visible_chars":len(txt),"status":"PASS" if not f else "FAIL","failures":f})
   if f:failures.append({"file":name,"failures":f})
