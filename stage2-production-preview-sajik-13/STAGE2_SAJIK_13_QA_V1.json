@@ -10,9 +10,9 @@
     "exam": 6
   },
   "visible_chars": {
-    "min": 6541,
-    "max": 7211,
-    "avg": 6874.2
+    "min": 6686,
+    "max": 7356,
+    "avg": 6993.4
   },
   "variation_adapter": {
     "variation_pack_id": "Ve4a779a721",
@@ -34,7 +34,7 @@
       "file": "seoul-jongno-sajikdong-elem-tutor.html",
       "family": "service",
       "intent": "elem-tutor",
-      "visible_chars": 6818,
+      "visible_chars": 6915,
       "status": "PASS",
       "failures": []
     },
@@ -42,7 +42,7 @@
       "file": "seoul-jongno-sajikdong-mid-conv.html",
       "family": "service",
       "intent": "mid-conv",
-      "visible_chars": 6794,
+      "visible_chars": 6891,
       "status": "PASS",
       "failures": []
     },
@@ -50,7 +50,7 @@
       "file": "seoul-jongno-sajikdong-high-conv.html",
       "family": "service",
       "intent": "high-conv",
-      "visible_chars": 6835,
+      "visible_chars": 6932,
       "status": "PASS",
       "failures": []
     },
@@ -58,7 +58,7 @@
       "file": "seoul-jongno-sajikdong-univ-conv.html",
       "family": "service",
       "intent": "univ-conv",
-      "visible_chars": 6900,
+      "visible_chars": 6997,
       "status": "PASS",
       "failures": []
     },
@@ -66,7 +66,7 @@
       "file": "seoul-jongno-sajikdong-jobseeker-conv.html",
       "family": "service",
       "intent": "jobseeker-conv",
-      "visible_chars": 6807,
+      "visible_chars": 6904,
       "status": "PASS",
       "failures": []
     },
@@ -74,7 +74,7 @@
       "file": "seoul-jongno-sajikdong-biz-business-conv.html",
       "family": "service",
       "intent": "biz-business-conv",
-      "visible_chars": 6723,
+      "visible_chars": 6820,
       "status": "PASS",
       "failures": []
     },
@@ -82,7 +82,7 @@
       "file": "seoul-jongno-sajikdong-housewife-conv.html",
       "family": "service",
       "intent": "housewife-conv",
-      "visible_chars": 6896,
+      "visible_chars": 6993,
       "status": "PASS",
       "failures": []
     },
@@ -90,7 +90,7 @@
       "file": "seoul-jongno-sajikdong-toeic.html",
       "family": "exam",
       "intent": "toeic",
-      "visible_chars": 6883,
+      "visible_chars": 7028,
       "status": "PASS",
       "failures": []
     },
@@ -98,7 +98,7 @@
       "file": "seoul-jongno-sajikdong-toeic-speaking.html",
       "family": "exam",
       "intent": "toeic-speaking",
-      "visible_chars": 6832,
+      "visible_chars": 6977,
       "status": "PASS",
       "failures": []
     },
@@ -106,7 +106,7 @@
       "file": "seoul-jongno-sajikdong-opic.html",
       "family": "exam",
       "intent": "opic",
-      "visible_chars": 6541,
+      "visible_chars": 6686,
       "status": "PASS",
       "failures": []
     },
@@ -114,7 +114,7 @@
       "file": "seoul-jongno-sajikdong-ielts.html",
       "family": "exam",
       "intent": "ielts",
-      "visible_chars": 7088,
+      "visible_chars": 7233,
       "status": "PASS",
       "failures": []
     },
@@ -122,7 +122,7 @@
       "file": "seoul-jongno-sajikdong-duolingo.html",
       "family": "exam",
       "intent": "duolingo",
-      "visible_chars": 7211,
+      "visible_chars": 7356,
       "status": "PASS",
       "failures": []
     },
@@ -130,7 +130,7 @@
       "file": "seoul-jongno-sajikdong-toefl.html",
       "family": "exam",
       "intent": "toefl",
-      "visible_chars": 7037,
+      "visible_chars": 7182,
       "status": "PASS",
       "failures": []
     }
