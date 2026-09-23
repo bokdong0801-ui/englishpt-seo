@@ -202,6 +202,73 @@ def install_stage4_guide_pool(g):
  g.guide_dimension_pool=pool
  g._DIMENSION_POOL_CACHE.clear()
 
+ TOPIC=[
+  "최근 혼자 처리한 범위","가장 자주 멈춘 행동","다음 일정에 필요한 수행","도움이 줄어도 유지되는 기능",
+  "반복해서 흔들리는 조건","이미 안정된 영역","실전에서 필요한 첫 반응","시간 압박에서 달라지는 부분",
+  "질문이 바뀔 때 흔들리는 지점","설명 없이 다시 가능한 범위","이번에 제외해도 되는 목표","다른 과정이 더 직접적인 조건",
+  "피드백 뒤 다시 볼 행동","자료가 달라도 유지되는 기준","복습 가능한 실제 시간","가장 가까운 결과에 영향을 주는 항목",
+  "한 번 성공한 뒤 재현되는 범위","힌트가 줄었을 때 수정되는 부분","실제 제출이나 사용 조건","다음 수업에서 확인할 기록"
+ ]
+ OBSERVE=[
+  "첫 점검 대상으로 둡니다","먼저 검토합니다","따로 살펴봅니다","현재 판단의 출발점으로 씁니다",
+  "초기 기록에 남깁니다","비교 항목으로 분리합니다","점검 순서 앞에 둡니다","현재 범위를 판단하는 기준으로 삼습니다",
+  "시작 자료로 활용합니다","다음 계획 전에 확인합니다","우선 확인 대상으로 표시합니다","현재 상태표에 따로 적습니다"
+ ]
+ RECORD=[
+  "다음 확인 목록에 남깁니다","별도 기록으로 정리합니다","후속 점검 항목으로 보관합니다","다음 수업 메모에 적습니다",
+  "재확인 목록으로 옮깁니다","관찰 기록에 구분해 둡니다","다음 비교용 기준으로 저장합니다","우선순위 표에 따로 둡니다",
+  "후속 확인 자료로 남깁니다","다음 단계의 체크 항목으로 씁니다","상담 메모에 구체적으로 적습니다","실행 기록에 분리해 둡니다"
+ ]
+ VERIFY=[
+  "새 조건에서 다시 점검합니다","비슷한 난도의 새 자료로 확인합니다","질문을 바꿔 재검토합니다","도움을 줄인 뒤 다시 봅니다",
+  "실전과 가까운 조건에서 재확인합니다","시간 조건을 바꿔 다시 살핍니다","다른 예시에서 다시 검증합니다","독립 수행으로 이어지는지 봅니다",
+  "다음 일정과 비슷한 상황에서 점검합니다","처음과 다른 자료로 재검사합니다","재현되는지 후속 점검합니다","조건을 하나 바꿔 다시 비교합니다"
+ ]
+ COMPARE=[
+  "같은 기준으로 나란히 봅니다","전후 조건을 맞춰 비교합니다","다른 선택과 함께 검토합니다","실제 운영 방식과 대조합니다",
+  "도움의 양을 기준으로 비교합니다","시간과 완결성을 함께 봅니다","결과보다 수행 과정을 비교합니다","현재 목표와의 거리를 따져봅니다",
+  "이전 기록과 나란히 확인합니다","다른 과정의 기준과 함께 봅니다","비슷한 난도에서 차이를 확인합니다","재사용 범위를 중심으로 대조합니다"
+ ]
+ PLAN=[
+  "다음 행동 하나로 좁힙니다","가까운 일정에 맞춰 순서를 정합니다","불필요한 범위는 뒤로 미룹니다","이미 되는 부분은 유지 확인만 남깁니다",
+  "실행 가능한 분량으로 줄입니다","가장 직접적인 항목부터 배치합니다","장기 보완 항목은 별도로 넘깁니다","반복 가능한 단위로 다시 나눕니다",
+  "이번 주에 확인할 범위만 남깁니다","실전 전에 필요한 항목부터 정리합니다","다음 수업까지 가능한 양으로 조정합니다","목표에 영향이 큰 순서로 다시 배열합니다"
+ ]
+ CLOSE=[
+  "한 번의 성공만으로 범위를 넓히지 않습니다","설명 직후 결과를 그대로 변화로 보지 않습니다","지역명만으로 학습 특성을 추측하지 않습니다",
+  "등록 여부보다 현재 기준을 먼저 확인합니다","가격 하나로 운영 방식을 판단하지 않습니다","이미 되는 내용을 처음부터 반복하지 않습니다",
+  "필요한 지원 강도만 남깁니다","다른 선택이 나은 조건도 함께 확인합니다","실제 일정과 연결되지 않는 목표는 보류합니다",
+  "사용자가 제공한 사실만 맥락으로 씁니다","다음 재확인 시점을 함께 정합니다","결과보다 반복 가능성을 확인합니다"
+ ]
+
+ def lex(row,arr,salt):
+  h=hashlib.sha256(f"{row['content_seed']}|{row.get('_intent_salt','')}|{salt}".encode()).hexdigest()
+  return arr[int(h[:12],16)%len(arr)]
+
+ def guide(row,slot):
+  topic=TOPIC[int(hashlib.sha256(f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|topic".encode()).hexdigest()[:12],16)%len(TOPIC)]
+  observe=lex(row,OBSERVE,"observe")
+  record=lex(row,RECORD,"record")
+  verify=lex(row,VERIFY,"verify")
+  compare=lex(row,COMPARE,"compare")
+  plan=lex(row,PLAN,"plan")
+  close=lex(row,CLOSE,"close")
+  dong=row["dong_name"]
+  mode=slot%6
+  if mode==0:
+   return f"{dong} 안내에서는 {topic}에 대해 {observe}. 이후에는 {verify}. {close}."
+  if mode==1:
+   return f"{topic} 기준으로 {compare}. 확인 결과는 {record}. {close}."
+  if mode==2:
+   return f"{topic}부터 {observe}. 그 결과를 바탕으로 {plan}. 다음에는 {verify}."
+  if mode==3:
+   return f"{dong} 페이지에서는 {topic}을 중심으로 보기보다 해당 항목을 다른 기준과 함께 봅니다. {compare}. {close}."
+  if mode==4:
+   return f"{topic}은 {record}. 당장 필요한 범위는 {plan}. 이후에는 {verify}."
+  return f"{topic}에 대해 {observe}. 수업이나 상담에서는 {compare}. 결과에 따라 {plan}."
+
+ g.guide=guide
+
 
 def install_stage4_unique_longform(g):
  # Row-seeded clause composition (Stage 4 rerun contract). Each sentence is assembled from short audited
@@ -338,7 +405,7 @@ def main():
    files.append({"path":f"stage4-preproduction-100x13/{name}","family":"exam","intent":intent,"exam":key,"h1":f"{row['dong_name']} {e['service']}","canonical":f"https://englishpt.kr/{row['region_slug']}-{intent}.html","locality":row["region_slug"],"blueprint":e["blueprint"],"variation_signature":row["variation_signature"]})
 
  failures=[]; checks=[]; lengths={}; sizes={}; groups=defaultdict(list); byloc=defaultdict(set)
- malformed=["영어회화을","영어과외을","비즈니스영어을","문항를","질의을","응시이","근거이","근거은","제한 제한","페이지은","범위을","행동를","기능를","조건를","영역를","지점를","반응를","시간를","항목를","증거를","'을 다음 확인 기준","'를 다음 확인 기준","합니다에서 무엇부터","습니다에서 무엇부터"]
+ malformed=["영어회화을","영어과외을","비즈니스영어을","문항를","질의을","응시이","근거이","근거은","제한 제한","페이지은","범위을","행동를","기능를","조건를","영역를","지점를","반응를","시간를","항목를","'을 다음 확인 기준","'를 다음 확인 기준","합니다에서 무엇부터","습니다에서 무엇부터"]
  generic=["최고의 강사진","성적 향상을 책임","지금 바로 상담 신청"]
  for m in files: byloc[m["locality"]].add(Path(m["path"]).name)
 
