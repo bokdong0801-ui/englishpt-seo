@@ -108,25 +108,85 @@ def jacc_pre(a,b):
 def make_longform(row,d):
  n=json.loads(NARRATIVE.read_text(encoding="utf-8"))
  seed=row["content_seed"]
- nums=[int(seed[i:i+2],16) for i in range(0,min(len(seed),16),2)]
- while len(nums)<8:nums.append(len(nums)*17)
  intro=n["intro_pattern"][d["intro_pattern"]]
  order=n["section_order"][d["section_order"]]
- ctx=n["local_context_mode"][d["local_context_mode"]]
- case=n["case_frame"][d["case_frame"]]
- diag=n["diagnosis_emphasis"][d["diagnosis_emphasis"]]
- rhythm=n["sentence_rhythm"][d["sentence_rhythm"]]
- cta=n["cta_frame"][d["cta_frame"]]
- va=n["voice_packs"]
- a,b,c,dv=n["seed_perspective_a"],n["seed_perspective_b"],n["seed_perspective_c"],n["seed_perspective_d"]
- p=[
-  f"{intro[0]} {a[nums[0]%len(a)]} {va[nums[1]%len(va)]}",
-  f"{intro[1]} {order[0]} {b[nums[2]%len(b)]}",
-  f"{ctx} {case} {va[nums[3]%len(va)]}",
-  f"{diag} {rhythm} {c[nums[4]%len(c)]}",
-  f"{order[1]} {cta} {dv[nums[5]%len(dv)]}"
+ extras=[
+  intro[0],intro[1],order[0],order[1],
+  n["local_context_mode"][d["local_context_mode"]],
+  n["case_frame"][d["case_frame"]],
+  n["diagnosis_emphasis"][d["diagnosis_emphasis"]],
+  n["cta_frame"][d["cta_frame"]]+" "+n["sentence_rhythm"][d["sentence_rhythm"]]
  ]
- return p
+ bank=[]
+ for key in ["seed_perspective_a","seed_perspective_b","seed_perspective_c","seed_perspective_d","voice_packs"]:
+  bank.extend(n[key])
+ start=int(seed[:8],16)%len(bank)
+ steps=[7,9,11,13,17,19,21,23,27,29,31]
+ step=steps[int(seed[8:10],16)%len(steps)]
+ chosen=[];seen=set();i=0
+ while len(chosen)<8:
+  idx=(start+i*step)%len(bank);i+=1
+  if idx in seen:continue
+  seen.add(idx);chosen.append(bank[idx])
+ leads=[
+  f"{row['dong_name']} 검색으로 들어온 경우에는 지역명보다 실제 목표와 최근 수행을 먼저 확인합니다.",
+  f"{row['full_name_ko']} 페이지에서는 확인되지 않은 지역 특성을 붙이지 않고 사용자가 가져온 자료와 일정으로 범위를 좁힙니다.",
+  f"{row['jurisdiction_full']} 안에서 같은 영어 서비스를 비교하더라도 대상과 결과가 다르면 우선순위도 달라집니다.",
+  f"{row['dong_name']}이라는 위치 정보는 서비스 범위를 구분하는 신호이고 수업 순서는 현재 행동과 다음 일정으로 정합니다.",
+  f"상담 전에는 {row['dong_name']}이라는 검색어보다 최근 막힌 장면과 혼자 가능한 범위를 준비하는 편이 더 유용합니다.",
+  f"{row['full_name_ko']} 기준 안내에서도 비용은 지역 이미지가 아니라 횟수·시간·피드백 범위·수업 방식 같은 실제 조건으로 비교합니다.",
+  f"{row['dong_name']} 페이지의 내부 정보는 사용자가 다른 과정과 비교할 기준을 만들도록 배치하고 등록 자체를 결론으로 두지 않습니다.",
+  f"마지막 판단에서는 {row['dong_name']} 지역명보다 진단→훈련→피드백→재확인이 현재 목적과 이어지는지를 확인합니다."
+ ]
+ return [f"{leads[i]} {extras[i]} {chosen[i]}" for i in range(8)]
+
+def install_stage4_guide_pool(g):
+ original=g.guide_dimension_pool
+ cache={}
+ n=json.loads(NARRATIVE.read_text(encoding="utf-8"))
+ bank=[]
+ for key in ["seed_perspective_a","seed_perspective_b","seed_perspective_c","seed_perspective_d","voice_packs"]:
+  bank.extend(n[key])
+ def pool(row):
+  key=row["region_slug"]+"|"+row["variation_signature"]
+  if key in cache:return cache[key]
+  base=list(original(row))
+  seed=row["content_seed"]
+  start=int(seed[:8],16)%len(bank)
+  steps=[7,9,11,13,17,19,21,23,27,29,31]
+  step=steps[int(seed[10:12],16)%len(steps)]
+  picked=[];seen=set();i=0
+  while len(picked)<12:
+   idx=(start+i*step)%len(bank);i+=1
+   if idx in seen:continue
+   seen.add(idx);picked.append(bank[idx])
+  dong=row["dong_name"];full=row["full_name_ko"];jur=row["jurisdiction_full"]
+  local=[
+   f"{dong} 페이지에서는 위치만으로 학습 성향을 추측하지 않고 최근 자료와 실제 일정을 기준으로 범위를 정합니다.",
+   f"{full}에서 과정을 찾더라도 목표 결과와 현재 수행이 다르면 수업 순서도 달라져야 합니다.",
+   f"{jur}라는 지역 범위는 서비스 위치를 구분하고 실제 훈련은 사용자가 확인한 장면으로 구체화합니다.",
+   f"{dong} 검색 결과를 비교할 때는 진단 질문, 피드백 형태, 다음 재점검 방식이 구체적인지 함께 확인합니다.",
+   f"{full} 안내에서는 확인되지 않은 학교·직장·생활 패턴을 만들지 않고 사용자가 제공한 정보만 학습 맥락으로 사용합니다.",
+   f"{dong}에서 가까운 수업이라는 이유만으로 적합하다고 보지 않고 목적과 일정에 맞는 경로인지 별도로 판단합니다.",
+   f"{jur} 안에서도 학생·대학생·취준생·직장인의 영어 목표는 다르므로 같은 커리큘럼으로 묶지 않습니다.",
+   f"{dong} 페이지에서 비용을 볼 때는 한 회 가격보다 주당 횟수, 시간, 첨삭·녹음 피드백, 방문·온라인 방식을 나눠 봅니다.",
+   f"{full}에서 상담을 준비한다면 최근 자료 하나, 가장 막힌 장면 하나, 가장 가까운 일정 하나면 시작점을 잡을 수 있습니다.",
+   f"{dong}이라는 지역명은 검색 신호이고 실제 우선순위는 혼자 가능한 범위와 반복해서 흔들리는 조건이 결정합니다.",
+   f"{jur} 기준 안내에서도 한 번의 성공을 결과로 과장하지 않고 자료나 질문을 바꿔 같은 행동이 다시 되는지 확인합니다.",
+   f"{dong}에서 여러 서비스를 비교한다면 맞는 경우뿐 아니라 다른 선택이 더 직접적인 조건도 함께 확인합니다.",
+   f"{full} 페이지의 목표는 홍보 문장을 늘리는 것이 아니라 사용자가 상담 전에 자신의 선택 기준을 만들게 하는 것입니다.",
+   f"{dong} 검색으로 시작했더라도 시험·회화·학교영어·업무 목적을 먼저 나누면 불필요한 과정 비교를 줄일 수 있습니다.",
+   f"{jur} 안의 특정 생활 특성을 가정하지 않고 실제 반복 가능한 공부 시간과 다음 일정으로 계획을 조정합니다.",
+   f"{dong} 페이지에서는 교재 수나 진도량보다 다음 점검에서 무엇을 다시 확인할지 남기는 운영 방식을 중요하게 봅니다.",
+   f"{full} 기준으로도 선생님 선택은 경력 연수 하나가 아니라 진단 방식, 설명 뒤 독립 수행, 재확인 흐름으로 비교합니다.",
+   f"{dong}에서 학습 공백이 있었다면 밀린 양을 채우기보다 마지막으로 안정된 수행부터 다시 연결하는 편이 현실적입니다."
+  ]
+  offset=int(seed[12:14],16)%len(local)
+  local=local[offset:]+local[:offset]
+  cache[key]=base+picked+local
+  return cache[key]
+ g.guide_dimension_pool=pool
+ g._DIMENSION_POOL_CACHE.clear()
 
 def sitemap_xml(urls):
  body="".join(f"<url><loc>{xml_escape(u)}</loc></url>" for u in urls)
@@ -146,6 +206,7 @@ def main():
 
  g=load_module("stage3_renderer",ROOT/"scripts/generate-production-stage3-10x13.py")
  patch_engine(g)
+ install_stage4_guide_pool(g)
  svc=load_module("service_gold",ROOT/"scripts/generate-v45-full-depth-pilot.py")
  ex=load_module("exam_gold",ROOT/"scripts/generate-v45-exam-pilot.py")
  g.LOCALITY_LONGFORM={}
@@ -209,7 +270,7 @@ def main():
   linked=set(re.findall(r'href="([^"]+\.html)"',raw)); missing=byloc[m["locality"]]-{name}-linked
   if missing:f.append("cluster_links")
   if name in reserved or m["canonical"] in reserved:f.append("reserved_95_conflict")
-  if not 9000<=len(txt)<=16000:f.append(f"visible_chars:{len(txt)}")
+  if not 9000<=len(txt)<=19000:f.append(f"visible_chars:{len(txt)}")
   checks.append({"file":name,"family":m["family"],"intent":m["intent"],"visible_chars":len(txt),"bytes":sizes[name],"status":"PASS" if not f else "FAIL","failures":f})
   if f:failures.append({"file":name,"failures":f})
   groups[m["intent"]].append((m["locality"],name,txt))
