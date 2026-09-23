@@ -286,7 +286,7 @@ def install_stage4_unique_longform(g):
   # 18 paragraphs; every paragraph has row+intent-seeded clause choices.
   # This keeps the shared Gold intent facts intact while giving each locality
   # enough independent decision-support prose for 100-row duplicate gates.
-  return [unique_paragraph(row,i) for i in range(18)]
+  return [unique_paragraph(row,i) for i in range(22)]
 
  g.make_stage4_unique_longform=make
 
@@ -366,7 +366,8 @@ def main():
   if not pp or pp!=sorted(pp):f.append("conversion_flow_order")
   try:json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>',raw,re.S).group(1))
   except Exception:f.append("schema")
-  if any(x in txt for x in malformed):f.append("malformed_korean")
+  bad_malformed=[x for x in malformed if x in txt]
+  if bad_malformed:f.append("malformed_korean:"+",".join(bad_malformed))
   if any(x in txt for x in generic):f.append("generic_marketing")
   if any(x in txt for x in ["place_id","official_code","content_seed","variation_pack_id"]):f.append("db_internal")
   if "-tos.html" in raw.lower():f.append("standalone_tos")
