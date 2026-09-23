@@ -1,0 +1,122 @@
+name: Stage 4 100x13 Pre-Production Batch
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'scripts/materialize-stage4-localities-100.py'
+      - 'scripts/generate-production-stage4-100x13.py'
+      - 'scripts/render-production-stage4-100x13.mjs'
+      - 'scripts/generate-production-stage3-10x13.py'
+      - 'PRODUCTION_VARIATION_NARRATIVE_V2.json'
+      - 'PRODUCTION_DECISION_SUPPORT_13INTENT_V1.json'
+      - '.github/workflows/stage4-100x13-preproduction.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: stage4-preproduction-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  generate-qa-render-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Materialize deterministic 100-locality input
+        run: python3 scripts/materialize-stage4-localities-100.py
+      - name: Generate 1,300 pages and run static duplicate sitemap size QA
+        run: python3 scripts/generate-production-stage4-100x13.py
+      - name: Verify physical output counts before browser QA
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          root=pathlib.Path('stage4-preproduction-100x13')
+          html=list(root.glob('*.html'))
+          assert len(html)==1300, len(html)
+          qa=json.loads((root/'STAGE4_100X13_QA_V1.json').read_text(encoding='utf-8'))
+          assert qa['status']=='PASS',qa
+          assert qa['page_count']==1300
+          assert qa['file_integrity']['filenames_unique']==1300
+          assert qa['file_integrity']['canonicals_unique']==1300
+          assert qa['file_integrity']['reserved_95_conflicts']==0
+          assert qa['sitemap_prototype']['url_count']==1300
+          assert len(qa['sitemap_prototype']['shards'])==3
+          assert qa['duplicate_gate']['status']=='PASS'
+          print(json.dumps({
+            'status':'PASS','physical_html':len(html),
+            'max_cosine':qa['duplicate_gate']['max_cosine'],
+            'max_jaccard5':qa['duplicate_gate']['max_5_shingle_jaccard'],
+            'stage4_mib':qa['package_sizing']['stage4_html_mib'],
+            'estimated_66937_gib':qa['package_sizing']['estimated_66937_html_gib'],
+            'render_sample_pages':qa['render_sample']['sample_pages']
+          },ensure_ascii=False))
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: npm install --no-save playwright && npx playwright install --with-deps chromium
+      - name: Start local server
+        run: |
+          python3 -m http.server 8000 >/tmp/stage4-http.log 2>&1 &
+          sleep 2
+      - name: Render sampled pages on desktop and mobile
+        run: node scripts/render-production-stage4-100x13.mjs
+      - name: Mark Stage 4 sample-render pass
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          root=pathlib.Path('stage4-preproduction-100x13')
+          qa=json.loads((root/'STAGE4_100X13_QA_V1.json').read_text(encoding='utf-8'))
+          rr=json.loads((root/'STAGE4_100X13_RENDER_QA_V1.json').read_text(encoding='utf-8'))
+          mf=json.loads((root/'STAGE4_100X13_MANIFEST_V1.json').read_text(encoding='utf-8'))
+          assert qa['status']=='PASS',qa
+          assert rr['status']=='PASS',rr
+          r={
+            'status':'PASS',
+            'file':'stage4-preproduction-100x13/STAGE4_100X13_RENDER_QA_V1.json',
+            'sample_pages':rr['sample_pages'],
+            'render_cases':rr['render_cases'],
+            'desktop_cases':rr['desktop_cases'],
+            'mobile_cases':rr['mobile_cases'],
+            'failures':rr['failures'],
+            'horizontal_overflow_failures':rr['horizontal_overflow_failures'],
+            'console_or_page_error_cases':rr['console_or_page_error_cases'],
+            'production_deploy':False
+          }
+          qa['render_qa']=r
+          qa['render_sample']['status']='PASS'
+          qa['status']='STATIC_DUPLICATE_LINK_SITEMAP_SIZE_SAMPLE_RENDER_PASS_HUMAN_REVIEW_REQUIRED_NOT_PRODUCTION'
+          mf['render_qa']=r
+          mf['status']='STAGE4_1300_ALL_AUTOMATED_GATES_PASS_HUMAN_REVIEW_REQUIRED_NOT_PRODUCTION'
+          (root/'STAGE4_100X13_QA_V1.json').write_text(json.dumps(qa,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          (root/'STAGE4_100X13_MANIFEST_V1.json').write_text(json.dumps(mf,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps({'status':'PASS','render_cases':rr['render_cases'],'sample_pages':rr['sample_pages']},ensure_ascii=False))
+          PY
+      - name: Commit Stage 4 pre-production outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add stage4_localities_100_v1.json stage4-preproduction-100x13
+          if git diff --cached --quiet; then
+            echo "No Stage 4 output changes"
+          else
+            git commit -m "Generate Stage 4 100x13 pre-production batch"
+            git pull --rebase origin reset-english-service-seo-v3
+            git push origin HEAD:reset-english-service-seo-v3
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage4-100x13-preproduction
+          path: |
+            stage4_localities_100_v1.json
+            stage4-preproduction-100x13/**
+          if-no-files-found: error
