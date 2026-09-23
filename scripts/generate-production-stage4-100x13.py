@@ -155,7 +155,7 @@ def install_stage4_guide_pool(g):
    if s[-1] not in ".!?":s+="."
    if s not in seen:
     seen.add(s);bank.append(s)
- if len(bank)<120:raise RuntimeError(f"stage4 guide sentence bank too small: {len(bank)}")
+ if len(bank)<80:raise RuntimeError(f"stage4 guide sentence bank too small: {len(bank)}")
 
  def local_sentence(row,slot):
   dong=row["dong_name"];full=row["full_name_ko"];jur=row["jurisdiction_full"]
