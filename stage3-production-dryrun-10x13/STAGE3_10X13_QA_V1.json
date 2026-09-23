@@ -6,16 +6,16 @@
   "locality_count": 10,
   "intent_count": 13,
   "visible_chars": {
-    "min": 9588,
-    "max": 11995,
-    "avg": 10627.8
+    "min": 10276,
+    "max": 12821,
+    "avg": 11357.6
   },
   "static_failures": 0,
   "duplicate_gate": {
     "status": "PASS",
     "pairs": 585,
-    "max_cosine": 0.7402,
-    "max_5_shingle_jaccard": 0.2234,
+    "max_cosine": 0.7504,
+    "max_5_shingle_jaccard": 0.1984,
     "thresholds": {
       "cosine_lt": 0.82,
       "jaccard5_lt": 0.24
@@ -25,141 +25,141 @@
         "intent": "elem-tutor",
         "a": "jeju-jeju-nohyeongdong",
         "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
-        "cosine": 0.6542,
-        "jaccard5": 0.2234
+        "cosine": 0.6571,
+        "jaccard5": 0.1984
       },
       {
         "intent": "housewife-conv",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "jeju-jeju-nohyeongdong",
-        "cosine": 0.7025,
-        "jaccard5": 0.2227
+        "cosine": 0.7155,
+        "jaccard5": 0.1974
       },
       {
         "intent": "high-conv",
         "a": "jeju-jeju-nohyeongdong",
         "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
-        "cosine": 0.6517,
-        "jaccard5": 0.2205
+        "cosine": 0.6588,
+        "jaccard5": 0.1962
       },
       {
-        "intent": "univ-conv",
-        "a": "jeju-jeju-nohyeongdong",
-        "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
-        "cosine": 0.6518,
-        "jaccard5": 0.2198
-      },
-      {
-        "intent": "mid-conv",
-        "a": "jeju-jeju-nohyeongdong",
-        "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
-        "cosine": 0.6941,
-        "jaccard5": 0.2197
+        "intent": "housewife-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "busan-haeundae-jungdong",
+        "cosine": 0.6428,
+        "jaccard5": 0.1958
       },
       {
         "intent": "toeic-speaking",
         "a": "jeju-jeju-nohyeongdong",
         "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
-        "cosine": 0.6588,
-        "jaccard5": 0.2192
+        "cosine": 0.662,
+        "jaccard5": 0.1957
+      },
+      {
+        "intent": "mid-conv",
+        "a": "jeju-jeju-nohyeongdong",
+        "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
+        "cosine": 0.6978,
+        "jaccard5": 0.1956
+      },
+      {
+        "intent": "univ-conv",
+        "a": "jeju-jeju-nohyeongdong",
+        "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
+        "cosine": 0.6589,
+        "jaccard5": 0.1953
+      },
+      {
+        "intent": "univ-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "busan-haeundae-jungdong",
+        "cosine": 0.6899,
+        "jaccard5": 0.1952
       },
       {
         "intent": "biz-business-conv",
         "a": "jeju-jeju-nohyeongdong",
         "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
-        "cosine": 0.6541,
-        "jaccard5": 0.2188
-      },
-      {
-        "intent": "housewife-conv",
-        "a": "gangwon-gangneung-gangnamdong",
-        "b": "busan-haeundae-jungdong",
-        "cosine": 0.6342,
-        "jaccard5": 0.2182
-      },
-      {
-        "intent": "univ-conv",
-        "a": "gangwon-gangneung-gangnamdong",
-        "b": "busan-haeundae-jungdong",
-        "cosine": 0.6826,
-        "jaccard5": 0.2181
+        "cosine": 0.6556,
+        "jaccard5": 0.1946
       },
       {
         "intent": "ielts",
         "a": "jeju-jeju-nohyeongdong",
         "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
-        "cosine": 0.6856,
-        "jaccard5": 0.2165
-      },
-      {
-        "intent": "housewife-conv",
-        "a": "jeju-jeju-nohyeongdong",
-        "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
-        "cosine": 0.6302,
-        "jaccard5": 0.2161
-      },
-      {
-        "intent": "jobseeker-conv",
-        "a": "jeju-jeju-nohyeongdong",
-        "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
-        "cosine": 0.6824,
-        "jaccard5": 0.215
-      },
-      {
-        "intent": "toeic",
-        "a": "seoul-seocho-naegokdong",
-        "b": "incheon-seohae-cheongna1dong",
-        "cosine": 0.718,
-        "jaccard5": 0.2147
+        "cosine": 0.6924,
+        "jaccard5": 0.1933
       },
       {
         "intent": "ielts",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.683,
-        "jaccard5": 0.2142
+        "cosine": 0.6903,
+        "jaccard5": 0.1923
+      },
+      {
+        "intent": "housewife-conv",
+        "a": "jeju-jeju-nohyeongdong",
+        "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
+        "cosine": 0.6347,
+        "jaccard5": 0.1923
       },
       {
         "intent": "toeic-speaking",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.693,
-        "jaccard5": 0.2136
+        "cosine": 0.6953,
+        "jaccard5": 0.1918
       },
       {
         "intent": "toeic",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.6651,
-        "jaccard5": 0.2136
+        "cosine": 0.6725,
+        "jaccard5": 0.1918
       },
       {
-        "intent": "housewife-conv",
-        "a": "gwangju-seo-hwajeongdong",
-        "b": "jeju-jeju-nohyeongdong",
-        "cosine": 0.6578,
-        "jaccard5": 0.2133
+        "intent": "jobseeker-conv",
+        "a": "jeju-jeju-nohyeongdong",
+        "b": "chungbuk-cheongju-heungdeok-gagyeongdong",
+        "cosine": 0.6871,
+        "jaccard5": 0.1913
       },
       {
         "intent": "toeic",
-        "a": "gangwon-gangneung-gangnamdong",
-        "b": "jeju-jeju-nohyeongdong",
-        "cosine": 0.7159,
-        "jaccard5": 0.2132
+        "a": "seoul-seocho-naegokdong",
+        "b": "incheon-seohae-cheongna1dong",
+        "cosine": 0.7293,
+        "jaccard5": 0.1906
       },
       {
         "intent": "mid-conv",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.6549,
-        "jaccard5": 0.213
+        "cosine": 0.6595,
+        "jaccard5": 0.1906
       },
       {
         "intent": "duolingo",
         "a": "gangwon-gangneung-gangnamdong",
         "b": "busan-haeundae-jungdong",
-        "cosine": 0.6357,
-        "jaccard5": 0.2117
+        "cosine": 0.6432,
+        "jaccard5": 0.1903
+      },
+      {
+        "intent": "housewife-conv",
+        "a": "gwangju-seo-hwajeongdong",
+        "b": "jeju-jeju-nohyeongdong",
+        "cosine": 0.6781,
+        "jaccard5": 0.1899
+      },
+      {
+        "intent": "toeic",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "jeju-jeju-nohyeongdong",
+        "cosine": 0.726,
+        "jaccard5": 0.1896
       }
     ]
   },
@@ -168,7 +168,7 @@
       "file": "seoul-jongno-sajikdong-elem-tutor.html",
       "family": "service",
       "intent": "elem-tutor",
-      "visible_chars": 10484,
+      "visible_chars": 11327,
       "status": "PASS",
       "failures": []
     },
@@ -176,7 +176,7 @@
       "file": "seoul-jongno-sajikdong-mid-conv.html",
       "family": "service",
       "intent": "mid-conv",
-      "visible_chars": 11038,
+      "visible_chars": 11880,
       "status": "PASS",
       "failures": []
     },
@@ -184,7 +184,7 @@
       "file": "seoul-jongno-sajikdong-high-conv.html",
       "family": "service",
       "intent": "high-conv",
-      "visible_chars": 11266,
+      "visible_chars": 12109,
       "status": "PASS",
       "failures": []
     },
@@ -192,7 +192,7 @@
       "file": "seoul-jongno-sajikdong-univ-conv.html",
       "family": "service",
       "intent": "univ-conv",
-      "visible_chars": 11556,
+      "visible_chars": 12398,
       "status": "PASS",
       "failures": []
     },
@@ -200,7 +200,7 @@
       "file": "seoul-jongno-sajikdong-jobseeker-conv.html",
       "family": "service",
       "intent": "jobseeker-conv",
-      "visible_chars": 11259,
+      "visible_chars": 12101,
       "status": "PASS",
       "failures": []
     },
@@ -208,7 +208,7 @@
       "file": "seoul-jongno-sajikdong-biz-business-conv.html",
       "family": "service",
       "intent": "biz-business-conv",
-      "visible_chars": 10750,
+      "visible_chars": 11594,
       "status": "PASS",
       "failures": []
     },
@@ -216,7 +216,7 @@
       "file": "seoul-jongno-sajikdong-housewife-conv.html",
       "family": "service",
       "intent": "housewife-conv",
-      "visible_chars": 10405,
+      "visible_chars": 11246,
       "status": "PASS",
       "failures": []
     },
@@ -224,7 +224,7 @@
       "file": "seoul-jongno-sajikdong-toeic.html",
       "family": "exam",
       "intent": "toeic",
-      "visible_chars": 11406,
+      "visible_chars": 12245,
       "status": "PASS",
       "failures": []
     },
@@ -232,7 +232,7 @@
       "file": "seoul-jongno-sajikdong-toeic-speaking.html",
       "family": "exam",
       "intent": "toeic-speaking",
-      "visible_chars": 11763,
+      "visible_chars": 12605,
       "status": "PASS",
       "failures": []
     },
@@ -240,7 +240,7 @@
       "file": "seoul-jongno-sajikdong-opic.html",
       "family": "exam",
       "intent": "opic",
-      "visible_chars": 11196,
+      "visible_chars": 12035,
       "status": "PASS",
       "failures": []
     },
@@ -248,7 +248,7 @@
       "file": "seoul-jongno-sajikdong-ielts.html",
       "family": "exam",
       "intent": "ielts",
-      "visible_chars": 11848,
+      "visible_chars": 12689,
       "status": "PASS",
       "failures": []
     },
@@ -256,7 +256,7 @@
       "file": "seoul-jongno-sajikdong-duolingo.html",
       "family": "exam",
       "intent": "duolingo",
-      "visible_chars": 11977,
+      "visible_chars": 12821,
       "status": "PASS",
       "failures": []
     },
@@ -264,7 +264,7 @@
       "file": "seoul-jongno-sajikdong-toefl.html",
       "family": "exam",
       "intent": "toefl",
-      "visible_chars": 11527,
+      "visible_chars": 12366,
       "status": "PASS",
       "failures": []
     },
@@ -272,7 +272,7 @@
       "file": "seoul-seocho-naegokdong-elem-tutor.html",
       "family": "service",
       "intent": "elem-tutor",
-      "visible_chars": 10822,
+      "visible_chars": 11636,
       "status": "PASS",
       "failures": []
     },
@@ -280,7 +280,7 @@
       "file": "seoul-seocho-naegokdong-mid-conv.html",
       "family": "service",
       "intent": "mid-conv",
-      "visible_chars": 10508,
+      "visible_chars": 11321,
       "status": "PASS",
       "failures": []
     },
@@ -288,7 +288,7 @@
       "file": "seoul-seocho-naegokdong-high-conv.html",
       "family": "service",
       "intent": "high-conv",
-      "visible_chars": 10257,
+      "visible_chars": 11071,
       "status": "PASS",
       "failures": []
     },
@@ -296,7 +296,7 @@
       "file": "seoul-seocho-naegokdong-univ-conv.html",
       "family": "service",
       "intent": "univ-conv",
-      "visible_chars": 10830,
+      "visible_chars": 11643,
       "status": "PASS",
       "failures": []
     },
@@ -304,7 +304,7 @@
       "file": "seoul-seocho-naegokdong-jobseeker-conv.html",
       "family": "service",
       "intent": "jobseeker-conv",
-      "visible_chars": 10781,
+      "visible_chars": 11594,
       "status": "PASS",
       "failures": []
     },
@@ -312,7 +312,7 @@
       "file": "seoul-seocho-naegokdong-biz-business-conv.html",
       "family": "service",
       "intent": "biz-business-conv",
-      "visible_chars": 10485,
+      "visible_chars": 11300,
       "status": "PASS",
       "failures": []
     },
@@ -320,7 +320,7 @@
       "file": "seoul-seocho-naegokdong-housewife-conv.html",
       "family": "service",
       "intent": "housewife-conv",
-      "visible_chars": 10836,
+      "visible_chars": 11648,
       "status": "PASS",
       "failures": []
     },
@@ -328,7 +328,7 @@
       "file": "seoul-seocho-naegokdong-toeic.html",
       "family": "exam",
       "intent": "toeic",
-      "visible_chars": 10766,
+      "visible_chars": 11576,
       "status": "PASS",
       "failures": []
     },
@@ -336,7 +336,7 @@
       "file": "seoul-seocho-naegokdong-toeic-speaking.html",
       "family": "exam",
       "intent": "toeic-speaking",
-      "visible_chars": 10868,
+      "visible_chars": 11681,
       "status": "PASS",
       "failures": []
     },
@@ -344,7 +344,7 @@
       "file": "seoul-seocho-naegokdong-opic.html",
       "family": "exam",
       "intent": "opic",
-      "visible_chars": 11995,
+      "visible_chars": 12805,
       "status": "PASS",
       "failures": []
     },
@@ -352,7 +352,7 @@
       "file": "seoul-seocho-naegokdong-ielts.html",
       "family": "exam",
       "intent": "ielts",
-      "visible_chars": 10896,
+      "visible_chars": 11708,
       "status": "PASS",
       "failures": []
     },
@@ -360,7 +360,7 @@
       "file": "seoul-seocho-naegokdong-duolingo.html",
       "family": "exam",
       "intent": "duolingo",
-      "visible_chars": 11616,
+      "visible_chars": 12431,
       "status": "PASS",
       "failures": []
     },
@@ -368,7 +368,7 @@
       "file": "seoul-seocho-naegokdong-toefl.html",
       "family": "exam",
       "intent": "toefl",
-      "visible_chars": 11204,
+      "visible_chars": 12014,
       "status": "PASS",
       "failures": []
     },
@@ -376,7 +376,7 @@
       "file": "gangwon-gangneung-naegokdong-elem-tutor.html",
       "family": "service",
       "intent": "elem-tutor",
-      "visible_chars": 10298,
+      "visible_chars": 11049,
       "status": "PASS",
       "failures": []
     },
@@ -384,7 +384,7 @@
       "file": "gangwon-gangneung-naegokdong-mid-conv.html",
       "family": "service",
       "intent": "mid-conv",
-      "visible_chars": 10097,
+      "visible_chars": 10847,
       "status": "PASS",
       "failures": []
     },
@@ -392,7 +392,7 @@
       "file": "gangwon-gangneung-naegokdong-high-conv.html",
       "family": "service",
       "intent": "high-conv",
-      "visible_chars": 9891,
+      "visible_chars": 10642,
       "status": "PASS",
       "failures": []
     },
@@ -400,7 +400,7 @@
       "file": "gangwon-gangneung-naegokdong-univ-conv.html",
       "family": "service",
       "intent": "univ-conv",
-      "visible_chars": 10178,
+      "visible_chars": 10928,
       "status": "PASS",
       "failures": []
     },
@@ -408,7 +408,7 @@
       "file": "gangwon-gangneung-naegokdong-jobseeker-conv.html",
       "family": "service",
       "intent": "jobseeker-conv",
-      "visible_chars": 10796,
+      "visible_chars": 11546,
       "status": "PASS",
       "failures": []
     },
@@ -416,7 +416,7 @@
       "file": "gangwon-gangneung-naegokdong-biz-business-conv.html",
       "family": "service",
       "intent": "biz-business-conv",
-      "visible_chars": 10029,
+      "visible_chars": 10781,
       "status": "PASS",
       "failures": []
     },
@@ -424,7 +424,7 @@
       "file": "gangwon-gangneung-naegokdong-housewife-conv.html",
       "family": "service",
       "intent": "housewife-conv",
-      "visible_chars": 10656,
+      "visible_chars": 11405,
       "status": "PASS",
       "failures": []
     },
@@ -432,7 +432,7 @@
       "file": "gangwon-gangneung-naegokdong-toeic.html",
       "family": "exam",
       "intent": "toeic",
-      "visible_chars": 10646,
+      "visible_chars": 11393,
       "status": "PASS",
       "failures": []
     },
@@ -440,7 +440,7 @@
       "file": "gangwon-gangneung-naegokdong-toeic-speaking.html",
       "family": "exam",
       "intent": "toeic-speaking",
-      "visible_chars": 10840,
+      "visible_chars": 11590,
       "status": "PASS",
       "failures": []
     },
@@ -448,7 +448,7 @@
       "file": "gangwon-gangneung-naegokdong-opic.html",
       "family": "exam",
       "intent": "opic",
-      "visible_chars": 10444,
+      "visible_chars": 11191,
       "status": "PASS",
       "failures": []
     },
@@ -456,7 +456,7 @@
       "file": "gangwon-gangneung-naegokdong-ielts.html",
       "family": "exam",
       "intent": "ielts",
-      "visible_chars": 10623,
+      "visible_chars": 11372,
       "status": "PASS",
       "failures": []
     },
@@ -464,7 +464,7 @@
       "file": "gangwon-gangneung-naegokdong-duolingo.html",
       "family": "exam",
       "intent": "duolingo",
-      "visible_chars": 10762,
+      "visible_chars": 11514,
       "status": "PASS",
       "failures": []
     },
@@ -472,7 +472,7 @@
       "file": "gangwon-gangneung-naegokdong-toefl.html",
       "family": "exam",
       "intent": "toefl",
-      "visible_chars": 10613,
+      "visible_chars": 11360,
       "status": "PASS",
       "failures": []
     },
@@ -480,7 +480,7 @@
       "file": "gangwon-gangneung-gangnamdong-elem-tutor.html",
       "family": "service",
       "intent": "elem-tutor",
-      "visible_chars": 9961,
+      "visible_chars": 10694,
       "status": "PASS",
       "failures": []
     },
@@ -488,7 +488,7 @@
       "file": "gangwon-gangneung-gangnamdong-mid-conv.html",
       "family": "service",
       "intent": "mid-conv",
-      "visible_chars": 10366,
+      "visible_chars": 11098,
       "status": "PASS",
       "failures": []
     },
@@ -496,7 +496,7 @@
       "file": "gangwon-gangneung-gangnamdong-high-conv.html",
       "family": "service",
       "intent": "high-conv",
-      "visible_chars": 10074,
+      "visible_chars": 10807,
       "status": "PASS",
       "failures": []
     },
@@ -504,7 +504,7 @@
       "file": "gangwon-gangneung-gangnamdong-univ-conv.html",
       "family": "service",
       "intent": "univ-conv",
-      "visible_chars": 10070,
+      "visible_chars": 10802,
       "status": "PASS",
       "failures": []
     },
@@ -512,7 +512,7 @@
       "file": "gangwon-gangneung-gangnamdong-jobseeker-conv.html",
       "family": "service",
       "intent": "jobseeker-conv",
-      "visible_chars": 10053,
+      "visible_chars": 10785,
       "status": "PASS",
       "failures": []
     },
@@ -520,7 +520,7 @@
       "file": "gangwon-gangneung-gangnamdong-biz-business-conv.html",
       "family": "service",
       "intent": "biz-business-conv",
-      "visible_chars": 10585,
+      "visible_chars": 11319,
       "status": "PASS",
       "failures": []
     },
@@ -528,7 +528,7 @@
       "file": "gangwon-gangneung-gangnamdong-housewife-conv.html",
       "family": "service",
       "intent": "housewife-conv",
-      "visible_chars": 9911,
+      "visible_chars": 10642,
       "status": "PASS",
       "failures": []
     },
@@ -536,7 +536,7 @@
       "file": "gangwon-gangneung-gangnamdong-toeic.html",
       "family": "exam",
       "intent": "toeic",
-      "visible_chars": 10290,
+      "visible_chars": 11019,
       "status": "PASS",
       "failures": []
     },
@@ -544,7 +544,7 @@
       "file": "gangwon-gangneung-gangnamdong-toeic-speaking.html",
       "family": "exam",
       "intent": "toeic-speaking",
-      "visible_chars": 10757,
+      "visible_chars": 11489,
       "status": "PASS",
       "failures": []
     },
@@ -552,7 +552,7 @@
       "file": "gangwon-gangneung-gangnamdong-opic.html",
       "family": "exam",
       "intent": "opic",
-      "visible_chars": 10505,
+      "visible_chars": 11234,
       "status": "PASS",
       "failures": []
     },
@@ -560,7 +560,7 @@
       "file": "gangwon-gangneung-gangnamdong-ielts.html",
       "family": "exam",
       "intent": "ielts",
-      "visible_chars": 10746,
+      "visible_chars": 11477,
       "status": "PASS",
       "failures": []
     },
@@ -568,7 +568,7 @@
       "file": "gangwon-gangneung-gangnamdong-duolingo.html",
       "family": "exam",
       "intent": "duolingo",
-      "visible_chars": 11426,
+      "visible_chars": 12160,
       "status": "PASS",
       "failures": []
     },
@@ -576,7 +576,7 @@
       "file": "gangwon-gangneung-gangnamdong-toefl.html",
       "family": "exam",
       "intent": "toefl",
-      "visible_chars": 10828,
+      "visible_chars": 11557,
       "status": "PASS",
       "failures": []
     },
@@ -584,7 +584,7 @@
       "file": "sejong-goundong-elem-tutor.html",
       "family": "service",
       "intent": "elem-tutor",
-      "visible_chars": 9700,
+      "visible_chars": 10408,
       "status": "PASS",
       "failures": []
     },
@@ -592,7 +592,7 @@
       "file": "sejong-goundong-mid-conv.html",
       "family": "service",
       "intent": "mid-conv",
-      "visible_chars": 10449,
+      "visible_chars": 11156,
       "status": "PASS",
       "failures": []
     },
@@ -600,7 +600,7 @@
       "file": "sejong-goundong-high-conv.html",
       "family": "service",
       "intent": "high-conv",
-      "visible_chars": 10208,
+      "visible_chars": 10916,
       "status": "PASS",
       "failures": []
     },
@@ -608,7 +608,7 @@
       "file": "sejong-goundong-univ-conv.html",
       "family": "service",
       "intent": "univ-conv",
-      "visible_chars": 10343,
+      "visible_chars": 11050,
       "status": "PASS",
       "failures": []
     },
@@ -616,7 +616,7 @@
       "file": "sejong-goundong-jobseeker-conv.html",
       "family": "service",
       "intent": "jobseeker-conv",
-      "visible_chars": 9898,
+      "visible_chars": 10605,
       "status": "PASS",
       "failures": []
     },
@@ -624,7 +624,7 @@
       "file": "sejong-goundong-biz-business-conv.html",
       "family": "service",
       "intent": "biz-business-conv",
-      "visible_chars": 10151,
+      "visible_chars": 10860,
       "status": "PASS",
       "failures": []
     },
@@ -632,7 +632,7 @@
       "file": "sejong-goundong-housewife-conv.html",
       "family": "service",
       "intent": "housewife-conv",
-      "visible_chars": 9612,
+      "visible_chars": 10318,
       "status": "PASS",
       "failures": []
     },
@@ -640,7 +640,7 @@
       "file": "sejong-goundong-toeic.html",
       "family": "exam",
       "intent": "toeic",
-      "visible_chars": 10364,
+      "visible_chars": 11068,
       "status": "PASS",
       "failures": []
     },
@@ -648,7 +648,7 @@
       "file": "sejong-goundong-toeic-speaking.html",
       "family": "exam",
       "intent": "toeic-speaking",
-      "visible_chars": 10739,
+      "visible_chars": 11446,
       "status": "PASS",
       "failures": []
     },
@@ -656,7 +656,7 @@
       "file": "sejong-goundong-opic.html",
       "family": "exam",
       "intent": "opic",
-      "visible_chars": 10756,
+      "visible_chars": 11460,
       "status": "PASS",
       "failures": []
     },
@@ -664,7 +664,7 @@
       "file": "sejong-goundong-ielts.html",
       "family": "exam",
       "intent": "ielts",
-      "visible_chars": 10291,
+      "visible_chars": 10997,
       "status": "PASS",
       "failures": []
     },
@@ -672,7 +672,7 @@
       "file": "sejong-goundong-duolingo.html",
       "family": "exam",
       "intent": "duolingo",
-      "visible_chars": 11469,
+      "visible_chars": 12178,
       "status": "PASS",
       "failures": []
     },
@@ -680,7 +680,7 @@
       "file": "sejong-goundong-toefl.html",
       "family": "exam",
       "intent": "toefl",
-      "visible_chars": 10947,
+      "visible_chars": 11651,
       "status": "PASS",
       "failures": []
     },
@@ -688,7 +688,7 @@
       "file": "busan-haeundae-jungdong-elem-tutor.html",
       "family": "service",
       "intent": "elem-tutor",
-      "visible_chars": 10179,
+      "visible_chars": 10872,
       "status": "PASS",
       "failures": []
     },
@@ -696,7 +696,7 @@
       "file": "busan-haeundae-jungdong-mid-conv.html",
       "family": "service",
       "intent": "mid-conv",
-      "visible_chars": 10282,
+      "visible_chars": 10974,
       "status": "PASS",
       "failures": []
     },
@@ -704,7 +704,7 @@
       "file": "busan-haeundae-jungdong-high-conv.html",
       "family": "service",
       "intent": "high-conv",
-      "visible_chars": 10074,
+      "visible_chars": 10767,
       "status": "PASS",
       "failures": []
     },
@@ -712,7 +712,7 @@
       "file": "busan-haeundae-jungdong-univ-conv.html",
       "family": "service",
       "intent": "univ-conv",
-      "visible_chars": 10174,
+      "visible_chars": 10866,
       "status": "PASS",
       "failures": []
     },
@@ -720,7 +720,7 @@
       "file": "busan-haeundae-jungdong-jobseeker-conv.html",
       "family": "service",
       "intent": "jobseeker-conv",
-      "visible_chars": 10746,
+      "visible_chars": 11438,
       "status": "PASS",
       "failures": []
     },
@@ -728,7 +728,7 @@
       "file": "busan-haeundae-jungdong-biz-business-conv.html",
       "family": "service",
       "intent": "biz-business-conv",
-      "visible_chars": 10448,
+      "visible_chars": 11142,
       "status": "PASS",
       "failures": []
     },
@@ -736,7 +736,7 @@
       "file": "busan-haeundae-jungdong-housewife-conv.html",
       "family": "service",
       "intent": "housewife-conv",
-      "visible_chars": 9998,
+      "visible_chars": 10689,
       "status": "PASS",
       "failures": []
     },
@@ -744,7 +744,7 @@
       "file": "busan-haeundae-jungdong-toeic.html",
       "family": "exam",
       "intent": "toeic",
-      "visible_chars": 10510,
+      "visible_chars": 11199,
       "status": "PASS",
       "failures": []
     },
@@ -752,7 +752,7 @@
       "file": "busan-haeundae-jungdong-toeic-speaking.html",
       "family": "exam",
       "intent": "toeic-speaking",
-      "visible_chars": 10870,
+      "visible_chars": 11562,
       "status": "PASS",
       "failures": []
     },
@@ -760,7 +760,7 @@
       "file": "busan-haeundae-jungdong-opic.html",
       "family": "exam",
       "intent": "opic",
-      "visible_chars": 10515,
+      "visible_chars": 11204,
       "status": "PASS",
       "failures": []
     },
@@ -768,7 +768,7 @@
       "file": "busan-haeundae-jungdong-ielts.html",
       "family": "exam",
       "intent": "ielts",
-      "visible_chars": 10922,
+      "visible_chars": 11613,
       "status": "PASS",
       "failures": []
     },
@@ -776,7 +776,7 @@
       "file": "busan-haeundae-jungdong-duolingo.html",
       "family": "exam",
       "intent": "duolingo",
-      "visible_chars": 10879,
+      "visible_chars": 11573,
       "status": "PASS",
       "failures": []
     },
@@ -784,7 +784,7 @@
       "file": "busan-haeundae-jungdong-toefl.html",
       "family": "exam",
       "intent": "toefl",
-      "visible_chars": 10005,
+      "visible_chars": 10694,
       "status": "PASS",
       "failures": []
     },
@@ -792,7 +792,7 @@
       "file": "gwangju-seo-hwajeongdong-elem-tutor.html",
       "family": "service",
       "intent": "elem-tutor",
-      "visible_chars": 9974,
+      "visible_chars": 10672,
       "status": "PASS",
       "failures": []
     },
@@ -800,7 +800,7 @@
       "file": "gwangju-seo-hwajeongdong-mid-conv.html",
       "family": "service",
       "intent": "mid-conv",
-      "visible_chars": 10650,
+      "visible_chars": 11347,
       "status": "PASS",
       "failures": []
     },
@@ -808,7 +808,7 @@
       "file": "gwangju-seo-hwajeongdong-high-conv.html",
       "family": "service",
       "intent": "high-conv",
-      "visible_chars": 10787,
+      "visible_chars": 11485,
       "status": "PASS",
       "failures": []
     },
@@ -816,7 +816,7 @@
       "file": "gwangju-seo-hwajeongdong-univ-conv.html",
       "family": "service",
       "intent": "univ-conv",
-      "visible_chars": 10650,
+      "visible_chars": 11347,
       "status": "PASS",
       "failures": []
     },
@@ -824,7 +824,7 @@
       "file": "gwangju-seo-hwajeongdong-jobseeker-conv.html",
       "family": "service",
       "intent": "jobseeker-conv",
-      "visible_chars": 10839,
+      "visible_chars": 11536,
       "status": "PASS",
       "failures": []
     },
@@ -832,7 +832,7 @@
       "file": "gwangju-seo-hwajeongdong-biz-business-conv.html",
       "family": "service",
       "intent": "biz-business-conv",
-      "visible_chars": 10937,
+      "visible_chars": 11636,
       "status": "PASS",
       "failures": []
     },
@@ -840,7 +840,7 @@
       "file": "gwangju-seo-hwajeongdong-housewife-conv.html",
       "family": "service",
       "intent": "housewife-conv",
-      "visible_chars": 10514,
+      "visible_chars": 11210,
       "status": "PASS",
       "failures": []
     },
@@ -848,7 +848,7 @@
       "file": "gwangju-seo-hwajeongdong-toeic.html",
       "family": "exam",
       "intent": "toeic",
-      "visible_chars": 10206,
+      "visible_chars": 10900,
       "status": "PASS",
       "failures": []
     },
@@ -856,7 +856,7 @@
       "file": "gwangju-seo-hwajeongdong-toeic-speaking.html",
       "family": "exam",
       "intent": "toeic-speaking",
-      "visible_chars": 10754,
+      "visible_chars": 11451,
       "status": "PASS",
       "failures": []
     },
@@ -864,7 +864,7 @@
       "file": "gwangju-seo-hwajeongdong-opic.html",
       "family": "exam",
       "intent": "opic",
-      "visible_chars": 10647,
+      "visible_chars": 11341,
       "status": "PASS",
       "failures": []
     },
@@ -872,7 +872,7 @@
       "file": "gwangju-seo-hwajeongdong-ielts.html",
       "family": "exam",
       "intent": "ielts",
-      "visible_chars": 10713,
+      "visible_chars": 11409,
       "status": "PASS",
       "failures": []
     },
@@ -880,7 +880,7 @@
       "file": "gwangju-seo-hwajeongdong-duolingo.html",
       "family": "exam",
       "intent": "duolingo",
-      "visible_chars": 11060,
+      "visible_chars": 11759,
       "status": "PASS",
       "failures": []
     },
@@ -888,7 +888,7 @@
       "file": "gwangju-seo-hwajeongdong-toefl.html",
       "family": "exam",
       "intent": "toefl",
-      "visible_chars": 10791,
+      "visible_chars": 11485,
       "status": "PASS",
       "failures": []
     },
@@ -896,7 +896,7 @@
       "file": "incheon-seohae-cheongna1dong-elem-tutor.html",
       "family": "service",
       "intent": "elem-tutor",
-      "visible_chars": 10373,
+      "visible_chars": 11079,
       "status": "PASS",
       "failures": []
     },
@@ -904,7 +904,7 @@
       "file": "incheon-seohae-cheongna1dong-mid-conv.html",
       "family": "service",
       "intent": "mid-conv",
-      "visible_chars": 10425,
+      "visible_chars": 11130,
       "status": "PASS",
       "failures": []
     },
@@ -912,7 +912,7 @@
       "file": "incheon-seohae-cheongna1dong-high-conv.html",
       "family": "service",
       "intent": "high-conv",
-      "visible_chars": 10166,
+      "visible_chars": 10872,
       "status": "PASS",
       "failures": []
     },
@@ -920,7 +920,7 @@
       "file": "incheon-seohae-cheongna1dong-univ-conv.html",
       "family": "service",
       "intent": "univ-conv",
-      "visible_chars": 10091,
+      "visible_chars": 10796,
       "status": "PASS",
       "failures": []
     },
@@ -928,7 +928,7 @@
       "file": "incheon-seohae-cheongna1dong-jobseeker-conv.html",
       "family": "service",
       "intent": "jobseeker-conv",
-      "visible_chars": 11010,
+      "visible_chars": 11715,
       "status": "PASS",
       "failures": []
     },
@@ -936,7 +936,7 @@
       "file": "incheon-seohae-cheongna1dong-biz-business-conv.html",
       "family": "service",
       "intent": "biz-business-conv",
-      "visible_chars": 10405,
+      "visible_chars": 11112,
       "status": "PASS",
       "failures": []
     },
@@ -944,7 +944,7 @@
       "file": "incheon-seohae-cheongna1dong-housewife-conv.html",
       "family": "service",
       "intent": "housewife-conv",
-      "visible_chars": 10027,
+      "visible_chars": 10731,
       "status": "PASS",
       "failures": []
     },
@@ -952,7 +952,7 @@
       "file": "incheon-seohae-cheongna1dong-toeic.html",
       "family": "exam",
       "intent": "toeic",
-      "visible_chars": 11068,
+      "visible_chars": 11770,
       "status": "PASS",
       "failures": []
     },
@@ -960,7 +960,7 @@
       "file": "incheon-seohae-cheongna1dong-toeic-speaking.html",
       "family": "exam",
       "intent": "toeic-speaking",
-      "visible_chars": 10623,
+      "visible_chars": 11328,
       "status": "PASS",
       "failures": []
     },
@@ -968,7 +968,7 @@
       "file": "incheon-seohae-cheongna1dong-opic.html",
       "family": "exam",
       "intent": "opic",
-      "visible_chars": 10727,
+      "visible_chars": 11429,
       "status": "PASS",
       "failures": []
     },
@@ -976,7 +976,7 @@
       "file": "incheon-seohae-cheongna1dong-ielts.html",
       "family": "exam",
       "intent": "ielts",
-      "visible_chars": 11134,
+      "visible_chars": 11838,
       "status": "PASS",
       "failures": []
     },
@@ -984,7 +984,7 @@
       "file": "incheon-seohae-cheongna1dong-duolingo.html",
       "family": "exam",
       "intent": "duolingo",
-      "visible_chars": 11209,
+      "visible_chars": 11916,
       "status": "PASS",
       "failures": []
     },
@@ -992,7 +992,7 @@
       "file": "incheon-seohae-cheongna1dong-toefl.html",
       "family": "exam",
       "intent": "toefl",
-      "visible_chars": 11153,
+      "visible_chars": 11855,
       "status": "PASS",
       "failures": []
     },
@@ -1000,7 +1000,7 @@
       "file": "jeju-jeju-nohyeongdong-elem-tutor.html",
       "family": "service",
       "intent": "elem-tutor",
-      "visible_chars": 9588,
+      "visible_chars": 10276,
       "status": "PASS",
       "failures": []
     },
@@ -1008,7 +1008,7 @@
       "file": "jeju-jeju-nohyeongdong-mid-conv.html",
       "family": "service",
       "intent": "mid-conv",
-      "visible_chars": 10915,
+      "visible_chars": 11602,
       "status": "PASS",
       "failures": []
     },
@@ -1016,7 +1016,7 @@
       "file": "jeju-jeju-nohyeongdong-high-conv.html",
       "family": "service",
       "intent": "high-conv",
-      "visible_chars": 10480,
+      "visible_chars": 11168,
       "status": "PASS",
       "failures": []
     },
@@ -1024,7 +1024,7 @@
       "file": "jeju-jeju-nohyeongdong-univ-conv.html",
       "family": "service",
       "intent": "univ-conv",
-      "visible_chars": 10796,
+      "visible_chars": 11483,
       "status": "PASS",
       "failures": []
     },
@@ -1032,7 +1032,7 @@
       "file": "jeju-jeju-nohyeongdong-jobseeker-conv.html",
       "family": "service",
       "intent": "jobseeker-conv",
-      "visible_chars": 10260,
+      "visible_chars": 10947,
       "status": "PASS",
       "failures": []
     },
@@ -1040,7 +1040,7 @@
       "file": "jeju-jeju-nohyeongdong-biz-business-conv.html",
       "family": "service",
       "intent": "biz-business-conv",
-      "visible_chars": 9871,
+      "visible_chars": 10560,
       "status": "PASS",
       "failures": []
     },
@@ -1048,7 +1048,7 @@
       "file": "jeju-jeju-nohyeongdong-housewife-conv.html",
       "family": "service",
       "intent": "housewife-conv",
-      "visible_chars": 9861,
+      "visible_chars": 10547,
       "status": "PASS",
       "failures": []
     },
@@ -1056,7 +1056,7 @@
       "file": "jeju-jeju-nohyeongdong-toeic.html",
       "family": "exam",
       "intent": "toeic",
-      "visible_chars": 10759,
+      "visible_chars": 11443,
       "status": "PASS",
       "failures": []
     },
@@ -1064,7 +1064,7 @@
       "file": "jeju-jeju-nohyeongdong-toeic-speaking.html",
       "family": "exam",
       "intent": "toeic-speaking",
-      "visible_chars": 10892,
+      "visible_chars": 11579,
       "status": "PASS",
       "failures": []
     },
@@ -1072,7 +1072,7 @@
       "file": "jeju-jeju-nohyeongdong-opic.html",
       "family": "exam",
       "intent": "opic",
-      "visible_chars": 11006,
+      "visible_chars": 11690,
       "status": "PASS",
       "failures": []
     },
@@ -1080,7 +1080,7 @@
       "file": "jeju-jeju-nohyeongdong-ielts.html",
       "family": "exam",
       "intent": "ielts",
-      "visible_chars": 11009,
+      "visible_chars": 11695,
       "status": "PASS",
       "failures": []
     },
@@ -1088,7 +1088,7 @@
       "file": "jeju-jeju-nohyeongdong-duolingo.html",
       "family": "exam",
       "intent": "duolingo",
-      "visible_chars": 10703,
+      "visible_chars": 11392,
       "status": "PASS",
       "failures": []
     },
@@ -1096,7 +1096,7 @@
       "file": "jeju-jeju-nohyeongdong-toefl.html",
       "family": "exam",
       "intent": "toefl",
-      "visible_chars": 11775,
+      "visible_chars": 12459,
       "status": "PASS",
       "failures": []
     },
@@ -1104,7 +1104,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-elem-tutor.html",
       "family": "service",
       "intent": "elem-tutor",
-      "visible_chars": 10163,
+      "visible_chars": 10841,
       "status": "PASS",
       "failures": []
     },
@@ -1112,7 +1112,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-mid-conv.html",
       "family": "service",
       "intent": "mid-conv",
-      "visible_chars": 10039,
+      "visible_chars": 10716,
       "status": "PASS",
       "failures": []
     },
@@ -1120,7 +1120,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-high-conv.html",
       "family": "service",
       "intent": "high-conv",
-      "visible_chars": 10735,
+      "visible_chars": 11413,
       "status": "PASS",
       "failures": []
     },
@@ -1128,7 +1128,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-univ-conv.html",
       "family": "service",
       "intent": "univ-conv",
-      "visible_chars": 10223,
+      "visible_chars": 10900,
       "status": "PASS",
       "failures": []
     },
@@ -1136,7 +1136,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-jobseeker-conv.html",
       "family": "service",
       "intent": "jobseeker-conv",
-      "visible_chars": 10177,
+      "visible_chars": 10854,
       "status": "PASS",
       "failures": []
     },
@@ -1144,7 +1144,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-biz-business-conv.html",
       "family": "service",
       "intent": "biz-business-conv",
-      "visible_chars": 9891,
+      "visible_chars": 10570,
       "status": "PASS",
       "failures": []
     },
@@ -1152,7 +1152,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-housewife-conv.html",
       "family": "service",
       "intent": "housewife-conv",
-      "visible_chars": 10491,
+      "visible_chars": 11167,
       "status": "PASS",
       "failures": []
     },
@@ -1160,7 +1160,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-toeic.html",
       "family": "exam",
       "intent": "toeic",
-      "visible_chars": 10374,
+      "visible_chars": 11048,
       "status": "PASS",
       "failures": []
     },
@@ -1168,7 +1168,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-toeic-speaking.html",
       "family": "exam",
       "intent": "toeic-speaking",
-      "visible_chars": 10935,
+      "visible_chars": 11612,
       "status": "PASS",
       "failures": []
     },
@@ -1176,7 +1176,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-opic.html",
       "family": "exam",
       "intent": "opic",
-      "visible_chars": 10352,
+      "visible_chars": 11026,
       "status": "PASS",
       "failures": []
     },
@@ -1184,7 +1184,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-ielts.html",
       "family": "exam",
       "intent": "ielts",
-      "visible_chars": 10999,
+      "visible_chars": 11675,
       "status": "PASS",
       "failures": []
     },
@@ -1192,7 +1192,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-duolingo.html",
       "family": "exam",
       "intent": "duolingo",
-      "visible_chars": 11111,
+      "visible_chars": 11790,
       "status": "PASS",
       "failures": []
     },
@@ -1200,7 +1200,7 @@
       "file": "chungbuk-cheongju-heungdeok-gagyeongdong-toefl.html",
       "family": "exam",
       "intent": "toefl",
-      "visible_chars": 10961,
+      "visible_chars": 11635,
       "status": "PASS",
       "failures": []
     }
