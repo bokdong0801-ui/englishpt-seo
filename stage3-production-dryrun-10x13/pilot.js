@@ -1,0 +1,1 @@
+document.addEventListener("DOMContentLoaded",()=>{document.querySelectorAll("#pilotForm").forEach(f=>f.addEventListener("submit",e=>{e.preventDefault();const s=f.querySelector(".pilot-status");if(s)s.textContent="검수용 페이지: 실제 상담 전송은 비활성화되어 있습니다. 전화 CTA만 실제 연결됩니다.";}));});
