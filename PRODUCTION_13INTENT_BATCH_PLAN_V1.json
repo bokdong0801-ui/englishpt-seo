@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "status": "STAGE2_1X13_STATIC_RENDER_HUMAN_PASS_USER_REVIEW_PENDING_NOT_PRODUCTION",
+  "status": "STAGE3_130_STATIC_DUPLICATE_RENDER_HUMAN_PASS_USER_REVIEW_PENDING_NOT_PRODUCTION",
   "created_at": "2026-09-22",
   "locality_count": 5149,
   "intent_count": 13,
@@ -19,7 +19,7 @@
     "total_pages": 30894,
     "tos_standalone": false
   },
-  "next_required_gate": "USER_REVIEW_STAGE2_EXAMPLES_THEN_STAGE3_10_LOCALITIES_X_13",
+  "next_required_gate": "USER_REVIEW_STAGE3_EXAMPLES_THEN_STAGE4_100_LOCALITIES_X_13",
   "after_row_manifest": [
     "generate 1 locality x 13 intent preview",
     "generate 10 locality x 13 intent dry-run",
@@ -51,6 +51,24 @@
     "workflow_run_id": 35698270506,
     "output_dir": "stage2-production-preview-sajik-13",
     "human_review_file": "stage2-production-preview-sajik-13/STAGE2_SAJIK_13_HUMAN_REVIEW_V1.md",
+    "production_deploy": false
+  },
+  "stage3": {
+    "status": "PASS_USER_REVIEW_PENDING",
+    "localities": 10,
+    "intents": 13,
+    "pages": 130,
+    "static_qa": "PASS",
+    "duplicate_qa": "PASS",
+    "render_qa": "PASS",
+    "human_review": "PASS",
+    "user_review": "PENDING",
+    "workflow_run_id": 35877014313,
+    "max_cosine": 0.7511,
+    "max_5_shingle_jaccard": 0.1982,
+    "render_cases": 260,
+    "output_dir": "stage3-production-dryrun-10x13",
+    "human_review_file": "stage3-production-dryrun-10x13/STAGE3_10X13_HUMAN_REVIEW_V1.md",
     "production_deploy": false
   }
 }
