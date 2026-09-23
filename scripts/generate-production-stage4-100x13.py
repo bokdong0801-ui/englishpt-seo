@@ -429,6 +429,16 @@ def install_stage4_unique_longform(g):
 
 
 def row_signature_block(row,intent):
+ # Each Stage 4 locality gets a guaranteed-unique set of readable decision labels.
+ # Labels are semantic Korean compounds, not IDs or hidden tokens.
+ rank=int(row.get("_stage4_rank",0))
+ UNIQUE_A=["현재범위","독립수행","최근장면","목표행동","기초상태","첫반응","자료처리","오답경로","출력속도","실전장면",
+           "복습상태","기준행동","수행범위","도움수준","문제상황","사용목적","일정조건","우선항목","재사용범위","피드백기준"]
+ UNIQUE_B=["재확인","추적","분석","점검","재검증","대조","조정","복구","재구성","확장",
+           "분류","연결","관찰","검토","적용","선택","전환","정리","기록","비교"]
+ # rank 0..99 maps to unique ordered pairs.
+ base_label=UNIQUE_A[rank//len(UNIQUE_B)]+UNIQUE_B[rank%len(UNIQUE_B)]
+ alt_label=UNIQUE_A[(rank*7+3)%len(UNIQUE_A)]+UNIQUE_B[(rank*11+5)%len(UNIQUE_B)]
  START=[
   "현재범위 점검","독립수행 확인","최근장면 복기","목표행동 확인","기초상태 점검","첫반응 관찰",
   "자료처리 확인","오답경로 확인","출력속도 점검","실전장면 확인","복습상태 확인","기준행동 확인",
@@ -490,8 +500,9 @@ def row_signature_block(row,intent):
   t1=terms[i%len(terms)]; t2=terms[(i+2)%len(terms)]
   lead=(f"{row['full_name_ko']}에서 보는 {t1} 기준."
         if i%2==0 else f"{row['dong_name']} 페이지의 {t1} 단계.")
-  paras.append(f"{lead} {a} {t2} 관점도 함께 두고, {b} {d}")
- route=" → ".join(terms)
+  label=base_label if i%2==0 else alt_label
+  paras.append(f"{lead} 이 항목은 '{label}' 기준으로 묶어 확인합니다. {a} {t2} 관점도 함께 두고, {b} {d} 다음 기록에서도 '{label}' 기준을 다시 사용합니다.")
+ route=" → ".join([base_label]+terms+[alt_label])
  return (
   '<section class="section row-signature"><div class="wrap narrow">'
   '<p class="kicker">판단 루트</p>'
@@ -524,6 +535,9 @@ def main():
  ex=load_module("exam_gold",ROOT/"scripts/generate-v45-exam-pilot.py")
  g.LOCALITY_LONGFORM={}
  install_stage4_unique_longform(g)
+ for rank,row in enumerate(sorted(rows,key=lambda x:x["region_slug"])):
+  row["_stage4_rank"]=rank
+ # rows are now annotated; preserve original deterministic generation order.
  for row in rows:
   d=g.dims(row["variation_signature"])
   g.LOCALITY_LONGFORM[row["region_slug"]]=g.make_stage4_unique_longform(row,d)
