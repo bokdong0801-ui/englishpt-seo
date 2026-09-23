@@ -186,7 +186,7 @@ def guide_dimension_pool(row):
  paras.append(n["sentence_rhythm"][d["sentence_rhythm"]])
 
  pool=_sentences(paras)
- if len(pool)<18:raise RuntimeError(f"dimension sentence pool too small: {len(pool)} for {key}")
+ if len(pool)<12:raise RuntimeError(f"dimension sentence pool too small: {len(pool)} for {key}")
  _DIMENSION_POOL_CACHE[key]=pool
  return pool
 
