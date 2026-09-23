@@ -204,7 +204,7 @@ def install_stage4_guide_pool(g):
 
 
 def install_stage4_unique_longform(g):
- # Row-seeded clause composition. Each sentence is assembled from short audited
+ # Row-seeded clause composition (Stage 4 rerun contract). Each sentence is assembled from short audited
  # decision-support fragments so locality pages differ in actual word order,
  # not by blind synonym replacement or fabricated local facts.
  OPEN=[
