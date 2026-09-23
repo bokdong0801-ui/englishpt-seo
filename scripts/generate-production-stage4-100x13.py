@@ -142,24 +142,49 @@ def make_longform(row,d):
 
 def install_stage4_guide_pool(g):
  n=json.loads(NARRATIVE.read_text(encoding="utf-8"))
- paragraphs=[]
- for key in ["seed_perspective_a","seed_perspective_b","seed_perspective_c","seed_perspective_d","voice_packs"]:
-  paragraphs.extend(n[key])
- # Use only complete, independently written sentences from the audited narrative library.
- bank=[]
- seen=set()
- for para in paragraphs:
-  for s in re.split(r'(?<=[.!?])\\s+',str(para).strip()):
-   s=s.strip()
-   if len(s)<28:continue
-   if s[-1] not in ".!?":s+="."
-   if s not in seen:
-    seen.add(s);bank.append(s)
- if len(bank)<80:raise RuntimeError(f"stage4 guide sentence bank too small: {len(bank)}")
+ cache={}
+ def sentence_split(paras):
+  out=[];seen=set()
+  for para in paras:
+   for s in re.split(r'(?<=[.!?])\\s+',str(para).strip()):
+    s=s.strip()
+    if len(s)<24:continue
+    if s[-1] not in ".!?":s+="."
+    if s not in seen:seen.add(s);out.append(s)
+  return out
 
- def local_sentence(row,slot):
+ def pick(arr,seed,offset,step=7):
+  base=int(hashlib.sha256(f"{seed}|{offset}".encode()).hexdigest()[:8],16)%len(arr)
+  out=[]
+  for i in range(3):
+   idx=(base+i*step)%len(arr)
+   if arr[idx] not in out:out.append(arr[idx])
+  return out
+
+ def pool(row):
+  d=row.get("_variation_dims")
+  if not d:raise RuntimeError("variation dims missing")
+  key=row["region_slug"]+"|"+row["variation_signature"]+"|"+row["content_seed"]
+  if key in cache:return cache[key]
+  seed=row["content_seed"]
+  paras=[]
+  # Keep the seven-axis meaning of the row.
+  paras.extend(n["intro_pattern"][d["intro_pattern"]])
+  paras.extend(n["section_order"][d["section_order"]])
+  paras.append(n["local_context_mode"][d["local_context_mode"]])
+  paras.append(n["case_frame"][d["case_frame"]])
+  paras.append(n["diagnosis_emphasis"][d["diagnosis_emphasis"]])
+  paras.append(n["cta_frame"][d["cta_frame"]])
+  paras.append(n["sentence_rhythm"][d["sentence_rhythm"]])
+  # Add a row-specific selection from each independent audited perspective family.
+  paras.extend(pick(n["seed_perspective_a"],seed,"a",5))
+  paras.extend(pick(n["seed_perspective_b"],seed,"b",7))
+  paras.extend(pick(n["seed_perspective_c"],seed,"c",9))
+  paras.extend(pick(n["seed_perspective_d"],seed,"d",11))
+  paras.extend(pick(n["voice_packs"],seed,"v",13))
+  # Add complete locality-safe sentences. These do not infer local behavior.
   dong=row["dong_name"];full=row["full_name_ko"];jur=row["jurisdiction_full"]
-  vals=[
+  paras.extend([
    f"{dong} 페이지에서는 확인되지 않은 지역 특성을 붙이지 않고 사용자가 가져온 자료와 일정으로 시작점을 정합니다.",
    f"{full}에서 과정을 비교할 때도 위치보다 목표 결과와 현재 수행, 피드백 방식이 실제 선택 기준이 됩니다.",
    f"{jur}라는 행정 범위는 위치를 구분하는 정보이고 수업의 우선순위는 최근 수행과 다음 일정으로 정합니다.",
@@ -167,31 +192,14 @@ def install_stage4_guide_pool(g):
    f"{full} 안내에서는 가까운 수업이라는 이유만으로 적합하다고 보지 않고 진단과 재확인 방식까지 함께 비교합니다.",
    f"{dong}에서 비용을 확인할 때는 한 회 금액보다 횟수·시간·피드백 범위·방문 또는 온라인 방식처럼 실제 조건을 나눠 봅니다.",
    f"{jur} 안에서도 대상과 목표가 다르면 같은 영어 수업을 그대로 적용하지 않고 필요한 수행을 먼저 좁힙니다.",
-   f"{dong} 페이지의 상담 준비는 많은 자료보다 최근 막힌 장면 하나와 다음 일정 하나를 정리하는 데서 시작합니다.",
-   f"{full}에서 선생님이나 수업을 비교할 때는 경력 숫자만 보지 않고 설명 뒤 혼자 다시 하게 하는지와 재점검 방식을 확인합니다.",
-   f"{dong}이라는 지역명은 검색 위치를 알려주지만 실제 학습 계획은 혼자 가능한 범위와 반복되는 병목을 기준으로 조정합니다.",
-   f"{jur} 기준 페이지에서도 확인되지 않은 학교·직장·통학 정보를 만들지 않고 사용자가 제공한 사실만 맥락으로 사용합니다.",
-   f"{dong}에서 다른 과정을 함께 볼 때는 맞는 경우뿐 아니라 더 가벼운 학습이나 다른 시험이 나은 조건도 같이 비교합니다."
-  ]
-  idx=int(hashlib.sha256(f"{row['content_seed']}|{slot}|local".encode()).hexdigest()[:8],16)%len(vals)
-  return vals[idx]
+   f"{dong} 페이지의 상담 준비는 많은 자료보다 최근 막힌 장면 하나와 다음 일정 하나를 정리하는 데서 시작합니다."
+  ])
+  sentences=sentence_split(paras)
+  if len(sentences)<35:raise RuntimeError(f"row-specific guide pool too small: {len(sentences)} {row['region_slug']}")
+  cache[key]=sentences
+  return sentences
 
- def guide(row,slot):
-  salt=row.get("_intent_salt","")
-  key=f"{row['content_seed']}|{salt}|{slot}|stage4-guide".encode("utf-8")
-  h=hashlib.sha256(key).hexdigest()
-  a=int(h[:8],16)%len(bank)
-  b=int(h[8:16],16)%len(bank)
-  if b==a:b=(b+37)%len(bank)
-  # Most slots use one independent complete sentence; selected structural slots
-  # also include a safe locality-specific decision sentence.
-  if slot%5==0:
-   return bank[a]+" "+local_sentence(row,slot)
-  if slot%7==0:
-   return local_sentence(row,slot)+" "+bank[b]
-  return bank[a]
-
- g.guide=guide
+ g.guide_dimension_pool=pool
  g._DIMENSION_POOL_CACHE.clear()
 
 def sitemap_xml(urls):
