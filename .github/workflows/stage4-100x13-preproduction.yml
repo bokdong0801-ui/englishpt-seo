@@ -1,4 +1,5 @@
 name: Stage 4 100x13 Pre-Production Batch
+# rerun: latest particle + lexical-diversity generator
 on:
   push:
     branches:
