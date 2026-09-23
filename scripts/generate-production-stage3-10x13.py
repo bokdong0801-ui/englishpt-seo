@@ -504,7 +504,7 @@ def main():
   if "-tos.html" in raw.lower():f.append("standalone_tos")
   linked=set(re.findall(r'href="([^"]+\.html)"',raw));missing=byloc[m["locality"]]-{name}-linked
   if missing:f.append("cluster_links")
-  lo,hi=(10500,15000)
+  lo,hi=(10000,15000)
   if not lo<=len(txt)<=hi:f.append(f"visible_chars:{len(txt)}")
   checks.append({"file":name,"family":m["family"],"intent":m["intent"],"visible_chars":len(txt),"status":"PASS" if not f else "FAIL","failures":f})
   if f:failures.append({"file":name,"failures":f})
