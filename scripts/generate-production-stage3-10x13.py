@@ -141,35 +141,57 @@ def dims(sig):
  vals=sig.split("|")
  if len(vals)!=7:raise RuntimeError(sig)
  return dict(zip(keys,vals))
-_GUIDE_SENTENCE_POOL=None
+_DIMENSION_POOL_CACHE={}
 
-def guide_sentence_pool():
- global _GUIDE_SENTENCE_POOL
- if _GUIDE_SENTENCE_POOL is not None:return _GUIDE_SENTENCE_POOL
- n=json.loads(NARRATIVE_PATH.read_text(encoding="utf-8"))
- raw=list(GUIDES)
- for bank in ["seed_perspective_a","seed_perspective_b","seed_perspective_c","seed_perspective_d","voice_packs"]:
-  raw.extend(n[bank])
- for group in ["intro_pattern","section_order"]:
-  for value in n[group].values():
-   raw.extend(value if isinstance(value,list) else [value])
- for group in ["local_context_mode","case_frame","sentence_rhythm","diagnosis_emphasis","cta_frame"]:
-  raw.extend(n[group].values())
- pool=[]
- seen=set()
- for para in raw:
+def _sentences(paragraphs):
+ out=[];seen=set()
+ for para in paragraphs:
   for s in re.split(r'(?<=[.!?])\\s+',str(para).strip()):
    s=s.strip()
    if len(s)<22:continue
    if s[-1] not in ".!?":s+="."
-   if s not in seen:
-    seen.add(s);pool.append(s)
- if len(pool)<150:raise RuntimeError(f"guide sentence pool too small: {len(pool)}")
- _GUIDE_SENTENCE_POOL=pool
+   if s not in seen:seen.add(s);out.append(s)
+ return out
+
+def guide_dimension_pool(row):
+ d=row.get("_variation_dims")
+ if not d:raise RuntimeError("variation dims missing from render row")
+ key="|".join(d[k] for k in ["intro_pattern","section_order","local_context_mode","case_frame","cta_frame","sentence_rhythm","diagnosis_emphasis"])
+ if key in _DIMENSION_POOL_CACHE:return _DIMENSION_POOL_CACHE[key]
+ n=json.loads(NARRATIVE_PATH.read_text(encoding="utf-8"))
+ paras=[]
+ intro_keys=list(n["intro_pattern"].keys());ii=intro_keys.index(d["intro_pattern"])
+ paras.extend(n["intro_pattern"][d["intro_pattern"]])
+ paras.append(n["voice_packs"][ii%len(n["voice_packs"])])
+
+ diag_keys=list(n["diagnosis_emphasis"].keys());di=diag_keys.index(d["diagnosis_emphasis"])
+ paras.append(n["diagnosis_emphasis"][d["diagnosis_emphasis"]])
+ paras.append(n["seed_perspective_c"][di%len(n["seed_perspective_c"])])
+ paras.append(n["seed_perspective_c"][(di+8)%len(n["seed_perspective_c"])])
+
+ case_keys=list(n["case_frame"].keys());ci=case_keys.index(d["case_frame"])
+ paras.append(n["case_frame"][d["case_frame"]])
+ paras.append(n["seed_perspective_a"][ci%len(n["seed_perspective_a"])])
+ paras.append(n["seed_perspective_a"][(ci+6)%len(n["seed_perspective_a"])])
+
+ cta_keys=list(n["cta_frame"].keys());ti=cta_keys.index(d["cta_frame"])
+ paras.append(n["cta_frame"][d["cta_frame"]])
+ paras.append(n["seed_perspective_d"][ti%len(n["seed_perspective_d"])])
+ paras.append(n["seed_perspective_d"][(ti+7)%len(n["seed_perspective_d"])])
+
+ order_keys=list(n["section_order"].keys());oi=order_keys.index(d["section_order"])
+ paras.extend(n["section_order"].get(d["section_order"],[]))
+ paras.append(n["seed_perspective_b"][oi%len(n["seed_perspective_b"])])
+ paras.append(n["local_context_mode"][d["local_context_mode"]])
+ paras.append(n["sentence_rhythm"][d["sentence_rhythm"]])
+
+ pool=_sentences(paras)
+ if len(pool)<18:raise RuntimeError(f"dimension sentence pool too small: {len(pool)} for {key}")
+ _DIMENSION_POOL_CACHE[key]=pool
  return pool
 
 def guide(row,slot):
- pool=guide_sentence_pool()
+ pool=guide_dimension_pool(row)
  salt=row.get("_intent_salt","")
  key=f"{row['content_seed']}|{salt}|{slot}".encode("utf-8")
  idx=int(hashlib.sha256(key).hexdigest()[:12],16)%len(pool)
@@ -315,6 +337,7 @@ def faq_block(scene_titles,priority,proof,boundary,row,d):
 def render_page(row,d,intent,family,facts,svc,ex):
  row=dict(row)
  row["_intent_salt"]=intent
+ row["_variation_dims"]=d
  slug=row["region_slug"];dong=row["dong_name"]
  if family=="service":
   p=facts
