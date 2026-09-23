@@ -227,42 +227,42 @@ def variation_story(row,d,service):
  parts.append(n["diagnosis_emphasis"][d["diagnosis_emphasis"]])
  parts.extend(n["section_order"].get(d["section_order"],[]))
  parts.append(n["cta_frame"][d["cta_frame"]])
-  seed=row["content_seed"]
-  perspective_specs=[
-   ("seed_perspective_a",0,"현재 수행을 읽는 관점"),
-   ("seed_perspective_b",2,"페이지 정보를 판단하는 관점"),
-   ("seed_perspective_c",4,"근거와 계획을 보는 관점"),
-   ("seed_perspective_d",6,"결정과 상담을 연결하는 관점"),
-  ]
-  seeded=[];seeded_titles=[]
-  for bank,offset,title in perspective_specs:
-   arr=n[bank];idx=int(seed[offset:offset+2],16)%len(arr)
-   seeded.append(arr[idx]);seeded_titles.append(title)
-  parts.extend(seeded)
+ seed=row["content_seed"]
+ perspective_specs=[
+  ("seed_perspective_a",0,"현재 수행을 읽는 관점"),
+  ("seed_perspective_b",2,"페이지 정보를 판단하는 관점"),
+  ("seed_perspective_c",4,"근거와 계획을 보는 관점"),
+  ("seed_perspective_d",6,"결정과 상담을 연결하는 관점"),
+ ]
+ seeded=[];seeded_titles=[]
+ for bank,offset,title in perspective_specs:
+  arr=n[bank];idx=int(seed[offset:offset+2],16)%len(arr)
+  seeded.append(arr[idx]);seeded_titles.append(title)
+ parts.extend(seeded)
 
-  voice=n["voice_packs"]
-  raw_ids=[
-   int(seed[8:10],16)%len(voice),
-   int(seed[10:12],16)%len(voice),
-   int(seed[12:14],16)%len(voice),
-   int(seed[14:16],16)%len(voice),
-   int(seed[0:2],16)%len(voice),
-   int(seed[6:8],16)%len(voice),
-  ]
-  chosen=[]
-  for idx in raw_ids:
-   while idx in chosen:idx=(idx+1)%len(voice)
-   chosen.append(idx)
-  parts.extend(voice[idx] for idx in chosen)
-  titles=[
-   "현재를 보는 관점","수업을 고르는 관점","지역과 생활 맥락","연습 전후 비교",
-   "설명 방식","진단 초점","정보를 배열하는 순서","선택을 좁히는 순서","상담으로 연결하는 기준",
-  ]+seeded_titles+[
-   "독립 서술 관점 1","독립 서술 관점 2","독립 서술 관점 3",
-   "독립 서술 관점 4","독립 서술 관점 5","독립 서술 관점 6",
-  ]
-  if len(parts)!=len(titles):raise RuntimeError(f"variation story mismatch: {len(parts)} vs {len(titles)}")
-  return '<section class="section variation-story"><div class="wrap narrow"><p class="kicker">판단 가이드</p><h2>'+esc(service)+'를 실제 일정에 연결하는 방법</h2>'+''.join(f'<article><b>{esc(t)}</b><p>{esc(p)}</p></article>' for t,p in zip(titles,parts))+'</div></section>'
+ voice=n["voice_packs"]
+ raw_ids=[
+  int(seed[8:10],16)%len(voice),
+  int(seed[10:12],16)%len(voice),
+  int(seed[12:14],16)%len(voice),
+  int(seed[14:16],16)%len(voice),
+  int(seed[0:2],16)%len(voice),
+  int(seed[6:8],16)%len(voice),
+ ]
+ chosen=[]
+ for idx in raw_ids:
+  while idx in chosen:idx=(idx+1)%len(voice)
+  chosen.append(idx)
+ parts.extend(voice[idx] for idx in chosen)
+ titles=[
+  "현재를 보는 관점","수업을 고르는 관점","지역과 생활 맥락","연습 전후 비교",
+  "설명 방식","진단 초점","정보를 배열하는 순서","선택을 좁히는 순서","상담으로 연결하는 기준",
+ ]+seeded_titles+[
+  "독립 서술 관점 1","독립 서술 관점 2","독립 서술 관점 3",
+  "독립 서술 관점 4","독립 서술 관점 5","독립 서술 관점 6",
+ ]
+ if len(parts)!=len(titles):raise RuntimeError(f"variation story mismatch: {len(parts)} vs {len(titles)}")
+ return '<section class="section variation-story"><div class="wrap narrow"><p class="kicker">판단 가이드</p><h2>'+esc(service)+'를 실제 일정에 연결하는 방법</h2>'+''.join(f'<article><b>{esc(t)}</b><p>{esc(p)}</p></article>' for t,p in zip(titles,parts))+'</div></section>'
 
 def deep_block(scene_titles,priority,boundary,service,row,d):
  topics=[
