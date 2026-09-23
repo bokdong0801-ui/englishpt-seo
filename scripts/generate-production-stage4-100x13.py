@@ -13,7 +13,7 @@ Safety:
 - no production deploy
 """
 from __future__ import annotations
-import html, importlib.util, json, math, re, shutil
+import hashlib, html, importlib.util, json, math, re, shutil
 from collections import Counter, defaultdict
 from itertools import combinations
 from pathlib import Path
