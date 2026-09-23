@@ -11,7 +11,7 @@ priority -> training flow -> mid CTA -> proof -> sample feedback ->
 Safety: noindex, no live lead submission, no sitemap, no main merge, no production deploy.
 """
 from __future__ import annotations
-import html, importlib.util, json, math, re, shutil
+import hashlib, html, importlib.util, json, math, re, shutil
 from collections import Counter, defaultdict
 from itertools import combinations
 from pathlib import Path
@@ -141,10 +141,39 @@ def dims(sig):
  vals=sig.split("|")
  if len(vals)!=7:raise RuntimeError(sig)
  return dict(zip(keys,vals))
-def seed_int(row,slot):
- return int(row["content_seed"][slot%12:slot%12+4] or row["content_seed"][:4],16)
+_GUIDE_SENTENCE_POOL=None
+
+def guide_sentence_pool():
+ global _GUIDE_SENTENCE_POOL
+ if _GUIDE_SENTENCE_POOL is not None:return _GUIDE_SENTENCE_POOL
+ n=json.loads(NARRATIVE_PATH.read_text(encoding="utf-8"))
+ raw=list(GUIDES)
+ for bank in ["seed_perspective_a","seed_perspective_b","seed_perspective_c","seed_perspective_d","voice_packs"]:
+  raw.extend(n[bank])
+ for group in ["intro_pattern","section_order"]:
+  for value in n[group].values():
+   raw.extend(value if isinstance(value,list) else [value])
+ for group in ["local_context_mode","case_frame","sentence_rhythm","diagnosis_emphasis","cta_frame"]:
+  raw.extend(n[group].values())
+ pool=[]
+ seen=set()
+ for para in raw:
+  for s in re.split(r'(?<=[.!?])\\s+',str(para).strip()):
+   s=s.strip()
+   if len(s)<22:continue
+   if s[-1] not in ".!?":s+="."
+   if s not in seen:
+    seen.add(s);pool.append(s)
+ if len(pool)<150:raise RuntimeError(f"guide sentence pool too small: {len(pool)}")
+ _GUIDE_SENTENCE_POOL=pool
+ return pool
+
 def guide(row,slot):
- return GUIDES[(seed_int(row,slot)+slot*7)%len(GUIDES)]
+ pool=guide_sentence_pool()
+ salt=row.get("_intent_salt","")
+ key=f"{row['content_seed']}|{salt}|{slot}".encode("utf-8")
+ idx=int(hashlib.sha256(key).hexdigest()[:12],16)%len(pool)
+ return pool[idx]
 
 def rhythm(d,slot):
  arr=RHYTHM[d["sentence_rhythm"]]
@@ -284,6 +313,8 @@ def faq_block(scene_titles,priority,proof,boundary,row,d):
  return '<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>선택 전에 확인할 질문</h2><div class="faq">'+''.join(f'<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>' for q,a in qas)+'</div></div></section>'
 
 def render_page(row,d,intent,family,facts,svc,ex):
+ row=dict(row)
+ row["_intent_salt"]=intent
  slug=row["region_slug"];dong=row["dong_name"]
  if family=="service":
   p=facts
