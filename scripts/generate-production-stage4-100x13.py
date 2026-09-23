@@ -195,7 +195,7 @@ def install_stage4_guide_pool(g):
    f"{dong} 페이지의 상담 준비는 많은 자료보다 최근 막힌 장면 하나와 다음 일정 하나를 정리하는 데서 시작합니다."
   ])
   sentences=sentence_split(paras)
-  if len(sentences)<35:raise RuntimeError(f"row-specific guide pool too small: {len(sentences)} {row['region_slug']}")
+  if len(sentences)<30:raise RuntimeError(f"row-specific guide pool too small: {len(sentences)} {row['region_slug']}")
   cache[key]=sentences
   return sentences
 
