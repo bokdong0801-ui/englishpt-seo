@@ -257,6 +257,23 @@ def install_stage4_guide_pool(g):
    return "은" if (ord(last)-0xAC00)%28 else "는"
   return "은"
 
+ SIG_PREFIX=[
+  "현재범위","독립수행","최근장면","목표행동","기초상태","첫반응","자료처리","오답경로","출력속도","실전장면",
+  "복습상태","기준행동","수행범위","도움수준","문제상황","사용목적","일정조건","우선항목","재사용범위","피드백기준",
+  "근거설명","질문대응","시간배분","자료적용"
+ ]
+ SIG_SUFFIX=[
+  "점검","확인","복기","정리","비교","추적","분해","대조","검토","재검증","기록","재확인",
+  "적용","선택","조정","관찰","검증","분류","재점검","연결","복구","전환","재구성","확장"
+ ]
+
+ def signature_term(row,slot):
+  seed=f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|signature"
+  h=hashlib.sha256(seed.encode()).hexdigest()
+  a=SIG_PREFIX[int(h[:10],16)%len(SIG_PREFIX)]
+  b=SIG_SUFFIX[int(h[10:20],16)%len(SIG_SUFFIX)]
+  return a+b
+
  def guide(row,slot):
   topic=TOPIC[int(hashlib.sha256(f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|topic".encode()).hexdigest()[:12],16)%len(TOPIC)]
   observe=lex(row,OBSERVE,"observe")
@@ -266,18 +283,20 @@ def install_stage4_guide_pool(g):
   plan=lex(row,PLAN,"plan")
   close=lex(row,CLOSE,"close")
   dong=row["dong_name"]
+  sig=signature_term(row,slot)
+  stamp=f" 기준 메모는 '{sig}' 항목으로 남깁니다."
   mode=slot%6
   if mode==0:
-   return f"{dong} 안내에서는 {topic}에 대해 {observe}. 이후에는 {verify}. {close}."
+   return f"{dong} 안내에서는 {topic}에 대해 {observe}. 이후에는 {verify}. {close}."+stamp
   if mode==1:
-   return f"{topic} 기준으로 {compare}. 확인 결과는 {record}. {close}."
+   return f"{topic} 기준으로 {compare}. 확인 결과는 {record}. {close}."+stamp
   if mode==2:
-   return f"{topic}부터 {observe}. 그 결과를 바탕으로 {plan}. 다음에는 {verify}."
+   return f"{topic}부터 {observe}. 그 결과를 바탕으로 {plan}. 다음에는 {verify}."+stamp
   if mode==3:
-   return f"{dong} 페이지에서는 {topic}{obj_josa(topic)} 중심으로 보기보다 해당 항목을 다른 기준과 함께 봅니다. {compare}. {close}."
+   return f"{dong} 페이지에서는 {topic}{obj_josa(topic)} 중심으로 보기보다 해당 항목을 다른 기준과 함께 봅니다. {compare}. {close}."+stamp
   if mode==4:
-   return f"{topic}{subj_josa(topic)} {record}. 당장 필요한 범위는 {plan}. 이후에는 {verify}."
-  return f"{topic}에 대해 {observe}. 수업이나 상담에서는 {compare}. 결과에 따라 {plan}."
+   return f"{topic}{subj_josa(topic)} {record}. 당장 필요한 범위는 {plan}. 이후에는 {verify}."+stamp
+  return f"{topic}에 대해 {observe}. 수업이나 상담에서는 {compare}. 결과에 따라 {plan}."+stamp
 
  g.guide=guide
 
