@@ -257,16 +257,20 @@ def feedback_block(titles,row,d):
   out.append(f'<article class="card"><b>기록 예시 {i+1}</b><p>{esc(msg)}</p></article>')
  return ''.join(out)
 
-def decision_guide(intent,service):
+def decision_guide(intent,service,row,d):
  ds=json.loads(DECISION_SUPPORT_PATH.read_text(encoding="utf-8"))["intents"][intent]
- vals=[
-  ("이런 경우 잘 맞습니다",ds["fit"]),
-  ("이런 경우엔 다른 선택도 비교하세요",ds["alternative"]),
-  ("비용을 좌우하는 4가지",ds["cost_factors"]+" · 구체 금액은 상담에서 안내"),
-  ("선생님·수업은 이렇게 비교하세요",ds["teacher_or_class_selection"]),
-  ("상담 전에 준비하실 것",ds["consult_preparation"]),
+ styles=[
+  (["이런 경우 잘 맞습니다","이런 경우엔 다른 선택도 비교하세요","비용을 좌우하는 4가지","선생님·수업은 이렇게 비교하세요","상담 전에 준비하실 것"],"등록 전에 다섯 가지 판단 기준을 확인하세요"),
+  (["내 상황과 맞는 신호","다른 경로를 먼저 볼 신호","비용이 달라지는 조건","수업 비교 포인트","미리 준비할 자료"],"비교할 때는 홍보문구보다 아래 기준을 먼저 보세요"),
+  (["이 과정이 필요한 경우","다른 선택이 더 직접적인 경우","비용 결정 요소","선생님·수업 확인 항목","상담 전 체크자료"],"지금 목표와 맞는 과정인지 다섯 항목으로 좁혀봅니다"),
+  (["적합한 상황","비교가 필요한 상황","비용 변수","수업 선택 기준","상담 준비"],"결정하기 전에 맞는 경우와 다른 선택을 함께 확인합니다"),
  ]
- return '<section class="section decision-guide"><div class="wrap narrow"><p class="kicker">선택 기준</p><h2>'+esc(service)+' 선택 전에, 이 다섯 가지를 먼저 확인하세요</h2><div class="decision-list">'+''.join(f'<div><b>◆ {esc(a)}</b><p>{esc(b)}</p></div>' for a,b in vals)+'</div></div></section>'
+ idx=int(hashlib.sha256((row["content_seed"]+"|decision-labels").encode()).hexdigest()[:8],16)%len(styles)
+ labels,heading=styles[idx]
+ bodies=[ds["fit"],ds["alternative"],ds["cost_factors"]+" · 구체 금액은 상담에서 안내",ds["teacher_or_class_selection"],ds["consult_preparation"]]
+ vals=list(zip(labels,bodies))
+ lead=guide(row,104)
+ return '<section class="section decision-guide"><div class="wrap narrow"><p class="kicker">선택 기준</p><h2>'+esc(heading)+'</h2><p>'+esc(lead)+'</p><div class="decision-list">'+''.join(f'<div><b>◆ {esc(a)}</b><p>{esc(b)}</p></div>' for a,b in vals)+'</div></div></section>'
 
 def variation_story(row,d,service):
  n=json.loads(NARRATIVE_PATH.read_text(encoding="utf-8"))
@@ -274,36 +278,20 @@ def variation_story(row,d,service):
  parts.extend(n["intro_pattern"][d["intro_pattern"]])
  parts.append(n["local_context_mode"][d["local_context_mode"]])
  parts.append(n["case_frame"][d["case_frame"]])
- parts.append(n["sentence_rhythm"][d["sentence_rhythm"]])
  parts.append(n["diagnosis_emphasis"][d["diagnosis_emphasis"]])
  parts.extend(n["section_order"].get(d["section_order"],[]))
- parts.append(n["cta_frame"][d["cta_frame"]])
  seed=row["content_seed"]
- seeded_specs=[
-  ("seed_perspective_b",2,"페이지 정보를 판단하는 관점"),
-  ("seed_perspective_d",6,"결정과 상담을 연결하는 관점"),
- ]
- seeded=[];seeded_titles=[]
- for bank,offset,title in seeded_specs:
-  arr=n[bank];idx=int(seed[offset:offset+2],16)%len(arr)
-  seeded.append(arr[idx]);seeded_titles.append(title)
- parts.extend(seeded)
+ arr=n["seed_perspective_b"]
+ seeded=arr[int(seed[2:4],16)%len(arr)]
+ parts.append(seeded)
  intro_keys=list(n["intro_pattern"].keys())
- base_voice=intro_keys.index(d["intro_pattern"])%len(n["voice_packs"])
- raw_ids=[
-  base_voice,
-  int(seed[8:10],16)%len(n["voice_packs"]),
-  int(seed[12:14],16)%len(n["voice_packs"]),
- ]
- chosen=[]
- for idx in raw_ids:
-  while idx in chosen:idx=(idx+1)%len(n["voice_packs"])
-  chosen.append(idx)
- parts.extend(n["voice_packs"][idx] for idx in chosen)
+ voice_idx=intro_keys.index(d["intro_pattern"])%len(n["voice_packs"])
+ parts.append(n["voice_packs"][voice_idx])
  titles=[
   "현재를 보는 관점","수업을 고르는 관점","지역과 생활 맥락","연습 전후 비교",
-  "설명 방식","진단 초점","정보를 배열하는 순서","선택을 좁히는 순서","상담으로 연결하는 기준",
- ]+seeded_titles+["독립 서술 관점 1","독립 서술 관점 2","독립 서술 관점 3"]
+  "진단 초점","정보를 배열하는 순서","선택을 좁히는 순서",
+  "페이지 정보를 판단하는 관점","독립 서술 관점",
+ ]
  if len(parts)!=len(titles):raise RuntimeError(f"variation story mismatch: {len(parts)} vs {len(titles)}")
  return '<section class="section variation-story"><div class="wrap narrow"><p class="kicker">판단 가이드</p><h2>'+esc(service)+'를 실제 일정에 연결하는 방법</h2>'+''.join(f'<article><b>{esc(t)}</b><p>{esc(p)}</p></article>' for t,p in zip(titles,parts))+'</div></section>'
 
@@ -317,14 +305,23 @@ def deep_block(scene_titles,priority,boundary,service,row,d):
  return '<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>'+esc(service)+' 선택 전에 확인할 기준</h2><div class="grid4">'+''.join(f'<article class="card"><b>{esc(t)}</b><p>{esc(p)}</p></article>' for t,p in topics)+'</div></div></section>'
 
 def faq_block(scene_titles,priority,proof,boundary,row,d):
- qas=[
-  ("무엇부터 시작하면 되나요?",f"첫 우선순위는 '{priority[0]}'입니다. {guide(row,85)}"),
-  ("현재 상태는 어떻게 확인하나요?",guide(row,87)),
-  ("수업 뒤에는 무엇을 기록하나요?",f"'{proof[0]}'을 다음 확인 기준으로 남깁니다. {guide(row,89)}"),
-  ("다른 과정이나 시험이 더 맞을 수도 있나요?",f"{boundary} {guide(row,91)}"),
-  ("변화는 어떻게 다시 확인하나요?",f"'{scene_titles[-1]}' 장면을 다시 만들고 {guide(row,93)}"),
+ styles=[
+  ("선택 전에 확인할 질문",["무엇부터 시작하면 되나요?","현재 상태는 어떻게 확인하나요?","수업 뒤에는 무엇을 기록하나요?","다른 과정이나 시험도 비교해야 하나요?","변화는 어떻게 다시 확인하나요?"]),
+  ("결정 전에 자주 확인하는 내용",["첫 순서는 어떻게 정하나요?","지금 가능한 범위는 어떻게 보나요?","수업 기록에는 무엇이 남나요?","다른 선택을 먼저 볼 때는 언제인가요?","다음 점검은 어떻게 하나요?"]),
+  ("내 상황에 맞는지 확인하는 질문",["가장 먼저 볼 항목은 무엇인가요?","현재 범위는 어디까지 확인하나요?","피드백은 어떤 기준으로 남기나요?","이 과정이 아니어도 되는 경우가 있나요?","새 조건에서는 무엇을 다시 보나요?"]),
+  ("상담 전 스스로 점검할 질문",["첫 우선순위는 무엇인가요?","혼자 되는 범위는 어떻게 확인하나요?","수업 후 어떤 기록이 필요한가요?","다른 경로와 비교할 기준은 무엇인가요?","다음 장면에서 무엇을 재확인하나요?"]),
  ]
- return '<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>선택 전에 확인할 질문</h2><div class="faq">'+''.join(f'<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>' for q,a in qas)+'</div></div></section>'
+ idx=int(hashlib.sha256((row["content_seed"]+"|faq-style").encode()).hexdigest()[:8],16)%len(styles)
+ heading,questions=styles[idx]
+ answers=[
+  f"첫 우선순위는 '{priority[0]}'입니다. {guide(row,85)}",
+  guide(row,87),
+  f"'{proof[0]}'을 다음 확인 기준으로 남깁니다. {guide(row,89)}",
+  f"{guide(row,91)} 앞부분의 '다른 선택' 기준과 함께 비교하면 됩니다.",
+  f"'{scene_titles[-1]}' 장면을 다시 만들고 {guide(row,93)}",
+ ]
+ qas=list(zip(questions,answers))
+ return '<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>'+esc(heading)+'</h2><div class="faq">'+''.join(f'<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>' for q,a in qas)+'</div></div></section>'
 
 def render_page(row,d,intent,family,facts,svc,ex):
  row=dict(row)
@@ -336,14 +333,16 @@ def render_page(row,d,intent,family,facts,svc,ex):
   service=p["service_h1"];service_body=p["service_body"];question=p["intro_q"];priority=p["priority"];boundary=p["boundary"]
   cards,steps,_proofs,_feedback=svc.extract_source(ROOT/"pilot-v45-5x7"/f"seoul-seocho-naegokdong-{intent}.html")
   scene_titles=[x[0] for x in cards];proof=priority
-  context_title="현재 영어를 한 수준으로 묶지 않습니다"
-  context_text=f"{guide(row,20)} {guide(row,72)}"
+  context_title=DIAG[d["diagnosis_emphasis"]].split(".")[0]
+  context_text=f"{CONTEXT[d['local_context_mode']]} {guide(row,20)} {guide(row,72)}"
+  context_extra=""
  else:
   e=facts
   service=e["service"];service_body=e["service"];question=e["first_question"];priority=e["priority"];boundary=e["boundary"]
   scene_titles=[x[0] for x in e["scenes"]];steps=e["flow"];proof=e["proof"]
-  context_title="시험 구조와 개인 병목을 따로 봅니다"
-  context_text=f"확인 항목은 {' · '.join(e['diagnosis'])}입니다. {guide(row,20)} {guide(row,72)}"
+  context_title=DIAG[d["diagnosis_emphasis"]].split(".")[0]
+  context_text=f"{CONTEXT[d['local_context_mode']]} {guide(row,20)} {guide(row,72)}"
+  context_extra='<p class="mini-note">확인 항목 · '+esc(" · ".join(e["diagnosis"]))+'</p>'
 
  h1=f"{dong} {service}"
  canonical=f"https://englishpt.kr/{slug}-{intent}.html"
@@ -364,8 +363,8 @@ def render_page(row,d,intent,family,facts,svc,ex):
 {decision_strip(d,family)}
 <section id="detail" class="section"><div class="wrap narrow"><p class="kicker">{'시험 목표' if family=='exam' else '지금 상황'}</p><h2>{esc(question)}</h2><p>{esc(intro1)}</p><p>{esc(intro2)}</p><p>{esc(guide(row,0))}</p></div></section>
 <section class="section soft"><div class="wrap"><p class="kicker">자기상황 식별</p><h2>내 상황과 가까운 장면부터 확인합니다</h2><div class="grid4">{scene_cards(scene_titles,row,d)}</div></div></section>
-{decision_guide(intent,service)}
-<section class="section"><div class="wrap narrow"><p class="kicker">{'시험 맥락 이해' if family=='exam' else '학습 맥락 이해'}</p><h2>{esc(context_title)}</h2><p>{esc(context_text)}</p><p>{esc(CASE[d["case_frame"]])}</p></div></section>
+{decision_guide(intent,service,row,d)}
+<section class="section"><div class="wrap narrow"><p class="kicker">{'시험 맥락 이해' if family=='exam' else '학습 맥락 이해'}</p><h2>{esc(context_title)}</h2><p>{esc(context_text)}</p>{context_extra}</div></section>
 {variation_story(row,d,service)}
 <section class="section soft"><div class="wrap"><p class="kicker">우선순위</p><h2>{esc(INTRO[d["intro_pattern"]].split(".")[0])}에서 무엇부터 볼지 정합니다</h2><ul class="proofs">{priority_block(priority,row,d)}</ul></div></section>
 <section class="section dark"><div class="wrap"><p class="kicker">수업 흐름</p><h2>설명에서 끝내지 않고 실제 행동으로 다시 확인합니다</h2><ol class="steps">{flow_block(steps,row,d)}</ol></div></section>
@@ -427,7 +426,7 @@ def main():
   if "-tos.html" in raw.lower():f.append("standalone_tos")
   linked=set(re.findall(r'href="([^"]+\.html)"',raw));missing=byloc[m["locality"]]-{name}-linked
   if missing:f.append("cluster_links")
-  lo,hi=(7200,11000)
+  lo,hi=(7200,10500)
   if not lo<=len(txt)<=hi:f.append(f"visible_chars:{len(txt)}")
   checks.append({"file":name,"family":m["family"],"intent":m["intent"],"visible_chars":len(txt),"status":"PASS" if not f else "FAIL","failures":f})
   if f:failures.append({"file":name,"failures":f})
