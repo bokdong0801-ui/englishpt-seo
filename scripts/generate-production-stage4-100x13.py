@@ -202,6 +202,84 @@ def install_stage4_guide_pool(g):
  g.guide_dimension_pool=pool
  g._DIMENSION_POOL_CACHE.clear()
 
+
+def install_stage4_unique_longform(g):
+ # Row-seeded clause composition. Each sentence is assembled from short audited
+ # decision-support fragments so locality pages differ in actual word order,
+ # not by blind synonym replacement or fabricated local facts.
+ OPEN=[
+  "검색 위치를 확인한 뒤","첫 판단에서는","과정을 비교할 때","상담 전에","수업 계획을 잡을 때",
+  "가까운 일정을 기준으로","현재 상태를 나눌 때","다른 선택과 비교할 때","피드백을 볼 때","다음 재확인을 정할 때",
+  "학습 범위를 좁힐 때","실제 사용 장면을 고를 때","비용과 운영 방식을 볼 때","선생님 수업을 비교할 때","목표가 여러 개라면",
+  "시간이 부족한 경우","이미 되는 부분이 있다면","반복 오류가 보인다면","설명 뒤 다시 확인할 때","새 자료로 옮겨볼 때"
+ ]
+ FOCUS=[
+  "최근 혼자 처리한 범위","가장 자주 멈춘 행동","다음 일정에 직접 필요한 수행","도움이 줄어도 유지되는 기능",
+  "반복해서 흔들리는 조건","이미 안정된 영역","실전에서 필요한 첫 반응","시간 압박에서 무너지는 지점",
+  "질문이 바뀌면 달라지는 부분","설명 없이 다시 가능한 범위","이번에 제외해도 되는 목표","다른 과정이 더 직접적인 조건",
+  "피드백 뒤 다시 볼 행동","자료가 달라도 유지되는 기준","복습 가능한 실제 시간","가장 가까운 결과에 영향을 주는 항목",
+  "한 번 성공한 뒤 재현되는지","힌트가 줄어도 수정되는지","실제 제출이나 사용 조건","다음 수업에서 확인할 증거"
+ ]
+ ACTION=[
+  "먼저 표시하고","둘로 나눈 뒤","우선순위로 올리고","별도 기록으로 남기고","실제 자료에서 확인하고",
+  "같은 조건에서 비교하고","새 질문으로 다시 확인하고","시간을 재서 점검하고","도움의 양을 줄여보고","다른 선택과 함께 비교하고",
+  "이번 계획의 중심으로 두고","유지 확인만 남기고","과제 범위에서 제외하고","상담 질문으로 바꾸고","다음 점검 항목으로 정하고",
+  "짧은 수행으로 재현하고","전후 조건을 맞춰 비교하고","실전 순서에 넣어보고","복습 단위로 줄이고","다음 일정과 연결하고"
+ ]
+ REASON=[
+  "불필요한 범위를 늘리지 않습니다","설명 직후의 성공을 변화로 과장하지 않습니다","지금 필요한 지원 강도를 구분할 수 있습니다",
+  "가격만으로 수업을 비교하지 않게 됩니다","현재 목표와 맞지 않는 과정을 걸러낼 수 있습니다","이미 되는 내용을 처음부터 반복하지 않습니다",
+  "실제 사용 가능성을 더 정확히 볼 수 있습니다","다음 상담에서 질문이 구체적으로 바뀝니다","학습량보다 순서를 조정할 수 있습니다",
+  "마감과 장기 기초를 한 계획에 섞지 않습니다","수업 뒤 무엇이 남는지 확인할 수 있습니다","다른 자료에서도 같은 기준이 남는지 볼 수 있습니다",
+  "혼자 가능한 범위가 늘었는지 비교할 수 있습니다","피드백이 진도 보고로 끝나는 것을 줄입니다","다음 단계로 넘어갈 근거가 생깁니다",
+  "새 내용을 더할지 기존 내용을 다시 볼지 정하기 쉽습니다","실제 운영 방식의 차이를 확인할 수 있습니다","목표에 맞는 자료를 고르기 쉬워집니다",
+  "한 번의 결과보다 반복 가능성을 보게 됩니다","상담을 등록 권유가 아니라 판단 단계로 사용할 수 있습니다"
+ ]
+ FOLLOW=[
+  "그 다음에는","이후에는","다음 확인에서는","수업 중에는","수업 뒤에는",
+  "새 조건에서는","상담에서는","비교 단계에서는","마감이 가까워지면","일정이 끝난 뒤에는",
+  "복습할 때는","자료를 바꾸면","질문이 달라지면","시간을 줄이면","도움을 줄이면",
+  "다른 과정을 볼 때는","비용을 확인할 때는","선생님을 비교할 때는","다음 주에는","실전 직전에는"
+ ]
+ SECOND=[
+  "같은 기능이 다시 나오는지 확인합니다","필요한 힌트가 줄었는지 봅니다","처리 시간이 어떻게 달라졌는지 기록합니다",
+  "근거를 스스로 설명할 수 있는지 봅니다","첫 반응이 더 빨라졌는지 확인합니다","완결성이 유지되는지 다시 봅니다",
+  "새 문제에서도 같은 오류가 반복되는지 확인합니다","익숙한 예시 없이도 다시 되는지 봅니다","현재 목표와 연결되지 않는 범위는 미룹니다",
+  "장기 보완 항목을 따로 남깁니다","실제 포함되는 피드백 범위를 확인합니다","방문과 온라인 방식의 운영 차이를 확인합니다",
+  "자료 첨삭과 재답변이 어디까지 포함되는지 묻습니다","스스로 계획할 수 있다면 더 가벼운 방식도 비교합니다","점수와 실제 수행을 한 기준으로 묶지 않습니다",
+  "사용자가 제공한 사실만 맥락으로 씁니다","확인되지 않은 학교나 생활 특성을 붙이지 않습니다","다음 일정에 직접 필요한 행동만 남깁니다",
+  "비슷한 난도의 새 자료로 다시 점검합니다","재점검 시점을 미리 정해 둡니다"
+ ]
+ END=[
+  "이 순서가 맞으면 다음 항목으로 이동합니다","조건이 달라지면 계획도 조정합니다","필요하면 다른 과정과 함께 비교합니다",
+  "결과는 다음 재확인 기록으로 남깁니다","잘되는 부분은 유지 확인으로 넘깁니다","남은 병목만 다음 수업으로 가져갑니다",
+  "구체 금액은 실제 운영 조건을 확인한 뒤 비교합니다","선생님 선택도 이 기준으로 질문합니다","수업 횟수보다 실제 재현 여부를 먼저 봅니다",
+  "마감 뒤 장기 계획은 별도로 이어갑니다","한 번의 성공만으로 범위를 넓히지 않습니다","비교 기준이 부족하면 상담에서 먼저 확인합니다",
+  "자료가 많아도 필요한 것만 남깁니다","시간이 부족하면 영역 수를 줄입니다","학습 공백이 있어도 마지막 안정 지점에서 다시 시작합니다",
+  "목표가 바뀌면 비중을 다시 조정합니다","실전 조건이 바뀌면 재검사 항목도 바꿉니다","사용 장면이 달라지면 필요한 출력 기준도 조정합니다",
+  "이미 충분한 부분은 과감히 덜어냅니다","다음 행동이 분명해질 때 계획을 확정합니다"
+ ]
+
+ def pick(row,slot,arr,salt):
+  h=hashlib.sha256(f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|{salt}".encode()).hexdigest()
+  return arr[int(h[:12],16)%len(arr)]
+
+ def unique_paragraph(row,slot):
+  dong=row["dong_name"]; full=row["full_name_ko"]
+  s1=(f"{dong}에서 {pick(row,slot,OPEN,'o')} "
+      f"{pick(row,slot,FOCUS,'f')}을 {pick(row,slot,ACTION,'a')} "
+      f"{pick(row,slot,REASON,'r')}.")
+  s2=(f"{pick(row,slot,FOLLOW,'w')} {pick(row,slot,FOCUS,'f2')}을 "
+      f"{pick(row,slot,ACTION,'a2')} {pick(row,slot,SECOND,'s')}.")
+  s3=(f"{full} 안내에서도 {pick(row,slot,END,'e')}.")
+  return s1+" "+s2+" "+s3
+
+ def make(row,d):
+  # 12 paragraphs; every paragraph has row+intent-seeded clause choices.
+  return [unique_paragraph(row,i) for i in range(12)]
+
+ g.make_stage4_unique_longform=make
+
 def sitemap_xml(urls):
  body="".join(f"<url><loc>{xml_escape(u)}</loc></url>" for u in urls)
  return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+body+"</urlset>\n"
@@ -224,9 +302,10 @@ def main():
  svc=load_module("service_gold",ROOT/"scripts/generate-v45-full-depth-pilot.py")
  ex=load_module("exam_gold",ROOT/"scripts/generate-v45-exam-pilot.py")
  g.LOCALITY_LONGFORM={}
+ install_stage4_unique_longform(g)
  for row in rows:
   d=g.dims(row["variation_signature"])
-  g.LOCALITY_LONGFORM[row["region_slug"]]=make_longform(row,d)
+  g.LOCALITY_LONGFORM[row["region_slug"]]=g.make_stage4_unique_longform(row,d)
 
  OUT.mkdir(parents=True,exist_ok=True)
  shutil.copy2(ROOT/"stage3-production-dryrun-10x13/pilot.css",OUT/"pilot.css")
