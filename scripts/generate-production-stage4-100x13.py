@@ -264,12 +264,20 @@ def install_stage4_unique_longform(g):
   h=hashlib.sha256(f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|{salt}".encode()).hexdigest()
   return arr[int(h[:12],16)%len(arr)]
 
+ def obj_particle(text):
+  last=text.rstrip()[-1]
+  if "가"<=last<="힣":
+   return "을" if (ord(last)-0xAC00)%28 else "를"
+  return "을"
+
  def unique_paragraph(row,slot):
   dong=row["dong_name"]; full=row["full_name_ko"]
+  focus1=pick(row,slot,FOCUS,'f')
+  focus2=pick(row,slot,FOCUS,'f2')
   s1=(f"{dong}에서 {pick(row,slot,OPEN,'o')} "
-      f"{pick(row,slot,FOCUS,'f')}을 {pick(row,slot,ACTION,'a')} "
+      f"{focus1}{obj_particle(focus1)} {pick(row,slot,ACTION,'a')} "
       f"{pick(row,slot,REASON,'r')}.")
-  s2=(f"{pick(row,slot,FOLLOW,'w')} {pick(row,slot,FOCUS,'f2')}을 "
+  s2=(f"{pick(row,slot,FOLLOW,'w')} {focus2}{obj_particle(focus2)} "
       f"{pick(row,slot,ACTION,'a2')} {pick(row,slot,SECOND,'s')}.")
   s3=(f"{full} 안내에서도 {pick(row,slot,END,'e')}.")
   return s1+" "+s2+" "+s3
@@ -330,7 +338,7 @@ def main():
    files.append({"path":f"stage4-preproduction-100x13/{name}","family":"exam","intent":intent,"exam":key,"h1":f"{row['dong_name']} {e['service']}","canonical":f"https://englishpt.kr/{row['region_slug']}-{intent}.html","locality":row["region_slug"],"blueprint":e["blueprint"],"variation_signature":row["variation_signature"]})
 
  failures=[]; checks=[]; lengths={}; sizes={}; groups=defaultdict(list); byloc=defaultdict(set)
- malformed=["영어회화을","영어과외을","비즈니스영어을","문항를","질의을","응시이","근거이","근거은","제한 제한","페이지은","'을 다음 확인 기준","'를 다음 확인 기준","합니다에서 무엇부터","습니다에서 무엇부터"]
+ malformed=["영어회화을","영어과외을","비즈니스영어을","문항를","질의을","응시이","근거이","근거은","제한 제한","페이지은","범위을","행동를","기능를","조건를","영역를","지점를","반응를","시간를","항목를","증거를","'을 다음 확인 기준","'를 다음 확인 기준","합니다에서 무엇부터","습니다에서 무엇부터"]
  generic=["최고의 강사진","성적 향상을 책임","지금 바로 상담 신청"]
  for m in files: byloc[m["locality"]].add(Path(m["path"]).name)
 
