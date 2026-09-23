@@ -148,6 +148,19 @@ DIAG={
 "current-level":"처음부터 다시 배우기보다 이미 혼자 가능한 범위와 도움이 필요한 범위를 분리합니다.",
 "priority":"여러 약점을 동시에 다루지 않고 결과에 가장 직접적인 한두 항목을 먼저 선택합니다.",
 }
+PRIORITY_HEADING={
+ "parent-view":"현재 도움 수준을 보고 첫 순서를 정합니다",
+ "learner-view":"최근 막힌 행동에서 첫 순서를 정합니다",
+ "decision-first":"가장 중요한 결과 하나를 기준으로 순서를 정합니다",
+ "assessment-first":"실제 평가에서 요구되는 행동부터 우선합니다",
+ "problem-first":"반복해서 막히는 원인부터 먼저 다룹니다",
+ "scene-first":"가장 가까운 실제 장면에서 우선순위를 정합니다",
+ "question-first":"지금 가장 중요한 질문부터 해결 순서를 정합니다",
+ "diagnosis-first":"현재 진단에서 가장 큰 병목부터 시작합니다",
+ "comparison-first":"여러 선택지를 같은 기준으로 놓고 우선순위를 정합니다",
+ "goal-first":"목표 결과에 가장 직접적인 행동부터 시작합니다",
+ "timeline-first":"가장 가까운 일정에서 거꾸로 우선순위를 정합니다"
+}
 RHYTHM={
 "short-analytic":["현재 범위를 확인합니다.","기준을 하나로 좁힙니다.","직접 수행합니다.","새 조건에서 다시 확인합니다.","결과를 기록합니다.","실전 조건으로 재검증합니다."],
 "balanced-editorial":["먼저 혼자 가능한 범위를 확인합니다.","필요한 기준을 정리한 뒤 바로 적용합니다.","실제 문제나 장면으로 옮깁니다.","자료나 질문을 바꿔 유지되는지 봅니다.","남은 병목을 다음 기록으로 남깁니다.","실제 일정과 비슷한 조건에서 확인합니다."],
@@ -393,7 +406,7 @@ def faq_block(scene_titles,priority,proof,boundary,row,d):
  answers=[
   f"첫 우선순위는 '{priority[0]}'입니다. {guide(row,85)}",
   guide(row,87),
-  f"'{proof[0]}'을 다음 확인 기준으로 남깁니다. {guide(row,89)}",
+  f"다음 확인 기준으로는 '{proof[0]}' 항목을 남깁니다. {guide(row,89)}",
   f"{guide(row,91)} 앞부분의 '다른 선택' 기준과 함께 비교하면 됩니다.",
   f"'{scene_titles[-1]}' 장면을 다시 만들고 {guide(row,93)}",
  ]
@@ -444,7 +457,7 @@ def render_page(row,d,intent,family,facts,svc,ex):
 <section class="section"><div class="wrap narrow"><p class="kicker">{'시험 맥락 이해' if family=='exam' else '학습 맥락 이해'}</p><h2>{esc(context_title)}</h2><p>{esc(context_text)}</p>{context_extra}</div></section>
 {variation_story(row,d,service)}
 {locality_longform(row,service)}
-<section class="section soft"><div class="wrap"><p class="kicker">우선순위</p><h2>{esc(INTRO[d["intro_pattern"]].split(".")[0])}에서 무엇부터 볼지 정합니다</h2><ul class="proofs">{priority_block(priority,row,d)}</ul></div></section>
+<section class="section soft"><div class="wrap"><p class="kicker">우선순위</p><h2>{esc(PRIORITY_HEADING[d["intro_pattern"]])}</h2><ul class="proofs">{priority_block(priority,row,d)}</ul></div></section>
 <section class="section dark"><div class="wrap"><p class="kicker">수업 흐름</p><h2>설명에서 끝내지 않고 실제 행동으로 다시 확인합니다</h2><ol class="steps">{flow_block(steps,row,d)}</ol></div></section>
 <section class="mid-cta"><div class="wrap"><div><p class="kicker">중간 확인</p><h2>{esc(mid)}</h2></div><div class="mid-actions"><a class="btn primary" href="#consultation-preview">상담 전 확인하기</a><a class="btn phone" href="{PHONE_HREF}">{PHONE_LABEL}</a></div></div></section>
 <section class="section"><div class="wrap"><p class="kicker">판단 기준</p><h2>변화를 추상적인 표현 대신 행동으로 확인합니다</h2><ul class="proofs">{proof_block(proof,row,d)}</ul></div></section>
@@ -481,7 +494,7 @@ def main():
    files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"exam","intent":intent,"exam":key,"h1":f"{row['dong_name']} {e['service']}","canonical":f"https://englishpt.kr/{row['region_slug']}-{intent}.html","locality":row["region_slug"],"blueprint":e["blueprint"],"variation_signature":row["variation_signature"]})
 
  failures=[];checks=[];lengths={};groups=defaultdict(list);byloc=defaultdict(set)
- malformed=["영어회화을","영어과외을","비즈니스영어을","문항를","질의을","응시이","근거이","근거은","제한 제한","페이지은"]
+ malformed=["영어회화을","영어과외을","비즈니스영어을","문항를","질의을","응시이","근거이","근거은","제한 제한","페이지은","'을 다음 확인 기준","'를 다음 확인 기준","합니다에서 무엇부터"]
  generic=["최고의 강사진","성적 향상을 책임","지금 바로 상담 신청"]
  for m in files:byloc[m["locality"]].add(Path(m["path"]).name)
  for m in files:
