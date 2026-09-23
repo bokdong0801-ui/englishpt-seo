@@ -408,6 +408,80 @@ def install_stage4_unique_longform(g):
 
  g.make_stage4_unique_longform=make
 
+
+def row_signature_block(row,intent):
+ START=[
+  "현재범위 점검","독립수행 확인","최근장면 복기","목표행동 확인","기초상태 점검","첫반응 관찰",
+  "자료처리 확인","오답경로 확인","출력속도 점검","실전장면 확인","복습상태 확인","기준행동 확인",
+  "수행범위 구분","도움수준 점검","문제상황 복기","사용목적 확인","일정조건 확인","우선항목 분리"
+ ]
+ CAUSE=[
+  "병목원인 추적","오류조건 분해","시간압박 점검","질문이해 구분","지식공백 확인","출력중단 추적",
+  "근거선택 점검","반복실수 분석","힌트의존 확인","전이실패 점검","복습공백 확인","과제과부하 점검",
+  "범위혼선 구분","우선순위 재검토","자료난도 확인","수행조건 대조","도움단계 확인","목표충돌 점검"
+ ]
+ TRAIN=[
+  "새자료 적용","질문변형 연습","독립수행 훈련","제한시간 적용","첫문장 훈련","근거설명 연습",
+  "재작성 훈련","재답변 연습","핵심요약 적용","오답복구 연습","루틴복구 실행","전이연습 적용",
+  "자료변형 적용","힌트감소 훈련","실전순서 연습","핵심행동 반복","조건변경 연습","우선기능 집중"
+ ]
+ VERIFY=[
+  "후속점검 기록","독립재현 확인","힌트감소 비교","새조건 재검증","처리시간 비교","완결성 재확인",
+  "근거설명 재점검","다른자료 검증","질문변형 확인","실전조건 재검사","다음수업 재확인","반복오류 재점검",
+  "도움수준 비교","전후조건 대조","재사용범위 확인","실행기록 비교","일정직전 점검","장기유지 확인"
+ ]
+ CHOICE=[
+  "과정적합 비교","비용구성 검토","피드백범위 확인","수업방식 비교","다른시험 검토","학원과외 비교",
+  "온라인방문 비교","교사피드백 확인","과제운영 검토","일정유연성 확인","재점검방식 비교","자료첨삭 범위",
+  "녹음피드백 확인","복습지원 비교","목표경로 선택","지원강도 비교","수업횟수 검토","상담질문 정리"
+ ]
+ FLOW_A=[
+  "첫 단계에서는 결과보다 현재 행동을 확인합니다","처음에는 혼자 가능한 부분과 도움 필요한 부분을 나눕니다",
+  "시작점에서는 최근 자료 한 개만 사용해 범위를 좁힙니다","초기 확인에서는 넓은 레벨보다 실제 수행을 봅니다",
+  "첫 기록은 잘한 내용보다 반복해서 막힌 지점을 남깁니다","출발할 때는 가장 가까운 일정과 현재 수행을 함께 봅니다",
+  "처음부터 전체 범위를 다루지 않고 한 가지 행동을 고릅니다","초기 판단은 학습량보다 독립적으로 되는 범위를 기준으로 합니다",
+  "첫 비교에서는 설명 전 상태를 그대로 기록합니다","시작 전에 이미 되는 영역은 유지 확인으로 따로 둡니다"
+ ]
+ FLOW_B=[
+  "다음 단계에서는 질문이나 자료를 바꿔 같은 기준이 남는지 봅니다","이후에는 힌트를 줄여 스스로 다시 이어가는지 확인합니다",
+  "연습 뒤에는 비슷한 난도의 새 자료로 재현 여부를 봅니다","설명 다음에는 직접 수행으로 바꿔 결과를 다시 확인합니다",
+  "한 번 맞힌 뒤에는 조건을 바꿔 기억이 아닌 적용인지 구분합니다","중간 점검에서는 시간과 도움의 양을 함께 비교합니다",
+  "같은 예시를 반복하기보다 새 질문으로 이동합니다","훈련 후에는 다음 일정과 가까운 조건으로 다시 점검합니다",
+  "문제가 고쳐졌다면 다른 맥락에서도 유지되는지 봅니다","연습 결과는 다음 재검사 항목과 함께 기록합니다"
+ ]
+ FLOW_C=[
+  "마지막에는 다른 선택이 더 직접적인 조건도 함께 확인합니다","후반에는 비용과 피드백 범위를 같은 기준으로 비교합니다",
+  "결정 전에는 상담에서 확인할 질문을 짧게 정리합니다","마무리에서는 이번에 제외해도 되는 목표를 따로 둡니다",
+  "최종 판단은 등록 여부보다 현재 목표와 방식의 적합성을 봅니다","마지막 단계에서는 장기 보완 항목과 단기 목표를 분리합니다",
+  "결론을 내기 전 수업 뒤 재점검 방식이 있는지 확인합니다","최종 비교에서는 횟수보다 실제 포함 범위를 함께 봅니다",
+  "마지막 기록은 다음에 무엇을 다시 볼지 남기는 데 사용합니다","결정 단계에서는 사용자가 스스로 비교 기준을 설명할 수 있는지 봅니다"
+ ]
+
+ def pick(arr,slot,salt):
+  h=hashlib.sha256(f"{row['content_seed']}|{intent}|{slot}|{salt}".encode()).hexdigest()
+  return arr[int(h[:12],16)%len(arr)]
+
+ terms=[
+  pick(START,0,"start"),pick(CAUSE,0,"cause"),pick(TRAIN,0,"train"),
+  pick(VERIFY,0,"verify"),pick(CHOICE,0,"choice")
+ ]
+ paras=[]
+ for i in range(10):
+  a=pick(FLOW_A,i,"a"); b=pick(FLOW_B,i,"b"); d=pick(FLOW_C,i,"c")
+  t1=terms[i%len(terms)]; t2=terms[(i+2)%len(terms)]
+  lead=(f"{row['full_name_ko']}에서 보는 {t1} 기준."
+        if i%2==0 else f"{row['dong_name']} 페이지의 {t1} 단계.")
+  paras.append(f"{lead} {a} {t2} 관점도 함께 두고, {b} {d}")
+ route=" → ".join(terms)
+ return (
+  '<section class="section row-signature"><div class="wrap narrow">'
+  '<p class="kicker">판단 루트</p>'
+  '<h2>'+html.escape(row["dong_name"])+' 페이지에서 확인하는 실제 순서</h2>'
+  '<p class="mini-note">'+html.escape(route)+'</p>'
+  +''.join('<p>'+html.escape(p)+'</p>' for p in paras)
+  +'</div></section>'
+ )
+
 def sitemap_xml(urls):
  body="".join(f"<url><loc>{xml_escape(u)}</loc></url>" for u in urls)
  return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+body+"</urlset>\n"
@@ -445,12 +519,14 @@ def main():
   for intent in SERVICE_ORDER:
    p=svc.PROFILES[intent]
    raw=g.render_page(row,d,intent,"service",p,svc,ex)
+   raw=raw.replace('<section class="section related">',row_signature_block(row,intent)+'<section class="section related">',1)
    raw=raw.replace("PRODUCTION DRY-RUN · noindex","PRE-PRODUCTION · noindex").replace("Stage 3 dry-run · production 미배포","Stage 4 pre-production · production 미배포")
    name=f"{row['region_slug']}-{intent}.html"; generated[name]=raw
    files.append({"path":f"stage4-preproduction-100x13/{name}","family":"service","intent":intent,"h1":f"{row['dong_name']} {p['service_h1']}","canonical":f"https://englishpt.kr/{row['region_slug']}-{intent}.html","locality":row["region_slug"],"blueprint":p["blueprint"],"variation_signature":row["variation_signature"]})
   for key in EXAM_ORDER:
    e=ex.EXAMS[key]; intent=e["intent"]
    raw=g.render_page(row,d,intent,"exam",e,svc,ex)
+   raw=raw.replace('<section class="section related">',row_signature_block(row,intent)+'<section class="section related">',1)
    raw=raw.replace("PRODUCTION DRY-RUN · noindex","PRE-PRODUCTION · noindex").replace("Stage 3 dry-run · production 미배포","Stage 4 pre-production · production 미배포")
    name=f"{row['region_slug']}-{intent}.html"; generated[name]=raw
    files.append({"path":f"stage4-preproduction-100x13/{name}","family":"exam","intent":intent,"exam":key,"h1":f"{row['dong_name']} {e['service']}","canonical":f"https://englishpt.kr/{row['region_slug']}-{intent}.html","locality":row["region_slug"],"blueprint":e["blueprint"],"variation_signature":row["variation_signature"]})
@@ -476,7 +552,7 @@ def main():
   if f'rel="canonical" href="{m["canonical"]}"' not in raw:f.append("canonical")
   if 'name="robots" content="noindex,nofollow"' not in raw:f.append("noindex")
   if 'data-production-deploy="false"' not in raw:f.append("production_flag")
-  if raw.count("◆ ")<5 or 'decision-strip' not in raw or 'decision-guide' not in raw or 'mid-cta' not in raw or 'variation-story' not in raw or 'locality-longform' not in raw:f.append("conversion_blocks")
+  if raw.count("◆ ")<5 or 'decision-strip' not in raw or 'decision-guide' not in raw or 'mid-cta' not in raw or 'variation-story' not in raw or 'locality-longform' not in raw or 'row-signature' not in raw:f.append("conversion_blocks")
   kickers=re.findall(r'<p class="kicker">(.*?)</p>',raw)
   expected=["자기상황 식별","선택 기준","우선순위","수업 흐름","중간 확인","판단 기준","피드백 예시","자주 묻는 질문","더 깊게 보기","관련 과정","상담 전 체크"]
   try: pp=[kickers.index(x) for x in expected]
