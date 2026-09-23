@@ -275,8 +275,10 @@ def install_stage4_unique_longform(g):
   return s1+" "+s2+" "+s3
 
  def make(row,d):
-  # 12 paragraphs; every paragraph has row+intent-seeded clause choices.
-  return [unique_paragraph(row,i) for i in range(12)]
+  # 18 paragraphs; every paragraph has row+intent-seeded clause choices.
+  # This keeps the shared Gold intent facts intact while giving each locality
+  # enough independent decision-support prose for 100-row duplicate gates.
+  return [unique_paragraph(row,i) for i in range(18)]
 
  g.make_stage4_unique_longform=make
 
