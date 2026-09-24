@@ -316,7 +316,7 @@ def install_stage4_guide_pool(g):
  def guide(row,slot):
   topic=TOPIC[int(hashlib.sha256(f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|topic".encode()).hexdigest()[:12],16)%len(TOPIC)]
   rank=int(row.get("_stage4_rank",0))
-  theme_idx=rank%10; method_idx=(rank//10)%10
+  theme_idx=rank%10; method_idx=((rank//10)+3*(rank%10))%10
   profile=PROFILE_THEME[theme_idx]+PROFILE_METHOD[method_idx]
   theme_terms=PROFILE_TERMS[theme_idx]
   action_terms=PROFILE_ACTIONS[method_idx]
@@ -473,9 +473,9 @@ def row_signature_block(row,intent):
  # Each Stage 4 locality gets a guaranteed-unique set of readable decision labels.
  # Labels are semantic Korean compounds, not IDs or hidden tokens.
  rank=int(row.get("_stage4_rank",0))
- profile=PROFILE_THEME[rank%10]+PROFILE_METHOD[(rank//10)%10]
+ profile=PROFILE_THEME[rank%10]+PROFILE_METHOD[((rank//10)+3*(rank%10))%10]
  theme_terms=PROFILE_TERMS[rank%10]
- action_terms=PROFILE_ACTIONS[(rank//10)%10]
+ action_terms=PROFILE_ACTIONS[((rank//10)+3*(rank%10))%10]
  UNIQUE_A=["현재범위","독립수행","최근장면","목표행동","기초상태","첫반응","자료처리","오답경로","출력속도","실전장면",
            "복습상태","기준행동","수행범위","도움수준","문제상황","사용목적","일정조건","우선항목","재사용범위","피드백기준"]
  UNIQUE_B=["재확인","추적","분석","점검","재검증","대조","조정","복구","재구성","확장",
