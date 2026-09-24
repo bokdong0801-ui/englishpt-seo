@@ -257,31 +257,31 @@ def install_stage4_guide_pool(g):
    return "은" if (ord(last)-0xAC00)%28 else "는"
   return "은"
 
-  SIG_DOMAIN=[
-   "현재범위","독립수행","최근장면","목표행동","기초상태",
-   "첫반응","자료처리","오류원인","출력속도","실전수행",
-   "복습상태","도움수준","일정조건","질문대응","재사용범위"
-  ]
-  SIG_FOCUS=[
-   "기준","근거","원인","시간","도움",
-   "적용","순서","조건","오류","반응",
-   "출력","선택","재현","우선","회복"
-  ]
-  SIG_ACTION=[
-   "점검","확인","기록","비교","추적",
-   "분리","검토","재검증","재확인","적용",
-   "조정","관찰","복기","연결","정리"
-  ]
+ SIG_DOMAIN=[
+  "현재범위","독립수행","최근장면","목표행동","기초상태",
+  "첫반응","자료처리","오류원인","출력속도","실전수행",
+  "복습상태","도움수준","일정조건","질문대응","재사용범위"
+ ]
+ SIG_FOCUS=[
+  "기준","근거","원인","시간","도움",
+  "적용","순서","조건","오류","반응",
+  "출력","선택","재현","우선","회복"
+ ]
+ SIG_ACTION=[
+  "점검","확인","기록","비교","추적",
+  "분리","검토","재검증","재확인","적용",
+  "조정","관찰","복기","연결","정리"
+ ]
 
-  def signature_term(row,slot):
-   rank=int(row.get("_stage4_rank",0))
-   total=len(SIG_DOMAIN)*len(SIG_FOCUS)*len(SIG_ACTION)
-   idx=(rank*31 + int(slot)) % total
-   a=SIG_DOMAIN[(idx // (len(SIG_FOCUS)*len(SIG_ACTION))) % len(SIG_DOMAIN)]
-   rem=idx % (len(SIG_FOCUS)*len(SIG_ACTION))
-   b=SIG_FOCUS[(rem // len(SIG_ACTION)) % len(SIG_FOCUS)]
-   d=SIG_ACTION[rem % len(SIG_ACTION)]
-   return a+b+d
+ def signature_term(row,slot):
+  rank=int(row.get("_stage4_rank",0))
+  total=len(SIG_DOMAIN)*len(SIG_FOCUS)*len(SIG_ACTION)
+  idx=(rank*31 + int(slot)) % total
+  a=SIG_DOMAIN[(idx // (len(SIG_FOCUS)*len(SIG_ACTION))) % len(SIG_DOMAIN)]
+  rem=idx % (len(SIG_FOCUS)*len(SIG_ACTION))
+  b=SIG_FOCUS[(rem // len(SIG_ACTION)) % len(SIG_FOCUS)]
+  d=SIG_ACTION[rem % len(SIG_ACTION)]
+  return a+b+d
 
  def guide(row,slot):
   topic=TOPIC[int(hashlib.sha256(f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|topic".encode()).hexdigest()[:12],16)%len(TOPIC)]
