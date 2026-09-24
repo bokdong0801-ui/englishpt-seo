@@ -330,9 +330,7 @@ def install_stage4_guide_pool(g):
   focus_a=theme_terms[slot%len(theme_terms)]
   focus_b=theme_terms[(slot+2)%len(theme_terms)]
   method_word=action_terms[slot%len(action_terms)]
-  stamp=(f" '{profile}' 관점에서 '{focus_a}' 항목을 {method_word} 방식으로 다루고, '{focus_b}' 항목은 다음 메모에 남깁니다. 재확인 이름은 '{sig}'로 정합니다." if slot%3==0
-         else f" 판단 프레임은 '{profile}'입니다. '{focus_a}' 항목을 {method_word} 방식으로 살피고, 이어서 '{focus_b}' 항목을 확인합니다. 다음 기록 이름은 '{sig}'입니다." if slot%3==1
-         else f" 이 단계는 '{profile}' 흐름을 사용합니다. '{focus_a}' 항목과 '{focus_b}' 항목을 {method_word} 방식으로 나눠 보고, 후속 메모는 '{sig}'로 남깁니다.")
+  stamp=f" 판단축은 '{profile}'이며, 기록 항목은 {focus_a} · {focus_b} · {method_word} · {sig}입니다."
   mode=slot%6
   if mode==0:
    return f"{dong} 안내에서는 {topic}에 대해 {observe}. 이후에는 {verify}. {close}."+stamp
