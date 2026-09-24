@@ -57,6 +57,9 @@ EXT_PRIORITY={
  "transition-first":"다음 환경에서 바로 필요한 기능부터 연결합니다"
 }
 
+PROFILE_THEME=["독립수행","일정역산","오류추적","실사용","조건전환","복습회수","시간처리","선택비교","피드백반영","목표경계"]
+PROFILE_METHOD=["점검형","배치형","교정형","적용형","확장형","유지형","측정형","대조형","기록형","집중형"]
+
 def load_module(name,path):
  spec=importlib.util.spec_from_file_location(name,path)
  if not spec or not spec.loader: raise RuntimeError(path)
