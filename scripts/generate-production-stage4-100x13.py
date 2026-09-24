@@ -59,6 +59,30 @@ EXT_PRIORITY={
 
 PROFILE_THEME=["독립수행","일정역산","오류추적","실사용","조건전환","복습회수","시간처리","선택비교","피드백반영","목표경계"]
 PROFILE_METHOD=["점검형","배치형","교정형","적용형","확장형","유지형","측정형","대조형","기록형","집중형"]
+PROFILE_TERMS=[
+ ["독립수행","도움의존","힌트감소","혼자재현","자기수정"],
+ ["일정역산","마감배치","연습횟수","직전점검","후속보완"],
+ ["오류추적","근거분리","반복실수","수정경로","원인태깅"],
+ ["실사용","첫반응","출력완결","장면적용","즉시사용"],
+ ["조건전환","자료변형","질문변형","전이확인","재사용범위"],
+ ["복습회수","기억재생","간격확인","재노출","누적유지"],
+ ["시간처리","순서배분","종료기준","속도안정","제한조건"],
+ ["선택비교","대안경로","비용구성","운영방식","과정적합"],
+ ["피드백반영","첨삭회수","재답변","다음행동","후속점검"],
+ ["목표경계","우선기능","제외범위","장기보완","단기집중"]
+]
+PROFILE_ACTIONS=[
+ ["점검","확인","관찰","검토","살핌"],
+ ["배치","역산","분배","조정","설계"],
+ ["교정","수정","복구","보완","정비"],
+ ["적용","사용","실행","재현","수행"],
+ ["확장","변형","전환","전이","응용"],
+ ["유지","반복","회수","복기","누적"],
+ ["측정","시간점검","순서기록","속도비교","제한검증"],
+ ["대조","구분","분리","판별","선별"],
+ ["기록","메모","체크","정리","후속기록"],
+ ["집중","우선화","제외","축소","선택"]
+]
 
 def load_module(name,path):
  spec=importlib.util.spec_from_file_location(name,path)
@@ -301,9 +325,14 @@ def install_stage4_guide_pool(g):
   sig=signature_term(row,slot)
   rank=int(row.get("_stage4_rank",0))
   profile=PROFILE_THEME[rank%10]+PROFILE_METHOD[(rank//10)%10]
-  stamp=(f" '{profile}' 관점으로 이 단계를 정리하고, '{sig}' 항목을 다음 기준 메모로 남깁니다." if slot%3==0
-         else f" 판단은 '{profile}' 방식으로 이어가며, '{sig}' 항목을 재확인 목록에 둡니다." if slot%3==1
-         else f" 이 단계의 비교 축은 '{profile}'이고, 다음 기록은 '{sig}' 항목으로 남깁니다.")
+  theme_terms=PROFILE_TERMS[rank%10]
+  action_terms=PROFILE_ACTIONS[(rank//10)%10]
+  focus_a=theme_terms[slot%len(theme_terms)]
+  focus_b=theme_terms[(slot+2)%len(theme_terms)]
+  method_word=action_terms[slot%len(action_terms)]
+  stamp=(f" '{profile}' 관점에서 '{focus_a}' 항목을 {method_word} 방식으로 다루고, '{focus_b}' 항목은 다음 메모에 남깁니다. 재확인 이름은 '{sig}'로 정합니다." if slot%3==0
+         else f" 판단 프레임은 '{profile}'입니다. '{focus_a}' 항목을 {method_word} 방식으로 살피고, 이어서 '{focus_b}' 항목을 확인합니다. 다음 기록 이름은 '{sig}'입니다." if slot%3==1
+         else f" 이 단계는 '{profile}' 흐름을 사용합니다. '{focus_a}' 항목과 '{focus_b}' 항목을 {method_word} 방식으로 나눠 보고, 후속 메모는 '{sig}'로 남깁니다.")
   mode=slot%6
   if mode==0:
    return f"{dong} 안내에서는 {topic}에 대해 {observe}. 이후에는 {verify}. {close}."+stamp
