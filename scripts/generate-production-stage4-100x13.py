@@ -83,6 +83,18 @@ PROFILE_ACTIONS=[
  ["기록","메모","체크","정리","후속기록"],
  ["집중","우선화","제외","축소","선택"]
 ]
+PROFILE_THEME_NOTE=[
+ "혼자 시작 · 도움 감소 · 자기 수정 · 재현 범위를 중심으로 봅니다.",
+ "시험일 · 마감 · 연습 횟수 · 직전 점검 순서로 역산합니다.",
+ "반복 실수 · 근거 · 수정 경로 · 재발 조건을 나눠 추적합니다.",
+ "첫 반응 · 실제 사용 · 출력 완결 · 장면 적용을 중심으로 봅니다.",
+ "자료 변형 · 질문 변형 · 조건 전환 · 전이 범위를 확인합니다.",
+ "기억 회수 · 간격 · 재노출 · 누적 유지 여부를 확인합니다.",
+ "처리 속도 · 순서 · 종료 기준 · 제한 시간 조건을 측정합니다.",
+ "대안 경로 · 비용 구성 · 운영 방식 · 과정 적합성을 비교합니다.",
+ "첨삭 반영 · 재답변 · 다음 행동 · 후속 점검을 기록합니다.",
+ "우선 기능 · 제외 범위 · 단기 집중 · 장기 보완을 구분합니다."
+]
 
 def load_module(name,path):
  spec=importlib.util.spec_from_file_location(name,path)
@@ -318,6 +330,7 @@ def install_stage4_guide_pool(g):
   rank=int(row.get("_stage4_rank",0))
   theme_idx=rank%10; method_idx=((rank//10)+3*(rank%10))%10
   profile=PROFILE_THEME[theme_idx]+PROFILE_METHOD[method_idx]
+  theme_note=PROFILE_THEME_NOTE[theme_idx]
   theme_terms=PROFILE_TERMS[theme_idx]
   action_terms=PROFILE_ACTIONS[method_idx]
   focus_a=theme_terms[slot%len(theme_terms)]
@@ -337,7 +350,7 @@ def install_stage4_guide_pool(g):
    f"'{topic}' 수행에서 다음에 남길 증거를 정합니다. {profile} 기록 항목: {focus_a} · {focus_b}. 기록 방식: {method_word}. 후속 이름: {sig}.",
    f"'{topic}' 목표에서 가장 직접적인 항목만 남깁니다. {profile} 집중 항목: {focus_a} · {focus_b}. 선택 방식: {method_word}. 다음 기준: {sig}."
   ]
-  return templates[method_idx]+area
+  return templates[method_idx]+" "+theme_note+area
 
  g.guide=guide
 
