@@ -330,7 +330,8 @@ def install_stage4_guide_pool(g):
   focus_a=theme_terms[slot%len(theme_terms)]
   focus_b=theme_terms[(slot+2)%len(theme_terms)]
   method_word=action_terms[slot%len(action_terms)]
-  stamp=f" 판단축은 '{profile}'이며, 기록 항목은 {focus_a} · {focus_b} · {method_word} · {sig}입니다."
+  area_note=(f" 지역 구분은 {row['jurisdiction_full']} 기준입니다." if row.get("_same_name_count",1)>1 else "")
+  stamp=f" 판단축은 '{profile}'이며, 기록 항목은 {focus_a} · {focus_b} · {method_word} · {sig}입니다."+area_note
   mode=slot%6
   if mode==0:
    return f"{dong} 안내에서는 {topic}에 대해 {observe}. 이후에는 {verify}. {close}."+stamp
@@ -479,6 +480,8 @@ def row_signature_block(row,intent):
  # Labels are semantic Korean compounds, not IDs or hidden tokens.
  rank=int(row.get("_stage4_rank",0))
  profile=PROFILE_THEME[rank%10]+PROFILE_METHOD[(rank//10)%10]
+ theme_terms=PROFILE_TERMS[rank%10]
+ action_terms=PROFILE_ACTIONS[(rank//10)%10]
  UNIQUE_A=["현재범위","독립수행","최근장면","목표행동","기초상태","첫반응","자료처리","오답경로","출력속도","실전장면",
            "복습상태","기준행동","수행범위","도움수준","문제상황","사용목적","일정조건","우선항목","재사용범위","피드백기준"]
  UNIQUE_B=["재확인","추적","분석","점검","재검증","대조","조정","복구","재구성","확장",
@@ -546,16 +549,16 @@ def row_signature_block(row,intent):
   p2=term_pools[(i+2)%len(term_pools)]
   t1=pick(p1,i,f"t1-{i}")
   t2=pick(p2,i+3,f"t2-{i}")
-  lead=(f"{row['full_name_ko']}에서 보는 {t1} 기준."
-        if i%2==0 else f"{row['dong_name']} 페이지의 {t1} 단계.")
+  vx=theme_terms[i%len(theme_terms)]
+  vy=action_terms[(i+1)%len(action_terms)]
   label=base_label if i%2==0 else alt_label
   if i%3==0:
-   paras.append(f"{lead} '{label}' 관점으로 현재 범위를 먼저 나눕니다. {a} 이어서 {t2} 관점으로 옮겨 {b} {d}")
+   paras.append(f"{row['full_name_ko']}의 {t1}. {vx}·{vy} 항목을 '{label}' 기준으로 봅니다. {a} {b}")
   elif i%3==1:
-   paras.append(f"{lead} {a} 이때 '{label}' 기준을 기록에 남깁니다. {t2} 관점도 함께 비교하고, {b} {d}")
+   paras.append(f"{row['dong_name']}의 {t1}. {vx}·{vy} 항목을 먼저 두고 {t2}와 비교합니다. {d}")
   else:
-   paras.append(f"{lead} {t2} 항목과 나란히 두고 {b} '{label}' 기준은 다음 확인에서도 유지합니다. {a} {d}")
- route=profile+" → "+" → ".join([base_label]+first_terms+[alt_label])
+   paras.append(f"{row['full_name_ko']}의 {t1}. {t2}와 {vx}·{vy} 항목을 연결해 '{label}' 기준으로 기록합니다.")
+ route=profile+" → "+("["+row["jurisdiction_full"]+"] → " if row.get("_same_name_count",1)>1 else "")+" → ".join([base_label]+first_terms+[alt_label])
  return (
   '<section class="section row-signature"><div class="wrap narrow">'
   '<p class="kicker">판단 루트</p>'
@@ -580,6 +583,8 @@ def main():
  if any(r["landing_eligibility"]!="ELIGIBLE_AFTER_SLUG_QA" for r in rows): raise RuntimeError("ineligible row")
  if len({r["variation_signature"] for r in rows})!=100: raise RuntimeError("variation signatures must be unique")
  if len({r["sido"] for r in rows})!=17: raise RuntimeError("Stage4 must cover all 17 first-level regions")
+ name_counts=Counter(r["dong_name"] for r in rows)
+ for r in rows: r["_same_name_count"]=name_counts[r["dong_name"]]
 
  g=load_module("stage3_renderer",ROOT/"scripts/generate-production-stage3-10x13.py")
  patch_engine(g)
