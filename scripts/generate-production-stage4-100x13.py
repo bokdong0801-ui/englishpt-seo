@@ -315,35 +315,29 @@ def install_stage4_guide_pool(g):
 
  def guide(row,slot):
   topic=TOPIC[int(hashlib.sha256(f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|topic".encode()).hexdigest()[:12],16)%len(TOPIC)]
-  observe=lex(row,OBSERVE,f"observe|{slot}")
-  record=lex(row,RECORD,f"record|{slot}")
-  verify=lex(row,VERIFY,f"verify|{slot}")
-  compare=lex(row,COMPARE,f"compare|{slot}")
-  plan=lex(row,PLAN,f"plan|{slot}")
-  close=lex(row,CLOSE,f"close|{slot}")
-  dong=row["dong_name"]
-  sig=signature_term(row,slot)
   rank=int(row.get("_stage4_rank",0))
-  profile=PROFILE_THEME[rank%10]+PROFILE_METHOD[(rank//10)%10]
-  theme_terms=PROFILE_TERMS[rank%10]
-  action_terms=PROFILE_ACTIONS[(rank//10)%10]
+  theme_idx=rank%10; method_idx=(rank//10)%10
+  profile=PROFILE_THEME[theme_idx]+PROFILE_METHOD[method_idx]
+  theme_terms=PROFILE_TERMS[theme_idx]
+  action_terms=PROFILE_ACTIONS[method_idx]
   focus_a=theme_terms[slot%len(theme_terms)]
   focus_b=theme_terms[(slot+2)%len(theme_terms)]
   method_word=action_terms[slot%len(action_terms)]
-  area_note=(f" 지역 구분은 {row['jurisdiction_full']} 기준입니다." if row.get("_same_name_count",1)>1 else "")
-  stamp=f" 판단축은 '{profile}'이며, 기록 항목은 {focus_a} · {focus_b} · {method_word} · {sig}입니다."+area_note
-  mode=slot%6
-  if mode==0:
-   return f"{dong} 안내에서는 {topic}에 대해 {observe}. 이후에는 {verify}. {close}."+stamp
-  if mode==1:
-   return f"{topic} 기준으로 {compare}. 확인 결과는 {record}. {close}."+stamp
-  if mode==2:
-   return f"{topic}부터 {observe}. 그 결과를 바탕으로 {plan}. 다음에는 {verify}."+stamp
-  if mode==3:
-   return f"{dong} 페이지에서는 {topic}{obj_josa(topic)} 중심으로 보기보다 해당 항목을 다른 기준과 함께 봅니다. {compare}. {close}."+stamp
-  if mode==4:
-   return f"{topic}{subj_josa(topic)} {record}. 당장 필요한 범위는 {plan}. 이후에는 {verify}."+stamp
-  return f"{topic}에 대해 {observe}. 수업이나 상담에서는 {compare}. 결과에 따라 {plan}."+stamp
+  sig=signature_term(row,slot)
+  area=(f" 위치 기준은 {row['jurisdiction_full']}입니다." if row.get("_same_name_count",1)>1 and slot%7==0 else "")
+  templates=[
+   f"{row['dong_name']}에서는 '{topic}' 장면을 {profile} 관점으로 점검합니다. 핵심 항목: {focus_a} · {focus_b}. 실행 방식: {method_word}. 후속 기록: {sig}.",
+   f"'{topic}' 준비 순서를 {profile} 기준으로 배치합니다. 먼저 볼 항목: {focus_a} · {focus_b}. 운영 방식: {method_word}. 다음 메모: {sig}.",
+   f"'{topic}' 장면은 {profile} 기준으로 교정합니다. 교정 대상: {focus_a} · {focus_b}. 적용 방식: {method_word}. 재점검 기록: {sig}.",
+   f"'{topic}' 장면을 실제 수행으로 옮깁니다. {profile} 적용 항목: {focus_a} · {focus_b}. 실행 방식: {method_word}. 다음 기록: {sig}.",
+   f"'{topic}' 조건을 바꿔 다시 봅니다. {profile} 확장 항목: {focus_a} · {focus_b}. 전환 방식: {method_word}. 확인 기록: {sig}.",
+   f"'{topic}' 결과가 다음에도 남는지 봅니다. {profile} 유지 항목: {focus_a} · {focus_b}. 복기 방식: {method_word}. 후속 기록: {sig}.",
+   f"'{topic}' 수행을 시간과 결과로 나눠 봅니다. {profile} 측정 항목: {focus_a} · {focus_b}. 측정 방식: {method_word}. 비교 기록: {sig}.",
+   f"'{topic}' 장면의 되는 조건과 흔들리는 조건을 대조합니다. {profile} 비교 항목: {focus_a} · {focus_b}. 구분 방식: {method_word}. 판단 기록: {sig}.",
+   f"'{topic}' 수행에서 다음에 남길 증거를 정합니다. {profile} 기록 항목: {focus_a} · {focus_b}. 기록 방식: {method_word}. 후속 이름: {sig}.",
+   f"'{topic}' 목표에서 가장 직접적인 항목만 남깁니다. {profile} 집중 항목: {focus_a} · {focus_b}. 선택 방식: {method_word}. 다음 기준: {sig}."
+  ]
+  return templates[method_idx]+area
 
  g.guide=guide
 
@@ -543,21 +537,20 @@ def row_signature_block(row,intent):
  term_pools=[START,CAUSE,TRAIN,VERIFY,CHOICE]
  first_terms=[pick(pool,j,f"route-{j}") for j,pool in enumerate(term_pools)]
  paras=[]
- for i in range(10):
-  a=pick(FLOW_A,i,"a"); b=pick(FLOW_B,i,"b"); d=pick(FLOW_C,i,"c")
+ for i in range(8):
   p1=term_pools[i%len(term_pools)]
-  p2=term_pools[(i+2)%len(term_pools)]
   t1=pick(p1,i,f"t1-{i}")
-  t2=pick(p2,i+3,f"t2-{i}")
   vx=theme_terms[i%len(theme_terms)]
   vy=action_terms[(i+1)%len(action_terms)]
   label=base_label if i%2==0 else alt_label
-  if i%3==0:
-   paras.append(f"{row['full_name_ko']}의 {t1}. {vx}·{vy} 항목을 '{label}' 기준으로 봅니다. {a} {b}")
-  elif i%3==1:
-   paras.append(f"{row['dong_name']}의 {t1}. {vx}·{vy} 항목을 먼저 두고 {t2}와 비교합니다. {d}")
+  if i%4==0:
+   paras.append(f"{row['full_name_ko']} 판단 메모. {profile} 기준의 {t1}. 핵심 항목: {vx} · {vy}. 기록 기준: {label}.")
+  elif i%4==1:
+   paras.append(f"{row['full_name_ko']} 비교 메모. {t1}에서 {vx} · {vy} 항목을 봅니다. 운영 프레임: {profile}. 후속 기준: {label}.")
+  elif i%4==2:
+   paras.append(f"{row['full_name_ko']} 재확인 메모. {vx} · {vy} 항목을 {profile} 방식으로 이어갑니다. 현재 주제: {t1}. 기록명: {label}.")
   else:
-   paras.append(f"{row['full_name_ko']}의 {t1}. {t2}와 {vx}·{vy} 항목을 연결해 '{label}' 기준으로 기록합니다.")
+   paras.append(f"{row['full_name_ko']} 선택 메모. {t1}을 볼 때 {profile} 프레임을 사용합니다. 확인 항목: {vx} · {vy}. 다음 기준: {label}.")
  route=profile+" → "+("["+row["jurisdiction_full"]+"] → " if row.get("_same_name_count",1)>1 else "")+" → ".join([base_label]+first_terms+[alt_label])
  return (
   '<section class="section row-signature"><div class="wrap narrow">'
