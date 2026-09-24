@@ -283,6 +283,9 @@ def install_stage4_guide_pool(g):
   d=SIG_ACTION[rem % len(SIG_ACTION)]
   return a+b+d
 
+ PROFILE_THEME=["독립수행","일정역산","오류추적","실사용","조건전환","복습회수","시간처리","선택비교","피드백반영","목표경계"]
+ PROFILE_METHOD=["점검형","배치형","교정형","적용형","확장형","유지형","측정형","대조형","기록형","집중형"]
+
  def guide(row,slot):
   topic=TOPIC[int(hashlib.sha256(f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|topic".encode()).hexdigest()[:12],16)%len(TOPIC)]
   observe=lex(row,OBSERVE,f"observe|{slot}")
@@ -293,7 +296,11 @@ def install_stage4_guide_pool(g):
   close=lex(row,CLOSE,f"close|{slot}")
   dong=row["dong_name"]
   sig=signature_term(row,slot)
-  stamp=f" 기준 메모는 '{sig}' 항목으로 남깁니다."
+  rank=int(row.get("_stage4_rank",0))
+  profile=PROFILE_THEME[rank%10]+PROFILE_METHOD[(rank//10)%10]
+  stamp=(f" '{profile}' 관점으로 이 단계를 정리하고, '{sig}' 항목을 다음 기준 메모로 남깁니다." if slot%3==0
+         else f" 판단은 '{profile}' 방식으로 이어가며, '{sig}' 항목을 재확인 목록에 둡니다." if slot%3==1
+         else f" 이 단계의 비교 축은 '{profile}'이고, 다음 기록은 '{sig}' 항목으로 남깁니다.")
   mode=slot%6
   if mode==0:
    return f"{dong} 안내에서는 {topic}에 대해 {observe}. 이후에는 {verify}. {close}."+stamp
@@ -441,6 +448,7 @@ def row_signature_block(row,intent):
  # Each Stage 4 locality gets a guaranteed-unique set of readable decision labels.
  # Labels are semantic Korean compounds, not IDs or hidden tokens.
  rank=int(row.get("_stage4_rank",0))
+ profile=PROFILE_THEME[rank%10]+PROFILE_METHOD[(rank//10)%10]
  UNIQUE_A=["현재범위","독립수행","최근장면","목표행동","기초상태","첫반응","자료처리","오답경로","출력속도","실전장면",
            "복습상태","기준행동","수행범위","도움수준","문제상황","사용목적","일정조건","우선항목","재사용범위","피드백기준"]
  UNIQUE_B=["재확인","추적","분석","점검","재검증","대조","조정","복구","재구성","확장",
@@ -517,7 +525,7 @@ def row_signature_block(row,intent):
    paras.append(f"{lead} {a} 이때 '{label}' 기준을 기록에 남깁니다. {t2} 관점도 함께 비교하고, {b} {d}")
   else:
    paras.append(f"{lead} {t2} 항목과 나란히 두고 {b} '{label}' 기준은 다음 확인에서도 유지합니다. {a} {d}")
- route=" → ".join([base_label]+first_terms+[alt_label])
+ route=profile+" → "+" → ".join([base_label]+first_terms+[alt_label])
  return (
   '<section class="section row-signature"><div class="wrap narrow">'
   '<p class="kicker">판단 루트</p>'
