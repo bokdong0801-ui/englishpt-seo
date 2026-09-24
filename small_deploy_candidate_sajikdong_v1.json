@@ -1,0 +1,193 @@
+{
+  "version": "1.6",
+  "status": "LEGACY_SAJIK_REFERENCE_SYNCED_TO_V4_5_GOLD_SAMPLE_NOT_PRODUCTION",
+  "locality": {
+    "locality_key": "서울특별시 종로구|사직동",
+    "sido": "서울특별시",
+    "jurisdiction_full": "서울특별시 종로구",
+    "dong_name": "사직동",
+    "full_name_ko": "서울특별시 종로구 사직동",
+    "entity_mix": "ADMIN_DONG+LEGAL_DONG",
+    "region_slug": "seoul-jongno-sajikdong",
+    "hub_url": "/seoul-jongno-sajikdong.html",
+    "landing_eligibility": "ELIGIBLE_AFTER_SLUG_QA",
+    "variation_pack_id": "Ve4a779a721",
+    "variation_signature": "parent-view|scene-check-train-report-fit|schedule-context|three-moments|goal-check|compact-direct|comprehension-skill",
+    "content_seed": "76bc829bb4fb1cf9"
+  },
+  "pages": [
+    {
+      "page_id": "sajik_hub",
+      "intent_slug": null,
+      "theme": "theme-local",
+      "blueprint": "region-dong-router-v1",
+      "primary_keyword": "사직동 영어회화·영어과외",
+      "url": "/seoul-jongno-sajikdong.html",
+      "generation_status": "NOT_GENERATED_CANDIDATE_ONLY"
+    },
+    {
+      "page_id": "sajik_high_conv",
+      "intent_slug": "high-conv",
+      "theme": "theme-high",
+      "blueprint": "v4-high-priority-deadline-v2",
+      "primary_keyword": "사직동 고등학생영어회화",
+      "url": "/seoul-jongno-sajikdong-high-conv.html",
+      "generation_status": "READY_FOR_V4_5_GENERATION"
+    },
+    {
+      "page_id": "sajik_mid_conv",
+      "intent_slug": "mid-conv",
+      "theme": "theme-mid",
+      "blueprint": "v4-mid-school-bridge-v2",
+      "primary_keyword": "사직동 중학생영어회화",
+      "url": "/seoul-jongno-sajikdong-mid-conv.html",
+      "generation_status": "READY_FOR_V4_5_GENERATION"
+    },
+    {
+      "page_id": "sajik_elem_tutor",
+      "intent_slug": "elem-tutor",
+      "theme": "theme-elem",
+      "blueprint": "v4-elem-parent-evidence-v2",
+      "primary_keyword": "사직동 초등학생영어과외",
+      "url": "/seoul-jongno-sajikdong-elem-tutor.html",
+      "generation_status": "READY_FOR_V4_5_GENERATION"
+    },
+    {
+      "page_id": "sajik_univ_conv",
+      "intent_slug": "univ-conv",
+      "theme": "theme-univ",
+      "blueprint": "v4-univ-campus-output-v2",
+      "primary_keyword": "사직동 대학생영어회화",
+      "url": "/seoul-jongno-sajikdong-univ-conv.html",
+      "generation_status": "READY_FOR_V4_5_GENERATION"
+    },
+    {
+      "page_id": "sajik_job_conv",
+      "intent_slug": "jobseeker-conv",
+      "theme": "theme-job",
+      "blueprint": "v4-job-interview-evidence-v2",
+      "primary_keyword": "사직동 취준생영어회화",
+      "url": "/seoul-jongno-sajikdong-jobseeker-conv.html",
+      "generation_status": "READY_FOR_V4_5_GENERATION"
+    },
+    {
+      "page_id": "sajik_worker_biz",
+      "intent_slug": "biz-business-conv",
+      "theme": "theme-worker",
+      "blueprint": "v4-worker-work-output-v2",
+      "primary_keyword": "사직동 직장인비즈니스영어",
+      "url": "/seoul-jongno-sajikdong-biz-business-conv.html",
+      "generation_status": "READY_FOR_V4_5_GENERATION"
+    },
+    {
+      "page_id": "sajik_housewife_conv",
+      "intent_slug": "housewife-conv",
+      "theme": "theme-housewife",
+      "blueprint": "v4-housewife-lifefit-v2",
+      "primary_keyword": "사직동 주부영어회화",
+      "url": "/seoul-jongno-sajikdong-housewife-conv.html",
+      "generation_status": "READY_FOR_V4_5_GENERATION"
+    }
+  ],
+  "required_before_html_generation": [
+    "reuse locked 8-page contracts",
+    "apply Sajikdong variation pack",
+    "same-intent cross-locality duplicate gate against Cheongun reference",
+    "broken-link check",
+    "schema/canonical/theme checks",
+    "noindex preview render",
+    "manual visual QA"
+  ],
+  "production_deploy": false,
+  "qa": {
+    "structure_and_duplicate": "PASS",
+    "structure_failures": 0,
+    "structure_warnings": 0,
+    "cross_locality_reference": "청운동 동일 intent 8페이지",
+    "cross_duplicate_failures": 0,
+    "cross_duplicate_warnings": 0,
+    "chromium_render": "PASS",
+    "desktop_renders": 8,
+    "mobile_renders": 8,
+    "horizontal_overflow": 0,
+    "console_page_errors": 0,
+    "modal_smoke_test": "PASS"
+  },
+  "safety": {
+    "robots": "noindex,nofollow",
+    "live_lead_submission": false,
+    "sitemap": false,
+    "main_merge": false,
+    "production_deploy": false
+  },
+  "next_gate": [
+    "repository shared assets integration",
+    "existing 95 URLs and redirects regression",
+    "Netlify deploy preview",
+    "sitemap/canonical final review",
+    "explicit production approval"
+  ],
+  "content_conversion_gate": {
+    "required": true,
+    "status": "CONTRACT_PASS_HTML_RENDER_PENDING",
+    "reason": "V4.5 audience blueprints, localized minimal Hero, V4.4 phone CTA and decision-proof contracts are approved. Final representative HTML files must still be generated and rendered on the safe branch before deploy preview.",
+    "required_before_promotion": [
+      "generate representative V4.5 HTML",
+      "same-intent cross-locality duplicate gate",
+      "desktop/mobile render QA",
+      "canonical/schema/internal-link QA",
+      "95 URL + redirects regression",
+      "deploy preview",
+      "explicit production approval"
+    ]
+  },
+  "high_gold_v2": {
+    "status": "PROTOTYPE_NO_INDEX_NOT_DEPLOYED",
+    "title": "사직동 고등학생영어회화 - 수행평가·듣기·발표 1:1 ENGLISH PT",
+    "conversion_standard": "CONVERSION_CONTENT_STANDARD_V2.md",
+    "reference_benchmark": "REFERENCE_BENCHMARK_ENGLISHUP_MUNGYEONG_V1.md",
+    "required_before_promotion": [
+      "manual content review",
+      "same-intent duplicate gate",
+      "repository shared-asset integration",
+      "95 URL + redirect regression",
+      "deploy preview",
+      "explicit production approval"
+    ]
+  },
+  "high_gold_v3_compact": {
+    "status": "PROTOTYPE_NOINDEX_NOT_DEPLOYED",
+    "standard": "CONVERSION_CONTENT_STANDARD_V3_COMPACT.md",
+    "rationale": "V2 was too verbose. V3 removes non-decision prose and keeps only scope, symptoms, method, fit and conversion information.",
+    "metrics": {
+      "v2_visible_text_chars": 9608,
+      "v3_visible_text_chars": 4253,
+      "reduction_pct": 55.7,
+      "h2": 11,
+      "h3": 32,
+      "paragraphs": 49
+    },
+    "render_qa": "PASS"
+  },
+  "presentation_standard": "V4_5_LOCALIZED_MINIMAL_HERO_STANDARD.md",
+  "phone_cta": {
+    "label": "전화 010-5006-8027",
+    "href": "tel:+821050068027"
+  },
+  "gold_sample_sync": {
+    "synced_at": "2026-09-22",
+    "gold_sample_freeze": "V4_5_GOLD_SAMPLE_FREEZE_20260922.json",
+    "hero_standard": "V4_5_LOCALIZED_MINIMAL_HERO_STANDARD.md",
+    "hero_h1s": [
+      "사직동 초등학생영어과외",
+      "사직동 중학생영어회화",
+      "사직동 고등학생영어회화",
+      "사직동 대학생영어회화",
+      "사직동 취준생영어회화",
+      "사직동 직장인비즈니스영어",
+      "사직동 주부영어회화"
+    ],
+    "repository_html_state": "NOT_PRESENT",
+    "note": "This file is a legacy locality reference contract only. No Sajikdong HTML is currently committed on the safe branch. Use the frozen V4.5 Gold Sample generator/production batch system for future generation."
+  }
+}

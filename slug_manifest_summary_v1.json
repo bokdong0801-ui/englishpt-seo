@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "status": "PASS",
+  "resolver_candidates": 5213,
+  "structurally_eligible_candidates": 5149,
+  "hold_admin_branch_offices": 64,
+  "corrected_synthetic_hierarchy_candidates": 517,
+  "slug_final_collisions": 0,
+  "preserved_95_url_conflicts": 0,
+  "variation_signature_duplicates": 0,
+  "duplicate_gate": {
+    "approval8": "PASS",
+    "structural_clone_pilot10": "FAIL_AS_EXPECTED",
+    "variation_probe_v4": "PASS",
+    "automated_failures": 0,
+    "manual_review_warnings": 2,
+    "manual_review_result": "PASS"
+  },
+  "next_candidate": "서울특별시 종로구 사직동",
+  "production_deploy": false
+}

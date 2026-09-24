@@ -1,0 +1,79 @@
+{
+  "version": "4.5",
+  "status": "FROZEN_7TARGET_GENERATOR_INPUT_NOT_PRODUCTION",
+  "standard": "V4_4_PHONE_DECISION_PROOF_STANDARD.md",
+  "reject_unlisted_blueprints": true,
+  "production_deploy": false,
+  "approved_blueprints": [
+    {
+      "audience": "univ",
+      "blueprint_id": "v4-univ-campus-output-v2",
+      "intent": "univ-conv",
+      "theme": "theme-univ",
+      "qa": "PASS_FINAL_CONTENT"
+    },
+    {
+      "audience": "job",
+      "blueprint_id": "v4-job-interview-evidence-v2",
+      "intent": "jobseeker-conv",
+      "theme": "theme-job",
+      "qa": "PASS_FINAL_CONTENT"
+    },
+    {
+      "audience": "elem",
+      "blueprint_id": "v4-elem-parent-evidence-v2",
+      "intent": "elem-tutor",
+      "theme": "theme-elem",
+      "qa": "PASS_FINAL_CONTENT"
+    },
+    {
+      "audience": "mid",
+      "blueprint_id": "v4-mid-school-bridge-v2",
+      "intent": "mid-conv",
+      "theme": "theme-mid",
+      "qa": "PASS_FINAL_CONTENT"
+    },
+    {
+      "audience": "high",
+      "blueprint_id": "v4-high-priority-deadline-v2",
+      "intent": "high-conv",
+      "theme": "theme-high",
+      "qa": "PASS_FINAL_CONTENT"
+    },
+    {
+      "audience": "worker",
+      "blueprint_id": "v4-worker-work-output-v2",
+      "intent": "biz-business-conv",
+      "theme": "theme-worker",
+      "qa": "PASS_FINAL_CONTENT"
+    },
+    {
+      "audience": "housewife",
+      "blueprint_id": "v4-housewife-lifefit-v2",
+      "intent": "housewife-conv",
+      "theme": "theme-housewife",
+      "qa": "PASS_FINAL_CONTENT"
+    }
+  ],
+  "holds": [],
+  "notes": [
+    "All 7 audiences are frozen at V4.5 final content-contract level for the 5x7 pilot.",
+    "elem/mid/high/worker/housewife retain their previously approved final audience-specific blueprints.",
+    "univ upgraded to v4-univ-campus-output-v2 with campus-output decision proof and test/interview boundaries.",
+    "job upgraded to v4-job-interview-evidence-v2 with evidence-based interview decision proof and test-score boundary.",
+    "visible Hero H1 follows V4.5 localized minimal keyword contract for all 7 targets.",
+    "phone CTA and decision proof requirements inherit V4.4 contract.",
+    "production_deploy remains false."
+  ],
+  "phone_cta": {
+    "label": "전화 010-5006-8027",
+    "href": "tel:+821050068027"
+  },
+  "presentation_standard": "V4_5_LOCALIZED_MINIMAL_HERO_STANDARD.md",
+  "hero_contract": "localized-minimal-keyword-v4.5",
+  "freeze": {
+    "version": "V4.5-7TARGET-FINAL",
+    "frozen_at": "2026-09-21",
+    "production_deploy": false
+  }
+}

@@ -1,0 +1,392 @@
+{
+  "version": "4.5",
+  "status": "FROZEN_7TARGET_BLUEPRINTS_NOT_PRODUCTION",
+  "standard": "CONVERSION_CONTENT_STANDARD_V4_CONVERSATIONAL_COMPACT.md",
+  "locality": "서울특별시 종로구 사직동",
+  "blueprints": {
+    "elem": {
+      "id": "v4-elem-parent-evidence-v2",
+      "audience": "초등학생/학부모",
+      "intent": "elem-tutor",
+      "theme": "theme-elem",
+      "status": "APPROVED_FINAL_CONTENT",
+      "first_question": "숙제는 하는데, 영어책 한 줄을 혼자 읽으라고 하면 왜 갑자기 어려워할까요?",
+      "flow": [
+        "Hero: 집에서 보이는 실제 장면",
+        "읽기/어휘/학교영어/말하기 4가지 행동",
+        "단어→문장→뜻→사용 연결표",
+        "학부모 5분 확인 질문",
+        "아이 현재 상태 기반 5단계 수업",
+        "잘 맞는 경우/다른 과정",
+        "학부모 FAQ",
+        "상담 CTA"
+      ],
+      "hero_contract": "localized-minimal-keyword-v4.5",
+      "hero_display": {
+        "tutor": "초등학생영어과외",
+        "conversation": "초등학생영어회화",
+        "guide": "초등영어"
+      },
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "읽기",
+        "이해",
+        "기억",
+        "사용",
+        "학부모 5분 확인",
+        "예시 피드백"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ],
+      "hero_h1_templates": {
+        "tutor": "{dong_name} 초등학생영어과외",
+        "conversation": "{dong_name} 초등학생영어회화",
+        "guide": "{dong_name} 초등영어"
+      }
+    },
+    "mid": {
+      "id": "v4-mid-school-bridge-v2",
+      "audience": "중학생",
+      "intent": "mid-conv",
+      "theme": "theme-mid",
+      "status": "APPROVED_FINAL_CONTENT",
+      "first_question": "시험 전에는 외웠는데, 수행평가나 질문에서 문장이 조금만 바뀌면 다시 막히나요?",
+      "flow": [
+        "Hero: 중학교 영어의 연결 문제",
+        "본문/수행/듣기/문법 4가지 실제 막힘",
+        "평소/수행 직전/지필 직전 우선순위",
+        "외운 문장을 내 말로 바꾸는 작은 연습",
+        "학교영어와 연결한 5단계 수업",
+        "잘 맞는 경우/내신 우선 경계",
+        "학생·학부모 FAQ",
+        "상담 CTA"
+      ],
+      "hero_contract": "localized-minimal-keyword-v4.5",
+      "hero_display": {
+        "conversation": "중학생영어회화",
+        "guide": "중등영어"
+      },
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "본문",
+        "문법",
+        "듣기",
+        "수행",
+        "중1·중2·중3 우선순위",
+        "다음 시험 약점 기록"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ],
+      "hero_h1_templates": {
+        "conversation": "{dong_name} 중학생영어회화",
+        "guide": "{dong_name} 중등영어"
+      }
+    },
+    "high": {
+      "id": "v4-high-priority-deadline-v2",
+      "audience": "고등학생",
+      "intent": "high-conv",
+      "theme": "theme-high",
+      "status": "APPROVED_FINAL_CONTENT",
+      "first_question": "내신도, 모의고사도, 수행평가도 급한데 회화까지 따로 해야 할까요?",
+      "flow": [
+        "Hero: 모든 고등영어를 동시에 잡지 않기",
+        "가까운 일정별 우선순위 표",
+        "회화가 필요한 발표/질문/요약/면접 4장면",
+        "회화로 해결하면 안 되는 내신·수능 경계",
+        "실제 평가 장면을 재현하는 5단계 수업",
+        "점수 대신 확인할 행동 변화",
+        "고등 FAQ",
+        "상담 CTA"
+      ],
+      "hero_contract": "localized-minimal-keyword-v4.5",
+      "hero_display": {
+        "conversation": "고등학생영어회화",
+        "guide": "고등영어"
+      },
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "deadline",
+        "질문 대응",
+        "요약",
+        "회화/내신 경계",
+        "고1·고2·고3 우선순위",
+        "평가행동 피드백"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ],
+      "hero_h1_templates": {
+        "conversation": "{dong_name} 고등학생영어회화",
+        "guide": "{dong_name} 고등영어"
+      }
+    },
+    "univ": {
+      "id": "v4-univ-campus-output-v2",
+      "audience": "대학생",
+      "intent": "univ-conv",
+      "theme": "theme-univ",
+      "status": "APPROVED_FINAL_CONTENT",
+      "first_question": "발표 자료는 준비했는데, 질문을 받거나 팀원과 의견을 주고받을 때 영어가 갑자기 짧아지나요?",
+      "flow": [
+        "Hero: 가장 가까운 캠퍼스 영어 사용 장면",
+        "발표·세미나·팀프로젝트·교환학생·캠퍼스 대화 실제 상황",
+        "학기 일정과 마감 기준 우선순위",
+        "첫 반응→의견 근거→요약·바꿔 말하기→질문 대응 연결",
+        "실제 발표·토론·생활 장면을 바꿔 재사용하는 5단계 수업",
+        "공인시험 점수 준비와 실제 사용 영어의 경계",
+        "대학생 Decision Proof + 예시 피드백",
+        "대학생 FAQ",
+        "전화 + 상담 CTA"
+      ],
+      "hero_contract": "localized-minimal-keyword-v4.5",
+      "hero_display": {
+        "conversation": "대학생영어회화"
+      },
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "첫 반응",
+        "의견·근거",
+        "요약·바꿔 말하기",
+        "질문 대응",
+        "가까운 일정 우선순위",
+        "캠퍼스 장면 재사용"
+      ],
+      "sample_feedback_focus": [
+        "질문 직후 첫 문장",
+        "근거 1~2개 연결",
+        "모르는 표현 우회",
+        "상대 질문 되묻기",
+        "다음 발표·세미나 재사용"
+      ],
+      "boundary": [
+        "TOEIC·IELTS 등 점수 자체가 가장 급하면 시험영어 우선",
+        "영어면접이 가장 가까우면 취준생 영어면접 과정 우선"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ],
+      "hero_h1_templates": {
+        "conversation": "{dong_name} 대학생영어회화"
+      }
+    },
+    "job": {
+      "id": "v4-job-interview-evidence-v2",
+      "audience": "취준생",
+      "intent": "jobseeker-conv",
+      "theme": "theme-job",
+      "status": "APPROVED_FINAL_CONTENT",
+      "first_question": "답변 내용은 준비했는데, 질문이 바뀌거나 근거를 더 묻는 순간 답이 길어지거나 끊기나요?",
+      "flow": [
+        "Hero: 가장 가까운 채용 일정과 영어면접 장면",
+        "자기소개·경험·지원동기·직무 질문·꼬리질문 실제 상황",
+        "채용 마감과 면접 일정 기준 우선순위",
+        "경험 근거 정리→짧은 답변 블록→직무 연결→꼬리질문 대응",
+        "질문 순서와 표현을 바꿔 재현하는 5단계 모의면접",
+        "TOEIC Speaking·OPIc 점수 준비와 영어면접의 경계",
+        "취준생 Decision Proof + 예시 피드백",
+        "취준생 FAQ",
+        "전화 + 상담 CTA"
+      ],
+      "hero_contract": "localized-minimal-keyword-v4.5",
+      "hero_display": {
+        "conversation": "취준생영어회화"
+      },
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "첫 답변",
+        "경험 근거",
+        "직무 연결",
+        "꼬리질문 회복",
+        "답변 길이 조절",
+        "다음 모의질문 기록"
+      ],
+      "sample_feedback_focus": [
+        "첫 20초 답변",
+        "STAR/경험 근거",
+        "회사·직무 연결",
+        "예상 밖 질문 회복",
+        "불필요하게 긴 문장 축소"
+      ],
+      "boundary": [
+        "공인 말하기시험 점수 제출이 가장 급하면 시험영어 우선",
+        "일상 회화가 목적이면 일반 성인 회화 과정 우선"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ],
+      "hero_h1_templates": {
+        "conversation": "{dong_name} 취준생영어회화"
+      }
+    },
+    "worker": {
+      "id": "v4-worker-work-output-v2",
+      "audience": "직장인",
+      "intent": "biz-business-conv",
+      "theme": "theme-worker",
+      "status": "APPROVED_FINAL_CONTENT",
+      "first_question": "영어 공부가 필요하다기보다, 다음 회의나 발표가 당장 급하신가요?",
+      "flow": [
+        "Hero: 다음 업무 일정",
+        "회의/발표/콜/고객·협상 실제 장면",
+        "표현집보다 상황 연결이 필요한 이유",
+        "실제 업무자료를 연습 재료로 전환",
+        "다음 업무에서 쓸 문장을 남기는 5단계 수업",
+        "바쁜 주 10분/5분 유지 루틴",
+        "비즈니스영어 적합/시험영어 경계",
+        "직장인 FAQ",
+        "상담 CTA"
+      ],
+      "hero_contract": "localized-minimal-keyword-v4.5",
+      "hero_display": {
+        "business": "직장인비즈니스영어",
+        "conversation": "직장인영어회화"
+      },
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "회의",
+        "발표",
+        "콜",
+        "고객대응",
+        "실제 업무자료 일반화",
+        "다음 업무 문장"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ],
+      "hero_h1_templates": {
+        "business": "{dong_name} 직장인비즈니스영어",
+        "conversation": "{dong_name} 직장인영어회화"
+      }
+    },
+    "housewife": {
+      "id": "v4-housewife-lifefit-v2",
+      "audience": "주부 30·40·50·60대",
+      "intent": "housewife-conv",
+      "theme": "theme-housewife",
+      "status": "APPROVED_FINAL_CONTENT",
+      "first_question": "영어가 싫어서 미룬 게 아니라, 가족 일정과 하루 일과 속에서 내 공부가 자꾸 뒤로 밀렸던 건 아닐까요?",
+      "flow": [
+        "Hero: 생활 때문에 미뤄진 영어",
+        "30·40·50·60대 대표 시작 상황",
+        "여행/아이영어/자기계발/재취업/해외생활/외국인대화 목적 분기",
+        "영어가 계속 끊긴 생활상의 이유",
+        "책상에 오래 앉지 않고 이어가는 방법",
+        "현재 수준부터 시작하는 5단계 수업",
+        "실제 가능한 시간과 유지 가능한 빈도 확인",
+        "오래 쉰 기간/기억/문법/아이영어/여행/숙제 FAQ",
+        "더 구체적인 목적별 다음 과정",
+        "무료 PT 진단 CTA"
+      ],
+      "safety": [
+        "No fabricated testimonials",
+        "No score/time-to-result promises",
+        "No free-trial claim",
+        "No guaranteed daytime availability",
+        "Age cards are representative contexts, not stereotypes"
+      ],
+      "hero_contract": "localized-minimal-keyword-v4.5",
+      "hero_display": {
+        "conversation": "주부영어회화"
+      },
+      "detailed_intro_location": "first-body-section",
+      "decision_proof": [
+        "여행",
+        "아이 영어",
+        "재시작",
+        "루틴",
+        "가능 시간",
+        "생활 재사용"
+      ],
+      "cta_contract": "phone-010-5006-8027 + consultation-form",
+      "section_order": [
+        "minimal_hero",
+        "detailed_intro",
+        "scope_priority",
+        "real_situations",
+        "class_flow",
+        "fit_or_observable_change",
+        "decision_proof",
+        "sample_feedback",
+        "faq",
+        "final_cta"
+      ],
+      "hero_h1_templates": {
+        "conversation": "{dong_name} 주부영어회화"
+      }
+    }
+  },
+  "presentation_standard": "V4_5_LOCALIZED_MINIMAL_HERO_STANDARD.md",
+  "phone_cta": {
+    "label": "전화 010-5006-8027",
+    "href": "tel:+821050068027"
+  },
+  "freeze": {
+    "version": "V4.5-7TARGET-FINAL",
+    "frozen_at": "2026-09-21",
+    "production_deploy": false,
+    "rule": "All 7 audience blueprints are frozen for the 5-locality x 7-target pilot. Any content-structure change requires a new version."
+  }
+}

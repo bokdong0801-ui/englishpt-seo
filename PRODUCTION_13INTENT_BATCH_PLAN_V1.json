@@ -1,0 +1,74 @@
+{
+  "version": "1.0",
+  "status": "STAGE3_130_STATIC_DUPLICATE_RENDER_HUMAN_PASS_USER_REVIEW_PENDING_NOT_PRODUCTION",
+  "created_at": "2026-09-22",
+  "locality_count": 5149,
+  "intent_count": 13,
+  "page_count": 66937,
+  "region_hubs_excluded": 5149,
+  "service_family": {
+    "count": 7,
+    "gold_freeze": "V4_5_GOLD_SAMPLE_FREEZE_20260922.json",
+    "pages_per_locality": 7,
+    "total_pages": 36043
+  },
+  "exam_family": {
+    "count": 6,
+    "gold_freeze": "pilot-v45-exam-5x6/PILOT_EXAM_5X6_GOLD_FREEZE_V1.md",
+    "pages_per_locality": 6,
+    "total_pages": 30894,
+    "tos_standalone": false
+  },
+  "next_required_gate": "USER_REVIEW_STAGE3_EXAMPLES_THEN_STAGE4_100_LOCALITIES_X_13",
+  "after_row_manifest": [
+    "generate 1 locality x 13 intent preview",
+    "generate 10 locality x 13 intent dry-run",
+    "generate 100 locality x 13 intent pre-production batch",
+    "generate all 66,937 pages"
+  ],
+  "example_review_policy": "PRODUCTION_SAMPLE_REVIEW_POLICY_V1.json",
+  "production_deploy": false,
+  "main_merge": false,
+  "locality_manifest": {
+    "status": "PASS",
+    "stage1_record": "PRODUCTION_LOCALITY_ROWS_5149_STAGE1_V1.json",
+    "rows": 5149,
+    "source_candidates": 5213,
+    "holds": 64,
+    "slug_unique": 5149,
+    "locality_key_unique": 5149,
+    "package_sha256": "c3d2fd8f52d08442cedef18d5bb2b610b5c1131561f2dce40f36c9c2b770da60"
+  },
+  "stage2": {
+    "status": "PASS_USER_REVIEW_PENDING",
+    "locality": "서울특별시 종로구 사직동",
+    "region_slug": "seoul-jongno-sajikdong",
+    "pages": 13,
+    "static_qa": "PASS",
+    "render_qa": "PASS",
+    "human_review": "PASS",
+    "user_review": "PENDING",
+    "workflow_run_id": 35698270506,
+    "output_dir": "stage2-production-preview-sajik-13",
+    "human_review_file": "stage2-production-preview-sajik-13/STAGE2_SAJIK_13_HUMAN_REVIEW_V1.md",
+    "production_deploy": false
+  },
+  "stage3": {
+    "status": "PASS_USER_REVIEW_PENDING",
+    "localities": 10,
+    "intents": 13,
+    "pages": 130,
+    "static_qa": "PASS",
+    "duplicate_qa": "PASS",
+    "render_qa": "PASS",
+    "human_review": "PASS",
+    "user_review": "PENDING",
+    "workflow_run_id": 35877014313,
+    "max_cosine": 0.7511,
+    "max_5_shingle_jaccard": 0.1982,
+    "render_cases": 260,
+    "output_dir": "stage3-production-dryrun-10x13",
+    "human_review_file": "stage3-production-dryrun-10x13/STAGE3_10X13_HUMAN_REVIEW_V1.md",
+    "production_deploy": false
+  }
+}

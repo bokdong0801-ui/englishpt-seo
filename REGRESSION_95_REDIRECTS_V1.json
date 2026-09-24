@@ -1,0 +1,1627 @@
+{
+  "version": "1.0",
+  "status": "PASS",
+  "preserved_urls": {
+    "expected": 95,
+    "actual": 95,
+    "existing": 95,
+    "canonical_failures": 0,
+    "h1_failures": 0,
+    "sitemap_missing": [],
+    "sitemap_extra": []
+  },
+  "redirects": {
+    "expected": 74,
+    "json_count": 74,
+    "netlify_rule_count": 75,
+    "failed": 0
+  },
+  "batch_count": {
+    "eligible_localities": 5149,
+    "targets": 7,
+    "service_pages": 36043,
+    "future_hubs_separate": 5149,
+    "service_plus_hubs": 41192
+  },
+  "failures": [],
+  "page_checks": [
+    {
+      "url": "/dalseo-songhyeondong-1to1-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-1to1-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-1to1-duolingo.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-1to1-duolingo.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-1to1-ielts.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-1to1-ielts.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-1to1-interview.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-1to1-interview.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-1to1-opic.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-1to1-opic.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-1to1-toefl.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-1to1-toefl.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-1to1-toeic.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-1to1-toeic.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-academy-ielts.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-academy-ielts.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-academy-opic.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-academy-opic.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-academy-toeic.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-academy-toeic.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-adult-academy.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-adult-academy.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-adult-basic-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-adult-basic-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-adult-beginner-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-adult-beginner-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-adult-cert.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-adult-cert.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-adult-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-adult-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-adult-tutor.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-adult-tutor.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-biz-academy.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-biz-academy.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-biz-basic-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-biz-basic-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-biz-beginner-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-biz-beginner-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-biz-business-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-biz-business-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-biz-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-biz-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-biz-tutor.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-biz-tutor.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-elem-academy.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-elem-academy.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-elem-basic-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-elem-basic-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-elem-beginner-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-elem-beginner-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-elem-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-elem-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-elem-listening-test.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-elem-listening-test.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-elem-performance-test.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-elem-performance-test.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-elem-phonics.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-elem-phonics.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-elem-reading.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-elem-reading.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-elem-speaking-test.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-elem-speaking-test.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-elem-tutor.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-elem-tutor.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-elem-vocab.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-elem-vocab.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-high-academy.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-high-academy.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-high-basic-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-high-basic-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-high-beginner-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-high-beginner-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-high-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-high-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-high-grammar.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-high-grammar.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-high-listening-test.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-high-listening-test.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-high-performance-test.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-high-performance-test.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-high-reading.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-high-reading.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-high-school.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-high-school.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-high-suneung.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-high-suneung.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-high-tutor.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-high-tutor.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-housewife-academy.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-housewife-academy.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-housewife-basic-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-housewife-basic-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-housewife-beginner-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-housewife-beginner-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-housewife-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-housewife-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-housewife-tutor.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-housewife-tutor.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-intl-academic-writing.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-intl-academic-writing.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-intl-debate.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-intl-debate.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-intl-presentation.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-intl-presentation.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-intl-reading.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-intl-reading.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-intl-sat.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-intl-sat.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-intl-school-grade.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-intl-school-grade.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-intl-toefl-junior.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-intl-toefl-junior.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-intl-tutor.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-intl-tutor.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-intl-vacation-maintenance.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-intl-vacation-maintenance.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-jobseeker-academy.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-jobseeker-academy.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-jobseeker-basic-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-jobseeker-basic-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-jobseeker-beginner-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-jobseeker-beginner-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-jobseeker-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-jobseeker-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-jobseeker-tutor.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-jobseeker-tutor.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-mid-academy.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-mid-academy.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-mid-basic-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-mid-basic-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-mid-beginner-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-mid-beginner-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-mid-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-mid-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-mid-grammar.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-mid-grammar.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-mid-listening-test.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-mid-listening-test.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-mid-performance-test.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-mid-performance-test.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-mid-school.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-mid-school.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-mid-speaking-test.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-mid-speaking-test.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-mid-tutor.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-mid-tutor.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-mid-vocab.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-mid-vocab.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-senior-academy.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-senior-academy.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-senior-basic-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-senior-basic-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-senior-beginner-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-senior-beginner-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-senior-cert.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-senior-cert.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-senior-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-senior-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-senior-daily.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-senior-daily.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-senior-drama.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-senior-drama.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-senior-grandchild.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-senior-grandchild.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-senior-hobby.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-senior-hobby.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-senior-travel.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-senior-travel.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-senior-tutor.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-senior-tutor.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-univ-academy.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-univ-academy.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-univ-basic-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-univ-basic-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-univ-beginner-eng-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-univ-beginner-eng-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-univ-conv.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-univ-conv.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-univ-exchange.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-univ-exchange.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-univ-major-english.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-univ-major-english.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong-univ-tutor.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong-univ-tutor.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/dalseo-songhyeondong.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/dalseo-songhyeondong.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    },
+    {
+      "url": "/englishpt.html",
+      "exists": true,
+      "canonical": "https://englishpt.kr/englishpt.html",
+      "canonical_ok": true,
+      "h1_count": 1,
+      "sitemap": true,
+      "broken_internal_html_links": []
+    }
+  ],
+  "redirect_checks": [
+    {
+      "old": "/dalseo-songhyeondong-1to1-tos.html",
+      "target": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-academy-phone.html",
+      "target": "/dalseo-songhyeondong-adult-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-adult-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-academy-video.html",
+      "target": "/dalseo-songhyeondong-adult-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-adult-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-basic-conv.html",
+      "target": "/dalseo-songhyeondong-adult-basic-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-adult-basic-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-beginner-conv.html",
+      "target": "/dalseo-songhyeondong-adult-beginner-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-adult-beginner-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-conv-phone.html",
+      "target": "/dalseo-songhyeondong-adult-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-adult-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-conv-video.html",
+      "target": "/dalseo-songhyeondong-adult-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-adult-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-ielts.html",
+      "target": "/dalseo-songhyeondong-1to1-ielts.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-ielts.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-opic.html",
+      "target": "/dalseo-songhyeondong-1to1-opic.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-opic.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-toeic-speaking.html",
+      "target": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-toeic.html",
+      "target": "/dalseo-songhyeondong-1to1-toeic.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-toeic.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-tos.html",
+      "target": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-tutor-phone.html",
+      "target": "/dalseo-songhyeondong-adult-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-adult-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-adult-tutor-video.html",
+      "target": "/dalseo-songhyeondong-adult-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-adult-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-academy-phone.html",
+      "target": "/dalseo-songhyeondong-biz-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-biz-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-academy-video.html",
+      "target": "/dalseo-songhyeondong-biz-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-biz-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-basic-conv.html",
+      "target": "/dalseo-songhyeondong-biz-basic-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-biz-basic-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-beginner-conv.html",
+      "target": "/dalseo-songhyeondong-biz-beginner-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-biz-beginner-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-cert.html",
+      "target": "/dalseo-songhyeondong-adult-cert.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-adult-cert.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-conv-phone.html",
+      "target": "/dalseo-songhyeondong-biz-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-biz-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-conv-video.html",
+      "target": "/dalseo-songhyeondong-biz-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-biz-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-ielts.html",
+      "target": "/dalseo-songhyeondong-1to1-ielts.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-ielts.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-opic.html",
+      "target": "/dalseo-songhyeondong-1to1-opic.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-opic.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-toeic-speaking.html",
+      "target": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-toeic.html",
+      "target": "/dalseo-songhyeondong-1to1-toeic.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-toeic.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-tos.html",
+      "target": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-tutor-phone.html",
+      "target": "/dalseo-songhyeondong-biz-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-biz-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-biz-tutor-video.html",
+      "target": "/dalseo-songhyeondong-biz-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-biz-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-elem-academy-phone.html",
+      "target": "/dalseo-songhyeondong-elem-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-elem-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-elem-academy-video.html",
+      "target": "/dalseo-songhyeondong-elem-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-elem-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-elem-basic-conv.html",
+      "target": "/dalseo-songhyeondong-elem-basic-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-elem-basic-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-elem-beginner-conv.html",
+      "target": "/dalseo-songhyeondong-elem-beginner-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-elem-beginner-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-elem-conv-phone.html",
+      "target": "/dalseo-songhyeondong-elem-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-elem-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-elem-conv-video.html",
+      "target": "/dalseo-songhyeondong-elem-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-elem-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-elem-tutor-phone.html",
+      "target": "/dalseo-songhyeondong-elem-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-elem-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-elem-tutor-video.html",
+      "target": "/dalseo-songhyeondong-elem-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-elem-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-high-academy-phone.html",
+      "target": "/dalseo-songhyeondong-high-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-high-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-high-academy-video.html",
+      "target": "/dalseo-songhyeondong-high-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-high-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-high-basic-conv.html",
+      "target": "/dalseo-songhyeondong-high-basic-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-high-basic-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-high-beginner-conv.html",
+      "target": "/dalseo-songhyeondong-high-beginner-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-high-beginner-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-high-conv-phone.html",
+      "target": "/dalseo-songhyeondong-high-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-high-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-high-conv-video.html",
+      "target": "/dalseo-songhyeondong-high-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-high-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-high-tutor-phone.html",
+      "target": "/dalseo-songhyeondong-high-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-high-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-high-tutor-video.html",
+      "target": "/dalseo-songhyeondong-high-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-high-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-academy-phone.html",
+      "target": "/dalseo-songhyeondong-housewife-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-housewife-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-academy-video.html",
+      "target": "/dalseo-songhyeondong-housewife-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-housewife-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-basic-conv.html",
+      "target": "/dalseo-songhyeondong-housewife-basic-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-housewife-basic-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-beginner-conv.html",
+      "target": "/dalseo-songhyeondong-housewife-beginner-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-housewife-beginner-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-cert.html",
+      "target": "/dalseo-songhyeondong-adult-cert.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-adult-cert.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-conv-phone.html",
+      "target": "/dalseo-songhyeondong-housewife-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-housewife-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-conv-video.html",
+      "target": "/dalseo-songhyeondong-housewife-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-housewife-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-ielts.html",
+      "target": "/dalseo-songhyeondong-1to1-ielts.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-ielts.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-opic.html",
+      "target": "/dalseo-songhyeondong-1to1-opic.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-opic.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-toeic-speaking.html",
+      "target": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-toeic.html",
+      "target": "/dalseo-songhyeondong-1to1-toeic.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-toeic.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-tos.html",
+      "target": "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-1to1-toeic-speaking.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-tutor-phone.html",
+      "target": "/dalseo-songhyeondong-housewife-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-housewife-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-housewife-tutor-video.html",
+      "target": "/dalseo-songhyeondong-housewife-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-housewife-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-mid-academy-phone.html",
+      "target": "/dalseo-songhyeondong-mid-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-mid-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-mid-academy-video.html",
+      "target": "/dalseo-songhyeondong-mid-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-mid-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-mid-basic-conv.html",
+      "target": "/dalseo-songhyeondong-mid-basic-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-mid-basic-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-mid-beginner-conv.html",
+      "target": "/dalseo-songhyeondong-mid-beginner-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-mid-beginner-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-mid-conv-phone.html",
+      "target": "/dalseo-songhyeondong-mid-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-mid-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-mid-conv-video.html",
+      "target": "/dalseo-songhyeondong-mid-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-mid-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-mid-tutor-phone.html",
+      "target": "/dalseo-songhyeondong-mid-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-mid-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-mid-tutor-video.html",
+      "target": "/dalseo-songhyeondong-mid-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-mid-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-senior-academy-phone.html",
+      "target": "/dalseo-songhyeondong-senior-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-senior-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-senior-academy-video.html",
+      "target": "/dalseo-songhyeondong-senior-academy.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-senior-academy.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-senior-basic-conv.html",
+      "target": "/dalseo-songhyeondong-senior-basic-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-senior-basic-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-senior-beginner-conv.html",
+      "target": "/dalseo-songhyeondong-senior-beginner-eng-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-senior-beginner-eng-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-senior-conv-phone.html",
+      "target": "/dalseo-songhyeondong-senior-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-senior-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-senior-conv-video.html",
+      "target": "/dalseo-songhyeondong-senior-conv.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-senior-conv.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-senior-tutor-phone.html",
+      "target": "/dalseo-songhyeondong-senior-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-senior-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    },
+    {
+      "old": "/dalseo-songhyeondong-senior-tutor-video.html",
+      "target": "/dalseo-songhyeondong-senior-tutor.html",
+      "target_exists": true,
+      "netlify": [
+        "/dalseo-songhyeondong-senior-tutor.html",
+        "301!"
+      ],
+      "pass": true
+    }
+  ],
+  "production_deploy": false
+}

@@ -1,0 +1,16 @@
+{
+  "version": "4.5-exam-v1",
+  "status": "FROZEN_6_EXAM_PILOT_INPUT_NOT_PRODUCTION",
+  "source": "V4_5_EXAM_BLUEPRINTS.json",
+  "reject_unlisted_blueprints": true,
+  "production_deploy": false,
+  "tos_standalone": false,
+  "blueprint_ids": [
+    "v45-exam-toeic-bottleneck-v1",
+    "v45-exam-toeic-speaking-response-v1",
+    "v45-exam-opic-story-recovery-v1",
+    "v45-exam-ielts-four-skill-band-v1",
+    "v45-exam-det-adaptive-output-v1",
+    "v45-exam-toefl-integrated-academic-v1"
+  ]
+}

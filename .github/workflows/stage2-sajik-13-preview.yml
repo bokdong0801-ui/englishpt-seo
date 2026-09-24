@@ -1,0 +1,83 @@
+name: Stage 2 Sajikdong 13 Intent Preview
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'scripts/generate-production-stage2-sajik-13.py'
+      - 'scripts/render-production-stage2-sajik-13.mjs'
+      - 'scripts/generate-v45-full-depth-pilot.py'
+      - 'scripts/generate-v45-exam-pilot.py'
+      - 'small_deploy_candidate_sajikdong_v1.json'
+      - 'V4_7TARGET_BLUEPRINTS.json'
+      - 'V4_5_EXAM_BLUEPRINTS.json'
+      - '.github/workflows/stage2-sajik-13-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  generate-static-render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate Sajikdong 13-intent production preview
+        run: python3 scripts/generate-production-stage2-sajik-13.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: npm install --no-save playwright && npx playwright install --with-deps chromium
+      - name: Start local server
+        run: |
+          python3 -m http.server 8000 >/tmp/stage2-http.log 2>&1 &
+          sleep 2
+      - name: Render QA 13 pages x desktop/mobile
+        run: node scripts/render-production-stage2-sajik-13.mjs
+      - name: Mark static and render QA pass in manifest
+        run: |
+          python3 - <<'PY'
+          import json, pathlib
+          root=pathlib.Path('stage2-production-preview-sajik-13')
+          qa=json.loads((root/'STAGE2_SAJIK_13_QA_V1.json').read_text(encoding='utf-8'))
+          render=json.loads((root/'STAGE2_SAJIK_13_RENDER_QA_V1.json').read_text(encoding='utf-8'))
+          manifest=json.loads((root/'STAGE2_SAJIK_13_MANIFEST_V1.json').read_text(encoding='utf-8'))
+          assert qa['status']=='PASS', qa
+          assert render['status']=='PASS', render
+          qa['render_qa']={
+            'status':'PASS','file':'stage2-production-preview-sajik-13/STAGE2_SAJIK_13_RENDER_QA_V1.json',
+            'render_cases':render['render_cases'],'desktop_cases':render['desktop_cases'],'mobile_cases':render['mobile_cases'],
+            'failures':render['failures'],'horizontal_overflow_failures':render['horizontal_overflow_failures'],
+            'console_or_page_error_cases':render['console_or_page_error_cases'],'production_deploy':False
+          }
+          qa['status']='STATIC_RENDER_PASS_USER_REVIEW_REQUIRED_NOT_PRODUCTION'
+          manifest['render_qa']=qa['render_qa']
+          manifest['status']='STAGE2_1X13_STATIC_RENDER_PASS_USER_REVIEW_REQUIRED_NOT_PRODUCTION'
+          (root/'STAGE2_SAJIK_13_QA_V1.json').write_text(json.dumps(qa,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          (root/'STAGE2_SAJIK_13_MANIFEST_V1.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps({'status':'PASS','pages':13,'render_cases':render['render_cases'],'user_review_required':True},ensure_ascii=False))
+          PY
+      - name: Commit Stage 2 preview outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add stage2-production-preview-sajik-13
+          if git diff --cached --quiet; then
+            echo "No Stage 2 output changes"
+          else
+            git commit -m "Generate Stage 2 Sajikdong 13-intent production preview"
+            git pull --rebase origin reset-english-service-seo-v3
+            git push origin HEAD:reset-english-service-seo-v3
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage2-sajik-13-production-preview
+          path: stage2-production-preview-sajik-13/**
+          if-no-files-found: error

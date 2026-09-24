@@ -1,0 +1,549 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Stage 3 production dry-run V2: 10 audited localities x 13 frozen intents.
+
+Fresh production renderer built from frozen Gold facts, not copied full-page prose.
+Conversion flow:
+Hero -> decision strip -> self-identification -> context -> problem cards ->
+priority -> training flow -> mid CTA -> proof -> sample feedback ->
+5-point decision guide -> Deep Guide -> FAQ -> related links -> consultation check.
+
+Safety: noindex, no live lead submission, no sitemap, no main merge, no production deploy.
+"""
+from __future__ import annotations
+import hashlib, html, importlib.util, json, math, re, shutil
+from collections import Counter, defaultdict
+from itertools import combinations
+from pathlib import Path
+
+ROOT=Path(__file__).resolve().parents[1]
+OUT=ROOT/"stage3-production-dryrun-10x13"
+INPUT=ROOT/"stage3_localities_10_v1.json"
+PHONE_LABEL="전화 010-5006-8027"
+PHONE_HREF="tel:+821050068027"
+SERVICE_ORDER=["elem-tutor","mid-conv","high-conv","univ-conv","jobseeker-conv","biz-business-conv","housewife-conv"]
+EXAM_ORDER=["toeic","toeic-speaking","opic","ielts","duolingo","toefl"]
+DECISION_SUPPORT_PATH=ROOT/"PRODUCTION_DECISION_SUPPORT_13INTENT_V1.json"
+NARRATIVE_PATH=ROOT/"PRODUCTION_VARIATION_NARRATIVE_V1.json"
+LOCALITY_LONGFORM={
+ "seoul-jongno-sajikdong":[
+  "이 페이지는 먼저 보호자나 학습자가 최근 실제로 확인한 장면을 출발점으로 삼습니다. 숙제나 연습을 끝냈다는 사실보다 처음 보는 문제, 낯선 질문, 설명 없이 다시 해보는 순간에 어디까지 혼자 되는지를 보는 방식입니다. 이미 되는 부분은 반복을 줄이고, 도움을 기다리는 지점만 다음 연습 대상으로 남깁니다.",
+  "선택 기준도 수업 횟수나 홍보 문구보다 관찰 가능한 행동을 중심으로 둡니다. 설명을 들은 직후에는 되지만 며칠 뒤 다시 흔들리는지, 같은 내용을 다른 문제에 옮겨 쓸 수 있는지, 피드백이 진도 보고가 아니라 다음 재확인 항목으로 이어지는지를 비교합니다.",
+  "일정은 이상적인 공부량보다 실제로 지킬 수 있는 반복 횟수를 기준으로 잡습니다. 평일과 주말의 사용 가능 시간이 다르면 같은 과제량을 강요하지 않고, 다음 수업 전에 반드시 다시 꺼내볼 최소 단위를 먼저 정합니다. 계획이 밀렸을 때도 누적 과제를 쌓기보다 마지막으로 안정된 지점에서 다시 시작합니다.",
+  "수업 전·중·후를 따로 보는 것도 이 페이지의 판단 방식입니다. 수업 전에는 혼자 가능한 범위를 확인하고, 수업 중에는 필요한 기준만 설명한 뒤 직접 수행하게 하며, 수업 후에는 질문이나 자료를 바꿔 같은 행동이 다시 나오는지 확인합니다. 한 번의 성공을 장기 변화로 과장하지 않습니다.",
+  "상담을 준비할 때는 최근 자료 하나와 가장 막힌 장면 하나면 충분합니다. 어디에서 멈췄는지, 어떤 도움을 받자 다시 이어졌는지, 다음 일정은 언제인지가 있으면 과정 설명보다 현재 우선순위를 먼저 이야기할 수 있습니다. 상담 자체도 등록 유도가 아니라 현재 기준을 확인하는 단계로 사용합니다."
+ ],
+ "seoul-seocho-naegokdong":[
+  "이 페이지는 과정을 고르기 전에 이번 영어에서 반드시 얻어야 할 결과 하나를 먼저 정하는 방식으로 읽습니다. 학교 수행, 공인시험, 발표, 면접, 업무처럼 결과가 다르면 같은 영어 공부라도 필요한 훈련과 피드백이 달라집니다. 목표를 먼저 고르면 지금 하지 않아도 되는 범위도 함께 정리할 수 있습니다.",
+  "결정할 때는 장점만 나열하지 않고 포기 가능한 목표와 반드시 지켜야 할 목표를 나눕니다. 시간이 한정되어 있다면 모든 영역을 조금씩 하는 것보다 가까운 결과에 직접 영향을 주는 행동에 더 많은 시간을 배분합니다. 이미 안정된 영역은 유지 확인만 하고 병목에 집중합니다.",
+  "생활이나 업무의 구체적인 환경을 지역명만으로 추측하지 않습니다. 대신 사용자가 직접 말할 수 있는 회의, 발표, 수업, 대화, 시험 장면을 기준으로 필요한 기능을 좁힙니다. 위치 정보는 서비스 범위를 알려주는 신호로만 사용하고 학습 성향을 임의로 만들어내지 않습니다.",
+  "수업 과정에서는 시작 전과 직후만 비교하지 않습니다. 같은 난도와 비슷한 조건에서 설명 전·후를 비교하고, 이후 자료와 질문을 바꿨을 때도 기준이 남는지를 확인합니다. 정답률뿐 아니라 필요한 힌트의 양, 시작 속도, 근거 설명, 답변 완결성까지 함께 봅니다.",
+  "비용이나 횟수를 비교할 때도 실제 포함 범위를 같이 봅니다. 진단, 첨삭, 녹음 피드백, 과제 확인, 재점검이 어디까지 포함되는지에 따라 같은 횟수라도 운영 방식이 달라질 수 있습니다. 상담 전에는 목표 결과와 가장 가까운 일정, 최근 막힌 장면을 정리해 비교 기준을 분명하게 만듭니다."
+ ],
+ "gangwon-gangneung-naegokdong":[
+  "이 페이지는 평가 장면부터 거꾸로 봅니다. 평소에 얼마나 공부했는지보다 실제 시험, 수행, 발표, 면접에서 어떤 행동을 제한 시간 안에 보여줘야 하는지를 먼저 확인합니다. 읽기·듣기·말하기·쓰기 중 무엇이 결과에 직접 반영되는지를 나누면 준비 범위를 줄이기 쉽습니다.",
+  "평가 자료는 틀린 부분만 찾는 데 쓰지 않습니다. 이미 안정된 항목과 반복해서 흔들리는 항목을 분리하고, 같은 원인이 새 문제에서도 다시 나타나는지 봅니다. 잘하는 영역을 계속 반복하기보다 실제 결과를 제한하는 조건을 먼저 연습합니다.",
+  "이동이나 지역 생활 패턴을 임의로 가정하지 않습니다. 실제 선택에서는 위치보다 목표 일정, 피드백 방식, 혼자 복습 가능한 시간과 같은 확인 가능한 정보가 더 중요합니다. 수업 방식도 이 정보에 맞춰 비교해야 과도한 지역 서술 없이 실제 의사결정에 도움이 됩니다.",
+  "연습 전후 비교에서는 한 번 설명한 뒤 맞힌 결과를 그대로 성과로 보지 않습니다. 어떤 힌트가 필요했는지, 그 힌트를 줄였을 때 스스로 수정되는지, 비슷한 새 자료에서도 같은 판단을 다시 할 수 있는지를 순서대로 봅니다. 오류의 원인과 수정 범위를 함께 기록합니다.",
+  "상담 전에는 최근 평가 자료나 응답 한 개를 준비하는 것이 유용합니다. 무엇을 틀렸는지보다 왜 그렇게 선택했는지, 시간이 충분하면 달라지는지, 설명 뒤 다시 해봤을 때 무엇이 남는지를 알려주면 수업 범위를 더 구체적으로 좁힐 수 있습니다."
+ ],
+ "gangwon-gangneung-gangnamdong":[
+  "이 페이지는 가장 자주 반복되는 문제 하나를 정확히 이름 붙이는 데서 시작합니다. 영어 전체가 부족하다고 넓게 잡기보다 질문을 잘못 읽는지, 필요한 지식이 부족한지, 시간 압박에서 실수하는지, 알고도 바로 출력하지 못하는지를 분리합니다. 원인이 달라지면 연습 방식도 달라집니다.",
+  "현재 상태를 확인할 때는 잘하는 부분과 어려운 부분을 동시에 봅니다. 부족한 점만 늘어놓으면 모든 범위를 다시 공부하게 되기 쉽습니다. 혼자 안정적으로 되는 부분은 제외하고, 도움을 줬을 때 수정되는 항목과 도움 없이도 다시 되는 항목을 구분합니다.",
+  "생활 장면은 사용자가 실제로 경험한 범위에서만 사용합니다. 지역명으로 생활 패턴이나 학습 습관을 가정하지 않고 최근 영어가 필요했던 순간을 직접 확인합니다. 이 원칙을 지키면 지역 페이지이면서도 불필요한 지역 상상 없이 학습 판단에 집중할 수 있습니다.",
+  "오류는 같은 문제를 반복해 맞히는 것으로 끝내지 않습니다. 비슷하지만 다른 문제나 질문을 사용해 실제 기준이 남았는지를 확인합니다. 정답을 기억해서 맞힌 것과 원리를 이해해 새 조건에서 다시 처리한 것은 구분해야 합니다.",
+  "상담에서는 최근 반복된 오류와 도움을 받아도 남는 문제를 먼저 이야기합니다. 자료가 많을 필요는 없습니다. 한두 개의 장면에서 첫 시도, 힌트 뒤 수정, 새 조건에서의 재현 결과를 나누면 무엇부터 바꿔야 할지 충분히 판단할 수 있습니다."
+ ],
+ "sejong-goundong":[
+  "이 페이지는 최근 영어가 실제로 필요했던 장면을 먼저 떠올리는 방식으로 읽습니다. 누구와 무엇을 하려 했는지, 어느 지점까지 혼자 됐는지, 어떤 순간에 멈췄는지를 시간 순서로 정리하면 추상적인 레벨보다 필요한 연습을 찾기 쉽습니다.",
+  "문제를 확인한 뒤에는 목표를 다시 좁힙니다. 이번 일정에서 반드시 바꿔야 할 행동 한두 개만 남기고 나머지는 뒤로 미룹니다. 여러 목표를 동시에 가져가면 실제 변화가 보이지 않기 때문에 가까운 결과에 영향을 주는 기능부터 안정시킵니다.",
+  "지역 설명은 최소화하고 검색 위치를 알려주는 역할만 맡깁니다. 본문은 목표, 병목, 훈련, 재확인처럼 실제 수업 선택에 필요한 정보로 빠르게 이동합니다. 특정 학교나 생활 특성을 임의로 붙이지 않는 대신 사용자가 가져오는 실제 일정과 자료로 구체화합니다.",
+  "실제 사용 장면을 짧게 재현한 뒤 질문과 자료를 조금씩 바꿉니다. 처음 성공한 상황과 완전히 같은 조건만 반복하면 외운 순서에 의존할 수 있습니다. 상대 반응이나 문제 표현이 달라도 핵심 행동을 다시 만들 수 있어야 재사용 범위가 넓어졌다고 볼 수 있습니다.",
+  "상담 전에는 무엇을 잘하고 못하는지 길게 설명하기보다 최근 장면과 반복 가능한 공부 시간을 정리합니다. 매주 유지 가능한 최소 루틴이 어느 정도인지가 있으면 수업 횟수와 과제 범위를 현실적으로 조정할 수 있습니다."
+ ],
+ "busan-haeundae-jungdong":[
+  "이 페이지는 먼저 사용자가 가진 질문을 기준으로 선택 경로를 나눕니다. 무엇을 배우는지보다 지금 어떤 결과가 필요한지, 현재 수준을 어떻게 확인할지, 회화와 시험 중 무엇이 더 직접적인지 같은 질문이 실제 과정 선택을 좌우합니다.",
+  "질문에 하나의 정답을 강요하지 않습니다. 목표, 일정, 현재 수행, 혼자 복습 가능한 시간에 따라 다른 선택이 더 나을 수 있다는 조건까지 함께 봅니다. 같은 지역에서도 필요한 과정이 달라질 수 있으므로 위치와 적합성을 분리해 판단합니다.",
+  "가까운 수업을 찾는 것과 맞는 수업을 찾는 것은 같지 않습니다. 이동 편의만으로 선택하기보다 실제 피드백 범위, 일정 유연성, 수업 뒤 재확인 방식과 자신의 목표를 함께 비교합니다. 지역은 검색 진입점이고 결정은 학습 조건이 만듭니다.",
+  "한 번에 여러 약점을 고치지 않고 현재 결과를 가장 크게 제한하는 기능 하나를 먼저 안정시킵니다. 한 기능이 새 조건에서도 유지되면 다음 항목으로 이동합니다. 이 방식은 과도한 학습량보다 우선순위와 독립 수행 범위를 분명하게 보여줍니다.",
+  "상담에서는 목표가 여러 개라면 가장 가까운 결과를 먼저 정합니다. 비용과 횟수도 단독으로 비교하지 않고 진단, 피드백, 재점검이 실제로 어디까지 포함되는지 함께 확인해야 같은 금액이라도 운영 방식의 차이를 이해할 수 있습니다."
+ ],
+ "gwangju-seo-hwajeongdong":[
+  "이 페이지는 남은 날짜보다 실제로 연습 가능한 횟수를 기준으로 계획합니다. 시험이나 발표가 가까울수록 새로운 범위를 계속 추가하기보다 지금까지 확인한 병목을 실전 조건에서 줄이는 것이 더 직접적입니다. 일정이 끝난 뒤의 장기 보완 항목은 따로 남깁니다.",
+  "목표를 정한 다음 현재 수행을 확인하고, 그 차이에서 가장 중요한 문제를 골라 훈련합니다. 원하는 결과와 지금 혼자 되는 범위를 비교하면 모든 영역을 같은 비중으로 공부하지 않아도 됩니다. 가까운 마감에 영향을 주는 기능이 우선입니다.",
+  "시간표와 실제 복습 가능량을 함께 봅니다. 주중과 주말의 사용 가능한 시간이 다르면 과제량도 동일하게 잡지 않습니다. 다음 수업 전 반드시 다시 확인할 최소 분량을 먼저 확보하고, 계획이 지연됐을 때 누적 과제를 무조건 보충하지 않습니다.",
+  "한 학습자 안에서도 영역별 수준이 다를 수 있습니다. 읽기는 안정적이지만 말하기가 늦거나, 지식은 충분하지만 시간 조건에서 흔들릴 수 있습니다. 한 레벨로 묶지 않고 결과를 가장 크게 제한하는 기능 하나를 먼저 찾아 안정시킵니다.",
+  "상담 전에는 시험일이나 발표일, 최근 가장 흔들린 항목, 일주일에 실제로 확보할 수 있는 시간을 정리합니다. 이 세 가지가 있으면 남은 기간에 무엇을 새로 시작하고 무엇을 유지 확인만 할지 현실적으로 나눌 수 있습니다."
+ ],
+ "incheon-seohae-cheongna1dong":[
+  "이 페이지는 학습자 본인이 느끼는 막힘을 실제 행동으로 바꾸는 데 초점을 둡니다. 말이 안 나온다는 느낌도 첫 문장이 늦는지, 단어가 떠오르지 않는지, 근거를 붙이지 못하는지에 따라 훈련 방식이 달라집니다. 스스로 설명할 수 있는 문제로 바꾸면 다음 수업 요청도 구체적이 됩니다.",
+  "목표를 정한 뒤 실제 장면을 바로 확인합니다. 원하는 결과와 최근 수행 사이의 차이를 문제·질문·대화 장면에서 구체적으로 보고, 그 차이를 줄일 수 있는 기준을 세웁니다. 학습량을 늘리기보다 실제 행동이 달라지는지에 초점을 둡니다.",
+  "학교영어, 일반회화, 시험, 취업, 업무 목적을 먼저 나눕니다. 비슷한 영어 고민처럼 보여도 결과가 다르면 피드백과 재확인 기준도 달라집니다. 하나의 과정이 모든 목적을 해결한다고 가정하지 않고 가장 직접적인 경로를 먼저 비교합니다.",
+  "수업 전·중·후 세 시점을 나눠 기록합니다. 수업 전에는 혼자 가능한 범위를 확인하고, 수업 중에는 필요한 행동을 연습하며, 수업 뒤에는 자료나 질문을 바꿔 다시 되는지 봅니다. 설명 직후의 성공과 실제 재사용을 구분합니다.",
+  "상담 전에 최근 두세 번 반복된 막힘을 찾아보면 도움이 됩니다. 같은 문제가 새 조건에서도 나타나는지, 어떤 도움을 받았을 때 회복되는지, 다음에 실제로 영어를 써야 하는 장면이 무엇인지가 있으면 과정 선택이 쉬워집니다."
+ ],
+ "jeju-jeju-nohyeongdong":[
+  "이 페이지는 일정에서 시작합니다. 시험, 수행, 발표처럼 날짜가 있다면 남은 기간 동안 실제로 바꿀 수 있는 행동을 먼저 고릅니다. 단기 결과와 장기 기초를 분리하면 촉박한 일정 때문에 모든 학습 계획이 흔들리는 일을 줄일 수 있습니다.",
+  "목표 다음에는 그 목표와 직접 연결되는 문제를 확인합니다. 이미 안정된 영역은 유지 확인으로 넘기고, 결과에 영향을 주는 문제만 실제 훈련 대상으로 남깁니다. 한 번에 전체 수준을 바꾸는 계획보다 이번 일정에서 가능한 변화를 먼저 봅니다.",
+  "특정 학교나 지역 생활 특성을 추측하지 않습니다. 학생이 가져오는 수업, 수행평가, 시험, 발표 일정과 실제 자료를 기준으로 범위를 구체화합니다. 지역 페이지의 역할은 위치를 정확히 알려주는 것이고 학습 판단은 실제 자료가 맡습니다.",
+  "설명 전과 후를 같은 조건에서 비교합니다. 정답률만 보지 않고 필요한 힌트, 시작 속도, 근거 설명, 완결성이 어떻게 달라졌는지 봅니다. 그 다음에는 비슷한 새 문제에서 같은 기준이 다시 남는지 확인합니다.",
+  "상담 전에는 일정, 최근 자료, 혼자 되는 범위를 준비합니다. 수업 방식도 이 세 정보에 맞춰 비교해야 합니다. 시간이 적다면 새 범위를 늘리기보다 실전 조건에서 흔들리는 항목을 줄이고, 일정 이후에 기초 보완을 이어갈 수 있도록 분리합니다."
+ ],
+ "chungbuk-cheongju-heungdeok-gagyeongdong":[
+  "이 페이지는 비슷해 보이는 선택지를 같은 기준 위에 놓고 비교합니다. 과외와 학원, 회화와 시험, 여러 공인시험처럼 이름이 비슷해도 목표 결과와 피드백 강도, 일정 유연성, 복습 방식이 다르면 더 적합한 경로도 달라집니다.",
+  "목표를 확인한 다음 현재 수행을 보고 실제 차이를 찾습니다. 원하는 결과와 지금 혼자 할 수 있는 범위를 비교해 가장 중요한 문제부터 훈련합니다. 가격이나 횟수보다 진단→훈련→피드백→재점검이 어떻게 이어지는지 보는 것이 선택에 도움이 됩니다.",
+  "학교영어, 회화, 시험, 취업, 업무 목적을 먼저 나누는 것도 중요합니다. 목적이 달라지면 같은 표현을 배우더라도 연습 장면과 결과 확인 방식이 달라집니다. 필요하지 않은 목표를 함께 넣어 페이지와 수업을 과하게 넓히지 않습니다.",
+  "결정 트리처럼 목적, 현재 수준, 일정, 복습 가능량을 순서대로 확인합니다. 조건이 달라지면 다른 과정이 더 적합하다는 점도 숨기지 않습니다. 이 방식은 등록을 먼저 권하기보다 사용자가 자신의 선택 기준을 스스로 만들 수 있게 합니다.",
+  "상담 전에는 비교하고 있는 선택지와 가장 중요한 기준 한 가지를 정리합니다. 최근 자료, 다음 일정, 원하는 피드백 방식까지 있으면 어떤 과정이 더 직접적인지 설명을 들을 때도 차이를 쉽게 확인할 수 있습니다."
+ ]
+}
+
+
+INTRO={
+"parent-view":"학생 영어를 볼 때는 진도량보다 최근 혼자 처리되는 범위와 도움이 필요한 장면을 먼저 나눕니다.",
+"learner-view":"직접 영어를 배우는 입장에서는 최근 영어가 필요했던 순간 하나를 골라 시작점을 잡습니다.",
+"decision-first":"과정 이름보다 지금 가장 먼저 바꿔야 할 영어 행동 하나를 정하면 비교 기준이 단순해집니다.",
+"assessment-first":"시험·수행·발표처럼 평가 장면이 있다면 그 장면에서 실제로 요구하는 행동부터 확인합니다.",
+"problem-first":"최근 반복해서 막힌 장면 하나를 출발점으로 삼아 필요한 연습 범위를 좁힙니다.",
+"scene-first":"영어가 실제로 필요했던 순간을 먼저 떠올리고 무엇이 됐고 어디에서 멈췄는지 나눕니다.",
+"question-first":"지금 내게 필요한 영어가 무엇인지 묻고 가장 가까운 사용 장면에서 거꾸로 범위를 정합니다.",
+"diagnosis-first":"현재 수준을 한 점수로 묶지 않고 이해·출력·시간·재사용처럼 행동 기준으로 나눕니다.",
+"comparison-first":"비슷해 보이는 과정도 목표와 평가 방식이 다르면 진단·훈련·재점검 순서가 달라집니다.",
+"goal-first":"학교·시험·취업·업무 중 이번 영어의 목적을 먼저 한 문장으로 정합니다.",
+"timeline-first":"시험일·발표일·면접일처럼 날짜가 있다면 남은 시간에 바꿀 수 있는 행동부터 역산합니다.",
+}
+CONTEXT={
+"schedule-context":"주간 일정 안에서 실제 반복 가능한 연습량을 기준으로 계획합니다. 무리한 분량보다 다음 주에도 이어갈 수 있는 루틴을 우선합니다.",
+"work-life-light":"지역 특성을 임의로 만들지 않고 회의·발표·수업·일상처럼 실제 영어 사용 장면으로 범위를 좁힙니다.",
+"commute-light":"지역은 검색과 위치 식별에만 사용합니다. 목표·일정·복습 가능량이 실제 수업 판단의 중심입니다.",
+"daily-life-light":"최근 일상에서 영어가 필요했던 순간을 기록해 시작점으로 사용합니다. 지역명만으로 학습 성향을 가정하지 않습니다.",
+"minimal-context":"지역 설명은 정확한 위치 신호까지만 사용하고 본문은 실제 학습 판단과 재확인 기준에 집중합니다.",
+"nearby-choice":"같은 지역에서도 대상과 목표가 다르면 과정이 달라질 수 있습니다. 가까운 위치보다 목적에 맞는 경로를 먼저 봅니다.",
+"purpose-router":"학교영어·회화·시험·취업·업무 목적을 먼저 나눠 가장 직접적인 경로부터 비교합니다.",
+"school-life-light":"학생 과정은 특정 학교를 추측하지 않고 읽기·듣기·말하기·수행처럼 실제 학교 영어 행동을 기준으로 봅니다.",
+}
+CASE={
+"three-moments":"수업 전 현재 장면을 확인하고, 수업 중 필요한 행동을 연습하며, 수업 뒤 조건을 바꿔 다시 되는지 봅니다.",
+"before-after-process":"넓은 고민을 구체적인 행동으로 좁힌 뒤 설명 전과 후에 혼자 처리되는 범위를 비교합니다.",
+"usage-scene":"실제 사용 장면을 재현한 뒤 질문·자료·순서를 조금씩 바꿔 같은 기능을 다시 쓸 수 있는지 봅니다.",
+"single-learner":"여러 목표를 동시에 늘리지 않고 현재 결과를 가장 크게 제한하는 기능 하나를 먼저 안정시킵니다.",
+"decision-tree":"학교영어·회화·시험·취업·업무 중 목적을 먼저 나누고 현재 수준과 일정에 따라 다음 경로를 선택합니다.",
+}
+CTA={
+"goal-check":"상담이나 수업 전에 이번에 가장 먼저 바꾸고 싶은 행동 하나를 정합니다.",
+"current-state":"지금 혼자 가능한 것과 반복해서 막히는 것을 한두 가지씩 나눕니다.",
+"first-plan":"첫 계획은 넓게 잡지 않고 가까운 일정에 바로 실행할 행동만 정합니다.",
+"route-find":"대상과 사용 목적을 먼저 고르면 회화·과외·시험 중 더 직접적인 경로를 좁힐 수 있습니다.",
+"diagnosis":"과정을 정하기 어렵다면 현재 되는 것과 막히는 것을 먼저 나눕니다.",
+"priority-check":"목표가 여러 개라면 가장 가까운 결과에 영향을 주는 한 가지를 먼저 정합니다.",
+"weakness-check":"최근 두세 번 반복된 막힘을 찾고 새 조건에서도 같은 문제가 생기는지 확인합니다.",
+}
+DIAG={
+"comprehension-skill":"읽거나 들을 때 어휘 부족인지 문장 구조인지 정보 처리 속도인지 원인을 나눕니다.",
+"usage-goal":"실제로 말하고 쓰고 선택해야 하는 행동을 먼저 정한 뒤 필요한 지식과 표현을 역산합니다.",
+"error-pattern":"정답 여부보다 같은 실수가 왜 반복되는지를 기록하고 힌트를 줄였을 때 수정되는 범위를 봅니다.",
+"deadline":"남은 기간 안에 바꿀 행동과 장기적으로 쌓아야 할 기초를 분리합니다.",
+"study-volume":"많이 공부하는 계획보다 실제 반복 가능한 분량과 다음 재확인 시점을 정합니다.",
+"output-skill":"알고 있는 표현이 실제 말이나 글로 바로 나오지 않는다면 첫 반응과 완결성을 봅니다.",
+"current-level":"처음부터 다시 배우기보다 이미 혼자 가능한 범위와 도움이 필요한 범위를 분리합니다.",
+"priority":"여러 약점을 동시에 다루지 않고 결과에 가장 직접적인 한두 항목을 먼저 선택합니다.",
+}
+PRIORITY_HEADING={
+ "parent-view":"현재 도움 수준을 보고 첫 순서를 정합니다",
+ "learner-view":"최근 막힌 행동에서 첫 순서를 정합니다",
+ "decision-first":"가장 중요한 결과 하나를 기준으로 순서를 정합니다",
+ "assessment-first":"실제 평가에서 요구되는 행동부터 우선합니다",
+ "problem-first":"반복해서 막히는 원인부터 먼저 다룹니다",
+ "scene-first":"가장 가까운 실제 장면에서 우선순위를 정합니다",
+ "question-first":"지금 가장 중요한 질문부터 해결 순서를 정합니다",
+ "diagnosis-first":"현재 진단에서 가장 큰 병목부터 시작합니다",
+ "comparison-first":"여러 선택지를 같은 기준으로 놓고 우선순위를 정합니다",
+ "goal-first":"목표 결과에 가장 직접적인 행동부터 시작합니다",
+ "timeline-first":"가장 가까운 일정에서 거꾸로 우선순위를 정합니다"
+}
+RHYTHM={
+"short-analytic":["현재 범위를 확인합니다.","기준을 하나로 좁힙니다.","직접 수행합니다.","새 조건에서 다시 확인합니다.","결과를 기록합니다.","실전 조건으로 재검증합니다."],
+"balanced-editorial":["먼저 혼자 가능한 범위를 확인합니다.","필요한 기준을 정리한 뒤 바로 적용합니다.","실제 문제나 장면으로 옮깁니다.","자료나 질문을 바꿔 유지되는지 봅니다.","남은 병목을 다음 기록으로 남깁니다.","실제 일정과 비슷한 조건에서 확인합니다."],
+"compact-direct":["현재 상태 확인.","핵심 기준 정리.","직접 수행.","새 조건 재사용.","결과 기록.","실전 재검증."],
+"calm-explanatory":["현재 가능한 범위를 차분히 확인합니다.","필요한 부분만 설명한 뒤 혼자 해보게 합니다.","익숙한 예시에서 실제 문제로 천천히 옮깁니다.","조건을 하나씩 바꿔도 같은 기준이 남는지 봅니다.","잘된 부분과 다시 볼 부분을 나눕니다.","다음 실제 일정에 가까운 조건으로 확인합니다."],
+"question-led":["지금 혼자 되는 것은 무엇인가요?","꼭 필요한 기준은 무엇인가요?","실제로 하면 어디에서 멈추나요?","질문이나 자료가 달라도 다시 되나요?","다음에 다시 볼 것은 무엇인가요?","실전 조건에서도 유지할 수 있나요?"],
+"example-led":["첫 예시에서 현재 범위를 기록합니다.","다음 예시에는 기준 하나만 적용합니다.","새 문제에서 직접 수행합니다.","다른 예시로 조건을 바꿉니다.","마지막 예시를 다음 계획으로 연결합니다.","실전 예시에서 제한 조건과 함께 확인합니다."],
+}
+GUIDES=[
+"최근 일주일 안에 영어 때문에 멈췄던 순간을 하나 적어봅니다. 구체적인 장면이 있으면 필요한 기능을 빨리 찾을 수 있습니다.",
+"처음부터 전체 실력을 바꾸려 하지 않고 한 가지 수행을 반복합니다. 같은 조건에서 다시 된 뒤 다음 목표를 정합니다.",
+"배운 내용을 그대로 따라 하는 것과 조건이 바뀌어도 다시 쓰는 것은 다릅니다. 질문·문제·상황을 바꿔 확인합니다.",
+"학습 시간을 늘리기 어렵다면 영역 수를 줄입니다. 꼭 필요한 기능을 남기고 부가 목표는 다음 단계로 미룹니다.",
+"모든 내용을 처음부터 다시 보기보다 실제로 막히는 기초 요소를 먼저 복구합니다. 이미 되는 부분은 반복을 줄입니다.",
+"시험 점수와 실제 말하기·쓰기 수행은 다르게 나타날 수 있습니다. 서로 다른 결과를 한 레벨로 묶지 않습니다.",
+"긴 복습을 계획하기보다 짧게 다시 꺼낼 단위를 남깁니다. 일정이 흔들려도 다시 시작할 위치가 있어야 합니다.",
+"상담에서는 약점을 어떻게 확인하는지, 수업 뒤 무엇을 기록하는지, 다음 점검에서 무엇을 보는지 차례로 확인합니다.",
+"정답률만 보지 않고 오답 이유와 공부 순서를 확인합니다. 스스로 다시 풀거나 설명할 수 있는지도 봅니다.",
+"실제로 쓸 표현을 고르고 반복합니다. 지식을 늘리는 것보다 필요한 순간에 꺼내 쓰는 속도와 완결성을 봅니다.",
+"마감이 없다면 한 달 단위 수행 목표를 둡니다. 목표가 안정되면 다음 기능을 추가하며 범위를 넓힙니다.",
+"마감이 있다면 남은 날짜에 맞춰 우선순위를 좁히고 시험·발표·면접과 비슷한 조건으로 연습합니다.",
+"가격이나 횟수만 비교하지 않고 진단→훈련→피드백→재점검이 어떻게 이어지는지 확인합니다.",
+"목표가 바뀌면 계획을 전부 버리지 않고 가장 가까운 사용 장면에 맞춰 비중을 다시 조정합니다.",
+"쉬운 과제만 반복하지 않고 성공 가능한 작은 수행과 약간 어려운 수행을 번갈아 배치합니다.",
+"완료하지 못한 계획을 누적하지 않습니다. 실제로 소화한 양을 기준으로 다음 계획을 줄입니다.",
+"모든 문장을 번역하기보다 핵심 정보와 문장 구조를 먼저 파악합니다. 어휘 부족과 구조 이해를 따로 봅니다.",
+"완벽한 문장을 만들려는 시간을 줄이고 짧은 첫 문장부터 꺼냅니다. 이후 이유와 예시를 붙입니다.",
+"놓친 구간이 단어인지 연결음인지 정보 처리인지 구분합니다. 원인에 따라 반복 방식도 달라집니다.",
+"여러 시험을 동시에 준비하기보다 실제로 필요한 시험을 먼저 정하고 나머지 목표는 뒤로 이동합니다.",
+"한 번 성공한 문제를 그대로 반복하지 않습니다. 비슷하지만 다른 자료에서 같은 기준이 남는지 확인합니다.",
+"도움을 많이 받은 성공과 혼자 다시 한 결과를 구분합니다. 필요한 힌트가 줄어드는 과정도 기록합니다.",
+"가까운 일정이 끝난 뒤 유지할 장기 목표를 따로 남깁니다. 단기 대비 때문에 기초 계획이 사라지지 않게 합니다.",
+"잘하는 영역은 유지 확인만 하고 반복해서 막히는 영역에 시간을 더 씁니다. 학습량보다 배분을 조정합니다.",
+"교재 진도보다 다음에 실제로 해야 할 행동을 먼저 정합니다. 자료는 그 행동을 연습할 수 있는지 보고 고릅니다.",
+"질문을 받았을 때 바로 답이 나오지 않으면 첫 반응, 근거, 마무리를 나눠 어느 구간이 늦는지 확인합니다.",
+"읽기나 듣기에서 정답을 맞혔더라도 근거를 설명하지 못하면 새 문제에서 다시 흔들릴 수 있습니다.",
+"말하기와 쓰기는 준비한 문장보다 새 조건에서 내용을 다시 구성하는 범위를 확인하는 것이 중요합니다.",
+"주간 계획에는 새 학습과 재확인을 따로 배치합니다. 배운 날의 성공만으로 다음 단계로 넘어가지 않습니다.",
+"상담 전에 최근 자료 하나, 가장 어려운 장면 하나, 다음 일정 하나만 정리해도 시작점을 훨씬 구체적으로 잡을 수 있습니다.",
+"목표가 여러 개라면 가장 가까운 결과에 직접 연결되는 행동부터 고르고 나머지는 순서를 뒤로 보냅니다.",
+"다른 사람의 공부량을 기준으로 잡지 않습니다. 현재 반복 가능한 횟수와 복습 시간을 기준으로 계획합니다.",
+]
+
+def load_module(name,path):
+ spec=importlib.util.spec_from_file_location(name,path)
+ if not spec or not spec.loader:raise RuntimeError(path)
+ m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+
+def visible(raw):
+ raw=re.sub(r"<script[\s\S]*?</script>"," ",raw,flags=re.I)
+ raw=re.sub(r"<style[\s\S]*?</style>"," ",raw,flags=re.I)
+ raw=re.sub(r"<[^>]+>"," ",raw)
+ return re.sub(r"\s+"," ",html.unescape(raw)).strip()
+def toks(t):return re.findall(r"[가-힣A-Za-z0-9]+",t.lower())
+def cosine(a,b):
+ ca,cb=Counter(toks(a)),Counter(toks(b));dot=sum(ca[k]*cb.get(k,0) for k in ca)
+ na=math.sqrt(sum(v*v for v in ca.values()));nb=math.sqrt(sum(v*v for v in cb.values()))
+ return dot/(na*nb) if na and nb else 0.0
+def jacc(a,b,n=5):
+ ta,tb=toks(a),toks(b);sa={tuple(ta[i:i+n]) for i in range(max(0,len(ta)-n+1))};sb={tuple(tb[i:i+n]) for i in range(max(0,len(tb)-n+1))}
+ return len(sa&sb)/len(sa|sb) if sa|sb else 0.0
+def dims(sig):
+ keys=["intro_pattern","section_order","local_context_mode","case_frame","cta_frame","sentence_rhythm","diagnosis_emphasis"]
+ vals=sig.split("|")
+ if len(vals)!=7:raise RuntimeError(sig)
+ return dict(zip(keys,vals))
+_DIMENSION_POOL_CACHE={}
+
+def _sentences(paragraphs):
+ out=[];seen=set()
+ for para in paragraphs:
+  for s in re.split(r'(?<=[.!?])\\s+',str(para).strip()):
+   s=s.strip()
+   if len(s)<22:continue
+   if s[-1] not in ".!?":s+="."
+   if s not in seen:seen.add(s);out.append(s)
+ return out
+
+def guide_dimension_pool(row):
+ d=row.get("_variation_dims")
+ if not d:raise RuntimeError("variation dims missing from render row")
+ key="|".join(d[k] for k in ["intro_pattern","section_order","local_context_mode","case_frame","cta_frame","sentence_rhythm","diagnosis_emphasis"])
+ if key in _DIMENSION_POOL_CACHE:return _DIMENSION_POOL_CACHE[key]
+ n=json.loads(NARRATIVE_PATH.read_text(encoding="utf-8"))
+ paras=[]
+ intro_keys=list(n["intro_pattern"].keys());ii=intro_keys.index(d["intro_pattern"])
+ paras.extend(n["intro_pattern"][d["intro_pattern"]])
+ paras.append(n["voice_packs"][ii%len(n["voice_packs"])])
+
+ diag_keys=list(n["diagnosis_emphasis"].keys());di=diag_keys.index(d["diagnosis_emphasis"])
+ paras.append(n["diagnosis_emphasis"][d["diagnosis_emphasis"]])
+ paras.append(n["seed_perspective_c"][di%len(n["seed_perspective_c"])])
+ paras.append(n["seed_perspective_c"][(di+8)%len(n["seed_perspective_c"])])
+
+ case_keys=list(n["case_frame"].keys());ci=case_keys.index(d["case_frame"])
+ paras.append(n["case_frame"][d["case_frame"]])
+ paras.append(n["seed_perspective_a"][ci%len(n["seed_perspective_a"])])
+ paras.append(n["seed_perspective_a"][(ci+6)%len(n["seed_perspective_a"])])
+
+ cta_keys=list(n["cta_frame"].keys());ti=cta_keys.index(d["cta_frame"])
+ paras.append(n["cta_frame"][d["cta_frame"]])
+ paras.append(n["seed_perspective_d"][ti%len(n["seed_perspective_d"])])
+ paras.append(n["seed_perspective_d"][(ti+7)%len(n["seed_perspective_d"])])
+
+ order_keys=list(n["section_order"].keys());oi=order_keys.index(d["section_order"])
+ paras.extend(n["section_order"].get(d["section_order"],[]))
+ paras.append(n["seed_perspective_b"][oi%len(n["seed_perspective_b"])])
+ paras.append(n["local_context_mode"][d["local_context_mode"]])
+ paras.append(n["sentence_rhythm"][d["sentence_rhythm"]])
+
+ pool=_sentences(paras)
+ if len(pool)<12:raise RuntimeError(f"dimension sentence pool too small: {len(pool)} for {key}")
+ _DIMENSION_POOL_CACHE[key]=pool
+ return pool
+
+def guide(row,slot):
+ pool=guide_dimension_pool(row)
+ salt=row.get("_intent_salt","")
+ key=f"{row['content_seed']}|{salt}|{slot}".encode("utf-8")
+ idx=int(hashlib.sha256(key).hexdigest()[:12],16)%len(pool)
+ return pool[idx]
+
+def rhythm(d,slot):
+ arr=RHYTHM[d["sentence_rhythm"]]
+ return arr[slot%len(arr)]
+def esc(x):return html.escape(str(x))
+def schema(canonical,h1,desc,row,service):
+ return {"@context":"https://schema.org","@graph":[
+  {"@type":"EducationalOrganization","@id":"https://englishpt.kr/#organization","name":"ENGLISH PT","url":"https://englishpt.kr/englishpt.html","telephone":"+82-10-5006-8027","areaServed":{"@type":"AdministrativeArea","name":row["full_name_ko"]}},
+  {"@type":"WebPage","@id":canonical+"#webpage","url":canonical,"name":h1+" | ENGLISH PT","description":desc,"inLanguage":"ko-KR"},
+  {"@type":"Service","@id":canonical+"#service","name":service,"provider":{"@id":"https://englishpt.kr/#organization"},"areaServed":row["full_name_ko"],"url":canonical}
+ ]}
+
+def links(row,current,svc,ex):
+ out=[]
+ for intent in SERVICE_ORDER:
+  if intent!=current:out.append((intent,row["dong_name"]+" "+svc.PROFILES[intent]["service_h1"]))
+ for key in EXAM_ORDER:
+  e=ex.EXAMS[key]
+  if e["intent"]!=current:out.append((e["intent"],row["dong_name"]+" "+e["service"]))
+ return ''.join(f'<a href="{row["region_slug"]}-{i}.html">{esc(label)}</a>' for i,label in out)
+
+def decision_strip(d,family):
+ if family=="service":
+  vals=[("출발점",INTRO[d["intro_pattern"]].split(".")[0]),("먼저 볼 것",DIAG[d["diagnosis_emphasis"]].split(".")[0]),("연습 방식",CASE[d["case_frame"]].split(".")[0]),("다음 확인",CTA[d["cta_frame"]].split(".")[0])]
+ else:
+  vals=[("시험 목표",INTRO[d["intro_pattern"]].split(".")[0]),("현재 병목",DIAG[d["diagnosis_emphasis"]].split(".")[0]),("훈련 방식",CASE[d["case_frame"]].split(".")[0]),("재확인",CTA[d["cta_frame"]].split(".")[0])]
+ return '<section class="decision-strip"><div class="wrap"><div class="decision-grid">'+''.join(f'<div><b>{esc(a)}</b><span>{esc(b)}</span></div>' for a,b in vals)+'</div></div></section>'
+
+def scene_cards(titles,row,d):
+ cards=[]
+ for i,title in enumerate(titles[:4]):
+  p1=f"'{title}' 항목에서는 {rhythm(d,i)} {guide(row,i+1)}"
+  p2=guide(row,i+9)+" "+guide(row,i+49)
+  cards.append(f'<article class="card"><b>{esc(title)}</b><p>{esc(p1)}</p><p>{esc(p2)}</p></article>')
+ return ''.join(cards)
+
+def priority_block(priority,row,d):
+ items=[]
+ for i,label in enumerate(priority[:4]):
+  note=guide(row,i+3)
+  items.append(f'<li><b>{esc(label)}</b><span>{esc(note)}</span></li>')
+ return ''.join(items)
+
+def flow_block(steps,row,d):
+ items=[]
+ for i,title in enumerate(steps):
+  p=f"'{title}' 단계에서는 {rhythm(d,i)} {guide(row,i+12)}"
+  q=guide(row,i+60)
+  items.append(f'<li><span>{i+1:02d}</span><div><b>{esc(title)}</b><p>{esc(p)}</p><p>{esc(q)}</p></div></li>')
+ return ''.join(items)
+
+def proof_block(labels,row,d):
+ return ''.join(f'<li><b>{esc(x)}</b><span>{esc(guide(row,i+18)+" "+rhythm(d,i+2))}</span></li>' for i,x in enumerate(labels[:5]))
+
+def feedback_block(titles,row,d):
+ out=[]
+ for i,title in enumerate(titles[:3]):
+  msg=f"'{title}' 항목은 특정 성과를 약속하는 기록이 아니라 다음에 다시 확인할 행동을 남기는 예시입니다. {guide(row,i+22)}"
+  out.append(f'<article class="card"><b>기록 예시 {i+1}</b><p>{esc(msg)}</p></article>')
+ return ''.join(out)
+
+def decision_guide(intent,service,row,d):
+ ds=json.loads(DECISION_SUPPORT_PATH.read_text(encoding="utf-8"))["intents"][intent]
+ styles=[
+  (["이런 경우 잘 맞습니다","이런 경우엔 다른 선택도 비교하세요","비용을 좌우하는 4가지","선생님·수업은 이렇게 비교하세요","상담 전에 준비하실 것"],"등록 전에 다섯 가지 판단 기준을 확인하세요"),
+  (["내 상황과 맞는 신호","다른 경로를 먼저 볼 신호","비용이 달라지는 조건","수업 비교 포인트","미리 준비할 자료"],"비교할 때는 홍보문구보다 아래 기준을 먼저 보세요"),
+  (["이 과정이 필요한 경우","다른 선택이 더 직접적인 경우","비용 결정 요소","선생님·수업 확인 항목","상담 전 체크자료"],"지금 목표와 맞는 과정인지 다섯 항목으로 좁혀봅니다"),
+  (["적합한 상황","비교가 필요한 상황","비용 변수","수업 선택 기준","상담 준비"],"결정하기 전에 맞는 경우와 다른 선택을 함께 확인합니다"),
+ ]
+ idx=int(hashlib.sha256((row["content_seed"]+"|decision-labels").encode()).hexdigest()[:8],16)%len(styles)
+ labels,heading=styles[idx]
+ bodies=[ds["fit"],ds["alternative"],ds["cost_factors"]+" · 구체 금액은 상담에서 안내",ds["teacher_or_class_selection"],ds["consult_preparation"]]
+ vals=list(zip(labels,bodies))
+ lead=guide(row,104)
+ return '<section class="section decision-guide"><div class="wrap narrow"><p class="kicker">선택 기준</p><h2>'+esc(heading)+'</h2><p>'+esc(lead)+'</p><div class="decision-list">'+''.join(f'<div><b>◆ {esc(a)}</b><p>{esc(b)}</p></div>' for a,b in vals)+'</div></div></section>'
+
+def variation_story(row,d,service):
+ n=json.loads(NARRATIVE_PATH.read_text(encoding="utf-8"))
+ parts=[]
+ parts.extend(n["intro_pattern"][d["intro_pattern"]])
+ parts.append(n["local_context_mode"][d["local_context_mode"]])
+ parts.append(n["case_frame"][d["case_frame"]])
+ parts.append(n["diagnosis_emphasis"][d["diagnosis_emphasis"]])
+ parts.extend(n["section_order"].get(d["section_order"],[]))
+ seed=row["content_seed"]
+ arr=n["seed_perspective_b"]
+ seeded=arr[int(seed[2:4],16)%len(arr)]
+ parts.append(seeded)
+ intro_keys=list(n["intro_pattern"].keys())
+ voice_idx=intro_keys.index(d["intro_pattern"])%len(n["voice_packs"])
+ parts.append(n["voice_packs"][voice_idx])
+ titles=[
+  "현재를 보는 관점","수업을 고르는 관점","지역과 생활 맥락","연습 전후 비교",
+  "진단 초점","정보를 배열하는 순서","선택을 좁히는 순서",
+  "페이지 정보를 판단하는 관점","독립 서술 관점",
+ ]
+ if len(parts)!=len(titles):raise RuntimeError(f"variation story mismatch: {len(parts)} vs {len(titles)}")
+ return '<section class="section variation-story"><div class="wrap narrow"><p class="kicker">판단 가이드</p><h2>'+esc(service)+'를 실제 일정에 연결하는 방법</h2>'+''.join(f'<article><b>{esc(t)}</b><p>{esc(p)}</p></article>' for t,p in zip(titles,parts))+'</div></section>'
+
+def locality_longform(row,service):
+ paras=LOCALITY_LONGFORM[row["region_slug"]]
+ return '<section class="section locality-longform"><div class="wrap narrow"><p class="kicker">지역별 판단 방식</p><h2>'+esc(service)+'를 고를 때 이 페이지가 보는 순서</h2>'+''.join('<p>'+esc(p)+'</p>' for p in paras)+'</div></section>'
+
+def deep_block(scene_titles,priority,boundary,service,row,d):
+ topics=[
+  (f"{scene_titles[0]}에서 시작점을 잡는 법",f"{guide(row,27)} {guide(row,77)}"),
+  (f"{priority[min(1,len(priority)-1)]}의 순서를 정하는 법",f"{guide(row,29)} {guide(row,79)}"),
+  (f"{scene_titles[-1]}을 다시 확인하는 법",f"{guide(row,31)} {guide(row,81)}"),
+  ("다른 경로와 비교할 때",f"{boundary} {guide(row,83)}"),
+ ]
+ return '<section class="section soft"><div class="wrap"><p class="kicker">더 깊게 보기</p><h2>'+esc(service)+' 선택 전에 확인할 기준</h2><div class="grid4">'+''.join(f'<article class="card"><b>{esc(t)}</b><p>{esc(p)}</p></article>' for t,p in topics)+'</div></div></section>'
+
+def faq_block(scene_titles,priority,proof,boundary,row,d):
+ styles=[
+  ("선택 전에 확인할 질문",["무엇부터 시작하면 되나요?","현재 상태는 어떻게 확인하나요?","수업 뒤에는 무엇을 기록하나요?","다른 과정이나 시험도 비교해야 하나요?","변화는 어떻게 다시 확인하나요?"]),
+  ("결정 전에 자주 확인하는 내용",["첫 순서는 어떻게 정하나요?","지금 가능한 범위는 어떻게 보나요?","수업 기록에는 무엇이 남나요?","다른 선택을 먼저 볼 때는 언제인가요?","다음 점검은 어떻게 하나요?"]),
+  ("내 상황에 맞는지 확인하는 질문",["가장 먼저 볼 항목은 무엇인가요?","현재 범위는 어디까지 확인하나요?","피드백은 어떤 기준으로 남기나요?","이 과정이 아니어도 되는 경우가 있나요?","새 조건에서는 무엇을 다시 보나요?"]),
+  ("상담 전 스스로 점검할 질문",["첫 우선순위는 무엇인가요?","혼자 되는 범위는 어떻게 확인하나요?","수업 후 어떤 기록이 필요한가요?","다른 경로와 비교할 기준은 무엇인가요?","다음 장면에서 무엇을 재확인하나요?"]),
+ ]
+ idx=int(hashlib.sha256((row["content_seed"]+"|faq-style").encode()).hexdigest()[:8],16)%len(styles)
+ heading,questions=styles[idx]
+ answers=[
+  f"첫 우선순위는 '{priority[0]}'입니다. {guide(row,85)}",
+  guide(row,87),
+  f"다음 확인 기준으로는 '{proof[0]}' 항목을 남깁니다. {guide(row,89)}",
+  f"{guide(row,91)} 앞부분의 '다른 선택' 기준과 함께 비교하면 됩니다.",
+  f"'{scene_titles[-1]}' 장면을 다시 만들고 {guide(row,93)}",
+ ]
+ qas=list(zip(questions,answers))
+ return '<section class="section"><div class="wrap narrow"><p class="kicker">자주 묻는 질문</p><h2>'+esc(heading)+'</h2><div class="faq">'+''.join(f'<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>' for q,a in qas)+'</div></div></section>'
+
+def render_page(row,d,intent,family,facts,svc,ex):
+ row=dict(row)
+ row["_intent_salt"]=intent
+ row["_variation_dims"]=d
+ slug=row["region_slug"];dong=row["dong_name"]
+ if family=="service":
+  p=facts
+  service=p["service_h1"];service_body=p["service_body"];question=p["intro_q"];priority=p["priority"];boundary=p["boundary"]
+  cards,steps,_proofs,_feedback=svc.extract_source(ROOT/"pilot-v45-5x7"/f"seoul-seocho-naegokdong-{intent}.html")
+  scene_titles=[x[0] for x in cards];proof=priority
+  context_title=DIAG[d["diagnosis_emphasis"]].split(".")[0]
+  context_text=f"{CONTEXT[d['local_context_mode']]} {guide(row,20)} {guide(row,72)}"
+  context_extra=""
+ else:
+  e=facts
+  service=e["service"];service_body=e["service"];question=e["first_question"];priority=e["priority"];boundary=e["boundary"]
+  scene_titles=[x[0] for x in e["scenes"]];steps=e["flow"];proof=e["proof"]
+  context_title=DIAG[d["diagnosis_emphasis"]].split(".")[0]
+  context_text=f"{CONTEXT[d['local_context_mode']]} {guide(row,20)} {guide(row,72)}"
+  context_extra='<p class="mini-note">확인 항목 · '+esc(" · ".join(e["diagnosis"]))+'</p>'
+
+ h1=f"{dong} {service}"
+ canonical=f"https://englishpt.kr/{slug}-{intent}.html"
+ desc=f"{h1} 안내. 현재 상황과 우선순위, 실제 훈련, 재확인, 다른 선택 경로와 상담 전 준비 정보를 확인합니다."
+ js=json.dumps(schema(canonical,h1,desc,row,service),ensure_ascii=False)
+ intro1=f"{row['full_name_ko']}에서 {service_body}를 알아볼 때는 이름이나 홍보문구보다 현재 목표와 실제 장면을 먼저 확인합니다."
+ intro2=f"{INTRO[d['intro_pattern']].split('.')[0]}. {guide(row,70)}"
+ mid=guide(row,23)
+ related=links(row,intent,svc,ex)
+
+ return f'''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{esc(h1)} | ENGLISH PT</title><meta name="description" content="{esc(desc)}"><meta name="robots" content="noindex,nofollow"><link rel="canonical" href="{canonical}">
+<meta property="og:title" content="{esc(h1)} | ENGLISH PT"><meta property="og:url" content="{canonical}"><link rel="stylesheet" href="pilot.css">
+<script type="application/ld+json">{js}</script><script defer src="pilot.js"></script></head>
+<body class="theme-test" data-production-deploy="false">
+<header><div class="wrap header"><a href="../englishpt.html" class="brand">ENGLISH PT</a><span>PRODUCTION DRY-RUN · noindex</span></div></header><main>
+<section class="hero"><div class="wrap"><p class="eyebrow">{esc(row["jurisdiction_full"])} · ENGLISH PT</p><h1>{esc(h1)}</h1><div class="hero-actions"><a class="btn primary" href="{PHONE_HREF}">{PHONE_LABEL}</a><a class="btn ghost" href="#detail">내용 보기</a><a class="btn ghost" href="#consultation-preview">상담 신청</a></div></div></section>
+{decision_strip(d,family)}
+<section id="detail" class="section"><div class="wrap narrow"><p class="kicker">{'시험 목표' if family=='exam' else '지금 상황'}</p><h2>{esc(question)}</h2><p>{esc(intro1)}</p><p>{esc(intro2)}</p><p>{esc(guide(row,0))}</p></div></section>
+<section class="section soft"><div class="wrap"><p class="kicker">자기상황 식별</p><h2>내 상황과 가까운 장면부터 확인합니다</h2><div class="grid4">{scene_cards(scene_titles,row,d)}</div></div></section>
+{decision_guide(intent,service,row,d)}
+<section class="section"><div class="wrap narrow"><p class="kicker">{'시험 맥락 이해' if family=='exam' else '학습 맥락 이해'}</p><h2>{esc(context_title)}</h2><p>{esc(context_text)}</p>{context_extra}</div></section>
+{variation_story(row,d,service)}
+{locality_longform(row,service)}
+<section class="section soft"><div class="wrap"><p class="kicker">우선순위</p><h2>{esc(PRIORITY_HEADING[d["intro_pattern"]])}</h2><ul class="proofs">{priority_block(priority,row,d)}</ul></div></section>
+<section class="section dark"><div class="wrap"><p class="kicker">수업 흐름</p><h2>설명에서 끝내지 않고 실제 행동으로 다시 확인합니다</h2><ol class="steps">{flow_block(steps,row,d)}</ol></div></section>
+<section class="mid-cta"><div class="wrap"><div><p class="kicker">중간 확인</p><h2>{esc(mid)}</h2></div><div class="mid-actions"><a class="btn primary" href="#consultation-preview">상담 전 확인하기</a><a class="btn phone" href="{PHONE_HREF}">{PHONE_LABEL}</a></div></div></section>
+<section class="section"><div class="wrap"><p class="kicker">판단 기준</p><h2>변화를 추상적인 표현 대신 행동으로 확인합니다</h2><ul class="proofs">{proof_block(proof,row,d)}</ul></div></section>
+<section class="section soft"><div class="wrap"><p class="kicker">피드백 예시</p><h2>성과를 약속하지 않고 다음 재확인 행동을 남깁니다</h2><p>아래 문장은 특정 수강생 후기나 점수 상승 사례가 아니라 기록 형식을 보여주는 예시입니다.</p><div class="grid4">{feedback_block(scene_titles,row,d)}</div></div></section>
+{faq_block(scene_titles,priority,proof,boundary,row,d)}
+{deep_block(scene_titles,priority,boundary,service,row,d)}
+<section class="section related"><div class="wrap"><p class="kicker">관련 과정</p><h2>{esc(dong)}에서 다른 목표도 비교해보세요</h2><div class="links">{related}</div></div></section>
+<section id="consultation-preview" class="section consult"><div class="wrap narrow"><p class="kicker">상담 전 체크</p><h2>최근 자료와 가장 막힌 장면, 다음 일정을 먼저 준비하세요</h2><p>{esc(CTA[d["cta_frame"]])} {esc(guide(row,30))}</p><form id="pilotForm"><label>가장 가까운 일정<input name="deadline" placeholder="시험·발표·면접·사용 일정"></label><label>가장 막히는 장면<textarea name="difficulty" rows="3" placeholder="최근 어려웠던 문제·응답·상황"></textarea></label><button class="btn primary" type="submit">상담 신청</button><a class="btn phone" href="{PHONE_HREF}">{PHONE_LABEL}</a><p class="pilot-status" aria-live="polite"></p></form></div></section>
+<section class="final"><div class="wrap"><h2>{esc(h1)}, 등록보다 현재 기준부터 확인하세요.</h2><p>{esc(guide(row,31))}</p><a class="btn light" href="{PHONE_HREF}">{PHONE_LABEL}</a></div></section>
+</main><footer><div class="wrap"><strong>ENGLISH PT</strong><p>{esc(row["full_name_ko"])} · Stage 3 dry-run · production 미배포</p></div></footer></body></html>'''
+
+def main():
+ rows=json.loads(INPUT.read_text(encoding="utf-8"))["rows"]
+ if len(rows)!=10 or len({r["region_slug"] for r in rows})!=10:raise RuntimeError("Stage3 needs 10 unique rows")
+ if any(r["landing_eligibility"]!="ELIGIBLE_AFTER_SLUG_QA" for r in rows):raise RuntimeError("ineligible row")
+ svc=load_module("service_gold",ROOT/"scripts/generate-v45-full-depth-pilot.py")
+ ex=load_module("exam_gold",ROOT/"scripts/generate-v45-exam-pilot.py")
+ OUT.mkdir(parents=True,exist_ok=True)
+ shutil.copy2(ROOT/"pilot-v45-5x7/pilot.css",OUT/"pilot.css")
+ with (OUT/"pilot.css").open("a",encoding="utf-8") as fp:
+  fp.write('''\n.decision-strip{background:#fff;border-bottom:1px solid #e6e2d9}.decision-grid{display:grid;grid-template-columns:repeat(4,1fr)}.decision-grid>div{padding:20px 18px;border-right:1px solid #e6e2d9}.decision-grid>div:last-child{border-right:0}.decision-grid b{display:block;font-size:13px;margin-bottom:4px}.decision-grid span{font-size:14px;color:#53605a}.mid-cta{padding:30px 0;background:#edeae2}.mid-cta .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px}.mid-cta h2{font-size:clamp(22px,3vw,32px);margin:6px 0}.mid-actions{display:flex;gap:10px;flex-wrap:wrap}.decision-guide{background:#f4f8f5}.decision-list{display:grid;gap:14px}.decision-list>div{padding:16px 18px;background:#fff;border:1px solid #dce7e0;border-radius:14px}.decision-list b{display:block;margin-bottom:6px}.decision-list p{margin:0;color:#41574d}.variation-story article{padding:16px 0;border-bottom:1px solid #e6e2d9}.variation-story article:last-child{border-bottom:0}.variation-story b{display:block;margin-bottom:6px}.variation-story p{margin:0;color:#41574d;line-height:1.8}@media(max-width:760px){.decision-grid{grid-template-columns:1fr 1fr}.decision-grid>div:nth-child(2){border-right:0}.decision-grid>div{border-bottom:1px solid #e6e2d9}.mid-cta .wrap{display:block}.mid-actions{margin-top:16px}}\n''')
+ shutil.copy2(ROOT/"pilot-v45-5x7/pilot.js",OUT/"pilot.js")
+
+ generated={};files=[]
+ for row in rows:
+  d=dims(row["variation_signature"])
+  for intent in SERVICE_ORDER:
+   p=svc.PROFILES[intent];raw=render_page(row,d,intent,"service",p,svc,ex)
+   name=f"{row['region_slug']}-{intent}.html";generated[name]=raw
+   files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"service","intent":intent,"h1":f"{row['dong_name']} {p['service_h1']}","canonical":f"https://englishpt.kr/{row['region_slug']}-{intent}.html","locality":row["region_slug"],"blueprint":p["blueprint"],"variation_signature":row["variation_signature"]})
+  for key in EXAM_ORDER:
+   e=ex.EXAMS[key];intent=e["intent"];raw=render_page(row,d,intent,"exam",e,svc,ex)
+   name=f"{row['region_slug']}-{intent}.html";generated[name]=raw
+   files.append({"path":f"stage3-production-dryrun-10x13/{name}","family":"exam","intent":intent,"exam":key,"h1":f"{row['dong_name']} {e['service']}","canonical":f"https://englishpt.kr/{row['region_slug']}-{intent}.html","locality":row["region_slug"],"blueprint":e["blueprint"],"variation_signature":row["variation_signature"]})
+
+ failures=[];checks=[];lengths={};groups=defaultdict(list);byloc=defaultdict(set)
+ malformed=["영어회화을","영어과외을","비즈니스영어을","문항를","질의을","응시이","근거이","근거은","제한 제한","페이지은","'을 다음 확인 기준","'를 다음 확인 기준","합니다에서 무엇부터"]
+ generic=["최고의 강사진","성적 향상을 책임","지금 바로 상담 신청"]
+ for m in files:byloc[m["locality"]].add(Path(m["path"]).name)
+ for m in files:
+  name=Path(m["path"]).name;raw=generated[name];txt=visible(raw);lengths[name]=len(txt);f=[]
+  if len(re.findall(r"<h1\b",raw))!=1 or f"<h1>{esc(m['h1'])}</h1>" not in raw:f.append("h1")
+  if f'rel="canonical" href="{m["canonical"]}"' not in raw:f.append("canonical")
+  if 'name="robots" content="noindex,nofollow"' not in raw:f.append("noindex")
+  if 'data-production-deploy="false"' not in raw:f.append("production_flag")
+  if raw.count("◆ ")<5 or 'decision-strip' not in raw or 'mid-cta' not in raw or 'variation-story' not in raw:f.append("conversion_blocks")
+  kickers=re.findall(r'<p class="kicker">(.*?)</p>',raw)
+  expected=["자기상황 식별","선택 기준","우선순위","수업 흐름","중간 확인","판단 기준","피드백 예시","자주 묻는 질문","더 깊게 보기","관련 과정","상담 전 체크"]
+  try: pp=[kickers.index(x) for x in expected]
+  except ValueError: pp=[]
+  if not pp or pp!=sorted(pp):f.append("conversion_flow_order")
+  try:json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>',raw,re.S).group(1))
+  except Exception:f.append("schema")
+  if any(x in txt for x in malformed):f.append("malformed_korean")
+  if any(x in txt for x in generic):f.append("generic_marketing")
+  if any(x in txt for x in ["place_id","official_code","content_seed","variation_pack_id"]):f.append("db_internal")
+  if "-tos.html" in raw.lower():f.append("standalone_tos")
+  linked=set(re.findall(r'href="([^"]+\.html)"',raw));missing=byloc[m["locality"]]-{name}-linked
+  if missing:f.append("cluster_links")
+  lo,hi=(10000,15000)
+  if not lo<=len(txt)<=hi:f.append(f"visible_chars:{len(txt)}")
+  checks.append({"file":name,"family":m["family"],"intent":m["intent"],"visible_chars":len(txt),"status":"PASS" if not f else "FAIL","failures":f})
+  if f:failures.append({"file":name,"failures":f})
+  groups[m["intent"]].append((m["locality"],txt))
+
+ pairs=[];maxc=maxj=0.0
+ for intent,docs in groups.items():
+  for (a,ta),(b,tb) in combinations(docs,2):
+   co=cosine(ta,tb);ja=jacc(ta,tb);maxc=max(maxc,co);maxj=max(maxj,ja)
+   p={"intent":intent,"a":a,"b":b,"cosine":round(co,4),"jaccard5":round(ja,4)};pairs.append(p)
+   if co>=0.82 or ja>=0.24:failures.append({"pair":[intent,a,b],"failures":[f"duplicate:{co:.4f}/{ja:.4f}"]})
+ if len(generated)!=130:failures.append({"global":["page_count",len(generated)]})
+ qa={"version":"2.0","status":"PASS" if not failures else "FAIL","stage":"STAGE3_10_LOCALITIES_X_13_INTENTS","page_count":len(generated),"locality_count":10,"intent_count":13,"visible_chars":{"min":min(lengths.values()),"max":max(lengths.values()),"avg":round(sum(lengths.values())/len(lengths),1)},"static_failures":len([x for x in failures if "file" in x or "global" in x]),"duplicate_gate":{"status":"PASS" if maxc<0.82 and maxj<0.24 else "FAIL","pairs":len(pairs),"max_cosine":round(maxc,4),"max_5_shingle_jaccard":round(maxj,4),"thresholds":{"cosine_lt":0.82,"jaccard5_lt":0.24},"top_pairs":sorted(pairs,key=lambda x:(x["jaccard5"],x["cosine"]),reverse=True)[:20]},"checks":checks,"failures":failures,"render_qa":"PENDING","safety":{"robots":"noindex,nofollow","live_lead_submission":False,"sitemap":False,"main_merge":False,"production_deploy":False}}
+ (OUT/"STAGE3_10X13_QA_V1.json").write_text(json.dumps(qa,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+ if failures:
+  # Debug-only evidence for the top duplicate pair. Workflow failure prevents commit.
+  top=qa["duplicate_gate"]["top_pairs"][0] if qa["duplicate_gate"]["top_pairs"] else None
+  if top:
+   for tag,slug in [("A",top["a"]),("B",top["b"])]:
+    name=f"{slug}-{top['intent']}.html"
+    if name in generated:
+     (OUT/f"DEBUG_TOP_{tag}_{name}").write_text(generated[name],encoding="utf-8")
+  print(json.dumps({"status":"FAIL","visible":qa["visible_chars"],"duplicate":qa["duplicate_gate"],"failures":failures[:60]},ensure_ascii=False));raise SystemExit(1)
+ for name,raw in generated.items():(OUT/name).write_text(raw,encoding="utf-8")
+ manifest={"version":"2.0","status":"STAGE3_130_STATIC_DUPLICATE_PASS_RENDER_PENDING_HUMAN_REVIEW_REQUIRED_NOT_PRODUCTION","stage":"STAGE3_10_LOCALITIES_X_13_INTENTS","page_count":130,"locality_count":10,"intent_count":13,"input":"stage3_localities_10_v1.json","renderer":"production-v2-intent-facts-plus-seven-axis-variation","localities":rows,"files":files,"safety":{"robots":"noindex,nofollow","live_lead_submission":False,"sitemap":False,"main_merge":False,"production_deploy":False}}
+ (OUT/"STAGE3_10X13_MANIFEST_V1.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+ print(json.dumps({"status":"PASS","pages":130,"visible":qa["visible_chars"],"max_cosine":qa["duplicate_gate"]["max_cosine"],"max_jaccard5":qa["duplicate_gate"]["max_5_shingle_jaccard"]},ensure_ascii=False))
+
+if __name__=="__main__":main()
