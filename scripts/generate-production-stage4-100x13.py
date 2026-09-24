@@ -257,31 +257,40 @@ def install_stage4_guide_pool(g):
    return "은" if (ord(last)-0xAC00)%28 else "는"
   return "은"
 
- SIG_PREFIX=[
-  "현재범위","독립수행","최근장면","목표행동","기초상태","첫반응","자료처리","오답경로","출력속도","실전장면",
-  "복습상태","기준행동","수행범위","도움수준","문제상황","사용목적","일정조건","우선항목","재사용범위","피드백기준",
-  "근거설명","질문대응","시간배분","자료적용"
- ]
- SIG_SUFFIX=[
-  "점검","확인","복기","정리","비교","추적","분해","대조","검토","재검증","기록","재확인",
-  "적용","선택","조정","관찰","검증","분류","재점검","연결","복구","전환","재구성","확장"
- ]
+  SIG_DOMAIN=[
+   "현재범위","독립수행","최근장면","목표행동","기초상태",
+   "첫반응","자료처리","오류원인","출력속도","실전수행",
+   "복습상태","도움수준","일정조건","질문대응","재사용범위"
+  ]
+  SIG_FOCUS=[
+   "기준","근거","원인","시간","도움",
+   "적용","순서","조건","오류","반응",
+   "출력","선택","재현","우선","회복"
+  ]
+  SIG_ACTION=[
+   "점검","확인","기록","비교","추적",
+   "분리","검토","재검증","재확인","적용",
+   "조정","관찰","복기","연결","정리"
+  ]
 
- def signature_term(row,slot):
-  seed=f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|signature"
-  h=hashlib.sha256(seed.encode()).hexdigest()
-  a=SIG_PREFIX[int(h[:10],16)%len(SIG_PREFIX)]
-  b=SIG_SUFFIX[int(h[10:20],16)%len(SIG_SUFFIX)]
-  return a+b
+  def signature_term(row,slot):
+   rank=int(row.get("_stage4_rank",0))
+   total=len(SIG_DOMAIN)*len(SIG_FOCUS)*len(SIG_ACTION)
+   idx=(rank*31 + int(slot)) % total
+   a=SIG_DOMAIN[(idx // (len(SIG_FOCUS)*len(SIG_ACTION))) % len(SIG_DOMAIN)]
+   rem=idx % (len(SIG_FOCUS)*len(SIG_ACTION))
+   b=SIG_FOCUS[(rem // len(SIG_ACTION)) % len(SIG_FOCUS)]
+   d=SIG_ACTION[rem % len(SIG_ACTION)]
+   return a+b+d
 
  def guide(row,slot):
   topic=TOPIC[int(hashlib.sha256(f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|topic".encode()).hexdigest()[:12],16)%len(TOPIC)]
-  observe=lex(row,OBSERVE,"observe")
-  record=lex(row,RECORD,"record")
-  verify=lex(row,VERIFY,"verify")
-  compare=lex(row,COMPARE,"compare")
-  plan=lex(row,PLAN,"plan")
-  close=lex(row,CLOSE,"close")
+  observe=lex(row,OBSERVE,f"observe|{slot}")
+  record=lex(row,RECORD,f"record|{slot}")
+  verify=lex(row,VERIFY,f"verify|{slot}")
+  compare=lex(row,COMPARE,f"compare|{slot}")
+  plan=lex(row,PLAN,f"plan|{slot}")
+  close=lex(row,CLOSE,f"close|{slot}")
   dong=row["dong_name"]
   sig=signature_term(row,slot)
   stamp=f" 기준 메모는 '{sig}' 항목으로 남깁니다."
@@ -490,19 +499,25 @@ def row_signature_block(row,intent):
   h=hashlib.sha256(f"{row['content_seed']}|{intent}|{slot}|{salt}".encode()).hexdigest()
   return arr[int(h[:12],16)%len(arr)]
 
- terms=[
-  pick(START,0,"start"),pick(CAUSE,0,"cause"),pick(TRAIN,0,"train"),
-  pick(VERIFY,0,"verify"),pick(CHOICE,0,"choice")
- ]
- paras=[]
- for i in range(10):
-  a=pick(FLOW_A,i,"a"); b=pick(FLOW_B,i,"b"); d=pick(FLOW_C,i,"c")
-  t1=terms[i%len(terms)]; t2=terms[(i+2)%len(terms)]
-  lead=(f"{row['full_name_ko']}에서 보는 {t1} 기준."
-        if i%2==0 else f"{row['dong_name']} 페이지의 {t1} 단계.")
-  label=base_label if i%2==0 else alt_label
-  paras.append(f"{lead} 이 항목은 '{label}' 기준으로 묶어 확인합니다. {a} {t2} 관점도 함께 두고, {b} {d} 다음 기록에서도 '{label}' 기준을 다시 사용합니다.")
- route=" → ".join([base_label]+terms+[alt_label])
+  term_pools=[START,CAUSE,TRAIN,VERIFY,CHOICE]
+  first_terms=[pick(pool,j,f"route-{j}") for j,pool in enumerate(term_pools)]
+  paras=[]
+  for i in range(10):
+   a=pick(FLOW_A,i,"a"); b=pick(FLOW_B,i,"b"); d=pick(FLOW_C,i,"c")
+   p1=term_pools[i%len(term_pools)]
+   p2=term_pools[(i+2)%len(term_pools)]
+   t1=pick(p1,i,f"t1-{i}")
+   t2=pick(p2,i+3,f"t2-{i}")
+   lead=(f"{row['full_name_ko']}에서 보는 {t1} 기준."
+         if i%2==0 else f"{row['dong_name']} 페이지의 {t1} 단계.")
+   label=base_label if i%2==0 else alt_label
+   if i%3==0:
+    paras.append(f"{lead} '{label}' 관점으로 현재 범위를 먼저 나눕니다. {a} 이어서 {t2} 관점으로 옮겨 {b} {d}")
+   elif i%3==1:
+    paras.append(f"{lead} {a} 이때 '{label}' 기준을 기록에 남깁니다. {t2} 관점도 함께 비교하고, {b} {d}")
+   else:
+    paras.append(f"{lead} {t2} 항목과 나란히 두고 {b} '{label}' 기준은 다음 확인에서도 유지합니다. {a} {d}")
+  route=" → ".join([base_label]+first_terms+[alt_label])
  return (
   '<section class="section row-signature"><div class="wrap narrow">'
   '<p class="kicker">판단 루트</p>'
