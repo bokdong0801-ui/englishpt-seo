@@ -499,25 +499,25 @@ def row_signature_block(row,intent):
   h=hashlib.sha256(f"{row['content_seed']}|{intent}|{slot}|{salt}".encode()).hexdigest()
   return arr[int(h[:12],16)%len(arr)]
 
-  term_pools=[START,CAUSE,TRAIN,VERIFY,CHOICE]
-  first_terms=[pick(pool,j,f"route-{j}") for j,pool in enumerate(term_pools)]
-  paras=[]
-  for i in range(10):
-   a=pick(FLOW_A,i,"a"); b=pick(FLOW_B,i,"b"); d=pick(FLOW_C,i,"c")
-   p1=term_pools[i%len(term_pools)]
-   p2=term_pools[(i+2)%len(term_pools)]
-   t1=pick(p1,i,f"t1-{i}")
-   t2=pick(p2,i+3,f"t2-{i}")
-   lead=(f"{row['full_name_ko']}에서 보는 {t1} 기준."
-         if i%2==0 else f"{row['dong_name']} 페이지의 {t1} 단계.")
-   label=base_label if i%2==0 else alt_label
-   if i%3==0:
-    paras.append(f"{lead} '{label}' 관점으로 현재 범위를 먼저 나눕니다. {a} 이어서 {t2} 관점으로 옮겨 {b} {d}")
-   elif i%3==1:
-    paras.append(f"{lead} {a} 이때 '{label}' 기준을 기록에 남깁니다. {t2} 관점도 함께 비교하고, {b} {d}")
-   else:
-    paras.append(f"{lead} {t2} 항목과 나란히 두고 {b} '{label}' 기준은 다음 확인에서도 유지합니다. {a} {d}")
-  route=" → ".join([base_label]+first_terms+[alt_label])
+ term_pools=[START,CAUSE,TRAIN,VERIFY,CHOICE]
+ first_terms=[pick(pool,j,f"route-{j}") for j,pool in enumerate(term_pools)]
+ paras=[]
+ for i in range(10):
+  a=pick(FLOW_A,i,"a"); b=pick(FLOW_B,i,"b"); d=pick(FLOW_C,i,"c")
+  p1=term_pools[i%len(term_pools)]
+  p2=term_pools[(i+2)%len(term_pools)]
+  t1=pick(p1,i,f"t1-{i}")
+  t2=pick(p2,i+3,f"t2-{i}")
+  lead=(f"{row['full_name_ko']}에서 보는 {t1} 기준."
+        if i%2==0 else f"{row['dong_name']} 페이지의 {t1} 단계.")
+  label=base_label if i%2==0 else alt_label
+  if i%3==0:
+   paras.append(f"{lead} '{label}' 관점으로 현재 범위를 먼저 나눕니다. {a} 이어서 {t2} 관점으로 옮겨 {b} {d}")
+  elif i%3==1:
+   paras.append(f"{lead} {a} 이때 '{label}' 기준을 기록에 남깁니다. {t2} 관점도 함께 비교하고, {b} {d}")
+  else:
+   paras.append(f"{lead} {t2} 항목과 나란히 두고 {b} '{label}' 기준은 다음 확인에서도 유지합니다. {a} {d}")
+ route=" → ".join([base_label]+first_terms+[alt_label])
  return (
   '<section class="section row-signature"><div class="wrap narrow">'
   '<p class="kicker">판단 루트</p>'
