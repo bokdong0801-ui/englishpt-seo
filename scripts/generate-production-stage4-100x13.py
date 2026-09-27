@@ -95,6 +95,68 @@ PROFILE_THEME_NOTE=[
  "첨삭 반영 · 재답변 · 다음 행동 · 후속 점검을 기록합니다.",
  "우선 기능 · 제외 범위 · 단기 집중 · 장기 보완을 구분합니다."
 ]
+PROFILE_THEME_GUIDES=[
+ [
+  "혼자 시작할 수 있는 범위와 힌트가 필요한 범위를 따로 적습니다.",
+  "도움을 한 단계 줄였을 때도 스스로 수정할 수 있는지 확인합니다.",
+  "익숙한 예시 없이 같은 행동을 다시 만들 수 있는 범위를 봅니다.",
+  "설명 횟수보다 독립적으로 수행한 결과를 다음 판단 기준으로 둡니다."
+ ],
+ [
+  "시험일이나 마감에서 남은 실제 연습 횟수를 먼저 계산합니다.",
+  "직전 점검에 필요한 항목과 일정 뒤 장기 보완 항목을 분리합니다.",
+  "모든 영역을 늘리기보다 가까운 결과에 직접 영향을 주는 순서를 잡습니다.",
+  "계획이 밀렸을 때는 누적 과제보다 남은 시간에 가능한 범위를 다시 배치합니다."
+ ],
+ [
+  "같은 실수가 반복되는지와 그때 선택한 근거를 함께 확인합니다.",
+  "설명 뒤 수정된 부분과 새 문제에서 다시 틀리는 부분을 나눕니다.",
+  "오류가 생긴 조건과 스스로 복구한 과정을 다음 기록으로 남깁니다.",
+  "정답 개수보다 같은 원인이 다시 나타나는지를 교정 순서에 반영합니다."
+ ],
+ [
+  "첫 반응이 실제 장면에서 바로 나오는지부터 확인합니다.",
+  "알고 있는 표현을 말하기·쓰기·문제 해결 행동으로 옮겨 봅니다.",
+  "시작만 되는지 끝까지 완결되는지 실제 출력 범위를 따로 봅니다.",
+  "설명으로 이해한 내용이 다음 사용 장면에서도 이어지는지 확인합니다."
+ ],
+ [
+  "자료 표현이나 질문 순서가 바뀌었을 때도 같은 기준을 쓰는지 봅니다.",
+  "한 조건씩 바꾸면서 어느 변화에서 다시 흔들리는지 확인합니다.",
+  "외운 순서가 없어도 핵심 의미를 다시 구성할 수 있는 범위를 봅니다.",
+  "익숙한 문제의 성공보다 다른 조건으로 전환되는 재사용 범위를 기록합니다."
+ ],
+ [
+  "배운 내용을 시간을 두고 다시 꺼낼 수 있는지 확인합니다.",
+  "복습 간격이 달라져도 기억에서 행동으로 다시 연결되는지를 봅니다.",
+  "한 번 재노출한 뒤가 아니라 다음 일정에서도 유지되는지를 기록합니다.",
+  "누적 학습량보다 필요한 순간에 다시 회수되는 범위를 기준으로 봅니다."
+ ],
+ [
+  "같은 문제라도 처리 시간과 풀이·응답 순서를 함께 기록합니다.",
+  "끝내지 못한 지점과 종료 기준을 구분해 시간 병목을 찾습니다.",
+  "제한 시간이 줄었을 때도 핵심 수행이 유지되는지를 확인합니다.",
+  "빠르게 끝내는 것보다 일정한 순서와 완결성이 유지되는지를 비교합니다."
+ ],
+ [
+  "현재 과정 외에 더 직접적인 대안이 있는 조건도 함께 확인합니다.",
+  "비용은 횟수뿐 아니라 시간·피드백·재점검 범위를 나눠 비교합니다.",
+  "방문·온라인·학원·과외의 운영 방식이 목표와 맞는지 같은 기준으로 봅니다.",
+  "등록 여부보다 현재 목적을 가장 짧게 연결하는 과정이 무엇인지 비교합니다."
+ ],
+ [
+  "첨삭이나 설명을 받은 뒤 실제로 무엇을 다시 바꿨는지 기록합니다.",
+  "같은 답을 반복하기보다 수정한 내용을 새 문제와 재답변에 적용합니다.",
+  "피드백은 잘한 점 목록보다 다음에 다시 확인할 행동으로 남깁니다.",
+  "후속 점검에서 이전 피드백 없이도 수정 방향을 잡는지 확인합니다."
+ ],
+ [
+  "이번 목표에 반드시 필요한 기능과 뒤로 미룰 범위를 먼저 나눕니다.",
+  "단기 일정에서 집중할 항목과 일정 뒤 장기 보완 항목을 분리합니다.",
+  "여러 약점을 동시에 다루기보다 결과에 직접 영향을 주는 기능부터 봅니다.",
+  "이미 충분한 영역은 반복하지 않고 우선순위가 높은 범위에 시간을 남깁니다."
+ ]
+]
 
 def load_module(name,path):
  spec=importlib.util.spec_from_file_location(name,path)
@@ -550,6 +612,7 @@ def row_signature_block(row,intent):
  theme_idx=rank%10
  method_idx=((rank//10)+3*(rank%10))%10
  theme_note=PROFILE_THEME_NOTE[theme_idx]
+ theme_guides=PROFILE_THEME_GUIDES[theme_idx]
  theme_terms=PROFILE_TERMS[theme_idx]
  START=[
   "현재 범위 점검","독립 수행 확인","최근 장면 복기","목표 행동 확인","기초 상태 점검","첫 반응 관찰",
@@ -630,6 +693,7 @@ def row_signature_block(row,intent):
   '<h2>'+html.escape(row["dong_name"])+' 페이지에서 확인하는 실제 순서</h2>'
   '<p class="mini-note">'+html.escape(route)+'</p>'
   '<p>'+html.escape(theme_note)+'</p>'
+  +''.join('<p>'+html.escape(p)+'</p>' for p in theme_guides)
   +''.join('<p>'+html.escape(p)+'</p>' for p in paras)
   +'</div></section>'
  )
@@ -731,7 +795,7 @@ def main():
   linked=set(re.findall(r'href="([^"]+\.html)"',raw)); missing=byloc[m["locality"]]-{name}-linked
   if missing:f.append("cluster_links")
   if name in reserved or m["canonical"] in reserved:f.append("reserved_95_conflict")
-  if not 9000<=len(txt)<=20500:f.append(f"visible_chars:{len(txt)}")
+  if not 9000<=len(txt)<=21200:f.append(f"visible_chars:{len(txt)}")
   checks.append({"file":name,"family":m["family"],"intent":m["intent"],"visible_chars":len(txt),"bytes":sizes[name],"status":"PASS" if not f else "FAIL","failures":f})
   if f:failures.append({"file":name,"failures":f})
   groups[m["intent"]].append((m["locality"],name,txt))
