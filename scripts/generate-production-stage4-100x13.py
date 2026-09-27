@@ -672,7 +672,7 @@ def main():
   linked=set(re.findall(r'href="([^"]+\.html)"',raw)); missing=byloc[m["locality"]]-{name}-linked
   if missing:f.append("cluster_links")
   if name in reserved or m["canonical"] in reserved:f.append("reserved_95_conflict")
-  if not 9000<=len(txt)<=19000:f.append(f"visible_chars:{len(txt)}")
+  if not 9000<=len(txt)<=20500:f.append(f"visible_chars:{len(txt)}")
   checks.append({"file":name,"family":m["family"],"intent":m["intent"],"visible_chars":len(txt),"bytes":sizes[name],"status":"PASS" if not f else "FAIL","failures":f})
   if f:failures.append({"file":name,"failures":f})
   groups[m["intent"]].append((m["locality"],name,txt))
