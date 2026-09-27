@@ -126,17 +126,47 @@ def visible(raw):
  raw=re.sub(r"<[^>]+>"," ",raw)
  return re.sub(r"\s+"," ",html.unescape(raw)).strip()
 
+def _expected_particle(label,particle):
+ label=label.rstrip()
+ if not label:return particle
+ last=label[-1]
+ if not ("가"<=last<="힣"):return particle
+ has_final=((ord(last)-0xAC00)%28)!=0
+ groups={
+  "을":("을","를"),"를":("을","를"),
+  "은":("은","는"),"는":("은","는"),
+  "이":("이","가"),"가":("이","가"),
+  "과":("과","와"),"와":("과","와")
+ }
+ pair=groups.get(particle)
+ if not pair:return particle
+ return pair[0] if has_final else pair[1]
+
 def quoted_particle_errors(text):
- pairs={"을":True,"를":False,"은":True,"는":False,"이":True,"가":False,"과":True,"와":False}
  out=[]
- for label,particle in re.findall(r"'([^']+)'(을|를|은|는|이|가|과|와)",text):
-  label=label.rstrip()
-  if not label: continue
-  last=label[-1]
-  if not ("가"<=last<="힣"): continue
-  has_final=((ord(last)-0xAC00)%28)!=0
-  if has_final!=pairs[particle]: out.append(f"{label}:{particle}")
+ for m in re.finditer(r"'([^'<>\\n]{1,160})'",text):
+  current=text[m.end():m.end()+1]
+  if current not in {"을","를","은","는","이","가","과","와"}:continue
+  expected=_expected_particle(m.group(1),current)
+  if expected!=current:out.append(f"{m.group(1)}:{current}->{expected}")
  return out
+
+def fix_quoted_particles(raw):
+ matches=list(re.finditer(r"'([^'<>\\n]{1,160})'",raw))
+ if not matches:return raw
+ pieces=[];cursor=0
+ for m in matches:
+  if m.start()<cursor:continue
+  pieces.append(raw[cursor:m.end()])
+  pos=m.end()
+  current=raw[pos:pos+1]
+  if current in {"을","를","은","는","이","가","과","와"}:
+   pieces.append(_expected_particle(m.group(1),current))
+   cursor=pos+1
+  else:
+   cursor=pos
+ pieces.append(raw[cursor:])
+ return "".join(pieces)
 
 def tokens(t): return re.findall(r"[가-힣A-Za-z0-9]+",t.lower())
 
@@ -635,6 +665,7 @@ def main():
    raw=g.render_page(row,d,intent,"service",p,svc,ex)
    raw=raw.replace('<section class="section related">',row_signature_block(row,intent)+'<section class="section related">',1)
    raw=raw.replace("PRODUCTION DRY-RUN · noindex","PRE-PRODUCTION · noindex").replace("Stage 3 dry-run · production 미배포","Stage 4 pre-production · production 미배포")
+   raw=fix_quoted_particles(raw)
    name=f"{row['region_slug']}-{intent}.html"; generated[name]=raw
    files.append({"path":f"stage4-preproduction-100x13/{name}","family":"service","intent":intent,"h1":f"{row['dong_name']} {p['service_h1']}","canonical":f"https://englishpt.kr/{row['region_slug']}-{intent}.html","locality":row["region_slug"],"blueprint":p["blueprint"],"variation_signature":row["variation_signature"]})
   for key in EXAM_ORDER:
@@ -642,6 +673,7 @@ def main():
    raw=g.render_page(row,d,intent,"exam",e,svc,ex)
    raw=raw.replace('<section class="section related">',row_signature_block(row,intent)+'<section class="section related">',1)
    raw=raw.replace("PRODUCTION DRY-RUN · noindex","PRE-PRODUCTION · noindex").replace("Stage 3 dry-run · production 미배포","Stage 4 pre-production · production 미배포")
+   raw=fix_quoted_particles(raw)
    name=f"{row['region_slug']}-{intent}.html"; generated[name]=raw
    files.append({"path":f"stage4-preproduction-100x13/{name}","family":"exam","intent":intent,"exam":key,"h1":f"{row['dong_name']} {e['service']}","canonical":f"https://englishpt.kr/{row['region_slug']}-{intent}.html","locality":row["region_slug"],"blueprint":e["blueprint"],"variation_signature":row["variation_signature"]})
 
