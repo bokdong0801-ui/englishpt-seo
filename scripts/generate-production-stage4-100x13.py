@@ -127,7 +127,7 @@ def visible(raw):
  return re.sub(r"\s+"," ",html.unescape(raw)).strip()
 
 def _expected_particle(label,particle):
- label=label.rstrip()
+ label=html.unescape(label).rstrip()
  if not label:return particle
  last=label[-1]
  if not ("가"<=last<="힣"):return particle
@@ -142,31 +142,44 @@ def _expected_particle(label,particle):
  if not pair:return particle
  return pair[0] if has_final else pair[1]
 
-def quoted_particle_errors(text):
- out=[]
- for m in re.finditer(r"'([^'<>\\n]{1,160})'",text):
-  current=text[m.end():m.end()+1]
-  if current not in {"을","를","은","는","이","가","과","와"}:continue
-  expected=_expected_particle(m.group(1),current)
-  if expected!=current:out.append(f"{m.group(1)}:{current}->{expected}")
- return out
+def _quote_pair_positions(raw,token):
+ positions=[];pos=0
+ while True:
+  i=raw.find(token,pos)
+  if i<0:break
+  positions.append(i)
+  pos=i+len(token)
+ # Only complete sequential pairs are meaningful.
+ return [(positions[i],positions[i+1]) for i in range(0,len(positions)-1,2)]
 
 def fix_quoted_particles(raw):
- matches=list(re.finditer(r"'([^'<>\\n]{1,160})'",raw))
- if not matches:return raw
- pieces=[];cursor=0
- for m in matches:
-  if m.start()<cursor:continue
-  pieces.append(raw[cursor:m.end()])
-  pos=m.end()
-  current=raw[pos:pos+1]
-  if current in {"을","를","은","는","이","가","과","와"}:
-   pieces.append(_expected_particle(m.group(1),current))
-   cursor=pos+1
-  else:
-   cursor=pos
- pieces.append(raw[cursor:])
- return "".join(pieces)
+ particles={"을","를","은","는","이","가","과","와"}
+ # Rendered user text normally uses the HTML entity token. Literal apostrophes
+ # are also supported for safety.
+ for token in ("&#x27;","'"):
+  for open_pos,close_pos in _quote_pair_positions(raw,token):
+   label=raw[open_pos+len(token):close_pos]
+   ppos=close_pos+len(token)
+   current=raw[ppos:ppos+1]
+   if current in particles:
+    expected=_expected_particle(label,current)
+    if expected!=current:
+     raw=raw[:ppos]+expected+raw[ppos+1:]
+ return raw
+
+def quoted_particle_errors_raw(raw):
+ particles={"을","를","은","는","이","가","과","와"}
+ out=[]
+ for token in ("&#x27;","'"):
+  for open_pos,close_pos in _quote_pair_positions(raw,token):
+   label=raw[open_pos+len(token):close_pos]
+   ppos=close_pos+len(token)
+   current=raw[ppos:ppos+1]
+   if current not in particles:continue
+   expected=_expected_particle(label,current)
+   if expected!=current:
+    out.append(f"{html.unescape(label)}:{current}->{expected}")
+ return out
 
 def tokens(t): return re.findall(r"[가-힣A-Za-z0-9]+",t.lower())
 
@@ -395,7 +408,7 @@ def install_stage4_guide_pool(g):
    f"'{topic}'의 조건을 하나 바꿔 다시 확인합니다.",
    f"'{topic}' 결과가 다음에도 남는지 다시 꺼내 봅니다.",
    f"'{topic}' 수행은 시간과 완결성을 함께 봅니다.",
-   f"'{topic}'은 되는 조건과 흔들리는 조건을 나눠 봅니다.",
+   f"확인할 장면은 '{topic}'입니다. 되는 조건과 흔들리는 조건을 나눠 봅니다.",
    f"'{topic}'에서 다음 수업에 남길 증거를 정합니다.",
    f"'{topic}' 목표에서는 지금 가장 직접적인 항목만 남깁니다."
   ]
@@ -708,7 +721,7 @@ def main():
   except Exception:f.append("schema")
   bad_malformed=[x for x in malformed if x in txt]
   if bad_malformed:f.append("malformed_korean:"+",".join(bad_malformed))
-  bad_particles=quoted_particle_errors(txt)
+  bad_particles=quoted_particle_errors_raw(raw)
   if bad_particles:f.append("quoted_particle:"+",".join(bad_particles[:8]))
   if any(x in txt for x in generic):f.append("generic_marketing")
   internal_profile=re.search(r"(독립수행|일정역산|오류추적|실사용|조건전환|복습회수|시간처리|선택비교|피드백반영|목표경계)(점검형|배치형|교정형|적용형|확장형|유지형|측정형|대조형|기록형|집중형)",txt)
