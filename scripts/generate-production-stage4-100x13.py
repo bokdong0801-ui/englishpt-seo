@@ -126,6 +126,18 @@ def visible(raw):
  raw=re.sub(r"<[^>]+>"," ",raw)
  return re.sub(r"\s+"," ",html.unescape(raw)).strip()
 
+def quoted_particle_errors(text):
+ pairs={"을":True,"를":False,"은":True,"는":False,"이":True,"가":False,"과":True,"와":False}
+ out=[]
+ for label,particle in re.findall(r"'([^']+)'(을|를|은|는|이|가|과|와)",text):
+  label=label.rstrip()
+  if not label: continue
+  last=label[-1]
+  if not ("가"<=last<="힣"): continue
+  has_final=((ord(last)-0xAC00)%28)!=0
+  if has_final!=pairs[particle]: out.append(f"{label}:{particle}")
+ return out
+
 def tokens(t): return re.findall(r"[가-힣A-Za-z0-9]+",t.lower())
 
 def prep_similarity(t):
@@ -563,11 +575,11 @@ def row_signature_block(row,intent):
   if i%4==0:
    paras.append(f"{row['full_name_ko']}에서는 '{t1}'부터 시작합니다. 확인 항목은 '{vx}', '{vy}'입니다. {a} 이어서 '{t2}' 단계에서 {b} {d}")
   elif i%4==1:
-   paras.append(f"{row['dong_name']} 페이지에서는 '{t1}'을 먼저 봅니다. {a} 다음 단계는 '{t2}'입니다. {b} {METHOD_NOTE[method_idx]}")
+   paras.append(f"{row['dong_name']} 페이지의 첫 확인 항목은 '{t1}'입니다. {a} 다음 단계는 '{t2}'입니다. {b} {METHOD_NOTE[method_idx]}")
   elif i%4==2:
-   paras.append(f"{row['full_name_ko']}의 선택 기준을 정리할 때 '{t1}'과 '{t2}'을 함께 봅니다. {a} {b} {d}")
+   paras.append(f"{row['full_name_ko']}의 선택 기준을 정리할 때 함께 보는 항목은 '{t1}', '{t2}'입니다. {a} {b} {d}")
   else:
-   paras.append(f"{row['dong_name']}에서 '{t1}'을 확인한 뒤 '{t2}'으로 이동합니다. 확인할 내용은 '{vx}', '{vy}'입니다. {b} {d}")
+   paras.append(f"{row['dong_name']}에서는 먼저 '{t1}' 단계를 확인합니다. 다음 단계는 '{t2}'입니다. 확인할 내용은 '{vx}', '{vy}'입니다. {b} {d}")
  route=("["+row["jurisdiction_full"]+"] → " if row.get("_same_name_count",1)>1 else "")+" → ".join(route_terms)
  return (
   '<section class="section row-signature"><div class="wrap narrow">'
@@ -664,6 +676,8 @@ def main():
   except Exception:f.append("schema")
   bad_malformed=[x for x in malformed if x in txt]
   if bad_malformed:f.append("malformed_korean:"+",".join(bad_malformed))
+  bad_particles=quoted_particle_errors(txt)
+  if bad_particles:f.append("quoted_particle:"+",".join(bad_particles[:8]))
   if any(x in txt for x in generic):f.append("generic_marketing")
   internal_profile=re.search(r"(독립수행|일정역산|오류추적|실사용|조건전환|복습회수|시간처리|선택비교|피드백반영|목표경계)(점검형|배치형|교정형|적용형|확장형|유지형|측정형|대조형|기록형|집중형)",txt)
   if internal_profile or any(x in txt for x in ["후속 이름:","운영 프레임:","기록명:","기준 메모는"]):f.append("internal_variation_label")
