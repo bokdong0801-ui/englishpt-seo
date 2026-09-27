@@ -320,37 +320,45 @@ def install_stage4_guide_pool(g):
   rem=idx % (len(SIG_FOCUS)*len(SIG_ACTION))
   b=SIG_FOCUS[(rem // len(SIG_ACTION)) % len(SIG_FOCUS)]
   d=SIG_ACTION[rem % len(SIG_ACTION)]
-  return a+b+d
-
- PROFILE_THEME=["독립수행","일정역산","오류추적","실사용","조건전환","복습회수","시간처리","선택비교","피드백반영","목표경계"]
- PROFILE_METHOD=["점검형","배치형","교정형","적용형","확장형","유지형","측정형","대조형","기록형","집중형"]
+  return f"다음에는 '{a}'에서 '{b}'{obj_josa(b)} 중심으로 {d}합니다."
 
  def guide(row,slot):
   topic=TOPIC[int(hashlib.sha256(f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|topic".encode()).hexdigest()[:12],16)%len(TOPIC)]
   rank=int(row.get("_stage4_rank",0))
-  theme_idx=rank%10; method_idx=((rank//10)+3*(rank%10))%10
-  profile=PROFILE_THEME[theme_idx]+PROFILE_METHOD[method_idx]
+  theme_idx=rank%10
+  method_idx=((rank//10)+3*(rank%10))%10
   theme_note=PROFILE_THEME_NOTE[theme_idx]
   theme_terms=PROFILE_TERMS[theme_idx]
-  action_terms=PROFILE_ACTIONS[method_idx]
   focus_a=theme_terms[slot%len(theme_terms)]
   focus_b=theme_terms[(slot+2)%len(theme_terms)]
-  method_word=action_terms[slot%len(action_terms)]
   sig=signature_term(row,slot)
-  area=(f" 위치 기준은 {row['jurisdiction_full']}입니다." if row.get("_same_name_count",1)>1 and slot%7==0 else "")
-  templates=[
-   f"{row['dong_name']}에서는 '{topic}' 장면을 {profile} 관점으로 점검합니다. 핵심 항목: {focus_a} · {focus_b}. 실행 방식: {method_word}. 후속 기록: {sig}.",
-   f"'{topic}' 준비 순서를 {profile} 기준으로 배치합니다. 먼저 볼 항목: {focus_a} · {focus_b}. 운영 방식: {method_word}. 다음 메모: {sig}.",
-   f"'{topic}' 장면은 {profile} 기준으로 교정합니다. 교정 대상: {focus_a} · {focus_b}. 적용 방식: {method_word}. 재점검 기록: {sig}.",
-   f"'{topic}' 장면을 실제 수행으로 옮깁니다. {profile} 적용 항목: {focus_a} · {focus_b}. 실행 방식: {method_word}. 다음 기록: {sig}.",
-   f"'{topic}' 조건을 바꿔 다시 봅니다. {profile} 확장 항목: {focus_a} · {focus_b}. 전환 방식: {method_word}. 확인 기록: {sig}.",
-   f"'{topic}' 결과가 다음에도 남는지 봅니다. {profile} 유지 항목: {focus_a} · {focus_b}. 복기 방식: {method_word}. 후속 기록: {sig}.",
-   f"'{topic}' 수행을 시간과 결과로 나눠 봅니다. {profile} 측정 항목: {focus_a} · {focus_b}. 측정 방식: {method_word}. 비교 기록: {sig}.",
-   f"'{topic}' 장면의 되는 조건과 흔들리는 조건을 대조합니다. {profile} 비교 항목: {focus_a} · {focus_b}. 구분 방식: {method_word}. 판단 기록: {sig}.",
-   f"'{topic}' 수행에서 다음에 남길 증거를 정합니다. {profile} 기록 항목: {focus_a} · {focus_b}. 기록 방식: {method_word}. 후속 이름: {sig}.",
-   f"'{topic}' 목표에서 가장 직접적인 항목만 남깁니다. {profile} 집중 항목: {focus_a} · {focus_b}. 선택 방식: {method_word}. 다음 기준: {sig}."
+  area=(f" 같은 이름의 지역과 구분하기 위해 위치 기준은 {row['jurisdiction_full']}로 확인합니다." if row.get("_same_name_count",1)>1 and slot%7==0 else "")
+  method_notes=[
+   "먼저 현재 상태를 확인하고 다음에 다시 볼 항목을 남깁니다.",
+   "가까운 일정에 맞춰 확인 순서를 다시 배치합니다.",
+   "반복되는 원인을 찾고 수정된 범위를 새 조건에서 다시 봅니다.",
+   "설명한 내용을 실제 문제나 장면에 바로 적용합니다.",
+   "자료나 질문을 바꿔도 같은 기준을 다시 쓸 수 있는지 확인합니다.",
+   "시간을 두고 다시 꺼내도 같은 행동이 남는지 확인합니다.",
+   "처리 시간과 순서를 함께 기록해 수행 과정을 비교합니다.",
+   "되는 조건과 흔들리는 조건을 나눠 차이를 확인합니다.",
+   "다음에 다시 볼 행동을 짧은 기록으로 남깁니다.",
+   "이번 목표에 직접 필요한 범위만 남기고 나머지는 뒤로 미룹니다."
   ]
-  return templates[method_idx]+" "+theme_note+area
+  leads=[
+   f"{row['dong_name']}에서는 '{topic}' 장면부터 확인합니다.",
+   f"'{topic}' 준비에서는 먼저 해야 할 순서를 좁힙니다.",
+   f"'{topic}'에서 반복되는 막힘이 어디서 시작되는지 확인합니다.",
+   f"'{topic}' 내용을 실제 수행으로 옮겨 봅니다.",
+   f"'{topic}'의 조건을 하나 바꿔 다시 확인합니다.",
+   f"'{topic}' 결과가 다음에도 남는지 다시 꺼내 봅니다.",
+   f"'{topic}' 수행은 시간과 완결성을 함께 봅니다.",
+   f"'{topic}'은 되는 조건과 흔들리는 조건을 나눠 봅니다.",
+   f"'{topic}'에서 다음 수업에 남길 증거를 정합니다.",
+   f"'{topic}' 목표에서는 지금 가장 직접적인 항목만 남깁니다."
+  ]
+  focus=f"확인할 내용은 '{focus_a}', '{focus_b}'입니다."
+  return f"{leads[method_idx]} {focus} {method_notes[method_idx]} {theme_note} {sig}{area}"
 
  g.guide=guide
 
@@ -483,93 +491,90 @@ def install_stage4_unique_longform(g):
 
 
 def row_signature_block(row,intent):
- # Each Stage 4 locality gets a guaranteed-unique set of readable decision labels.
- # Labels are semantic Korean compounds, not IDs or hidden tokens.
  rank=int(row.get("_stage4_rank",0))
- profile=PROFILE_THEME[rank%10]+PROFILE_METHOD[((rank//10)+3*(rank%10))%10]
- theme_terms=PROFILE_TERMS[rank%10]
- action_terms=PROFILE_ACTIONS[((rank//10)+3*(rank%10))%10]
- UNIQUE_A=["현재범위","독립수행","최근장면","목표행동","기초상태","첫반응","자료처리","오답경로","출력속도","실전장면",
-           "복습상태","기준행동","수행범위","도움수준","문제상황","사용목적","일정조건","우선항목","재사용범위","피드백기준"]
- UNIQUE_B=["재확인","추적","분석","점검","재검증","대조","조정","복구","재구성","확장",
-           "분류","연결","관찰","검토","적용","선택","전환","정리","기록","비교"]
- # rank 0..99 maps to unique ordered pairs.
- base_label=UNIQUE_A[rank//len(UNIQUE_B)]+UNIQUE_B[rank%len(UNIQUE_B)]
- alt_label=UNIQUE_A[(rank*7+3)%len(UNIQUE_A)]+UNIQUE_B[(rank*11+5)%len(UNIQUE_B)]
+ theme_idx=rank%10
+ method_idx=((rank//10)+3*(rank%10))%10
+ theme_note=PROFILE_THEME_NOTE[theme_idx]
+ theme_terms=PROFILE_TERMS[theme_idx]
  START=[
-  "현재범위 점검","독립수행 확인","최근장면 복기","목표행동 확인","기초상태 점검","첫반응 관찰",
-  "자료처리 확인","오답경로 확인","출력속도 점검","실전장면 확인","복습상태 확인","기준행동 확인",
-  "수행범위 구분","도움수준 점검","문제상황 복기","사용목적 확인","일정조건 확인","우선항목 분리"
+  "현재 범위 점검","독립 수행 확인","최근 장면 복기","목표 행동 확인","기초 상태 점검","첫 반응 관찰",
+  "자료 처리 확인","오답 경로 확인","출력 속도 점검","실전 장면 확인","복습 상태 확인","기준 행동 확인",
+  "수행 범위 구분","도움 수준 점검","문제 상황 복기","사용 목적 확인","일정 조건 확인","우선 항목 분리"
  ]
  CAUSE=[
-  "병목원인 추적","오류조건 분해","시간압박 점검","질문이해 구분","지식공백 확인","출력중단 추적",
-  "근거선택 점검","반복실수 분석","힌트의존 확인","전이실패 점검","복습공백 확인","과제과부하 점검",
-  "범위혼선 구분","우선순위 재검토","자료난도 확인","수행조건 대조","도움단계 확인","목표충돌 점검"
+  "병목 원인 추적","오류 조건 분해","시간 압박 점검","질문 이해 구분","지식 공백 확인","출력 중단 추적",
+  "근거 선택 점검","반복 실수 분석","힌트 의존 확인","전이 실패 점검","복습 공백 확인","과제 과부하 점검",
+  "범위 혼선 구분","우선순위 재검토","자료 난도 확인","수행 조건 대조","도움 단계 확인","목표 충돌 점검"
  ]
  TRAIN=[
-  "새자료 적용","질문변형 연습","독립수행 훈련","제한시간 적용","첫문장 훈련","근거설명 연습",
-  "재작성 훈련","재답변 연습","핵심요약 적용","오답복구 연습","루틴복구 실행","전이연습 적용",
-  "자료변형 적용","힌트감소 훈련","실전순서 연습","핵심행동 반복","조건변경 연습","우선기능 집중"
+  "새 자료 적용","질문 변형 연습","독립 수행 훈련","제한 시간 적용","첫 문장 훈련","근거 설명 연습",
+  "재작성 훈련","재답변 연습","핵심 요약 적용","오답 복구 연습","루틴 복구 실행","전이 연습 적용",
+  "자료 변형 적용","힌트 감소 훈련","실전 순서 연습","핵심 행동 반복","조건 변경 연습","우선 기능 집중"
  ]
  VERIFY=[
-  "후속점검 기록","독립재현 확인","힌트감소 비교","새조건 재검증","처리시간 비교","완결성 재확인",
-  "근거설명 재점검","다른자료 검증","질문변형 확인","실전조건 재검사","다음수업 재확인","반복오류 재점검",
-  "도움수준 비교","전후조건 대조","재사용범위 확인","실행기록 비교","일정직전 점검","장기유지 확인"
+  "후속 점검 기록","독립 재현 확인","힌트 감소 비교","새 조건 재검증","처리 시간 비교","완결성 재확인",
+  "근거 설명 재점검","다른 자료 검증","질문 변형 확인","실전 조건 재검사","다음 수업 재확인","반복 오류 재점검",
+  "도움 수준 비교","전후 조건 대조","재사용 범위 확인","실행 기록 비교","일정 직전 점검","장기 유지 확인"
  ]
  CHOICE=[
-  "과정적합 비교","비용구성 검토","피드백범위 확인","수업방식 비교","다른시험 검토","학원과외 비교",
-  "온라인방문 비교","교사피드백 확인","과제운영 검토","일정유연성 확인","재점검방식 비교","자료첨삭 범위",
-  "녹음피드백 확인","복습지원 비교","목표경로 선택","지원강도 비교","수업횟수 검토","상담질문 정리"
+  "과정 적합 비교","비용 구성 검토","피드백 범위 확인","수업 방식 비교","다른 시험 검토","학원·과외 비교",
+  "온라인·방문 비교","교사 피드백 확인","과제 운영 검토","일정 유연성 확인","재점검 방식 비교","자료 첨삭 범위",
+  "녹음 피드백 확인","복습 지원 비교","목표 경로 선택","지원 강도 비교","수업 횟수 검토","상담 질문 정리"
  ]
  FLOW_A=[
-  "첫 단계에서는 결과보다 현재 행동을 확인합니다","처음에는 혼자 가능한 부분과 도움 필요한 부분을 나눕니다",
-  "시작점에서는 최근 자료 한 개만 사용해 범위를 좁힙니다","초기 확인에서는 넓은 레벨보다 실제 수행을 봅니다",
-  "첫 기록은 잘한 내용보다 반복해서 막힌 지점을 남깁니다","출발할 때는 가장 가까운 일정과 현재 수행을 함께 봅니다",
-  "처음부터 전체 범위를 다루지 않고 한 가지 행동을 고릅니다","초기 판단은 학습량보다 독립적으로 되는 범위를 기준으로 합니다",
-  "첫 비교에서는 설명 전 상태를 그대로 기록합니다","시작 전에 이미 되는 영역은 유지 확인으로 따로 둡니다"
+  "결과보다 현재 행동을 먼저 확인합니다.","혼자 가능한 부분과 도움이 필요한 부분을 나눕니다.",
+  "최근 자료 한 개만 사용해 시작 범위를 좁힙니다.","넓은 레벨보다 실제 수행을 먼저 봅니다.",
+  "잘한 내용보다 반복해서 막힌 지점을 먼저 남깁니다.","가장 가까운 일정과 현재 수행을 함께 봅니다.",
+  "전체 범위를 한꺼번에 다루지 않고 한 가지 행동을 고릅니다.","학습량보다 독립적으로 되는 범위를 기준으로 삼습니다.",
+  "설명 전 상태를 그대로 기록합니다.","이미 되는 영역은 유지 확인으로 따로 둡니다."
  ]
  FLOW_B=[
-  "다음 단계에서는 질문이나 자료를 바꿔 같은 기준이 남는지 봅니다","이후에는 힌트를 줄여 스스로 다시 이어가는지 확인합니다",
-  "연습 뒤에는 비슷한 난도의 새 자료로 재현 여부를 봅니다","설명 다음에는 직접 수행으로 바꿔 결과를 다시 확인합니다",
-  "한 번 맞힌 뒤에는 조건을 바꿔 기억이 아닌 적용인지 구분합니다","중간 점검에서는 시간과 도움의 양을 함께 비교합니다",
-  "같은 예시를 반복하기보다 새 질문으로 이동합니다","훈련 후에는 다음 일정과 가까운 조건으로 다시 점검합니다",
-  "문제가 고쳐졌다면 다른 맥락에서도 유지되는지 봅니다","연습 결과는 다음 재검사 항목과 함께 기록합니다"
+  "질문이나 자료를 바꿔 같은 기준이 남는지 봅니다.","힌트를 줄여 스스로 다시 이어가는지 확인합니다.",
+  "비슷한 난도의 새 자료로 재현 여부를 봅니다.","설명 다음에는 직접 수행으로 바꿔 결과를 다시 확인합니다.",
+  "조건을 바꿔 기억이 아니라 적용인지 구분합니다.","시간과 도움의 양을 함께 비교합니다.",
+  "같은 예시를 반복하기보다 새 질문으로 이동합니다.","다음 일정과 가까운 조건으로 다시 점검합니다.",
+  "다른 맥락에서도 같은 행동이 유지되는지 봅니다.","결과와 다음 재검사 항목을 함께 기록합니다."
  ]
  FLOW_C=[
-  "마지막에는 다른 선택이 더 직접적인 조건도 함께 확인합니다","후반에는 비용과 피드백 범위를 같은 기준으로 비교합니다",
-  "결정 전에는 상담에서 확인할 질문을 짧게 정리합니다","마무리에서는 이번에 제외해도 되는 목표를 따로 둡니다",
-  "최종 판단은 등록 여부보다 현재 목표와 방식의 적합성을 봅니다","마지막 단계에서는 장기 보완 항목과 단기 목표를 분리합니다",
-  "결론을 내기 전 수업 뒤 재점검 방식이 있는지 확인합니다","최종 비교에서는 횟수보다 실제 포함 범위를 함께 봅니다",
-  "마지막 기록은 다음에 무엇을 다시 볼지 남기는 데 사용합니다","결정 단계에서는 사용자가 스스로 비교 기준을 설명할 수 있는지 봅니다"
+  "다른 선택이 더 직접적인 조건도 함께 확인합니다.","비용과 피드백 범위를 같은 기준으로 비교합니다.",
+  "상담에서 확인할 질문을 짧게 정리합니다.","이번에 제외해도 되는 목표를 따로 둡니다.",
+  "등록 여부보다 현재 목표와 방식의 적합성을 봅니다.","장기 보완 항목과 단기 목표를 분리합니다.",
+  "수업 뒤 재점검 방식이 있는지 확인합니다.","횟수보다 실제 포함 범위를 함께 봅니다.",
+  "다음에 무엇을 다시 볼지 기록으로 남깁니다.","사용자가 스스로 비교 기준을 설명할 수 있는지 봅니다."
  ]
-
+ METHOD_NOTE=[
+  "현재 상태를 먼저 확인하는 순서입니다.","가까운 일정에서 거꾸로 순서를 잡습니다.","오류의 원인과 수정 과정을 함께 봅니다.",
+  "설명을 실제 수행으로 연결합니다.","조건을 바꿔 재사용 범위를 확인합니다.","시간을 두고 다시 되는지 확인합니다.",
+  "시간과 순서를 기록해 비교합니다.","되는 조건과 흔들리는 조건을 대조합니다.","다음 확인 행동을 기록으로 남깁니다.",
+  "이번 목표에 필요한 범위만 남깁니다."
+ ]
  def pick(arr,slot,salt):
   h=hashlib.sha256(f"{row['content_seed']}|{intent}|{slot}|{salt}".encode()).hexdigest()
   return arr[int(h[:12],16)%len(arr)]
-
  term_pools=[START,CAUSE,TRAIN,VERIFY,CHOICE]
- first_terms=[pick(pool,j,f"route-{j}") for j,pool in enumerate(term_pools)]
+ route_terms=[pick(pool,j,f"route-{j}") for j,pool in enumerate(term_pools)]
  paras=[]
  for i in range(8):
-  p1=term_pools[i%len(term_pools)]
-  t1=pick(p1,i,f"t1-{i}")
+  t1=pick(term_pools[i%len(term_pools)],i,f"t1-{i}")
+  t2=pick(term_pools[(i+2)%len(term_pools)],i+3,f"t2-{i}")
   vx=theme_terms[i%len(theme_terms)]
-  vy=action_terms[(i+1)%len(action_terms)]
-  label=base_label if i%2==0 else alt_label
+  vy=theme_terms[(i+2)%len(theme_terms)]
+  a=pick(FLOW_A,i,"a"); b=pick(FLOW_B,i,"b"); d=pick(FLOW_C,i,"c")
   if i%4==0:
-   paras.append(f"{row['full_name_ko']} 판단 메모. {profile} 기준의 {t1}. 핵심 항목: {vx} · {vy}. 기록 기준: {label}.")
+   paras.append(f"{row['full_name_ko']}에서는 '{t1}'부터 시작합니다. 확인 항목은 '{vx}', '{vy}'입니다. {a} 이어서 '{t2}' 단계에서 {b} {d}")
   elif i%4==1:
-   paras.append(f"{row['full_name_ko']} 비교 메모. {t1}에서 {vx} · {vy} 항목을 봅니다. 운영 프레임: {profile}. 후속 기준: {label}.")
+   paras.append(f"{row['dong_name']} 페이지에서는 '{t1}'을 먼저 봅니다. {a} 다음 단계는 '{t2}'입니다. {b} {METHOD_NOTE[method_idx]}")
   elif i%4==2:
-   paras.append(f"{row['full_name_ko']} 재확인 메모. {vx} · {vy} 항목을 {profile} 방식으로 이어갑니다. 현재 주제: {t1}. 기록명: {label}.")
+   paras.append(f"{row['full_name_ko']}의 선택 기준을 정리할 때 '{t1}'과 '{t2}'을 함께 봅니다. {a} {b} {d}")
   else:
-   paras.append(f"{row['full_name_ko']} 선택 메모. {t1}을 볼 때 {profile} 프레임을 사용합니다. 확인 항목: {vx} · {vy}. 다음 기준: {label}.")
- route=profile+" → "+("["+row["jurisdiction_full"]+"] → " if row.get("_same_name_count",1)>1 else "")+" → ".join([base_label]+first_terms+[alt_label])
+   paras.append(f"{row['dong_name']}에서 '{t1}'을 확인한 뒤 '{t2}'으로 이동합니다. 확인할 내용은 '{vx}', '{vy}'입니다. {b} {d}")
+ route=("["+row["jurisdiction_full"]+"] → " if row.get("_same_name_count",1)>1 else "")+" → ".join(route_terms)
  return (
   '<section class="section row-signature"><div class="wrap narrow">'
   '<p class="kicker">판단 루트</p>'
   '<h2>'+html.escape(row["dong_name"])+' 페이지에서 확인하는 실제 순서</h2>'
   '<p class="mini-note">'+html.escape(route)+'</p>'
+  '<p>'+html.escape(theme_note)+'</p>'
   +''.join('<p>'+html.escape(p)+'</p>' for p in paras)
   +'</div></section>'
  )
@@ -660,6 +665,8 @@ def main():
   bad_malformed=[x for x in malformed if x in txt]
   if bad_malformed:f.append("malformed_korean:"+",".join(bad_malformed))
   if any(x in txt for x in generic):f.append("generic_marketing")
+  internal_profile=re.search(r"(독립수행|일정역산|오류추적|실사용|조건전환|복습회수|시간처리|선택비교|피드백반영|목표경계)(점검형|배치형|교정형|적용형|확장형|유지형|측정형|대조형|기록형|집중형)",txt)
+  if internal_profile or any(x in txt for x in ["후속 이름:","운영 프레임:","기록명:","기준 메모는"]):f.append("internal_variation_label")
   if any(x in txt for x in ["place_id","official_code","content_seed","variation_pack_id"]):f.append("db_internal")
   if "-tos.html" in raw.lower():f.append("standalone_tos")
   linked=set(re.findall(r'href="([^"]+\.html)"',raw)); missing=byloc[m["locality"]]-{name}-linked
