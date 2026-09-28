@@ -183,7 +183,7 @@ def fix_quoted_particles(raw):
 
  # 2) html.escape() turns quote marks inside rendered copy into &#x27;.
  # Correct those before visible() unescapes them and QA checks the particle.
- esc_pat=r"((?:&#x27;|&#39;)([가-힣A-Za-z0-9·/ &+\\-]{1,48})(?:&#x27;|&#39;)(?:\\s*</(?:b|strong|em|span)>)?\\s*)([을를은는이가과와])"
+ esc_pat=r"((?:&#x27;|&#39;)([가-힣A-Za-z0-9·/ &+\\-]{1,48})(?:&#x27;|&#39;)(?:\s*</(?:b|strong|em|span)>)?\s*)([을를은는이가과와])"
  def repl(m):
   label=m.group(2).strip()
   if not label or len(label.split())>8:
