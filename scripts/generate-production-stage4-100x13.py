@@ -164,21 +164,36 @@ def quoted_particle_errors(text):
  return out
 
 def fix_quoted_particles(raw):
+ # 1) Literal single-quoted labels.
  matches=list(_quoted_label_matches(raw))
- if not matches:return raw
- pieces=[];cursor=0
- for m in matches:
-  if m.start()<cursor:continue
-  pieces.append(raw[cursor:m.end()])
-  pos=m.end()
-  current=raw[pos:pos+1]
-  if current in {"을","를","은","는","이","가","과","와"}:
-   pieces.append(_expected_particle(m.group(1),current))
-   cursor=pos+1
-  else:
-   cursor=pos
- pieces.append(raw[cursor:])
- return "".join(pieces)
+ if matches:
+  pieces=[];cursor=0
+  for m in matches:
+   if m.start()<cursor:continue
+   pieces.append(raw[cursor:m.end()])
+   pos=m.end()
+   current=raw[pos:pos+1]
+   if current in {"을","를","은","는","이","가","과","와"}:
+    pieces.append(_expected_particle(m.group(1),current))
+    cursor=pos+1
+   else:
+    cursor=pos
+  pieces.append(raw[cursor:])
+  raw="".join(pieces)
+
+ # 2) html.escape() turns quote marks inside rendered copy into &#x27;.
+ # Correct those before visible() unescapes them and QA checks the particle.
+ esc_pat=r"(?:&#x27;|&#39;)([가-힣A-Za-z0-9·/ &+\\-]{1,48})(?:&#x27;|&#39;)([을를은는이가과와])"
+ def repl(m):
+  label=m.group(1).strip()
+  if not label or len(label.split())>8:
+   return m.group(0)
+  if re.search(r"(고|며|면서|면|면서도|지만|도록|해서|하고|됩니다|합니다|입니다|봅니다)$",label):
+   return m.group(0)
+  particle=_expected_particle(label,m.group(2))
+  quoted=m.group(0)[:-1]
+  return quoted+particle
+ return re.sub(esc_pat,repl,raw)
 
 def tokens(t): return re.findall(r"[가-힣A-Za-z0-9]+",t.lower())
 
