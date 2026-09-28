@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "status": "STAGE3_130_STATIC_DUPLICATE_RENDER_HUMAN_PASS_USER_REVIEW_PENDING_NOT_PRODUCTION",
+  "status": "STAGE4_1300_ALL_GATES_HUMAN_PASS_USER_REVIEW_PENDING_NOT_PRODUCTION",
   "created_at": "2026-09-22",
   "locality_count": 5149,
   "intent_count": 13,
@@ -19,7 +19,7 @@
     "total_pages": 30894,
     "tos_standalone": false
   },
-  "next_required_gate": "USER_REVIEW_STAGE3_EXAMPLES_THEN_STAGE4_100_LOCALITIES_X_13",
+  "next_required_gate": "USER_REVIEW_STAGE4_EXAMPLES_THEN_STAGE5_FULL_66937_GENERATION",
   "after_row_manifest": [
     "generate 1 locality x 13 intent preview",
     "generate 10 locality x 13 intent dry-run",
@@ -69,6 +69,45 @@
     "render_cases": 260,
     "output_dir": "stage3-production-dryrun-10x13",
     "human_review_file": "stage3-production-dryrun-10x13/STAGE3_10X13_HUMAN_REVIEW_V1.md",
+    "production_deploy": false
+  },
+  "stage4": {
+    "status": "PASS_USER_REVIEW_PENDING",
+    "localities": 100,
+    "intents": 13,
+    "pages": 1300,
+    "static_qa": "PASS",
+    "file_collision_qa": "PASS",
+    "canonical_qa": "PASS",
+    "reserved_95_conflicts": 0,
+    "duplicate_qa": "PASS",
+    "max_cosine": 0.8152,
+    "max_5_shingle_jaccard": 0.2123,
+    "duplicate_pairs": 64350,
+    "internal_links": "PASS",
+    "sitemap_prototype": {
+      "status": "PASS",
+      "urls": 1300,
+      "shards": 3,
+      "shard_size": 500
+    },
+    "package_sizing": {
+      "stage4_html_mib": 68.31,
+      "estimated_66937_html_gib": 3.435
+    },
+    "sample_render": {
+      "status": "PASS",
+      "sample_pages": 30,
+      "render_cases": 60,
+      "desktop": 30,
+      "mobile": 30,
+      "failures": 0
+    },
+    "human_review": "PASS",
+    "user_review": "PENDING",
+    "workflow_run_id": 36401775070,
+    "output_dir": "stage4-preproduction-100x13",
+    "human_review_file": "stage4-preproduction-100x13/STAGE4_100X13_HUMAN_REVIEW_V1.md",
     "production_deploy": false
   }
 }
