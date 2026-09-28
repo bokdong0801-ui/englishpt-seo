@@ -95,131 +95,6 @@ PROFILE_THEME_NOTE=[
  "첨삭 반영 · 재답변 · 다음 행동 · 후속 점검을 기록합니다.",
  "우선 기능 · 제외 범위 · 단기 집중 · 장기 보완을 구분합니다."
 ]
-PROFILE_METHOD_GUIDES=[
- [
-  "처음에는 현재 상태를 짧게 점검하고, 다음 확인 항목을 한두 개만 남깁니다.",
-  "설명 전에 혼자 할 수 있는 범위를 먼저 적어 두어 이후 변화와 구분합니다.",
-  "한 번의 성공보다 같은 기준이 새 자료에서도 유지되는지 확인합니다.",
-  "상담에서도 현재 범위와 다음 점검 항목을 분리해 질문합니다."
- ],
- [
-  "가까운 일정에서 거꾸로 필요한 행동을 배치하고, 뒤로 미룰 항목을 함께 정합니다.",
-  "남은 날짜보다 실제 연습 가능한 횟수를 기준으로 계획량을 조정합니다.",
-  "직전 점검과 일정 뒤 장기 보완을 같은 계획에 섞지 않습니다.",
-  "수업 횟수보다 각 회차가 어떤 결과를 남기는지 순서대로 확인합니다."
- ],
- [
-  "반복되는 오류의 원인을 먼저 교정하고, 수정된 부분을 새 조건에서 다시 봅니다.",
-  "정답 설명보다 왜 그런 선택을 했는지와 어떤 단서에서 수정됐는지를 확인합니다.",
-  "같은 오류가 새 문제에서도 반복되는지 확인해 교정이 실제로 남았는지 봅니다.",
-  "오답 수보다 수정 경로와 재발 조건을 다음 수업 자료로 사용합니다."
- ],
- [
-  "설명한 내용을 바로 실제 문제·답변·대화 장면에 적용해 보는 방식입니다.",
-  "알고 있다는 설명보다 직접 수행했을 때 어디까지 완결되는지를 확인합니다.",
-  "연습 결과를 다음 사용 장면과 연결해 실제로 다시 쓸 수 있는지 봅니다.",
-  "수업 밖에서 다시 사용할 한두 가지 행동을 정해 실제 적용 결과를 가져옵니다."
- ],
- [
-  "자료와 질문 조건을 바꾸면서 같은 기준을 재사용할 수 있는 범위를 넓힙니다.",
-  "처음에는 성공 가능한 조건을 만들고 이후 도움과 예시를 단계적으로 줄입니다.",
-  "새 조건에서 흔들릴 때는 새 내용을 늘리기보다 어떤 단서가 사라졌는지 봅니다.",
-  "재사용 범위가 넓어진 뒤에만 다음 난도나 새로운 범위를 추가합니다."
- ],
- [
-  "시간을 두고 다시 꺼냈을 때도 같은 행동이 남는지를 확인하는 방식입니다.",
-  "수업 직후 성공과 며칠 뒤 스스로 다시 해낸 결과를 서로 다른 기록으로 봅니다.",
-  "복습량을 늘리기보다 다시 꺼내는 간격과 재노출 시점을 조절합니다.",
-  "기억이 흐려졌을 때 어떤 단서만으로 다시 회복되는지도 함께 확인합니다."
- ],
- [
-  "처리 시간과 순서를 기록해 결과뿐 아니라 과정의 속도와 안정성을 비교합니다.",
-  "제한 시간이 있을 때 어디에서 지연되는지 구간을 나눠 확인합니다.",
-  "정확도를 유지하면서 시간을 줄일 수 있는지, 서두르면 어떤 오류가 생기는지 봅니다.",
-  "실전 직전에는 새 범위보다 순서와 종료 기준이 안정되는지를 다시 측정합니다."
- ],
- [
-  "되는 조건과 흔들리는 조건을 같은 기준으로 나란히 놓고 비교합니다.",
-  "비용·수업 방식·피드백 범위도 하나씩 따로 보지 않고 목표와 연결해 대조합니다.",
-  "다른 과정이 더 직접적인 조건을 함께 적어 한 방향만 권하지 않습니다.",
-  "사용자가 스스로 비교 기준을 설명할 수 있을 때 선택을 확정합니다."
- ],
- [
-  "수업 뒤 남은 행동을 짧게 기록하고, 다음 시간에 같은 항목을 다시 확인합니다.",
-  "첨삭이나 피드백이 설명으로 끝나지 않고 재작성·재답변으로 이어지는지 봅니다.",
-  "다음 행동과 재확인 시점을 함께 기록해 진도 보고와 실제 변화 기록을 구분합니다.",
-  "후속 기록이 누적되면 이미 해결된 항목은 목록에서 빼고 남은 병목만 유지합니다."
- ],
- [
-  "이번 목표에 직접 필요한 범위만 남기고, 당장 필요하지 않은 항목은 제외합니다.",
-  "단기 결과와 장기 보완을 분리해 한 번의 일정에 모든 목표를 넣지 않습니다.",
-  "가장 영향이 큰 한두 기능에 집중하고 이미 되는 부분은 유지 확인만 합니다.",
-  "목표가 바뀌면 기존 계획을 고집하지 않고 포함 범위와 우선순위를 다시 줄입니다."
- ]
-]
-
-PROFILE_THEME_GUIDES=[
- [
-  "혼자 시작할 수 있는 범위와 힌트가 필요한 범위를 따로 적습니다.",
-  "도움을 한 단계 줄였을 때도 스스로 수정할 수 있는지 확인합니다.",
-  "익숙한 예시 없이 같은 행동을 다시 만들 수 있는 범위를 봅니다.",
-  "설명 횟수보다 독립적으로 수행한 결과를 다음 판단 기준으로 둡니다."
- ],
- [
-  "시험일이나 마감에서 남은 실제 연습 횟수를 먼저 계산합니다.",
-  "직전 점검에 필요한 항목과 일정 뒤 장기 보완 항목을 분리합니다.",
-  "모든 영역을 늘리기보다 가까운 결과에 직접 영향을 주는 순서를 잡습니다.",
-  "계획이 밀렸을 때는 누적 과제보다 남은 시간에 가능한 범위를 다시 배치합니다."
- ],
- [
-  "같은 실수가 반복되는지와 그때 선택한 근거를 함께 확인합니다.",
-  "설명 뒤 수정된 부분과 새 문제에서 다시 틀리는 부분을 나눕니다.",
-  "오류가 생긴 조건과 스스로 복구한 과정을 다음 기록으로 남깁니다.",
-  "정답 개수보다 같은 원인이 다시 나타나는지를 교정 순서에 반영합니다."
- ],
- [
-  "첫 반응이 실제 장면에서 바로 나오는지부터 확인합니다.",
-  "알고 있는 표현을 말하기·쓰기·문제 해결 행동으로 옮겨 봅니다.",
-  "시작만 되는지 끝까지 완결되는지 실제 출력 범위를 따로 봅니다.",
-  "설명으로 이해한 내용이 다음 사용 장면에서도 이어지는지 확인합니다."
- ],
- [
-  "자료 표현이나 질문 순서가 바뀌었을 때도 같은 기준을 쓰는지 봅니다.",
-  "한 조건씩 바꾸면서 어느 변화에서 다시 흔들리는지 확인합니다.",
-  "외운 순서가 없어도 핵심 의미를 다시 구성할 수 있는 범위를 봅니다.",
-  "익숙한 문제의 성공보다 다른 조건으로 전환되는 재사용 범위를 기록합니다."
- ],
- [
-  "배운 내용을 시간을 두고 다시 꺼낼 수 있는지 확인합니다.",
-  "복습 간격이 달라져도 기억에서 행동으로 다시 연결되는지를 봅니다.",
-  "한 번 재노출한 뒤가 아니라 다음 일정에서도 유지되는지를 기록합니다.",
-  "누적 학습량보다 필요한 순간에 다시 회수되는 범위를 기준으로 봅니다."
- ],
- [
-  "같은 문제라도 처리 시간과 풀이·응답 순서를 함께 기록합니다.",
-  "끝내지 못한 지점과 종료 기준을 구분해 시간 병목을 찾습니다.",
-  "제한 시간이 줄었을 때도 핵심 수행이 유지되는지를 확인합니다.",
-  "빠르게 끝내는 것보다 일정한 순서와 완결성이 유지되는지를 비교합니다."
- ],
- [
-  "현재 과정 외에 더 직접적인 대안이 있는 조건도 함께 확인합니다.",
-  "비용은 횟수뿐 아니라 시간·피드백·재점검 범위를 나눠 비교합니다.",
-  "방문·온라인·학원·과외의 운영 방식이 목표와 맞는지 같은 기준으로 봅니다.",
-  "등록 여부보다 현재 목적을 가장 짧게 연결하는 과정이 무엇인지 비교합니다."
- ],
- [
-  "첨삭이나 설명을 받은 뒤 실제로 무엇을 다시 바꿨는지 기록합니다.",
-  "같은 답을 반복하기보다 수정한 내용을 새 문제와 재답변에 적용합니다.",
-  "피드백은 잘한 점 목록보다 다음에 다시 확인할 행동으로 남깁니다.",
-  "후속 점검에서 이전 피드백 없이도 수정 방향을 잡는지 확인합니다."
- ],
- [
-  "이번 목표에 반드시 필요한 기능과 뒤로 미룰 범위를 먼저 나눕니다.",
-  "단기 일정에서 집중할 항목과 일정 뒤 장기 보완 항목을 분리합니다.",
-  "여러 약점을 동시에 다루기보다 결과에 직접 영향을 주는 기능부터 봅니다.",
-  "이미 충분한 영역은 반복하지 않고 우선순위가 높은 범위에 시간을 남깁니다."
- ]
-]
 
 def load_module(name,path):
  spec=importlib.util.spec_from_file_location(name,path)
@@ -252,7 +127,7 @@ def visible(raw):
  return re.sub(r"\s+"," ",html.unescape(raw)).strip()
 
 def _expected_particle(label,particle):
- label=html.unescape(label).rstrip()
+ label=label.rstrip()
  if not label:return particle
  last=label[-1]
  if not ("가"<=last<="힣"):return particle
@@ -267,44 +142,43 @@ def _expected_particle(label,particle):
  if not pair:return particle
  return pair[0] if has_final else pair[1]
 
-def _quote_pair_positions(raw,token):
- positions=[];pos=0
- while True:
-  i=raw.find(token,pos)
-  if i<0:break
-  positions.append(i)
-  pos=i+len(token)
- # Only complete sequential pairs are meaningful.
- return [(positions[i],positions[i+1]) for i in range(0,len(positions)-1,2)]
+def _quoted_label_matches(text):
+ # Only short noun-like labels are particle-checked. This intentionally
+ # excludes full sentences accidentally spanning two quote marks.
+ pat=r"'([가-힣A-Za-z0-9·/ &+\\-]{1,48})'"
+ for m in re.finditer(pat,text):
+  label=m.group(1).strip()
+  if not label or len(label.split())>8:continue
+  # Skip verb/connective fragments such as "장면을 다시 만들고".
+  if re.search(r"(고|며|면서|면|면서도|지만|도록|해서|하고|됩니다|합니다|입니다|봅니다|합니다)$",label):
+   continue
+  yield m
+
+def quoted_particle_errors(text):
+ out=[]
+ for m in _quoted_label_matches(text):
+  current=text[m.end():m.end()+1]
+  if current not in {"을","를","은","는","이","가","과","와"}:continue
+  expected=_expected_particle(m.group(1),current)
+  if expected!=current:out.append(f"{m.group(1)}:{current}->{expected}")
+ return out
 
 def fix_quoted_particles(raw):
- particles={"을","를","은","는","이","가","과","와"}
- # Rendered user text normally uses the HTML entity token. Literal apostrophes
- # are also supported for safety.
- for token in ("&#x27;","'"):
-  for open_pos,close_pos in _quote_pair_positions(raw,token):
-   label=raw[open_pos+len(token):close_pos]
-   ppos=close_pos+len(token)
-   current=raw[ppos:ppos+1]
-   if current in particles:
-    expected=_expected_particle(label,current)
-    if expected!=current:
-     raw=raw[:ppos]+expected+raw[ppos+1:]
- return raw
-
-def quoted_particle_errors_raw(raw):
- particles={"을","를","은","는","이","가","과","와"}
- out=[]
- for token in ("&#x27;","'"):
-  for open_pos,close_pos in _quote_pair_positions(raw,token):
-   label=raw[open_pos+len(token):close_pos]
-   ppos=close_pos+len(token)
-   current=raw[ppos:ppos+1]
-   if current not in particles:continue
-   expected=_expected_particle(label,current)
-   if expected!=current:
-    out.append(f"{html.unescape(label)}:{current}->{expected}")
- return out
+ matches=list(_quoted_label_matches(raw))
+ if not matches:return raw
+ pieces=[];cursor=0
+ for m in matches:
+  if m.start()<cursor:continue
+  pieces.append(raw[cursor:m.end()])
+  pos=m.end()
+  current=raw[pos:pos+1]
+  if current in {"을","를","은","는","이","가","과","와"}:
+   pieces.append(_expected_particle(m.group(1),current))
+   cursor=pos+1
+  else:
+   cursor=pos
+ pieces.append(raw[cursor:])
+ return "".join(pieces)
 
 def tokens(t): return re.findall(r"[가-힣A-Za-z0-9]+",t.lower())
 
@@ -533,7 +407,7 @@ def install_stage4_guide_pool(g):
    f"'{topic}'의 조건을 하나 바꿔 다시 확인합니다.",
    f"'{topic}' 결과가 다음에도 남는지 다시 꺼내 봅니다.",
    f"'{topic}' 수행은 시간과 완결성을 함께 봅니다.",
-   f"확인할 장면은 '{topic}'입니다. 되는 조건과 흔들리는 조건을 나눠 봅니다.",
+   f"'{topic}'은 되는 조건과 흔들리는 조건을 나눠 봅니다.",
    f"'{topic}'에서 다음 수업에 남길 증거를 정합니다.",
    f"'{topic}' 목표에서는 지금 가장 직접적인 항목만 남깁니다."
   ]
@@ -675,8 +549,6 @@ def row_signature_block(row,intent):
  theme_idx=rank%10
  method_idx=((rank//10)+3*(rank%10))%10
  theme_note=PROFILE_THEME_NOTE[theme_idx]
- theme_guides=PROFILE_THEME_GUIDES[theme_idx]
- method_guides=PROFILE_METHOD_GUIDES[method_idx]
  theme_terms=PROFILE_TERMS[theme_idx]
  START=[
   "현재 범위 점검","독립 수행 확인","최근 장면 복기","목표 행동 확인","기초 상태 점검","첫 반응 관찰",
@@ -757,9 +629,6 @@ def row_signature_block(row,intent):
   '<h2>'+html.escape(row["dong_name"])+' 페이지에서 확인하는 실제 순서</h2>'
   '<p class="mini-note">'+html.escape(route)+'</p>'
   '<p>'+html.escape(theme_note)+'</p>'
-  +''.join('<p>'+html.escape(p)+'</p>' for p in theme_guides)
-  +'<p><b>'+html.escape(PROFILE_THEME[theme_idx]+' · '+PROFILE_METHOD[method_idx])+' 판단 방식</b></p>'
-  +''.join('<p>'+html.escape(p)+'</p>' for p in method_guides)
   +''.join('<p>'+html.escape(p)+'</p>' for p in paras)
   +'</div></section>'
  )
@@ -851,7 +720,7 @@ def main():
   except Exception:f.append("schema")
   bad_malformed=[x for x in malformed if x in txt]
   if bad_malformed:f.append("malformed_korean:"+",".join(bad_malformed))
-  bad_particles=quoted_particle_errors_raw(raw)
+  bad_particles=quoted_particle_errors(txt)
   if bad_particles:f.append("quoted_particle:"+",".join(bad_particles[:8]))
   if any(x in txt for x in generic):f.append("generic_marketing")
   internal_profile=re.search(r"(독립수행|일정역산|오류추적|실사용|조건전환|복습회수|시간처리|선택비교|피드백반영|목표경계)(점검형|배치형|교정형|적용형|확장형|유지형|측정형|대조형|기록형|집중형)",txt)
@@ -861,7 +730,7 @@ def main():
   linked=set(re.findall(r'href="([^"]+\.html)"',raw)); missing=byloc[m["locality"]]-{name}-linked
   if missing:f.append("cluster_links")
   if name in reserved or m["canonical"] in reserved:f.append("reserved_95_conflict")
-  if not 9000<=len(txt)<=21200:f.append(f"visible_chars:{len(txt)}")
+  if not 9000<=len(txt)<=20500:f.append(f"visible_chars:{len(txt)}")
   checks.append({"file":name,"family":m["family"],"intent":m["intent"],"visible_chars":len(txt),"bytes":sizes[name],"status":"PASS" if not f else "FAIL","failures":f})
   if f:failures.append({"file":name,"failures":f})
   groups[m["intent"]].append((m["locality"],name,txt))
