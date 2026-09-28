@@ -183,16 +183,15 @@ def fix_quoted_particles(raw):
 
  # 2) html.escape() turns quote marks inside rendered copy into &#x27;.
  # Correct those before visible() unescapes them and QA checks the particle.
- esc_pat=r"(?:&#x27;|&#39;)([가-힣A-Za-z0-9·/ &+\\-]{1,48})(?:&#x27;|&#39;)([을를은는이가과와])"
+ esc_pat=r"((?:&#x27;|&#39;)([가-힣A-Za-z0-9·/ &+\\-]{1,48})(?:&#x27;|&#39;)(?:\\s*</(?:b|strong|em|span)>)?\\s*)([을를은는이가과와])"
  def repl(m):
-  label=m.group(1).strip()
+  label=m.group(2).strip()
   if not label or len(label.split())>8:
    return m.group(0)
   if re.search(r"(고|며|면서|면|면서도|지만|도록|해서|하고|됩니다|합니다|입니다|봅니다)$",label):
    return m.group(0)
-  particle=_expected_particle(label,m.group(2))
-  quoted=m.group(0)[:-1]
-  return quoted+particle
+  particle=_expected_particle(label,m.group(3))
+  return m.group(1)+particle
  return re.sub(esc_pat,repl,raw)
 
 def tokens(t): return re.findall(r"[가-힣A-Za-z0-9]+",t.lower())
