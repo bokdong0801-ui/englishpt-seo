@@ -159,56 +159,122 @@ def _stage5_profile(row: dict) -> tuple[int, int, int, int]:
     return lane % len(STAGE5_LENSES), (lane // len(STAGE5_LENSES)) % len(STAGE5_PROCESS_MODES), theme_idx, method_idx
 
 
-def install_stage5_scaled_guide(g, s4) -> None:
-    """Use Stage 4's audited row-specific guide pool to break the 100-row cycle.
+def _stage5_lane_terms(row: dict) -> tuple[int, int, list[str]]:
+    rank = int(row.get("_stage5_global_rank", 0))
+    lane = rank // 100
+    lens_idx = lane % len(STAGE5_LENSES)
+    process_idx = (lane // len(STAGE5_LENSES)) % len(STAGE5_PROCESS_MODES)
+    process_terms = [
+        ["관찰 기록", "변화 지점", "상태 비교", "기록 분리", "재확인 시점", "전후 메모"],
+        ["조건 대조", "새 자료 검사", "전후 비교", "재검증", "차이 확인", "대조 기준"],
+        ["직접 수행", "출력 연결", "즉시 적용", "실행 결과", "수행 완결", "후속 행동"],
+        ["목표 배치", "범위 조정", "우선 순서", "후순위", "일정 정렬", "범위 축소"],
+    ]
+    return lane, process_idx, STAGE5_LENSES[lens_idx]["terms"] + process_terms[process_idx]
 
-    Stage 4's visible guide repeats one profile sentence many times per page.
-    At Stage 5 scale that creates rank+100 near-duplicates. Preserve the
-    original lead, focus, method and signature sentences, and replace only the
-    repeated theme sentence with one audited row/slot-specific pool sentence.
+
+def install_stage5_scaled_guide(g, s4) -> None:
+    """Extend Stage 4 without adding prose or changing the frozen page structure.
+
+    Lane 0 remains byte-for-byte compatible with the Stage 4 guide. For later
+    100-row lanes, only repeated focus/theme/method vocabulary is replaced with
+    lane-specific audited decision-support language of similar length.
     """
     base_guide = g.guide
-    pool_fn = g.guide_dimension_pool
+    stage4_method_notes = [
+        "먼저 현재 상태를 확인하고 다음에 다시 볼 항목을 남깁니다.",
+        "가까운 일정에 맞춰 확인 순서를 다시 배치합니다.",
+        "반복되는 원인을 찾고 수정된 범위를 새 조건에서 다시 봅니다.",
+        "설명한 내용을 실제 문제나 장면에 바로 적용합니다.",
+        "자료나 질문을 바꿔도 같은 기준을 다시 쓸 수 있는지 확인합니다.",
+        "시간을 두고 다시 꺼내도 같은 행동이 남는지 확인합니다.",
+        "처리 시간과 순서를 함께 기록해 수행 과정을 비교합니다.",
+        "되는 조건과 흔들리는 조건을 나눠 차이를 확인합니다.",
+        "다음에 다시 볼 행동을 짧은 기록으로 남깁니다.",
+        "이번 목표에 직접 필요한 범위만 남기고 나머지는 뒤로 미룹니다.",
+    ]
+    process_notes = [
+        "현재 상태와 변화 지점을 분리해 기록하고 다음 재확인 시점을 남깁니다.",
+        "전후 조건을 맞춰 대조하고 새 자료에서 같은 차이가 남는지 다시 검사합니다.",
+        "설명보다 직접 수행을 먼저 두고 출력이 끝까지 이어지는지 결과로 확인합니다.",
+        "가까운 목표에 필요한 항목을 앞에 두고 나머지 범위는 실제 일정에 맞춰 조정합니다.",
+    ]
 
     def guide(row: dict, slot: int) -> str:
         base_text = base_guide(row, slot)
-        parts = re.split(r"(?<=\.)\s+", base_text)
-        if len(parts) < 5:
+        lane, process_idx, terms = _stage5_lane_terms(row)
+        if lane == 0:
             return base_text
 
-        pool = pool_fn(row)
-        if not pool:
-            return base_text
+        _, _, theme_idx, method_idx = _stage5_profile(row)
+        base_terms = s4.PROFILE_TERMS[theme_idx]
+        old_a = base_terms[slot % len(base_terms)]
+        old_b = base_terms[(slot + 2) % len(base_terms)]
+        new_a = _stage5_pick(row, slot, terms, "guide-focus-a")
+        new_b = _stage5_pick(row, slot + 7, terms, "guide-focus-b")
+        if new_a == new_b:
+            new_b = terms[(terms.index(new_a) + 1) % len(terms)]
 
-        sentences = []
-        seen = set()
-        for item in pool:
-            for sentence in re.split(r"(?<=[.!?])\s+", str(item).strip()):
-                sentence = sentence.strip()
-                if not 24 <= len(sentence) <= 180:
-                    continue
-                if sentence[-1] not in ".!?":
-                    sentence += "."
-                if sentence not in seen:
-                    seen.add(sentence)
-                    sentences.append(sentence)
-        if not sentences:
-            return base_text
-
-        seed = (
-            f"{row['content_seed']}|{row.get('_intent_salt','')}|"
-            f"{row.get('_stage5_global_rank',0)}|{slot}|stage5-row-sentence"
-        )
-        idx = int(hashlib.sha256(seed.encode("utf-8")).hexdigest()[:12], 16) % len(sentences)
-        parts[3] = sentences[idx]
-        return " ".join(parts)
+        text = base_text.replace(f"'{old_a}', '{old_b}'", f"'{new_a}', '{new_b}'", 1)
+        text = text.replace(s4.PROFILE_THEME_NOTE[theme_idx], STAGE5_LENSES[(lane % len(STAGE5_LENSES))]["note"], 1)
+        text = text.replace(stage4_method_notes[method_idx], process_notes[process_idx], 1)
+        return text
 
     g.guide = guide
 
 
+def install_stage5_scaled_longform(g) -> None:
+    """Replace one sentence per Stage 4 longform paragraph for lanes after lane 0."""
+    base_make = g.make_stage4_unique_longform
+    templates = [
+        "이번 기록에서는 '{a}'과 '{b}'의 변화 시점을 분리해 다음 확인에서도 같은 기준으로 비교합니다.",
+        "'{a}'이 흔들린 조건과 '{b}'이 유지된 조건을 나란히 두고 새 자료에서 차이를 다시 검증합니다.",
+        "'{a}'을 설명으로 끝내지 않고 '{b}'이 실제 응답이나 문제 처리로 이어지는지 직접 수행으로 확인합니다.",
+        "가까운 일정에는 '{a}'을 앞에 두고 '{b}'은 후순위로 조정해 실제 가능한 범위만 남깁니다.",
+    ]
+
+    def make(row: dict, d: dict) -> list[str]:
+        paras = base_make(row, d)
+        lane, process_idx, terms = _stage5_lane_terms(row)
+        if lane == 0:
+            return paras
+
+        out = []
+        for slot, para in enumerate(paras):
+            parts = re.split(r"(?<=\.)\s+", para)
+            if len(parts) < 3:
+                out.append(para)
+                continue
+            a = _stage5_pick(row, slot, terms, "long-a")
+            b = _stage5_pick(row, slot + 13, terms, "long-b")
+            if a == b:
+                b = terms[(terms.index(a) + 1) % len(terms)]
+            parts[1] = templates[process_idx].format(a=a, b=b)
+            out.append(" ".join(parts))
+        return out
+
+    g.make_stage4_unique_longform = make
+
+
 def stage5_row_signature_block(s4, row: dict, intent: str) -> str:
-    """Keep the already human-reviewed Stage 4 row-signature contract unchanged."""
-    return s4.row_signature_block(row, intent)
+    """Preserve Stage 4 block shape and replace only the repeating lane note."""
+    raw = s4.row_signature_block(row, intent)
+    lane, process_idx, terms = _stage5_lane_terms(row)
+    if lane == 0:
+        return raw
+    _, _, theme_idx, _ = _stage5_profile(row)
+    old_note = s4.PROFILE_THEME_NOTE[theme_idx]
+    a = _stage5_pick(row, 3, terms, "row-a")
+    b = _stage5_pick(row, 9, terms, "row-b")
+    if a == b:
+        b = terms[(terms.index(a) + 1) % len(terms)]
+    notes = [
+        f"'{a}'과 '{b}'의 변화 시점을 나눠 다음 점검 기록으로 남깁니다.",
+        f"'{a}'과 '{b}'을 같은 조건에서 대조하고 새 자료에서 다시 확인합니다.",
+        f"'{a}'과 '{b}'이 실제 수행과 출력으로 이어지는지 직접 확인합니다.",
+        f"'{a}'을 우선하고 '{b}'은 후순위로 두어 현재 일정에 맞는 범위를 정합니다.",
+    ]
+    return raw.replace("<p>" + old_note + "</p>", "<p>" + notes[process_idx] + "</p>", 1)
 
 
 def load_module(name: str, path: Path):
@@ -298,6 +364,7 @@ def main() -> None:
     s4.install_stage4_guide_pool(g)
     install_stage5_scaled_guide(g, s4)
     s4.install_stage4_unique_longform(g)
+    install_stage5_scaled_longform(g)
     svc = load_module("service_gold_stage5", ROOT / "scripts/generate-v45-full-depth-pilot.py")
     ex = load_module("exam_gold_stage5", ROOT / "scripts/generate-v45-exam-pilot.py")
 
