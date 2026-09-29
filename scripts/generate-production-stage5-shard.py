@@ -180,12 +180,27 @@ def install_stage5_scaled_guide(g, s4) -> None:
         if not pool:
             return base_text
 
+        sentences = []
+        seen = set()
+        for item in pool:
+            for sentence in re.split(r"(?<=[.!?])\s+", str(item).strip()):
+                sentence = sentence.strip()
+                if not 24 <= len(sentence) <= 180:
+                    continue
+                if sentence[-1] not in ".!?":
+                    sentence += "."
+                if sentence not in seen:
+                    seen.add(sentence)
+                    sentences.append(sentence)
+        if not sentences:
+            return base_text
+
         seed = (
             f"{row['content_seed']}|{row.get('_intent_salt','')}|"
-            f"{row.get('_stage5_global_rank',0)}|{slot}|stage5-row-pool"
+            f"{row.get('_stage5_global_rank',0)}|{slot}|stage5-row-sentence"
         )
-        idx = int(hashlib.sha256(seed.encode("utf-8")).hexdigest()[:12], 16) % len(pool)
-        parts[3] = pool[idx]
+        idx = int(hashlib.sha256(seed.encode("utf-8")).hexdigest()[:12], 16) % len(sentences)
+        parts[3] = sentences[idx]
         return " ".join(parts)
 
     g.guide = guide
