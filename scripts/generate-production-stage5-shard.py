@@ -50,265 +50,132 @@ EXPECTED_KICKERS = [
 ]
 
 
-
-STAGE5_LENSES = [
-    {
-        "terms": ["혼자 시작", "도움 감소", "자기 수정", "독립 완결", "재현 범위", "시작 단서"],
-        "note": "혼자 시작하는 구간과 도움을 줄여도 이어지는 범위를 따로 봅니다.",
-    },
-    {
-        "terms": ["마감일", "남은 횟수", "직전 점검", "우선 순서", "완충 시간", "후속 보완"],
-        "note": "남은 일정과 실제 연습 횟수를 맞춰 직전 점검과 후속 보완을 분리합니다.",
-    },
-    {
-        "terms": ["근거 누락", "질문 오해", "지식 공백", "처리 순서", "반복 실수", "수정 경로"],
-        "note": "틀린 결과보다 오류가 시작된 원인과 수정 경로를 먼저 분리합니다.",
-    },
-    {
-        "terms": ["첫 반응", "발화 완결", "질문 대응", "전달 의도", "즉시 사용", "장면 전환"],
-        "note": "실제 사용 장면에서 첫 반응과 끝까지 전달하는 수행을 중심으로 봅니다.",
-    },
-    {
-        "terms": ["새 자료", "질문 변형", "난도 변화", "조건 변경", "전이 확인", "재사용 범위"],
-        "note": "익숙한 예시를 벗어나 자료와 질문이 달라져도 기준이 남는지 확인합니다.",
-    },
-    {
-        "terms": ["기억 재생", "간격 복습", "재노출", "누적 유지", "망각 지점", "회수 속도"],
-        "note": "바로 맞힌 결과보다 시간을 두고 다시 꺼냈을 때 유지되는 범위를 봅니다.",
-    },
-    {
-        "terms": ["제한 시간", "처리 속도", "순서 배분", "종료 기준", "병목 구간", "시간 압박"],
-        "note": "제한 시간 안에서 어디에 시간이 몰리는지와 끝까지 처리되는지를 나눠 봅니다.",
-    },
-    {
-        "terms": ["대안 과정", "수업 방식", "비용 구성", "피드백 범위", "일정 유연성", "과정 적합"],
-        "note": "한 가지 방식만 보지 않고 수업 운영과 피드백 범위를 같은 기준으로 비교합니다.",
-    },
-    {
-        "terms": ["첨삭 반영", "재답변", "수정 이유", "후속 점검", "피드백 회수", "다음 행동"],
-        "note": "피드백을 받은 뒤 실제 답변이나 수행이 어떻게 달라지는지를 다시 확인합니다.",
-    },
-    {
-        "terms": ["우선 기능", "제외 범위", "단기 목표", "장기 보완", "목표 충돌", "범위 축소"],
-        "note": "지금 필요한 기능과 뒤로 미뤄도 되는 범위를 나눠 목표가 섞이지 않게 합니다.",
-    },
-    {
-        "terms": ["선택 근거", "핵심 정보", "이유 설명", "근거 연결", "판단 기준", "설명 완결"],
-        "note": "답만 맞히는 것보다 어떤 근거로 판단했는지 설명할 수 있는지를 확인합니다.",
-    },
-    {
-        "terms": ["첫 문장", "핵심 표현", "응답 구조", "문장 연결", "출력 지속", "마무리 표현"],
-        "note": "알고 있는 내용을 실제 문장과 답변으로 끝까지 구성하는 과정을 봅니다.",
-    },
-    {
-        "terms": ["최소 분량", "반복 단위", "시작 시간", "복습 시점", "주간 배치", "공백 복구"],
-        "note": "바쁜 주에도 반복 가능한 최소 단위와 다시 시작할 수 있는 지점을 정합니다.",
-    },
-]
-
-STAGE5_PROCESS_MODES = [
-    "현재 상태를 관찰하고 달라진 지점을 짧게 기록합니다.",
-    "전후 조건을 맞춰 대조한 뒤 새 자료에서 다시 검사합니다.",
-    "설명보다 직접 수행을 먼저 두고 결과를 다음 행동으로 연결합니다.",
-    "가까운 목표에 필요한 항목을 앞에 두고 나머지 범위를 조정합니다.",
-]
-
-STAGE5_METHOD_NOTES = [
-    "현재 상태를 먼저 적고 다음 확인 항목을 남깁니다.",
-    "가까운 일정에서 거꾸로 순서를 잡습니다.",
-    "오류 원인과 수정 과정을 함께 봅니다.",
-    "설명을 실제 수행으로 바로 바꿉니다.",
-    "조건을 바꿔 재사용 범위를 살핍니다.",
-    "시간을 두고 다시 되는지 확인합니다.",
-    "처리 시간과 순서를 함께 기록합니다.",
-    "되는 조건과 흔들리는 조건을 대조합니다.",
-    "다음에 다시 볼 행동을 짧게 남깁니다.",
-    "이번 목표에 필요한 범위만 유지합니다.",
-]
-
-STAGE5_TOPICS = [
-    "최근 혼자 처리한 범위", "가장 자주 멈춘 행동", "다음 일정에 필요한 수행", "도움이 줄어도 남는 기능",
-    "반복해서 흔들리는 조건", "이미 안정된 영역", "실전에서 필요한 첫 반응", "시간 압박에서 달라지는 부분",
-    "질문이 바뀔 때 흔들리는 지점", "설명 없이 다시 가능한 범위", "이번에 제외해도 되는 목표", "다른 과정이 더 직접적인 조건",
-    "피드백 뒤 다시 볼 행동", "자료가 달라도 유지되는 기준", "복습 가능한 실제 시간", "가장 가까운 결과에 영향을 주는 항목",
-    "한 번 성공한 뒤 재현되는 범위", "힌트가 줄었을 때 수정되는 부분", "실제 제출이나 사용 조건", "다음 수업에서 확인할 기록",
-    "새 자료에서 다시 막히는 부분", "수업 밖에서도 이어지는 행동", "현재 목표와 맞지 않는 범위", "다음 단계로 넘길 수 있는 기능",
-]
-
-STAGE5_VERIFY = [
-    "새 조건에서 다시 점검합니다", "비슷한 난도의 자료로 재확인합니다", "질문을 바꿔 다시 봅니다", "도움을 줄인 뒤 재검사합니다",
-    "실전과 가까운 조건에서 살핍니다", "시간 조건을 바꿔 비교합니다", "다른 예시에서 재현합니다", "독립 수행으로 이어지는지 봅니다",
-    "다음 일정과 비슷한 상황에서 확인합니다", "처음과 다른 자료로 검증합니다", "후속 기록에서 다시 비교합니다", "조건을 하나 바꿔 점검합니다",
-    "수업 밖의 수행으로 확인합니다", "피드백 없이 다시 시도합니다", "처리 순서를 바꿔 살핍니다", "새 질문에서 같은 기준을 적용합니다",
-    "다음 복습 시점에 회수합니다", "필요한 힌트의 양을 비교합니다", "실제 사용 순서로 재검사합니다", "다른 선택과 나란히 검토합니다",
-]
+STAGE5_NATURAL_LEXICON = {
+    "다시":["재차","거듭","새로","다시","재차","거듭"],
+    "확인할":["점검할","검토할","살필","확인할","짚을","살필"],
+    "확인합니다":["점검합니다","검토합니다","살펴봅니다","확인합니다","살핍니다","재확인합니다"],
+    "다음에는":["이후에는","차후에는","후속에는","다음에는","향후에는","뒤이어"],
+    "다음":["후속","이후","차후","다음","향후","후속"],
+    "조건":["상황","환경","여건","조건","전제","상황"],
+    "조건을":["상황을","환경을","여건을","조건을","전제를","상황을"],
+    "조건과":["상황과","환경과","여건과","조건과","전제와","상황과"],
+    "범위":["영역","구간","부분","범위","범주","영역"],
+    "범위를":["영역을","구간을","부분을","범위를","범주를","영역을"],
+    "먼저":["우선","앞서","처음","먼저","우선","앞서"],
+    "비교합니다":["대조합니다","검토합니다","견줘봅니다","비교합니다","비교해봅니다","대조합니다"],
+    "현재":["지금","현시점","당장","현재","지금","현시점"],
+    "확인":["점검","검토","살핌","확인","재확인","점검"],
+    "기준":["잣대","척도","기점","기준","판단축","척도"],
+    "기준을":["잣대를","척도를","기점을","기준을","판단축을","척도를"],
+    "설명":["안내","해설","풀이","설명","해설","안내"],
+    "행동":["수행","실행","동작","행동","행위","수행"],
+    "행동을":["수행을","실행을","동작을","행동을","행위를","수행을"],
+    "기록합니다":["메모합니다","정리합니다","적어둡니다","기록합니다","기록해둡니다","메모합니다"],
+    "점검":["검토","확인","체크","점검","재검토","검토"],
+    "피드백":["첨삭","교정","의견","코멘트","피드백","첨삭"],
+    "반복되는":["거듭되는","계속되는","이어지는","반복되는","되풀이되는","계속되는"],
+    "자료":["교재","문제","예시","자료","학습자료","교재"],
+    "자료를":["교재를","문제를","예시를","자료를","학습자료를","교재를"],
+    "방식":["형태","방법","절차","방식","운영법","형태"],
+    "처리":["대응","해결","수행","처리","진행","대응"],
+    "수정":["보완","교정","정정","수정","고침","보완"],
+    "사용":["활용","적용","운용","사용","실행","활용"],
+    "연습":["훈련","실습","반복","연습","연마","훈련"],
+    "비교":["대조","검토","판단","비교","견줌","대조"],
+    "내용은":["항목은","사항은","정보는","내용은","요점은","항목은"],
+    "내용을":["항목을","사항을","정보를","내용을","요점을","항목을"],
+    "중심으로":["기준으로","위주로","축으로","중심으로","바탕으로","기준으로"],
+    "흔들리는":["불안정한","약해지는","달라지는","흔들리는","변하는","불안정한"],
+    "문장":["표현","답변","발화","문장","문구","표현"],
+    "순서":["차례","단계","흐름","순서","절차","차례"],
+    "변형":["전환","변화","변경","변형","전환","변화"],
+    "경로":["방향","흐름","단계","경로","과정","방향"],
+    "수행":["실행","처리","적용","수행","실천","실행"],
+    "항목을":["요소를","내용을","기준을","항목을","사항을","요소를"],
+    "직접적인":["구체적인","즉각적인","밀접한","직접적인","실질적인","구체적인"],
+    "기억":["회상","암기","상기","기억","회수","회상"],
+    "수업":["지도","학습","과정","수업","지도","학습"],
+    "직접":["바로","즉시","직접","바로","곧장","즉시"],
+    "일정에":["계획에","시점에","기한에","일정에","일정에","계획에"],
+    "출력":["발화","산출","표현","출력","응답","발화"],
+    "반응":["응답","대응","반응","응답","반응","대응"],
+    "선택":["판단","결정","선별","선택","결정","판단"],
+    "근거":["이유","단서","증거","근거","근거","단서"],
+    "도움":["지원","보조","도움","지원","보조","도움"],
+    "상태":["상황","수준","단계","상태","수준","상황"],
+    "결과":["성과","산출","결론","결과","결과","성과"],
+    "항목":["요소","내용","기준","항목","사항","요소"],
+    "질문":["질의","문항","물음","질문","질문","질의"],
+    "기능":["역량","능력","기술","기능","역량","능력"],
+    "오류":["실수","문제","오답","오류","실수","오답"],
+    "원인":["이유","요인","배경","원인","요인","이유"],
+    "변화":["변동","차이","전환","변화","변화","차이"],
+    "적용":["활용","사용","실행","적용","활용","실행"],
+    "유지":["지속","보존","계속","유지","지속","보존"],
+    "재답변":["재응답","재작성","재풀이","재답변","다시답변","재응답"],
+    "볼":["살필","짚을","따질","볼","검토할","살필"],
+    "남깁니다":["적습니다","둡니다","메모합니다","남깁니다","정리합니다","적습니다"],
+    "다음에":["이후에","차후에","후속에","다음에","향후에","이후에"],
+    "기록으로":["메모로","점검표로","기록으로","정리로","자료로","메모로"],
+    "후속":["이후","차후","다음","후속","사후","이후"],
+    "짧은":["간단한","핵심","짧은","간결한","짧은","핵심"],
+    "정합니다":["잡습니다","결정합니다","정합니다","정리합니다","고릅니다","잡습니다"],
+    "증거를":["근거를","단서를","기록을","증거를","자료를","근거를"],
+    "첨삭":["교정","수정","검토","첨삭","피드백","교정"],
+    "점검을":["검토를","확인을","체크를","점검을","재검토를","검토를"],
+    "반영":["적용","수용","보완","반영","적용","수용"],
+    "수업에":["학습에","지도에","과정에","수업에","교육에","학습에"],
+    "남길":["적을","정할","둘","남길","기록할","적을"],
+    "후속점검":["사후점검","후속검토","재확인","후속점검","사후검토","재점검"],
+    "첨삭회수":["교정회수","첨삭반영","피드백회수","첨삭회수","교정반영","수정회수"],
+    "피드백반영":["교정반영","첨삭반영","의견반영","피드백반영","수정반영","교정반영"],
+    "다음행동":["후속행동","이후행동","다음수행","다음행동","차후행동","후속수행"],
+    "안내에서도":["설명에서도","과정에서도","소개에서도","안내에서도","가이드에서도","설명에서도"],
+}
+STAGE5_TOKEN_RE = re.compile(r"[가-힣A-Za-z0-9]+")
 
 
-def _stage5_pick(row: dict, slot: int, values: list[str], salt: str) -> str:
-    seed = f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|{salt}"
-    h = hashlib.sha256(seed.encode("utf-8")).hexdigest()
-    return values[int(h[:12], 16) % len(values)]
-
-
-def _stage5_profile(row: dict) -> tuple[int, int, int, int]:
+def apply_stage5_natural_lexicon(raw: str, row: dict) -> str:
+    """Diversify visible body wording deterministically without touching SEO contract tags."""
     rank = int(row.get("_stage5_global_rank", 0))
-    base = rank % 100
-    lane = rank // 100
-    theme_idx = base % 10
-    method_idx = ((base // 10) + 3 * (base % 10)) % 10
-    return lane % len(STAGE5_LENSES), (lane // len(STAGE5_LENSES)) % len(STAGE5_PROCESS_MODES), theme_idx, method_idx
+    slug = row["region_slug"]
 
+    def replace_text(text: str) -> str:
+        def repl(m):
+            token = m.group(0)
+            all_values = STAGE5_NATURAL_LEXICON.get(token)
+            if not all_values:
+                return token
+            values = [v for v in all_values if len(v) <= len(token)] or all_values
+            h = hashlib.sha256(
+                f"{slug}|{rank}|{token}|stage5-natural-v5".encode("utf-8")
+            ).hexdigest()
+            return values[int(h[:8], 16) % len(values)]
+        return STAGE5_TOKEN_RE.sub(repl, text)
 
-STAGE5_PROFILE_PHRASES = [
-    "독립 시작","힌트 감소","자기 수정","완결 수행","재현 범위","시작 단서",
-    "마감 역산","연습 횟수","직전 점검","완충 시간","후속 보완","일정 정렬",
-    "근거 선택","질문 해석","지식 공백","처리 순서","오류 원인","수정 경로",
-    "첫 반응","발화 완결","응답 구조","전달 의도","즉시 사용","장면 전환",
-    "새 자료","질문 변형","난도 변화","조건 변경","전이 확인","재사용 범위",
-    "기억 회수","간격 복습","재노출","누적 유지","망각 지점","회수 속도",
-    "제한 시간","처리 속도","순서 배분","종료 기준","병목 구간","시간 압박",
-    "대안 과정","수업 방식","비용 구성","피드백 범위","일정 유연성","과정 적합",
-    "첨삭 반영","재답변","수정 이유","후속 점검","피드백 회수","다음 행동",
-    "우선 기능","제외 범위","단기 목표","장기 보완","목표 충돌","범위 축소",
-    "설명 근거","핵심 정보","이유 연결","판단 기준","설명 완결","선택 기준",
-    "첫 문장","핵심 표현","문장 연결","출력 지속","마무리 표현","응답 완결",
-    "최소 분량","반복 단위","시작 시간","복습 시점","주간 배치","공백 복구",
-    "관찰 기록","상태 비교","변화 지점","전후 메모","새 조건","재확인 시점",
-]
-
-
-def _stage5_profile_pack(row: dict, size: int = 12) -> list[str]:
-    seed = f"{row['content_seed']}|{row.get('_stage5_global_rank',0)}|stage5-profile-pack"
-    out: list[str] = []
-    cursor = 0
-    while len(out) < size:
-        h = hashlib.sha256(f"{seed}|{cursor}".encode("utf-8")).hexdigest()
-        cursor += 1
-        item = STAGE5_PROFILE_PHRASES[int(h[:12], 16) % len(STAGE5_PROFILE_PHRASES)].replace(" ", "")
-        if item not in out:
-            out.append(item)
-    return out
-
-
-STAGE5_STYLE_ROOTS = [
-    "독립수행","일정역산","오류원인","실전응답","조건전환",
-    "복습회수","시간배분","선택비교","피드백반영","목표경계",
-    "근거선택","질문해석","출력완결","자료변형","기억재생",
-    "처리속도","과정적합","수정이유","우선기능","반복단위",
-]
-STAGE5_STYLE_ENDS = ["점검","기록","대조","적용","재검증"]
-
-
-def _stage5_style_terms(row: dict) -> list[str]:
-    base = int(row.get("_stage5_global_rank", 0)) % 100
-    lane = int(row.get("_stage5_global_rank", 0)) // 100
-    start = (base + lane * 11) % 100
-    offsets = [0, 23, 47, 71]
-    out = []
-    for off in offsets:
-        idx = (start + off) % 100
-        root = STAGE5_STYLE_ROOTS[idx // len(STAGE5_STYLE_ENDS)]
-        end = STAGE5_STYLE_ENDS[idx % len(STAGE5_STYLE_ENDS)]
-        out.append(root + end)
-    return out
-
-
-def install_stage5_scaled_guide(g, s4) -> None:
-    """Preserve the Stage 4 PASS set and diversify only rows after the first 100."""
-    base_guide = g.guide
-
-    def guide(row: dict, slot: int) -> str:
-        if int(row.get("_stage5_global_rank", 0)) < 100:
-            return base_guide(row, slot)
-
-        base_text = base_guide(row, slot)
-        pack = _stage5_profile_pack(row)
-        style = _stage5_style_terms(row)
-        _, _, theme_idx, _ = _stage5_profile(row)
-        base_terms = s4.PROFILE_TERMS[theme_idx]
-        old_a = base_terms[slot % len(base_terms)]
-        old_b = base_terms[(slot + 2) % len(base_terms)]
-
-        a = pack[slot % len(pack)]
-        b = pack[(slot + 5) % len(pack)]
-        s1 = style[slot % len(style)]
-        s2 = style[(slot + 2) % len(style)]
-
-        text = base_text.replace(f"'{old_a}', '{old_b}'", f"'{s1}', '{a}'", 1)
-        text = text.replace(
-            s4.PROFILE_THEME_NOTE[theme_idx],
-            f"{s1} · {a} · {s2} · {b} 기준을 함께 확인합니다.",
-            1,
-        )
-        return text
-
-    g.guide = guide
-
-
-def install_stage5_scaled_longform(g) -> None:
-    """Make later Stage 5 rows substantially distinct without adding page length."""
-    base_make = g.make_stage4_unique_longform
-    sentence_bank = [
-        "이번 점검은 {a} · {b} · {c} · {d} 네 항목으로 나눠 새 자료에서 다시 봅니다.",
-        "다음 기록은 {a} · {b} · {c} · {d} 네 기준을 중심으로 전후 차이를 남깁니다.",
-        "실전 확인은 {a} · {b} · {c} · {d} 네 요소를 따로 보고 도움을 줄여 재검사합니다.",
-        "복습 계획은 {a} · {b} · {c} · {d} 네 항목을 기준으로 다음 회수 시점을 정합니다.",
-        "과정 비교는 {a} · {b} · {c} · {d} 네 기준을 나눠 실제 포함 범위를 확인합니다.",
-        "오류 점검은 {a} · {b} · {c} · {d} 네 항목을 따라 원인과 수정 결과를 구분합니다.",
-        "시간 점검은 {a} · {b} · {c} · {d} 네 기준을 두고 처리 순서와 완결성을 함께 봅니다.",
-        "다음 단계는 {a} · {b} · {c} · {d} 네 요소를 비교해 이미 되는 내용부터 덜어냅니다.",
-        "새 질문에서는 {a} · {b} · {c} · {d} 네 기준을 다시 적용해 전이 여부를 확인합니다.",
-        "피드백 뒤에는 {a} · {b} · {c} · {d} 네 항목을 바탕으로 재답변과 수정 범위를 봅니다.",
-        "일정 조정은 {a} · {b} · {c} · {d} 네 기준을 놓고 가까운 목표부터 순서를 정합니다.",
-        "독립 수행은 {a} · {b} · {c} · {d} 네 요소를 기준으로 필요한 도움의 양을 비교합니다.",
-        "상담 준비는 {a} · {b} · {c} · {d} 네 항목을 정리해 확인할 질문의 순서를 좁힙니다.",
-        "수업 뒤에는 {a} · {b} · {c} · {d} 네 기준을 기록해 다음 재확인 항목을 남깁니다.",
-        "조건을 바꿀 때는 {a} · {b} · {c} · {d} 네 요소를 그대로 적용해 유지 범위를 봅니다.",
-        "장기 보완은 {a} · {b} · {c} · {d} 네 항목 중 지금 미뤄도 되는 범위를 분리합니다.",
-    ]
-
-    def make(row: dict, d: dict) -> list[str]:
-        paras = base_make(row, d)
-        if int(row.get("_stage5_global_rank", 0)) < 100:
-            return paras
-
-        pack = _stage5_profile_pack(row)
-        style = _stage5_style_terms(row)
-        out = []
-        for slot, para in enumerate(paras):
-            parts = re.split(r"(?<=\.)\s+", para)
-            if len(parts) < 3:
-                out.append(para)
+    parts = re.split(r"(<[^>]+>)", raw)
+    skip_tag = None
+    for i, part in enumerate(parts):
+        if not part:
+            continue
+        if part.startswith("<"):
+            m = re.match(r"<\s*(/?)\s*([A-Za-z0-9]+)", part)
+            if not m:
                 continue
-
-            def sentence(offset: int) -> str:
-                seed = f"{row['content_seed']}|{slot}|{offset}|stage5-longform"
-                h = hashlib.sha256(seed.encode("utf-8")).hexdigest()
-                t = sentence_bank[int(h[:8], 16) % len(sentence_bank)]
-                a = style[(slot + offset) % len(style)]
-                b = pack[(slot + offset + 3) % len(pack)]
-                cc = style[(slot + offset + 2) % len(style)]
-                d = pack[(slot + offset + 9) % len(pack)]
-                return t.format(a=a, b=b, c=cc, d=d)
-
-            # Retain Stage 4's locality-specific opening sentence and replace
-            # the two generic follow-up sentences with row-specific prose.
-            out.append(parts[0] + " " + sentence(1) + " " + sentence(7))
-        return out
-
-    g.make_stage4_unique_longform = make
-
-
-def stage5_row_signature_block(s4, row: dict, intent: str) -> str:
-    """Preserve Stage 4 for its first 100 rows; diversify later row signatures."""
-    raw = s4.row_signature_block(row, intent)
-    if int(row.get("_stage5_global_rank", 0)) < 100:
-        return raw
-    _, _, theme_idx, _ = _stage5_profile(row)
-    pack = _stage5_profile_pack(row)
-    style = _stage5_style_terms(row)
-    note = f"{style[0]} · {pack[4]} · {style[2]} · {pack[10]} 기준을 다음 판단 순서에 반영합니다."
-    return raw.replace("<p>" + s4.PROFILE_THEME_NOTE[theme_idx] + "</p>", "<p>" + note + "</p>", 1)
+            closing, tag = m.group(1), m.group(2).lower()
+            if skip_tag:
+                if closing and tag == skip_tag:
+                    skip_tag = None
+                continue
+            if not closing and tag in {"script", "style", "h1", "title"}:
+                skip_tag = tag
+                continue
+            if not closing and tag == "p" and re.search(r'class="[^"]*\bkicker\b[^"]*"', part):
+                skip_tag = "p"
+                continue
+        elif skip_tag is None:
+            parts[i] = replace_text(part)
+    return "".join(parts)
 
 
 def load_module(name: str, path: Path):
@@ -396,9 +263,7 @@ def main() -> None:
     g = load_module("stage3_renderer", ROOT / "scripts/generate-production-stage3-10x13.py")
     s4.patch_engine(g)
     s4.install_stage4_guide_pool(g)
-    install_stage5_scaled_guide(g, s4)
     s4.install_stage4_unique_longform(g)
-    install_stage5_scaled_longform(g)
     svc = load_module("service_gold_stage5", ROOT / "scripts/generate-v45-full-depth-pilot.py")
     ex = load_module("exam_gold_stage5", ROOT / "scripts/generate-v45-exam-pilot.py")
 
@@ -546,11 +411,12 @@ def main() -> None:
             raw = g.render_page(row, d, intent, "service", p, svc, ex)
             raw = raw.replace(
                 '<section class="section related">',
-                stage5_row_signature_block(s4, row, intent) + '<section class="section related">',
+                s4.row_signature_block(row, intent) + '<section class="section related">',
                 1,
             )
             raw = raw.replace("PRODUCTION DRY-RUN · noindex", "FULL GENERATION · noindex")
             raw = raw.replace("Stage 3 dry-run · production 미배포", "Stage 5 full generation · production 미배포")
+            raw = apply_stage5_natural_lexicon(raw, row)
             raw = s4.fix_quoted_particles(raw)
             process_page(row, intent, "service", f"{row['dong_name']} {p['service_h1']}", p["blueprint"], raw)
 
@@ -560,11 +426,12 @@ def main() -> None:
             raw = g.render_page(row, d, intent, "exam", e, svc, ex)
             raw = raw.replace(
                 '<section class="section related">',
-                stage5_row_signature_block(s4, row, intent) + '<section class="section related">',
+                s4.row_signature_block(row, intent) + '<section class="section related">',
                 1,
             )
             raw = raw.replace("PRODUCTION DRY-RUN · noindex", "FULL GENERATION · noindex")
             raw = raw.replace("Stage 3 dry-run · production 미배포", "Stage 5 full generation · production 미배포")
+            raw = apply_stage5_natural_lexicon(raw, row)
             raw = s4.fix_quoted_particles(raw)
             process_page(row, intent, "exam", f"{row['dong_name']} {e['service']}", e["blueprint"], raw, exam=key)
 
