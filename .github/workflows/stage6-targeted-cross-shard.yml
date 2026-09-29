@@ -6,6 +6,8 @@ on:
     branches:
       - reset-english-service-seo-v3
     paths:
+      - 'scripts/generate-production-stage5-shard.py'
+      - 'stage6-targeted-fail-slugs.txt'
       - '.github/workflows/stage6-targeted-cross-shard.yml'
 
 permissions:
