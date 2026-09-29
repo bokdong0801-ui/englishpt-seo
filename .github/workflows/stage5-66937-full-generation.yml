@@ -2,6 +2,11 @@ name: Stage 5 66,937 Full Generation
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage5-full-run-trigger.txt'
 
 permissions:
   contents: read
