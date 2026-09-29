@@ -1,0 +1,80 @@
+name: Stage 6 Targeted Cross-Shard Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - '.github/workflows/stage6-targeted-cross-shard.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage6-targeted-cross-shard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  targeted:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reconstruct frozen Stage 5 input
+        run: python3 scripts/materialize-production-localities-5149.py
+
+      - name: Verify preserved 95 URLs and 74 redirects
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+      - name: Generate only Stage 6 failed locality set
+        run: |
+          python3 scripts/generate-production-stage5-shard.py \
+            --shard-index 0 \
+            --shard-count 1 \
+            --shard-size 74 \
+            --target-slugs-file stage6-targeted-fail-slugs.txt
+
+      - name: Assert targeted gate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('stage5-full-generation/targeted-074-cross-shard/STAGE5_SHARD_QA_V1.json')
+          q=json.loads(p.read_text(encoding='utf-8'))
+          assert q['status']=='PASS',q['status']
+          assert q['page_count']==74*13
+          assert q['locality_count']==74
+          assert q['static_failure_count']==0
+          assert q['duplicate_gate']['failure_count']==0
+          assert q['duplicate_gate']['max_cosine'] < 0.82
+          assert q['duplicate_gate']['max_5_shingle_jaccard'] < 0.24
+          assert q['safety']['production_deploy'] is False
+          assert q['safety']['main_merge'] is False
+          print(json.dumps({
+            'status':'PASS',
+            'pages':q['page_count'],
+            'localities':q['locality_count'],
+            'pairs':q['duplicate_gate']['pairs'],
+            'max_cosine':q['duplicate_gate']['max_cosine'],
+            'max_jaccard5':q['duplicate_gate']['max_5_shingle_jaccard'],
+          },ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage6-targeted-cross-shard-review
+          path: |
+            stage5-full-generation/targeted-074-cross-shard/STAGE5_SHARD_QA_V1.json
+            stage5-full-generation/targeted-074-cross-shard/STAGE5_SHARD_MANIFEST_V1.json
+          retention-days: 7
+          if-no-files-found: warn
