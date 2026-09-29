@@ -254,9 +254,12 @@ def apply_stage5_signature_lexicon(raw: str, row: dict, intent: str) -> str:
                 return token
             values = [v for v in all_values if len(v) <= len(token)] or [token]
             salt = int(hashlib.sha256(token.encode("utf-8")).hexdigest()[:8], 16)
-            # +37*lane makes rank N and N+100 diverge even when token pools are small.
-            intent_salt = int(hashlib.sha256(intent.encode("utf-8")).hexdigest()[:8], 16)
-            idx = (rank + lane * 37 + salt + intent_salt) % len(values)
+            # Region + intent + token salt prevents distant localities from landing
+            # on the same lexical signature while preserving deterministic output.
+            regional_salt = int(hashlib.sha256(
+                f"{row['region_slug']}|{intent}|{token}|stage5-signature-v3".encode("utf-8")
+            ).hexdigest()[:8], 16)
+            idx = (rank + lane * 37 + salt + regional_salt) % len(values)
             return values[idx]
         return STAGE5_TOKEN_RE.sub(repl, text)
 
