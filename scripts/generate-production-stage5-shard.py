@@ -184,17 +184,20 @@ def _stage5_profile_pack(row: dict, size: int = 12) -> list[str]:
     while len(out) < size:
         h = hashlib.sha256(f"{seed}|{cursor}".encode("utf-8")).hexdigest()
         cursor += 1
-        item = STAGE5_PROFILE_PHRASES[int(h[:12], 16) % len(STAGE5_PROFILE_PHRASES)]
+        item = STAGE5_PROFILE_PHRASES[int(h[:12], 16) % len(STAGE5_PROFILE_PHRASES)].replace(" ", "")
         if item not in out:
             out.append(item)
     return out
 
 
 def install_stage5_scaled_guide(g, s4) -> None:
-    """Keep Stage 4 syntax/length while giving every locality a distinct vocabulary vector."""
+    """Preserve the Stage 4 PASS set and diversify only rows after the first 100."""
     base_guide = g.guide
 
     def guide(row: dict, slot: int) -> str:
+        if int(row.get("_stage5_global_rank", 0)) < 100:
+            return base_guide(row, slot)
+
         base_text = base_guide(row, slot)
         pack = _stage5_profile_pack(row)
         _, _, theme_idx, _ = _stage5_profile(row)
@@ -208,19 +211,71 @@ def install_stage5_scaled_guide(g, s4) -> None:
         d = pack[(slot + 11) % len(pack)]
 
         text = base_text.replace(f"'{old_a}', '{old_b}'", f"'{a}', '{b}'", 1)
-        row_note = f"{a} · {b} · {c} · {d} 기준을 함께 확인합니다."
-        text = text.replace(s4.PROFILE_THEME_NOTE[theme_idx], row_note, 1)
+        text = text.replace(
+            s4.PROFILE_THEME_NOTE[theme_idx],
+            f"{a} · {b} · {c} · {d} 기준을 함께 확인합니다.",
+            1,
+        )
         return text
 
     g.guide = guide
 
 
+def install_stage5_scaled_longform(g) -> None:
+    """Make later Stage 5 rows substantially distinct without adding page length."""
+    base_make = g.make_stage4_unique_longform
+    sentence_bank = [
+        "이번 확인 항목은 {a} · {b}입니다. 다음 자료에서도 두 기준을 같은 순서로 기록합니다.",
+        "비교할 두 항목은 {a} · {b}입니다. 전후 조건을 맞춘 뒤 차이가 다시 나타나는지 봅니다.",
+        "수행 점검 항목은 {a} · {b}입니다. 설명 직후보다 실제 문제나 응답에서 재현되는지를 확인합니다.",
+        "일정 판단 항목은 {a} · {b}입니다. 가까운 목표에 직접 필요한 내용을 먼저 남깁니다.",
+        "다음 기록의 기준은 {a} · {b}입니다. 도움의 양을 바꾼 뒤 독립 수행 범위를 다시 봅니다.",
+        "새 자료에서 볼 기준은 {a} · {b}입니다. 익숙한 예시 없이 같은 행동이 이어지는지 확인합니다.",
+        "피드백 뒤 확인할 기준은 {a} · {b}입니다. 수정 전후를 나눠 다음 행동을 짧게 기록합니다.",
+        "실전 전 점검 기준은 {a} · {b}입니다. 시간과 완결성을 함께 보고 우선순위를 조정합니다.",
+        "복습 때 꺼낼 기준은 {a} · {b}입니다. 시간이 지난 뒤 다시 가능한 범위를 따로 남깁니다.",
+        "과정 비교 기준은 {a} · {b}입니다. 횟수보다 실제 포함 범위와 재확인 방식을 함께 봅니다.",
+        "이번 단계의 기준은 {a} · {b}입니다. 이미 되는 내용은 덜어내고 남은 병목만 이어갑니다.",
+        "후속 확인 기준은 {a} · {b}입니다. 질문이나 조건을 하나 바꿔 같은 수행이 유지되는지 봅니다.",
+    ]
+
+    def make(row: dict, d: dict) -> list[str]:
+        paras = base_make(row, d)
+        if int(row.get("_stage5_global_rank", 0)) < 100:
+            return paras
+
+        pack = _stage5_profile_pack(row)
+        out = []
+        for slot, para in enumerate(paras):
+            parts = re.split(r"(?<=\.)\s+", para)
+            if len(parts) < 3:
+                out.append(para)
+                continue
+
+            def sentence(offset: int) -> str:
+                seed = f"{row['content_seed']}|{slot}|{offset}|stage5-longform"
+                h = hashlib.sha256(seed.encode("utf-8")).hexdigest()
+                t = sentence_bank[int(h[:8], 16) % len(sentence_bank)]
+                a = pack[(slot + offset) % len(pack)]
+                b = pack[(slot + offset + 5) % len(pack)]
+                return t.format(a=a, b=b)
+
+            # Retain Stage 4's locality-specific opening sentence and replace
+            # the two generic follow-up sentences with row-specific prose.
+            out.append(parts[0] + " " + sentence(1) + " " + sentence(7))
+        return out
+
+    g.make_stage4_unique_longform = make
+
+
 def stage5_row_signature_block(s4, row: dict, intent: str) -> str:
-    """Keep the Stage 4 block and replace its single repeated theme note with row-specific terms."""
+    """Preserve Stage 4 for its first 100 rows; diversify later row signatures."""
     raw = s4.row_signature_block(row, intent)
+    if int(row.get("_stage5_global_rank", 0)) < 100:
+        return raw
     _, _, theme_idx, _ = _stage5_profile(row)
     pack = _stage5_profile_pack(row)
-    note = f"{pack[1]} · {pack[4]} · {pack[7]} · {pack[10]} 기준을 다음 판단 순서에 함께 반영합니다."
+    note = f"{pack[1]} · {pack[4]} · {pack[7]} · {pack[10]} 기준을 다음 판단 순서에 반영합니다."
     return raw.replace("<p>" + s4.PROFILE_THEME_NOTE[theme_idx] + "</p>", "<p>" + note + "</p>", 1)
 
 
@@ -311,6 +366,7 @@ def main() -> None:
     s4.install_stage4_guide_pool(g)
     install_stage5_scaled_guide(g, s4)
     s4.install_stage4_unique_longform(g)
+    install_stage5_scaled_longform(g)
     svc = load_module("service_gold_stage5", ROOT / "scripts/generate-v45-full-depth-pilot.py")
     ex = load_module("exam_gold_stage5", ROOT / "scripts/generate-v45-exam-pilot.py")
 
