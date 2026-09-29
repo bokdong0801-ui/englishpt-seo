@@ -178,6 +178,80 @@ def apply_stage5_natural_lexicon(raw: str, row: dict) -> str:
     return "".join(parts)
 
 
+def _stage5_expected_particle(label: str, particle: str) -> str:
+    label = label.rstrip()
+    if not label:
+        return particle
+    last = label[-1]
+    if not ("가" <= last <= "힣"):
+        return particle
+    has_final = ((ord(last) - 0xAC00) % 28) != 0
+    groups = {
+        "을":("을","를"), "를":("을","를"),
+        "은":("은","는"), "는":("은","는"),
+        "이":("이","가"), "가":("이","가"),
+        "과":("과","와"), "와":("과","와"),
+    }
+    pair = groups.get(particle)
+    if not pair:
+        return particle
+    return pair[0] if has_final else pair[1]
+
+
+def _stage5_quoted_label_matches(text: str):
+    pat = r"'([가-힣A-Za-z0-9·/ &+\-]{1,48})'"
+    for m in re.finditer(pat, text):
+        label = m.group(1).strip()
+        if not label or len(label.split()) > 8:
+            continue
+        if re.search(r"(고|며|면서|면|면서도|지만|도록|해서|하고|됩니다|합니다|입니다|봅니다|합니다)$", label):
+            continue
+        yield m
+
+
+def fix_stage5_quoted_particles(raw: str) -> str:
+    """Stage 4 particle repair with a guard against syllables that start a word.
+
+    A true post-quote particle is a standalone syllable. If another Hangul
+    syllable follows immediately, the first syllable belongs to the next word
+    (for example 이유) and must never be rewritten as a particle.
+    """
+    particles = {"을","를","은","는","이","가","과","와"}
+    matches = list(_stage5_quoted_label_matches(raw))
+    if matches:
+        pieces = []
+        cursor = 0
+        for m in matches:
+            if m.start() < cursor:
+                continue
+            pieces.append(raw[cursor:m.end()])
+            pos = m.end()
+            current = raw[pos:pos+1]
+            nxt = raw[pos+1:pos+2]
+            next_is_hangul = bool(nxt and "가" <= nxt <= "힣")
+            if current in particles and not next_is_hangul:
+                pieces.append(_stage5_expected_particle(m.group(1), current))
+                cursor = pos + 1
+            else:
+                cursor = pos
+        pieces.append(raw[cursor:])
+        raw = "".join(pieces)
+
+    esc_pat = (
+        r"((?:&#x27;|&#39;)([가-힣A-Za-z0-9·/ &+\-]{1,48})"
+        r"(?:&#x27;|&#39;)(?:\s*</(?:b|strong|em|span)>)?\s*)"
+        r"([을를은는이가과와])(?![가-힣])"
+    )
+    def repl(m):
+        label = m.group(2).strip()
+        if not label or len(label.split()) > 8:
+            return m.group(0)
+        if re.search(r"(고|며|면서|면|면서도|지만|도록|해서|하고|됩니다|합니다|입니다|봅니다)$", label):
+            return m.group(0)
+        return m.group(1) + _stage5_expected_particle(label, m.group(3))
+    return re.sub(esc_pat, repl, raw)
+
+
 def load_module(name: str, path: Path):
     spec = importlib.util.spec_from_file_location(name, path)
     if not spec or not spec.loader:
@@ -417,7 +491,7 @@ def main() -> None:
             raw = raw.replace("PRODUCTION DRY-RUN · noindex", "FULL GENERATION · noindex")
             raw = raw.replace("Stage 3 dry-run · production 미배포", "Stage 5 full generation · production 미배포")
             raw = apply_stage5_natural_lexicon(raw, row)
-            raw = s4.fix_quoted_particles(raw)
+            raw = fix_stage5_quoted_particles(raw)
             process_page(row, intent, "service", f"{row['dong_name']} {p['service_h1']}", p["blueprint"], raw)
 
         for key in EXAM_ORDER:
@@ -432,7 +506,7 @@ def main() -> None:
             raw = raw.replace("PRODUCTION DRY-RUN · noindex", "FULL GENERATION · noindex")
             raw = raw.replace("Stage 3 dry-run · production 미배포", "Stage 5 full generation · production 미배포")
             raw = apply_stage5_natural_lexicon(raw, row)
-            raw = s4.fix_quoted_particles(raw)
+            raw = fix_stage5_quoted_particles(raw)
             process_page(row, intent, "exam", f"{row['dong_name']} {e['service']}", e["blueprint"], raw, exam=key)
 
     expected_pages = len(rows) * INTENTS_PER_LOCALITY
