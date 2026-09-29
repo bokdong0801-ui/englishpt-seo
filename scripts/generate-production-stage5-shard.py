@@ -50,6 +50,171 @@ EXPECTED_KICKERS = [
 ]
 
 
+
+STAGE5_LENSES = [
+    {
+        "terms": ["혼자 시작", "도움 감소", "자기 수정", "독립 완결", "재현 범위", "시작 단서"],
+        "note": "혼자 시작하는 구간과 도움을 줄여도 이어지는 범위를 따로 봅니다.",
+    },
+    {
+        "terms": ["마감일", "남은 횟수", "직전 점검", "우선 순서", "완충 시간", "후속 보완"],
+        "note": "남은 일정과 실제 연습 횟수를 맞춰 직전 점검과 후속 보완을 분리합니다.",
+    },
+    {
+        "terms": ["근거 누락", "질문 오해", "지식 공백", "처리 순서", "반복 실수", "수정 경로"],
+        "note": "틀린 결과보다 오류가 시작된 원인과 수정 경로를 먼저 분리합니다.",
+    },
+    {
+        "terms": ["첫 반응", "발화 완결", "질문 대응", "전달 의도", "즉시 사용", "장면 전환"],
+        "note": "실제 사용 장면에서 첫 반응과 끝까지 전달하는 수행을 중심으로 봅니다.",
+    },
+    {
+        "terms": ["새 자료", "질문 변형", "난도 변화", "조건 변경", "전이 확인", "재사용 범위"],
+        "note": "익숙한 예시를 벗어나 자료와 질문이 달라져도 기준이 남는지 확인합니다.",
+    },
+    {
+        "terms": ["기억 재생", "간격 복습", "재노출", "누적 유지", "망각 지점", "회수 속도"],
+        "note": "바로 맞힌 결과보다 시간을 두고 다시 꺼냈을 때 유지되는 범위를 봅니다.",
+    },
+    {
+        "terms": ["제한 시간", "처리 속도", "순서 배분", "종료 기준", "병목 구간", "시간 압박"],
+        "note": "제한 시간 안에서 어디에 시간이 몰리는지와 끝까지 처리되는지를 나눠 봅니다.",
+    },
+    {
+        "terms": ["대안 과정", "수업 방식", "비용 구성", "피드백 범위", "일정 유연성", "과정 적합"],
+        "note": "한 가지 방식만 보지 않고 수업 운영과 피드백 범위를 같은 기준으로 비교합니다.",
+    },
+    {
+        "terms": ["첨삭 반영", "재답변", "수정 이유", "후속 점검", "피드백 회수", "다음 행동"],
+        "note": "피드백을 받은 뒤 실제 답변이나 수행이 어떻게 달라지는지를 다시 확인합니다.",
+    },
+    {
+        "terms": ["우선 기능", "제외 범위", "단기 목표", "장기 보완", "목표 충돌", "범위 축소"],
+        "note": "지금 필요한 기능과 뒤로 미뤄도 되는 범위를 나눠 목표가 섞이지 않게 합니다.",
+    },
+    {
+        "terms": ["선택 근거", "핵심 정보", "이유 설명", "근거 연결", "판단 기준", "설명 완결"],
+        "note": "답만 맞히는 것보다 어떤 근거로 판단했는지 설명할 수 있는지를 확인합니다.",
+    },
+    {
+        "terms": ["첫 문장", "핵심 표현", "응답 구조", "문장 연결", "출력 지속", "마무리 표현"],
+        "note": "알고 있는 내용을 실제 문장과 답변으로 끝까지 구성하는 과정을 봅니다.",
+    },
+    {
+        "terms": ["최소 분량", "반복 단위", "시작 시간", "복습 시점", "주간 배치", "공백 복구"],
+        "note": "바쁜 주에도 반복 가능한 최소 단위와 다시 시작할 수 있는 지점을 정합니다.",
+    },
+]
+
+STAGE5_PROCESS_MODES = [
+    "현재 상태를 관찰하고 달라진 지점을 짧게 기록합니다.",
+    "전후 조건을 맞춰 대조한 뒤 새 자료에서 다시 검사합니다.",
+    "설명보다 직접 수행을 먼저 두고 결과를 다음 행동으로 연결합니다.",
+    "가까운 목표에 필요한 항목을 앞에 두고 나머지 범위를 조정합니다.",
+]
+
+STAGE5_METHOD_NOTES = [
+    "현재 상태를 먼저 적고 다음 확인 항목을 남깁니다.",
+    "가까운 일정에서 거꾸로 순서를 잡습니다.",
+    "오류 원인과 수정 과정을 함께 봅니다.",
+    "설명을 실제 수행으로 바로 바꿉니다.",
+    "조건을 바꿔 재사용 범위를 살핍니다.",
+    "시간을 두고 다시 되는지 확인합니다.",
+    "처리 시간과 순서를 함께 기록합니다.",
+    "되는 조건과 흔들리는 조건을 대조합니다.",
+    "다음에 다시 볼 행동을 짧게 남깁니다.",
+    "이번 목표에 필요한 범위만 유지합니다.",
+]
+
+STAGE5_TOPICS = [
+    "최근 혼자 처리한 범위", "가장 자주 멈춘 행동", "다음 일정에 필요한 수행", "도움이 줄어도 남는 기능",
+    "반복해서 흔들리는 조건", "이미 안정된 영역", "실전에서 필요한 첫 반응", "시간 압박에서 달라지는 부분",
+    "질문이 바뀔 때 흔들리는 지점", "설명 없이 다시 가능한 범위", "이번에 제외해도 되는 목표", "다른 과정이 더 직접적인 조건",
+    "피드백 뒤 다시 볼 행동", "자료가 달라도 유지되는 기준", "복습 가능한 실제 시간", "가장 가까운 결과에 영향을 주는 항목",
+    "한 번 성공한 뒤 재현되는 범위", "힌트가 줄었을 때 수정되는 부분", "실제 제출이나 사용 조건", "다음 수업에서 확인할 기록",
+    "새 자료에서 다시 막히는 부분", "수업 밖에서도 이어지는 행동", "현재 목표와 맞지 않는 범위", "다음 단계로 넘길 수 있는 기능",
+]
+
+STAGE5_VERIFY = [
+    "새 조건에서 다시 점검합니다", "비슷한 난도의 자료로 재확인합니다", "질문을 바꿔 다시 봅니다", "도움을 줄인 뒤 재검사합니다",
+    "실전과 가까운 조건에서 살핍니다", "시간 조건을 바꿔 비교합니다", "다른 예시에서 재현합니다", "독립 수행으로 이어지는지 봅니다",
+    "다음 일정과 비슷한 상황에서 확인합니다", "처음과 다른 자료로 검증합니다", "후속 기록에서 다시 비교합니다", "조건을 하나 바꿔 점검합니다",
+    "수업 밖의 수행으로 확인합니다", "피드백 없이 다시 시도합니다", "처리 순서를 바꿔 살핍니다", "새 질문에서 같은 기준을 적용합니다",
+    "다음 복습 시점에 회수합니다", "필요한 힌트의 양을 비교합니다", "실제 사용 순서로 재검사합니다", "다른 선택과 나란히 검토합니다",
+]
+
+
+def _stage5_pick(row: dict, slot: int, values: list[str], salt: str) -> str:
+    seed = f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|{salt}"
+    h = hashlib.sha256(seed.encode("utf-8")).hexdigest()
+    return values[int(h[:12], 16) % len(values)]
+
+
+def _stage5_profile(row: dict) -> tuple[int, int, int, int]:
+    rank = int(row.get("_stage5_global_rank", 0))
+    base = rank % 100
+    lane = rank // 100
+    theme_idx = base % 10
+    method_idx = ((base // 10) + 3 * (base % 10)) % 10
+    return lane % len(STAGE5_LENSES), (lane // len(STAGE5_LENSES)) % len(STAGE5_PROCESS_MODES), theme_idx, method_idx
+
+
+def install_stage5_scaled_guide(g, s4) -> None:
+    """Extend the Stage 4 100-profile guide matrix to 5,200 semantic combinations."""
+    def guide(row: dict, slot: int) -> str:
+        lens_idx, process_idx, theme_idx, method_idx = _stage5_profile(row)
+        lens = STAGE5_LENSES[lens_idx]
+        topic = _stage5_pick(row, slot, STAGE5_TOPICS, "topic")
+        t1 = _stage5_pick(row, slot, lens["terms"], "lens-a")
+        t2 = _stage5_pick(row, slot + 17, lens["terms"], "lens-b")
+        if t2 == t1:
+            t2 = lens["terms"][(lens["terms"].index(t1) + 1 + slot) % len(lens["terms"])]
+        verify = _stage5_pick(row, slot, STAGE5_VERIFY, "verify")
+        base_terms = s4.PROFILE_TERMS[theme_idx]
+        base_focus = base_terms[(slot + method_idx) % len(base_terms)]
+        theme_note = s4.PROFILE_THEME_NOTE[theme_idx]
+        method_note = STAGE5_METHOD_NOTES[method_idx]
+        process_note = STAGE5_PROCESS_MODES[process_idx]
+        shape = int(hashlib.sha256(
+            f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|shape".encode("utf-8")
+        ).hexdigest()[:8], 16) % 4
+
+        if shape == 0:
+            return (
+                f"{row['dong_name']}에서는 '{topic}' 장면을 기준으로 둡니다. "
+                f"{theme_note} {method_note} {lens['note']} "
+                f"이번 확인에서는 '{base_focus}', '{t1}', '{t2}'를 구분하고 {process_note} 다음에는 {verify}"
+            )
+        if shape == 1:
+            return (
+                f"'{topic}'을 볼 때 {method_note} {lens['note']} "
+                f"현재 기준은 '{t1}', '{base_focus}', '{t2}'입니다. "
+                f"{process_note} {theme_note} 이어지는 단계에서는 {verify}"
+            )
+        if shape == 2:
+            return (
+                f"{row['full_name_ko']} 안내에서는 '{topic}'부터 범위를 좁힙니다. "
+                f"{lens['note']} {theme_note} '{t1}'과 '{t2}'를 나눠 본 뒤 {method_note} "
+                f"{process_note} 마지막에는 {verify}"
+            )
+        return (
+            f"먼저 '{topic}'을 실제 확인 장면으로 둡니다. {process_note} "
+            f"{theme_note} {lens['note']} '{base_focus}'와 '{t1}', '{t2}'를 따로 보고 "
+            f"{method_note} 다음 자료에서는 {verify}"
+        )
+
+    g.guide = guide
+
+
+def stage5_row_signature_block(s4, row: dict, intent: str) -> str:
+    """Keep the Stage 4 row-signature structure but replace its 100-cycle note."""
+    raw = s4.row_signature_block(row, intent)
+    lens_idx, process_idx, theme_idx, _ = _stage5_profile(row)
+    old_note = s4.PROFILE_THEME_NOTE[theme_idx]
+    lane_note = STAGE5_LENSES[lens_idx]["note"] + " " + STAGE5_PROCESS_MODES[process_idx]
+    return raw.replace("<p>" + old_note + "</p>", "<p>" + lane_note + "</p>", 1)
+
+
 def load_module(name: str, path: Path):
     spec = importlib.util.spec_from_file_location(name, path)
     if not spec or not spec.loader:
@@ -135,6 +300,7 @@ def main() -> None:
     g = load_module("stage3_renderer", ROOT / "scripts/generate-production-stage3-10x13.py")
     s4.patch_engine(g)
     s4.install_stage4_guide_pool(g)
+    install_stage5_scaled_guide(g, s4)
     s4.install_stage4_unique_longform(g)
     svc = load_module("service_gold_stage5", ROOT / "scripts/generate-v45-full-depth-pilot.py")
     ex = load_module("exam_gold_stage5", ROOT / "scripts/generate-v45-exam-pilot.py")
@@ -283,7 +449,7 @@ def main() -> None:
             raw = g.render_page(row, d, intent, "service", p, svc, ex)
             raw = raw.replace(
                 '<section class="section related">',
-                s4.row_signature_block(row, intent) + '<section class="section related">',
+                stage5_row_signature_block(s4, row, intent) + '<section class="section related">',
                 1,
             )
             raw = raw.replace("PRODUCTION DRY-RUN · noindex", "FULL GENERATION · noindex")
@@ -297,7 +463,7 @@ def main() -> None:
             raw = g.render_page(row, d, intent, "exam", e, svc, ex)
             raw = raw.replace(
                 '<section class="section related">',
-                s4.row_signature_block(row, intent) + '<section class="section related">',
+                stage5_row_signature_block(s4, row, intent) + '<section class="section related">',
                 1,
             )
             raw = raw.replace("PRODUCTION DRY-RUN · noindex", "FULL GENERATION · noindex")
