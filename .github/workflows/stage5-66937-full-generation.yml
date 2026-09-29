@@ -2,11 +2,6 @@ name: Stage 5 66,937 Full Generation
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - reset-english-service-seo-v3
-    paths:
-      - '.github/workflows/stage5-66937-full-generation.yml'
 
 permissions:
   contents: read
