@@ -160,58 +160,83 @@ def _stage5_profile(row: dict) -> tuple[int, int, int, int]:
 
 
 def install_stage5_scaled_guide(g, s4) -> None:
-    """Extend the Stage 4 100-profile guide matrix to 5,200 semantic combinations."""
-    def guide(row: dict, slot: int) -> str:
-        lens_idx, process_idx, theme_idx, method_idx = _stage5_profile(row)
-        lens = STAGE5_LENSES[lens_idx]
-        topic = _stage5_pick(row, slot, STAGE5_TOPICS, "topic")
-        t1 = _stage5_pick(row, slot, lens["terms"], "lens-a")
-        t2 = _stage5_pick(row, slot + 17, lens["terms"], "lens-b")
-        if t2 == t1:
-            t2 = lens["terms"][(lens["terms"].index(t1) + 1 + slot) % len(lens["terms"])]
-        verify = _stage5_pick(row, slot, STAGE5_VERIFY, "verify")
-        base_terms = s4.PROFILE_TERMS[theme_idx]
-        base_focus = base_terms[(slot + method_idx) % len(base_terms)]
-        theme_note = s4.PROFILE_THEME_NOTE[theme_idx]
-        method_note = STAGE5_METHOD_NOTES[method_idx]
-        process_note = STAGE5_PROCESS_MODES[process_idx]
-        shape = int(hashlib.sha256(
-            f"{row['content_seed']}|{row.get('_intent_salt','')}|{slot}|shape".encode("utf-8")
-        ).hexdigest()[:8], 16) % 4
+    """Preserve Stage 4's 100-profile distinctions and add a 52-lane lexical layer.
 
-        if shape == 0:
-            return (
-                f"{row['dong_name']}에서는 '{topic}' 장면을 기준으로 둡니다. "
-                f"{theme_note} {method_note} {lens['note']} "
-                f"이번 확인에서는 '{base_focus}', '{t1}', '{t2}'를 구분하고 {process_note} 다음에는 {verify}"
-            )
-        if shape == 1:
-            return (
-                f"'{topic}'을 볼 때 {method_note} {lens['note']} "
-                f"현재 기준은 '{t1}', '{base_focus}', '{t2}'입니다. "
-                f"{process_note} {theme_note} 이어지는 단계에서는 {verify}"
-            )
-        if shape == 2:
-            return (
-                f"{row['full_name_ko']} 안내에서는 '{topic}'부터 범위를 좁힙니다. "
-                f"{lens['note']} {theme_note} '{t1}'과 '{t2}'를 나눠 본 뒤 {method_note} "
-                f"{process_note} 마지막에는 {verify}"
-            )
-        return (
-            f"먼저 '{topic}'을 실제 확인 장면으로 둡니다. {process_note} "
-            f"{theme_note} {lens['note']} '{base_focus}'와 '{t1}', '{t2}'를 따로 보고 "
-            f"{method_note} 다음 자료에서는 {verify}"
-        )
+    The wrapper keeps the original lead/signature sentences. Three middle
+    sentences are replaced, not appended, so page length stays in the Stage 4
+    envelope while rank+100 pages no longer reuse the same lexical profile.
+    """
+    base_guide = g.guide
+    method_short = [
+        "현재 상태부터 살핍니다",
+        "가까운 일정에서 거꾸로 배치합니다",
+        "오류 원인을 따라갑니다",
+        "설명을 수행으로 바꿉니다",
+        "조건을 바꿔 적용 범위를 봅니다",
+        "시간을 두고 다시 꺼냅니다",
+        "처리 시간과 순서를 함께 봅니다",
+        "되는 조건과 흔들리는 조건을 대조합니다",
+        "후속 행동을 기록으로 남깁니다",
+        "이번 목표에 필요한 범위만 남깁니다",
+    ]
+    focus_templates = [
+        "'{base}'와 '{lane}'를 관찰 기록에서 따로 남깁니다.",
+        "'{base}'와 '{lane}'를 같은 조건에서 나란히 대조합니다.",
+        "'{base}'와 '{lane}'를 직접 수행 안에서 연결합니다.",
+        "'{base}'와 '{lane}'를 가까운 목표 순서에 맞춰 배치합니다.",
+    ]
+    method_suffix = [
+        "변화 전후를 짧은 메모로 구분합니다.",
+        "새 자료로 바꾼 뒤 차이를 다시 검사합니다.",
+        "설명 뒤 바로 문제나 응답으로 옮깁니다.",
+        "덜 필요한 범위는 뒤로 보내 순서를 조정합니다.",
+    ]
+    theme_templates = [
+        "'{base}'와 '{lane}'가 다시 나타나는 시점을 기록합니다.",
+        "'{base}'와 '{lane}'의 전후 차이를 다시 비교합니다.",
+        "'{base}'와 '{lane}'가 실제 출력까지 이어지는지 봅니다.",
+        "'{base}'와 '{lane}' 중 먼저 다룰 항목을 정합니다.",
+    ]
+
+    def guide(row: dict, slot: int) -> str:
+        base_text = base_guide(row, slot)
+        parts = re.split(r"(?<=\.)\s+", base_text)
+        if len(parts) < 5:
+            return base_text
+
+        lens_idx, process_idx, theme_idx, method_idx = _stage5_profile(row)
+        lens_terms = STAGE5_LENSES[lens_idx]["terms"]
+        base_terms = s4.PROFILE_TERMS[theme_idx]
+        base_a = base_terms[(slot + method_idx) % len(base_terms)]
+        base_b = base_terms[(slot + method_idx + 2) % len(base_terms)]
+        lane_a = _stage5_pick(row, slot, lens_terms, "lane-a")
+        lane_b = _stage5_pick(row, slot + 11, lens_terms, "lane-b")
+        if lane_b == lane_a:
+            lane_b = lens_terms[(lens_terms.index(lane_a) + 1 + slot) % len(lens_terms)]
+
+        parts[1] = focus_templates[process_idx].format(base=base_a, lane=lane_a)
+        parts[2] = method_short[method_idx] + ". " + method_suffix[process_idx]
+        parts[3] = theme_templates[process_idx].format(base=base_b, lane=lane_b)
+        return " ".join(parts)
 
     g.guide = guide
 
 
 def stage5_row_signature_block(s4, row: dict, intent: str) -> str:
-    """Keep the Stage 4 row-signature structure but replace its 100-cycle note."""
+    """Keep the Stage 4 row-signature block while removing its 100-row cycle."""
     raw = s4.row_signature_block(row, intent)
-    lens_idx, process_idx, theme_idx, _ = _stage5_profile(row)
+    lens_idx, process_idx, theme_idx, method_idx = _stage5_profile(row)
     old_note = s4.PROFILE_THEME_NOTE[theme_idx]
-    lane_note = STAGE5_LENSES[lens_idx]["note"] + " " + STAGE5_PROCESS_MODES[process_idx]
+    base_term = s4.PROFILE_TERMS[theme_idx][method_idx % len(s4.PROFILE_TERMS[theme_idx])]
+    lane_terms = STAGE5_LENSES[lens_idx]["terms"]
+    lane_term = _stage5_pick(row, method_idx, lane_terms, "row-signature")
+    row_actions = [
+        "관찰 기록에서 따로 남깁니다.",
+        "같은 조건에서 나란히 대조합니다.",
+        "직접 수행 안에서 함께 확인합니다.",
+        "가까운 목표 순서에 맞춰 배치합니다.",
+    ]
+    lane_note = f"'{base_term}' 기준과 '{lane_term}' 항목을 {row_actions[process_idx]}"
     return raw.replace("<p>" + old_note + "</p>", "<p>" + lane_note + "</p>", 1)
 
 
