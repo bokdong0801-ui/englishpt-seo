@@ -225,18 +225,22 @@ def install_stage5_scaled_longform(g) -> None:
     """Make later Stage 5 rows substantially distinct without adding page length."""
     base_make = g.make_stage4_unique_longform
     sentence_bank = [
-        "이번 확인 항목은 {a} · {b}입니다. 다음 자료에서도 두 기준을 같은 순서로 기록합니다.",
-        "비교할 두 항목은 {a} · {b}입니다. 전후 조건을 맞춘 뒤 차이가 다시 나타나는지 봅니다.",
-        "수행 점검 항목은 {a} · {b}입니다. 설명 직후보다 실제 문제나 응답에서 재현되는지를 확인합니다.",
-        "일정 판단 항목은 {a} · {b}입니다. 가까운 목표에 직접 필요한 내용을 먼저 남깁니다.",
-        "다음 기록의 기준은 {a} · {b}입니다. 도움의 양을 바꾼 뒤 독립 수행 범위를 다시 봅니다.",
-        "새 자료에서 볼 기준은 {a} · {b}입니다. 익숙한 예시 없이 같은 행동이 이어지는지 확인합니다.",
-        "피드백 뒤 확인할 기준은 {a} · {b}입니다. 수정 전후를 나눠 다음 행동을 짧게 기록합니다.",
-        "실전 전 점검 기준은 {a} · {b}입니다. 시간과 완결성을 함께 보고 우선순위를 조정합니다.",
-        "복습 때 꺼낼 기준은 {a} · {b}입니다. 시간이 지난 뒤 다시 가능한 범위를 따로 남깁니다.",
-        "과정 비교 기준은 {a} · {b}입니다. 횟수보다 실제 포함 범위와 재확인 방식을 함께 봅니다.",
-        "이번 단계의 기준은 {a} · {b}입니다. 이미 되는 내용은 덜어내고 남은 병목만 이어갑니다.",
-        "후속 확인 기준은 {a} · {b}입니다. 질문이나 조건을 하나 바꿔 같은 수행이 유지되는지 봅니다.",
+        "이번 점검은 {a} · {b} · {c} · {d} 네 항목으로 나눠 새 자료에서 다시 봅니다.",
+        "다음 기록은 {a} · {b} · {c} · {d} 네 기준을 중심으로 전후 차이를 남깁니다.",
+        "실전 확인은 {a} · {b} · {c} · {d} 네 요소를 따로 보고 도움을 줄여 재검사합니다.",
+        "복습 계획은 {a} · {b} · {c} · {d} 네 항목을 기준으로 다음 회수 시점을 정합니다.",
+        "과정 비교는 {a} · {b} · {c} · {d} 네 기준을 나눠 실제 포함 범위를 확인합니다.",
+        "오류 점검은 {a} · {b} · {c} · {d} 네 항목을 따라 원인과 수정 결과를 구분합니다.",
+        "시간 점검은 {a} · {b} · {c} · {d} 네 기준을 두고 처리 순서와 완결성을 함께 봅니다.",
+        "다음 단계는 {a} · {b} · {c} · {d} 네 요소를 비교해 이미 되는 내용부터 덜어냅니다.",
+        "새 질문에서는 {a} · {b} · {c} · {d} 네 기준을 다시 적용해 전이 여부를 확인합니다.",
+        "피드백 뒤에는 {a} · {b} · {c} · {d} 네 항목을 바탕으로 재답변과 수정 범위를 봅니다.",
+        "일정 조정은 {a} · {b} · {c} · {d} 네 기준을 놓고 가까운 목표부터 순서를 정합니다.",
+        "독립 수행은 {a} · {b} · {c} · {d} 네 요소를 기준으로 필요한 도움의 양을 비교합니다.",
+        "상담 준비는 {a} · {b} · {c} · {d} 네 항목을 정리해 확인할 질문의 순서를 좁힙니다.",
+        "수업 뒤에는 {a} · {b} · {c} · {d} 네 기준을 기록해 다음 재확인 항목을 남깁니다.",
+        "조건을 바꿀 때는 {a} · {b} · {c} · {d} 네 요소를 그대로 적용해 유지 범위를 봅니다.",
+        "장기 보완은 {a} · {b} · {c} · {d} 네 항목 중 지금 미뤄도 되는 범위를 분리합니다.",
     ]
 
     def make(row: dict, d: dict) -> list[str]:
@@ -257,8 +261,10 @@ def install_stage5_scaled_longform(g) -> None:
                 h = hashlib.sha256(seed.encode("utf-8")).hexdigest()
                 t = sentence_bank[int(h[:8], 16) % len(sentence_bank)]
                 a = pack[(slot + offset) % len(pack)]
-                b = pack[(slot + offset + 5) % len(pack)]
-                return t.format(a=a, b=b)
+                b = pack[(slot + offset + 3) % len(pack)]
+                cc = pack[(slot + offset + 6) % len(pack)]
+                d = pack[(slot + offset + 9) % len(pack)]
+                return t.format(a=a, b=b, c=cc, d=d)
 
             # Retain Stage 4's locality-specific opening sentence and replace
             # the two generic follow-up sentences with row-specific prose.
