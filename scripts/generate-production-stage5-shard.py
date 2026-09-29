@@ -135,7 +135,7 @@ STAGE5_NATURAL_LEXICON = {
 STAGE5_TOKEN_RE = re.compile(r"[가-힣A-Za-z0-9]+")
 
 
-def apply_stage5_natural_lexicon(raw: str, row: dict) -> str:
+def apply_stage5_natural_lexicon(raw: str, row: dict, intent: str) -> str:
     """Diversify visible body wording deterministically without touching SEO contract tags."""
     rank = int(row.get("_stage5_global_rank", 0))
     slug = row["region_slug"]
@@ -148,7 +148,7 @@ def apply_stage5_natural_lexicon(raw: str, row: dict) -> str:
                 return token
             values = [v for v in all_values if len(v) <= len(token)] or all_values
             h = hashlib.sha256(
-                f"{slug}|{rank}|{token}|stage5-natural-v5".encode("utf-8")
+                f"{slug}|{rank}|{intent}|{token}|stage5-natural-v6".encode("utf-8")
             ).hexdigest()
             return values[int(h[:8], 16) % len(values)]
         return STAGE5_TOKEN_RE.sub(repl, text)
@@ -241,7 +241,7 @@ STAGE5_SIGNATURE_LEXICON = {
 }
 
 
-def apply_stage5_signature_lexicon(raw: str, row: dict) -> str:
+def apply_stage5_signature_lexicon(raw: str, row: dict, intent: str) -> str:
     """Break rank+100 lexical collisions without increasing visible text length."""
     rank = int(row.get("_stage5_global_rank", 0))
     lane = rank // 100
@@ -255,7 +255,8 @@ def apply_stage5_signature_lexicon(raw: str, row: dict) -> str:
             values = [v for v in all_values if len(v) <= len(token)] or [token]
             salt = int(hashlib.sha256(token.encode("utf-8")).hexdigest()[:8], 16)
             # +37*lane makes rank N and N+100 diverge even when token pools are small.
-            idx = (rank + lane * 37 + salt) % len(values)
+            intent_salt = int(hashlib.sha256(intent.encode("utf-8")).hexdigest()[:8], 16)
+            idx = (rank + lane * 37 + salt + intent_salt) % len(values)
             return values[idx]
         return STAGE5_TOKEN_RE.sub(repl, text)
 
@@ -409,15 +410,17 @@ def main() -> None:
     ap.add_argument("--shard-index", type=int, required=True, help="zero-based shard index")
     ap.add_argument("--shard-count", type=int, default=DEFAULT_SHARD_COUNT)
     ap.add_argument("--shard-size", type=int, default=DEFAULT_SHARD_SIZE)
+    ap.add_argument("--target-slugs-file", type=str, default=None)
     args = ap.parse_args()
 
     if args.shard_size <= 0:
         raise RuntimeError("shard-size must be positive")
-    required_count = math.ceil(EXPECTED_LOCALITIES / args.shard_size)
-    if args.shard_count != required_count:
-        raise RuntimeError(f"shard-count mismatch: {args.shard_count} != {required_count}")
-    if not 0 <= args.shard_index < args.shard_count:
-        raise RuntimeError(f"shard-index out of range: {args.shard_index}")
+    if not args.target_slugs_file:
+        required_count = math.ceil(EXPECTED_LOCALITIES / args.shard_size)
+        if args.shard_count != required_count:
+            raise RuntimeError(f"shard-count mismatch: {args.shard_count} != {required_count}")
+        if not 0 <= args.shard_index < args.shard_count:
+            raise RuntimeError(f"shard-index out of range: {args.shard_index}")
 
     all_rows = load_rows()
     name_counts = Counter(r["dong_name"] for r in all_rows)
@@ -426,13 +429,31 @@ def main() -> None:
         row["_stage5_global_rank"] = rank
         row["_same_name_count"] = name_counts[row["dong_name"]]
 
-    start = args.shard_index * args.shard_size
-    end = min(start + args.shard_size, len(all_rows))
-    rows = all_rows[start:end]
-    if not rows:
-        raise RuntimeError("empty shard")
-
-    shard_name = f"shard-{args.shard_index + 1:03d}-of-{args.shard_count:03d}"
+    if args.target_slugs_file:
+        target_path = Path(args.target_slugs_file)
+        if not target_path.exists():
+            raise RuntimeError(f"target slugs file missing: {target_path}")
+        target_slugs = {
+            x.strip() for x in target_path.read_text(encoding="utf-8").splitlines()
+            if x.strip() and not x.lstrip().startswith("#")
+        }
+        rows = [r for r in all_rows if r["region_slug"] in target_slugs]
+        found = {r["region_slug"] for r in rows}
+        missing_targets = sorted(target_slugs - found)
+        if missing_targets:
+            raise RuntimeError(f"target slugs missing from Stage5 input: {missing_targets[:10]}")
+        if len(rows) != len(target_slugs):
+            raise RuntimeError("target slug selection mismatch")
+        start = 0
+        end = len(rows)
+        shard_name = f"targeted-{len(rows):03d}-cross-shard"
+    else:
+        start = args.shard_index * args.shard_size
+        end = min(start + args.shard_size, len(all_rows))
+        rows = all_rows[start:end]
+        if not rows:
+            raise RuntimeError("empty shard")
+        shard_name = f"shard-{args.shard_index + 1:03d}-of-{args.shard_count:03d}"
     out = OUTPUT_ROOT / shard_name
     pages = out / "pages"
     if out.exists():
@@ -596,8 +617,8 @@ def main() -> None:
             )
             raw = raw.replace("PRODUCTION DRY-RUN · noindex", "FULL GENERATION · noindex")
             raw = raw.replace("Stage 3 dry-run · production 미배포", "Stage 5 full generation · production 미배포")
-            raw = apply_stage5_natural_lexicon(raw, row)
-            raw = apply_stage5_signature_lexicon(raw, row)
+            raw = apply_stage5_natural_lexicon(raw, row, intent)
+            raw = apply_stage5_signature_lexicon(raw, row, intent)
             raw = fix_stage5_quoted_particles(raw)
             process_page(row, intent, "service", f"{row['dong_name']} {p['service_h1']}", p["blueprint"], raw)
 
@@ -612,8 +633,8 @@ def main() -> None:
             )
             raw = raw.replace("PRODUCTION DRY-RUN · noindex", "FULL GENERATION · noindex")
             raw = raw.replace("Stage 3 dry-run · production 미배포", "Stage 5 full generation · production 미배포")
-            raw = apply_stage5_natural_lexicon(raw, row)
-            raw = apply_stage5_signature_lexicon(raw, row)
+            raw = apply_stage5_natural_lexicon(raw, row, intent)
+            raw = apply_stage5_signature_lexicon(raw, row, intent)
             raw = fix_stage5_quoted_particles(raw)
             process_page(row, intent, "exam", f"{row['dong_name']} {e['service']}", e["blueprint"], raw, exam=key)
 
