@@ -1,2 +1,3 @@
 stage5 full generation trigger: locality-aware signature v3
 rerun: final-edge-case-v4
+rerun: final-incheon-collision-v5
