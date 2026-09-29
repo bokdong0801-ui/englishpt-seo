@@ -2,6 +2,11 @@ name: Stage 6 Global Cross-Shard QA
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - '.github/workflows/stage6-global-cross-shard-qa.yml'
 
 permissions:
   contents: read
