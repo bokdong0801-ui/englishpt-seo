@@ -238,6 +238,22 @@ STAGE5_SIGNATURE_LEXICON = {
     "맞춰":["맞춰","따라","기준해","맞게"],
     "좁힙니다":["좁힙니다","줄입니다","정합니다","추립니다"],
     "비용":["비용","금액","가격","지출","예산"],
+    "문제":["문제","문항","과제"],
+    "목표":["목표","과제","방향"],
+    "답변":["답변","응답"],
+    "응답":["응답","답변","반응"],
+    "연습":["연습","훈련","실습"],
+    "학습":["학습","공부"],
+    "시험":["시험","평가"],
+    "구간":["구간","부분","영역"],
+    "정리":["정리","요약","구성"],
+    "내용":["내용","사항","정보"],
+    "방법":["방법","방식","절차"],
+    "이유":["이유","원인","근거"],
+    "단계":["단계","순서","과정"],
+    "점수":["점수","성적"],
+    "표현":["표현","문구","발화"],
+    "목적":["목적","목표","용도"],
 }
 
 
@@ -360,6 +376,49 @@ def fix_stage5_quoted_particles(raw: str) -> str:
             return m.group(0)
         return m.group(1) + _stage5_expected_particle(label, m.group(3))
     return re.sub(esc_pat, repl, raw)
+
+
+def compact_stage5_visible_text(raw: str, visible_func) -> str:
+    """Keep the existing 20,500-char gate without changing page structure."""
+    if len(visible_func(raw)) <= 20500:
+        return raw
+    compact = {
+        "재확인합니다":"확인합니다",
+        "살펴봅니다":"봅니다",
+        "비교해봅니다":"비교합니다",
+        "현시점":"현재",
+        "학습자료":"자료",
+        "직접적인":"직접",
+        "다시답변":"재답변",
+        "가이드에서도":"안내에서도",
+    }
+    parts = re.split(r"(<[^>]+>)", raw)
+    skip_tag = None
+    for i, part in enumerate(parts):
+        if not part:
+            continue
+        if part.startswith("<"):
+            m = re.match(r"<\s*(/?)\s*([A-Za-z0-9]+)", part)
+            if not m:
+                continue
+            closing, tag = m.group(1), m.group(2).lower()
+            if skip_tag:
+                if closing and tag == skip_tag:
+                    skip_tag = None
+                continue
+            if not closing and tag in {"script","style","h1","title"}:
+                skip_tag = tag
+                continue
+            if not closing and tag == "p" and re.search(r'class="[^"]*\bkicker\b[^"]*"', part):
+                skip_tag = "p"
+                continue
+        elif skip_tag is None:
+            for old,new in compact.items():
+                if len(visible_func("".join(parts))) <= 20500:
+                    break
+                part = part.replace(old,new)
+            parts[i]=part
+    return "".join(parts)
 
 
 def load_module(name: str, path: Path):
@@ -623,6 +682,7 @@ def main() -> None:
             raw = apply_stage5_natural_lexicon(raw, row, intent)
             raw = apply_stage5_signature_lexicon(raw, row, intent)
             raw = fix_stage5_quoted_particles(raw)
+            raw = compact_stage5_visible_text(raw, s4.visible)
             process_page(row, intent, "service", f"{row['dong_name']} {p['service_h1']}", p["blueprint"], raw)
 
         for key in EXAM_ORDER:
@@ -639,6 +699,7 @@ def main() -> None:
             raw = apply_stage5_natural_lexicon(raw, row, intent)
             raw = apply_stage5_signature_lexicon(raw, row, intent)
             raw = fix_stage5_quoted_particles(raw)
+            raw = compact_stage5_visible_text(raw, s4.visible)
             process_page(row, intent, "exam", f"{row['dong_name']} {e['service']}", e["blueprint"], raw, exam=key)
 
     expected_pages = len(rows) * INTENTS_PER_LOCALITY
