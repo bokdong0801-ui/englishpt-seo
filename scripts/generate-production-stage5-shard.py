@@ -190,6 +190,29 @@ def _stage5_profile_pack(row: dict, size: int = 12) -> list[str]:
     return out
 
 
+STAGE5_STYLE_ROOTS = [
+    "독립수행","일정역산","오류원인","실전응답","조건전환",
+    "복습회수","시간배분","선택비교","피드백반영","목표경계",
+    "근거선택","질문해석","출력완결","자료변형","기억재생",
+    "처리속도","과정적합","수정이유","우선기능","반복단위",
+]
+STAGE5_STYLE_ENDS = ["점검","기록","대조","적용","재검증"]
+
+
+def _stage5_style_terms(row: dict) -> list[str]:
+    base = int(row.get("_stage5_global_rank", 0)) % 100
+    lane = int(row.get("_stage5_global_rank", 0)) // 100
+    start = (base + lane * 11) % 100
+    offsets = [0, 23, 47, 71]
+    out = []
+    for off in offsets:
+        idx = (start + off) % 100
+        root = STAGE5_STYLE_ROOTS[idx // len(STAGE5_STYLE_ENDS)]
+        end = STAGE5_STYLE_ENDS[idx % len(STAGE5_STYLE_ENDS)]
+        out.append(root + end)
+    return out
+
+
 def install_stage5_scaled_guide(g, s4) -> None:
     """Preserve the Stage 4 PASS set and diversify only rows after the first 100."""
     base_guide = g.guide
@@ -200,6 +223,7 @@ def install_stage5_scaled_guide(g, s4) -> None:
 
         base_text = base_guide(row, slot)
         pack = _stage5_profile_pack(row)
+        style = _stage5_style_terms(row)
         _, _, theme_idx, _ = _stage5_profile(row)
         base_terms = s4.PROFILE_TERMS[theme_idx]
         old_a = base_terms[slot % len(base_terms)]
@@ -207,13 +231,13 @@ def install_stage5_scaled_guide(g, s4) -> None:
 
         a = pack[slot % len(pack)]
         b = pack[(slot + 5) % len(pack)]
-        c = pack[(slot + 8) % len(pack)]
-        d = pack[(slot + 11) % len(pack)]
+        s1 = style[slot % len(style)]
+        s2 = style[(slot + 2) % len(style)]
 
-        text = base_text.replace(f"'{old_a}', '{old_b}'", f"'{a}', '{b}'", 1)
+        text = base_text.replace(f"'{old_a}', '{old_b}'", f"'{s1}', '{a}'", 1)
         text = text.replace(
             s4.PROFILE_THEME_NOTE[theme_idx],
-            f"{a} · {b} · {c} · {d} 기준을 함께 확인합니다.",
+            f"{s1} · {a} · {s2} · {b} 기준을 함께 확인합니다.",
             1,
         )
         return text
@@ -249,6 +273,7 @@ def install_stage5_scaled_longform(g) -> None:
             return paras
 
         pack = _stage5_profile_pack(row)
+        style = _stage5_style_terms(row)
         out = []
         for slot, para in enumerate(paras):
             parts = re.split(r"(?<=\.)\s+", para)
@@ -260,9 +285,9 @@ def install_stage5_scaled_longform(g) -> None:
                 seed = f"{row['content_seed']}|{slot}|{offset}|stage5-longform"
                 h = hashlib.sha256(seed.encode("utf-8")).hexdigest()
                 t = sentence_bank[int(h[:8], 16) % len(sentence_bank)]
-                a = pack[(slot + offset) % len(pack)]
+                a = style[(slot + offset) % len(style)]
                 b = pack[(slot + offset + 3) % len(pack)]
-                cc = pack[(slot + offset + 6) % len(pack)]
+                cc = style[(slot + offset + 2) % len(style)]
                 d = pack[(slot + offset + 9) % len(pack)]
                 return t.format(a=a, b=b, c=cc, d=d)
 
@@ -281,7 +306,8 @@ def stage5_row_signature_block(s4, row: dict, intent: str) -> str:
         return raw
     _, _, theme_idx, _ = _stage5_profile(row)
     pack = _stage5_profile_pack(row)
-    note = f"{pack[1]} · {pack[4]} · {pack[7]} · {pack[10]} 기준을 다음 판단 순서에 반영합니다."
+    style = _stage5_style_terms(row)
+    note = f"{style[0]} · {pack[4]} · {style[2]} · {pack[10]} 기준을 다음 판단 순서에 반영합니다."
     return raw.replace("<p>" + s4.PROFILE_THEME_NOTE[theme_idx] + "</p>", "<p>" + note + "</p>", 1)
 
 
