@@ -97,4 +97,4 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-# trigger: locality-intent-signature-v3
+# trigger: final-edge-case-v4
