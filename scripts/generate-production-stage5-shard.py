@@ -159,122 +159,69 @@ def _stage5_profile(row: dict) -> tuple[int, int, int, int]:
     return lane % len(STAGE5_LENSES), (lane // len(STAGE5_LENSES)) % len(STAGE5_PROCESS_MODES), theme_idx, method_idx
 
 
-def _stage5_lane_terms(row: dict) -> tuple[int, int, list[str]]:
-    rank = int(row.get("_stage5_global_rank", 0))
-    lane = rank // 100
-    lens_idx = lane % len(STAGE5_LENSES)
-    process_idx = (lane // len(STAGE5_LENSES)) % len(STAGE5_PROCESS_MODES)
-    process_terms = [
-        ["관찰 기록", "변화 지점", "상태 비교", "기록 분리", "재확인 시점", "전후 메모"],
-        ["조건 대조", "새 자료 검사", "전후 비교", "재검증", "차이 확인", "대조 기준"],
-        ["직접 수행", "출력 연결", "즉시 적용", "실행 결과", "수행 완결", "후속 행동"],
-        ["목표 배치", "범위 조정", "우선 순서", "후순위", "일정 정렬", "범위 축소"],
-    ]
-    return lane, process_idx, STAGE5_LENSES[lens_idx]["terms"] + process_terms[process_idx]
+STAGE5_PROFILE_PHRASES = [
+    "독립 시작","힌트 감소","자기 수정","완결 수행","재현 범위","시작 단서",
+    "마감 역산","연습 횟수","직전 점검","완충 시간","후속 보완","일정 정렬",
+    "근거 선택","질문 해석","지식 공백","처리 순서","오류 원인","수정 경로",
+    "첫 반응","발화 완결","응답 구조","전달 의도","즉시 사용","장면 전환",
+    "새 자료","질문 변형","난도 변화","조건 변경","전이 확인","재사용 범위",
+    "기억 회수","간격 복습","재노출","누적 유지","망각 지점","회수 속도",
+    "제한 시간","처리 속도","순서 배분","종료 기준","병목 구간","시간 압박",
+    "대안 과정","수업 방식","비용 구성","피드백 범위","일정 유연성","과정 적합",
+    "첨삭 반영","재답변","수정 이유","후속 점검","피드백 회수","다음 행동",
+    "우선 기능","제외 범위","단기 목표","장기 보완","목표 충돌","범위 축소",
+    "설명 근거","핵심 정보","이유 연결","판단 기준","설명 완결","선택 기준",
+    "첫 문장","핵심 표현","문장 연결","출력 지속","마무리 표현","응답 완결",
+    "최소 분량","반복 단위","시작 시간","복습 시점","주간 배치","공백 복구",
+    "관찰 기록","상태 비교","변화 지점","전후 메모","새 조건","재확인 시점",
+]
+
+
+def _stage5_profile_pack(row: dict, size: int = 12) -> list[str]:
+    seed = f"{row['content_seed']}|{row.get('_stage5_global_rank',0)}|stage5-profile-pack"
+    out: list[str] = []
+    cursor = 0
+    while len(out) < size:
+        h = hashlib.sha256(f"{seed}|{cursor}".encode("utf-8")).hexdigest()
+        cursor += 1
+        item = STAGE5_PROFILE_PHRASES[int(h[:12], 16) % len(STAGE5_PROFILE_PHRASES)]
+        if item not in out:
+            out.append(item)
+    return out
 
 
 def install_stage5_scaled_guide(g, s4) -> None:
-    """Extend Stage 4 without adding prose or changing the frozen page structure.
-
-    Lane 0 remains byte-for-byte compatible with the Stage 4 guide. For later
-    100-row lanes, only repeated focus/theme/method vocabulary is replaced with
-    lane-specific audited decision-support language of similar length.
-    """
+    """Keep Stage 4 syntax/length while giving every locality a distinct vocabulary vector."""
     base_guide = g.guide
-    stage4_method_notes = [
-        "먼저 현재 상태를 확인하고 다음에 다시 볼 항목을 남깁니다.",
-        "가까운 일정에 맞춰 확인 순서를 다시 배치합니다.",
-        "반복되는 원인을 찾고 수정된 범위를 새 조건에서 다시 봅니다.",
-        "설명한 내용을 실제 문제나 장면에 바로 적용합니다.",
-        "자료나 질문을 바꿔도 같은 기준을 다시 쓸 수 있는지 확인합니다.",
-        "시간을 두고 다시 꺼내도 같은 행동이 남는지 확인합니다.",
-        "처리 시간과 순서를 함께 기록해 수행 과정을 비교합니다.",
-        "되는 조건과 흔들리는 조건을 나눠 차이를 확인합니다.",
-        "다음에 다시 볼 행동을 짧은 기록으로 남깁니다.",
-        "이번 목표에 직접 필요한 범위만 남기고 나머지는 뒤로 미룹니다.",
-    ]
-    process_notes = [
-        "현재 상태와 변화 지점을 분리해 기록하고 다음 재확인 시점을 남깁니다.",
-        "전후 조건을 맞춰 대조하고 새 자료에서 같은 차이가 남는지 다시 검사합니다.",
-        "설명보다 직접 수행을 먼저 두고 출력이 끝까지 이어지는지 결과로 확인합니다.",
-        "가까운 목표에 필요한 항목을 앞에 두고 나머지 범위는 실제 일정에 맞춰 조정합니다.",
-    ]
 
     def guide(row: dict, slot: int) -> str:
         base_text = base_guide(row, slot)
-        lane, process_idx, terms = _stage5_lane_terms(row)
-        if lane == 0:
-            return base_text
-
-        _, _, theme_idx, method_idx = _stage5_profile(row)
+        pack = _stage5_profile_pack(row)
+        _, _, theme_idx, _ = _stage5_profile(row)
         base_terms = s4.PROFILE_TERMS[theme_idx]
         old_a = base_terms[slot % len(base_terms)]
         old_b = base_terms[(slot + 2) % len(base_terms)]
-        new_a = _stage5_pick(row, slot, terms, "guide-focus-a")
-        new_b = _stage5_pick(row, slot + 7, terms, "guide-focus-b")
-        if new_a == new_b:
-            new_b = terms[(terms.index(new_a) + 1) % len(terms)]
 
-        text = base_text.replace(f"'{old_a}', '{old_b}'", f"'{new_a}', '{new_b}'", 1)
-        text = text.replace(s4.PROFILE_THEME_NOTE[theme_idx], STAGE5_LENSES[(lane % len(STAGE5_LENSES))]["note"], 1)
-        text = text.replace(stage4_method_notes[method_idx], process_notes[process_idx], 1)
+        a = pack[slot % len(pack)]
+        b = pack[(slot + 5) % len(pack)]
+        c = pack[(slot + 8) % len(pack)]
+        d = pack[(slot + 11) % len(pack)]
+
+        text = base_text.replace(f"'{old_a}', '{old_b}'", f"'{a}', '{b}'", 1)
+        row_note = f"{a} · {b} · {c} · {d} 기준을 함께 확인합니다."
+        text = text.replace(s4.PROFILE_THEME_NOTE[theme_idx], row_note, 1)
         return text
 
     g.guide = guide
 
 
-def install_stage5_scaled_longform(g) -> None:
-    """Replace one sentence per Stage 4 longform paragraph for lanes after lane 0."""
-    base_make = g.make_stage4_unique_longform
-    templates = [
-        "비교 기준을 {a} / {b} 두 항목으로 나누고 변화 시점을 기록해 다음 확인에서도 같은 기준을 사용합니다.",
-        "대조 기준을 {a} / {b} 두 항목으로 잡고 조건을 맞춘 새 자료에서 차이를 다시 검증합니다.",
-        "수행 기준을 {a} / {b} 두 항목으로 두고 설명이 실제 응답이나 문제 처리로 이어지는지 확인합니다.",
-        "우선순위를 {a} / {b} 두 항목으로 나눠 가까운 일정에 필요한 범위부터 배치합니다.",
-    ]
-
-    def make(row: dict, d: dict) -> list[str]:
-        paras = base_make(row, d)
-        lane, process_idx, terms = _stage5_lane_terms(row)
-        if lane == 0:
-            return paras
-
-        out = []
-        for slot, para in enumerate(paras):
-            parts = re.split(r"(?<=\.)\s+", para)
-            if len(parts) < 3:
-                out.append(para)
-                continue
-            a = _stage5_pick(row, slot, terms, "long-a")
-            b = _stage5_pick(row, slot + 13, terms, "long-b")
-            if a == b:
-                b = terms[(terms.index(a) + 1) % len(terms)]
-            parts[1] = templates[process_idx].format(a=a, b=b)
-            out.append(" ".join(parts))
-        return out
-
-    g.make_stage4_unique_longform = make
-
-
 def stage5_row_signature_block(s4, row: dict, intent: str) -> str:
-    """Preserve Stage 4 block shape and replace only the repeating lane note."""
+    """Keep the Stage 4 block and replace its single repeated theme note with row-specific terms."""
     raw = s4.row_signature_block(row, intent)
-    lane, process_idx, terms = _stage5_lane_terms(row)
-    if lane == 0:
-        return raw
     _, _, theme_idx, _ = _stage5_profile(row)
-    old_note = s4.PROFILE_THEME_NOTE[theme_idx]
-    a = _stage5_pick(row, 3, terms, "row-a")
-    b = _stage5_pick(row, 9, terms, "row-b")
-    if a == b:
-        b = terms[(terms.index(a) + 1) % len(terms)]
-    notes = [
-        f"판단 기준을 {a} / {b} 두 항목으로 나눠 다음 점검 기록으로 남깁니다.",
-        f"대조 기준을 {a} / {b} 두 항목으로 잡고 새 자료에서 다시 확인합니다.",
-        f"수행 기준을 {a} / {b} 두 항목으로 두고 실제 출력까지 이어지는지 확인합니다.",
-        f"우선순위를 {a} / {b} 두 항목으로 나눠 현재 일정에 맞는 범위를 정합니다.",
-    ]
-    return raw.replace("<p>" + old_note + "</p>", "<p>" + notes[process_idx] + "</p>", 1)
+    pack = _stage5_profile_pack(row)
+    note = f"{pack[1]} · {pack[4]} · {pack[7]} · {pack[10]} 기준을 다음 판단 순서에 함께 반영합니다."
+    return raw.replace("<p>" + s4.PROFILE_THEME_NOTE[theme_idx] + "</p>", "<p>" + note + "</p>", 1)
 
 
 def load_module(name: str, path: Path):
@@ -364,7 +311,6 @@ def main() -> None:
     s4.install_stage4_guide_pool(g)
     install_stage5_scaled_guide(g, s4)
     s4.install_stage4_unique_longform(g)
-    install_stage5_scaled_longform(g)
     svc = load_module("service_gold_stage5", ROOT / "scripts/generate-v45-full-depth-pilot.py")
     ex = load_module("exam_gold_stage5", ROOT / "scripts/generate-v45-exam-pilot.py")
 
