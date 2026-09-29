@@ -96,3 +96,5 @@ jobs:
             stage5-full-generation/shard-*/STAGE5_SHARD_MANIFEST_V1.json
           retention-days: 7
           if-no-files-found: warn
+
+# trigger: signature-lexicon-v2
