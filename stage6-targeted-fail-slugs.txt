@@ -72,3 +72,5 @@ seoul-yeongdeungpo-singilje4dong
 seoul-yeongdeungpo-yangpyeongje2dong
 seoul-yongsan-wonhyoroje1dong
 seoul-yongsan-yongsan2gadong
+incheon-gyeyang-gyeyang2dong
+incheon-michuhol-juan7dong
