@@ -1,0 +1,88 @@
+name: Stage 6 Global Cross-Shard QA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  stage6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Stage 6 analysis dependencies
+        run: python3 -m pip install --disable-pip-version-check --quiet numpy scipy scikit-learn
+
+      - name: Re-run preserved 95 URLs and 74 redirects regression
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+      - name: Download all 26 Stage 5 shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: stage5-shard-*
+          path: stage5-packages
+          merge-multiple: true
+          run-id: 36537940131
+          github-token: ${{ github.token }}
+
+      - name: Extract all 66,937 generated pages
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          mkdir -p stage5-work
+          test "$(find stage5-packages -name '*.tar.zst' | wc -l)" -eq 26
+          for f in stage5-packages/*.tar.zst; do
+            tar --zstd -xf "$f" -C stage5-work
+          done
+          test "$(find stage5-work/stage5-full-generation -name '*.html' | wc -l)" -eq 66937
+
+      - name: Run Stage 6 global cross-shard duplicate QA
+        run: |
+          python3 scripts/stage6-global-cross-shard-qa.py \
+            --work-root stage5-work \
+            --output stage6-global \
+            --expected-pages 66937
+
+      - name: Assert Stage 6 final safety gate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('stage6-global/STAGE6_GLOBAL_CROSS_SHARD_QA_V1.json').read_text(encoding='utf-8'))
+          assert q['status']=='PASS_STAGE6_GLOBAL_CROSS_SHARD_QA_NOT_PRODUCTION',q['status']
+          assert q['page_count']==66937
+          assert q['locality_count']==5149
+          assert q['intent_count']==13
+          assert q['cosine_failure_count']==0
+          assert q['jaccard5_failure_count']==0
+          assert q['max_cosine'] < 0.82
+          assert q['max_hashed_jaccard5_screen'] < 0.24
+          assert q['safety']['production_deploy'] is False
+          assert q['safety']['main_merge'] is False
+          print(json.dumps({
+            'status':'PASS',
+            'pages':q['page_count'],
+            'cross_shard_pairs':q['scope']['cross_shard_cosine_pairs'],
+            'max_cosine':q['max_cosine'],
+            'max_jaccard5_screen':q['max_hashed_jaccard5_screen'],
+            'max_exact_jaccard5_checked':q['max_exact_jaccard5_checked'],
+          },ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage6-global-cross-shard-review
+          path: stage6-global/STAGE6_GLOBAL_CROSS_SHARD_QA_V1.json
+          retention-days: 14
+          if-no-files-found: error
