@@ -1,4 +1,4 @@
-name: Stage 5 Representative 3-Shard Gate
+name: Stage 5 Representative 4-Shard Gate
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: stage5-representative-3shards-${{ github.ref }}
+  group: stage5-representative-4shards-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -39,7 +39,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 12, 25]
+        shard: [0, 12, 17, 25]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -97,4 +97,4 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-# trigger: final-edge-case-v4
+# trigger: final-incheon-collision-v5
