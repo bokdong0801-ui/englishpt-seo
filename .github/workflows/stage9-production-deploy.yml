@@ -2,13 +2,6 @@ name: Stage 9 Production Deploy
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - reset-english-service-seo-v3
-    paths:
-      - '.github/workflows/stage9-production-deploy.yml'
-      - 'scripts/build-stage9-production-release.py'
-      - 'STAGE9_PRODUCTION_DEPLOY_APPROVAL.json'
 
 permissions:
   contents: read
@@ -51,22 +44,29 @@ jobs:
           print('PASS explicit Stage 9 approval')
           PY
 
-      - name: Verify Netlify credentials are configured
+      - name: Verify Netlify auth token is configured
         run: |
-          missing=0
-          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
-            echo "::error::NETLIFY_AUTH_TOKEN (or NETLIFY_TOKEN) GitHub secret is missing"
-            missing=1
-          else
-            echo "PASS Netlify auth token present (value hidden)"
-          fi
+          test -n "$NETLIFY_AUTH_TOKEN" || { echo "::error::NETLIFY_AUTH_TOKEN (or NETLIFY_TOKEN) GitHub secret is missing"; exit 1; }
+          echo "PASS Netlify auth token present (value hidden)"
+
+      - name: Resolve Netlify project for englishpt.kr
+        run: |
           if [ -z "$NETLIFY_SITE_ID" ]; then
-            echo "::error::NETLIFY_SITE_ID/ENGLISHPT_NETLIFY_SITE_ID secret or variable is missing"
-            missing=1
+            curl -fsS \
+              -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+              "https://api.netlify.com/api/v1/sites/englishpt.kr" \
+              -o /tmp/netlify-site.json
+            SITE_ID="$(python3 - <<'PY'
+          import json
+          print(json.load(open('/tmp/netlify-site.json',encoding='utf-8'))['id'])
+          PY
+            )"
+            test -n "$SITE_ID"
+            echo "NETLIFY_SITE_ID=$SITE_ID" >> "$GITHUB_ENV"
+            echo "PASS resolved Netlify project from englishpt.kr (id hidden)"
           else
-            echo "PASS Netlify site id present (value hidden)"
+            echo "PASS using configured Netlify site id (value hidden)"
           fi
-          exit "$missing"
 
       - name: Re-run preserved 95 URLs and 74 redirects regression
         run: python3 scripts/regression_95_and_batch_manifest.py
