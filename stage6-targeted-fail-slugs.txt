@@ -166,3 +166,7 @@ busan-sasang-samrakdong
 daegu-dalseo-wolseongdong
 chungbuk-jecheon-goamdong
 gyeonggi-suwon-yeongtong-iuidong
+gyeongbuk-gimcheon-daesindong
+seoul-jongno-haengchondong
+busan-yeonje-yeonsanje1dong
+daegu-suseong-daeheungdong

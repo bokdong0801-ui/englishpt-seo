@@ -691,6 +691,74 @@ def apply_stage5_final_exact_lexicon(raw: str, row: dict, intent: str) -> str:
     return "".join(parts)
 
 
+STAGE5_FINAL_PAIR_OVERRIDES = {
+    ("gyeongbuk-gimcheon-daesindong","opic"): {
+        "전환":["변경","변화","이동","전환"],
+        "계속":["지속","유지","거듭","계속"],
+        "검토합니다":["확인합니다","점검합니다","살핍니다","검토합니다"],
+    },
+    ("busan-yeonje-yeonsanje1dong","toefl"): {
+        "전환":["변경","변화","이동","전환"],
+        "검토합니다":["확인합니다","점검합니다","살핍니다","검토합니다"],
+        "환경을":["여건을","상황을","조건을","환경을"],
+        "조건과":["여건과","환경과","상황과","조건과"],
+    },
+}
+
+
+def apply_stage5_final_pair_override(raw: str, row: dict, intent: str) -> str:
+    """Spread only the last Stage 6 collision pages across natural synonyms."""
+    mapping = STAGE5_FINAL_PAIR_OVERRIDES.get((row["region_slug"], intent))
+    if not mapping:
+        return raw
+    counters = Counter()
+    offsets = {
+        token: int(hashlib.sha256(
+            f"{row['region_slug']}|{intent}|{token}|stage5-final-pair-v1".encode("utf-8")
+        ).hexdigest()[:8], 16)
+        for token in mapping
+    }
+
+    def replace_unquoted(text: str) -> str:
+        def repl(m):
+            token = m.group(0)
+            values = mapping.get(token)
+            if not values:
+                return token
+            idx = (offsets[token] + counters[token]) % len(values)
+            counters[token] += 1
+            return values[idx]
+        return STAGE5_TOKEN_RE.sub(repl, text)
+
+    def replace_text(text: str) -> str:
+        quote_parts = re.split(r"('[^']*')", text)
+        return "".join(part if i % 2 else replace_unquoted(part) for i, part in enumerate(quote_parts))
+
+    parts = re.split(r"(<[^>]+>)", raw)
+    skip_tag = None
+    for i, part in enumerate(parts):
+        if not part:
+            continue
+        if part.startswith("<"):
+            m = re.match(r"<\s*(/?)\s*([A-Za-z0-9]+)", part)
+            if not m:
+                continue
+            closing, tag = m.group(1), m.group(2).lower()
+            if skip_tag:
+                if closing and tag == skip_tag:
+                    skip_tag = None
+                continue
+            if not closing and tag in {"script","style","h1","title"}:
+                skip_tag = tag
+                continue
+            if not closing and tag == "p" and re.search(r'class="[^"]*\bkicker\b[^"]*"', part):
+                skip_tag = "p"
+                continue
+        elif skip_tag is None:
+            parts[i] = replace_text(part)
+    return "".join(parts)
+
+
 def _stage5_expected_particle(label: str, particle: str) -> str:
     label = label.rstrip()
     if not label:
@@ -1075,6 +1143,7 @@ def main() -> None:
             raw = apply_stage5_global_lexicon(raw, row, intent)
             raw = apply_stage5_stem_lexicon(raw, row, intent)
             raw = apply_stage5_final_exact_lexicon(raw, row, intent)
+            raw = apply_stage5_final_pair_override(raw, row, intent)
             raw = fix_stage5_quoted_particles(raw)
             raw = compact_stage5_visible_text(raw, s4.visible)
             process_page(row, intent, "service", f"{row['dong_name']} {p['service_h1']}", p["blueprint"], raw)
@@ -1095,6 +1164,7 @@ def main() -> None:
             raw = apply_stage5_global_lexicon(raw, row, intent)
             raw = apply_stage5_stem_lexicon(raw, row, intent)
             raw = apply_stage5_final_exact_lexicon(raw, row, intent)
+            raw = apply_stage5_final_pair_override(raw, row, intent)
             raw = fix_stage5_quoted_particles(raw)
             raw = compact_stage5_visible_text(raw, s4.visible)
             process_page(row, intent, "exam", f"{row['dong_name']} {e['service']}", e["blueprint"], raw, exam=key)
