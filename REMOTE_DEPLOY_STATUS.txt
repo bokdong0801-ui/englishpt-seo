@@ -4,11 +4,27 @@ Repository: bokdong0801-ui/englishpt-seo
 Host selected: Netlify
 Final production domain: https://englishpt.kr
 Final domain status: CONFIRMED
-Stage 6 global QA: PASS
-Stage 7 deploy preview / rollback: PASS
-Public production deployment: NOT YET EXECUTED
-Main branch merge: NOT YET EXECUTED
-Sitemap live submission: NOT YET EXECUTED
 
-The release is ready for the Stage 8 explicit production-approval gate.
-Until that gate is explicitly executed, keep production_deploy=false, main_merge=false and sitemap_live=false.
+QA / RELEASE GATES
+- Stage 6 global cross-shard QA: PASS
+- Stage 6 incremental final proof: PASS
+- Stage 7 deploy preview / rollback: PASS
+- Stage 8 production approval packet: PASS
+- Stage 8 run: 36694845460
+- Deploy HTML total: 67,032
+- New pages: 66,937
+- Preserved pages: 95
+- Sitemap URLs: 67,032
+- Sitemap shards: 135
+- Legacy permanent redirects: 74
+- Proven shard packages: 26
+- Rollback package: AVAILABLE
+
+CURRENT SAFETY STATE
+- Public production deployment: NOT YET EXECUTED
+- Main branch merge: NOT YET EXECUTED
+- Sitemap live submission: NOT YET EXECUTED
+- Bulk indexing request: NOT YET EXECUTED
+
+NEXT STAGE
+STAGE9_PRODUCTION_DEPLOY requires explicit production-deploy approval before any public release.
