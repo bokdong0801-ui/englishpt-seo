@@ -2,6 +2,11 @@ name: Stage 9 Production Deploy
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-run-trigger.txt'
 
 permissions:
   contents: read
