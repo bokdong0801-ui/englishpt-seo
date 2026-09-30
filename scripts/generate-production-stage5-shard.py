@@ -693,15 +693,16 @@ def apply_stage5_final_exact_lexicon(raw: str, row: dict, intent: str) -> str:
 
 STAGE5_FINAL_PAIR_OVERRIDES = {
     ("gyeongbuk-gimcheon-daesindong","opic"): {
-        "전환":["변경","변화","이동","전환"],
-        "계속":["지속","유지","거듭","계속"],
-        "검토합니다":["확인합니다","점검합니다","살핍니다","검토합니다"],
+        "전환":["변경","조정"],
+    },
+    ("seoul-jongno-haengchondong","opic"): {
+        "전환":["변화","이행"],
     },
     ("busan-yeonje-yeonsanje1dong","toefl"): {
-        "전환":["변경","변화","이동","전환"],
-        "검토합니다":["확인합니다","점검합니다","살핍니다","검토합니다"],
-        "환경을":["여건을","상황을","조건을","환경을"],
-        "조건과":["여건과","환경과","상황과","조건과"],
+        "전환":["변환","재편"],
+    },
+    ("daegu-suseong-daeheungdong","toefl"): {
+        "전환":["교체","수정"],
     },
 }
 
