@@ -143,7 +143,7 @@ def main() -> None:
     shutil.copy2(ROOT / "redirects.json", release / "redirects.json")
 
     # Confirm the final 26 proven page packages are present and fingerprint them.
-    packages = sorted(package_root.glob("stage5-shard-*-of-026.tar.zst"))
+    packages = sorted(package_root.rglob("stage5-shard-*-of-026.tar.zst"))
     if len(packages) != EXPECTED_PACKAGES:
         failures.append({"stage5_package_count": len(packages)})
     package_manifest = [
@@ -155,7 +155,7 @@ def main() -> None:
         encoding="utf-8",
     )
 
-    rollback_candidates = list(package_root.glob("stage7-rollback-95-baseline.tar.zst"))
+    rollback_candidates = list(package_root.rglob("stage7-rollback-95-baseline.tar.zst"))
     if len(rollback_candidates) != 1:
         failures.append({"rollback_package_count": len(rollback_candidates)})
 
