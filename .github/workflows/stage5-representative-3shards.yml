@@ -97,4 +97,4 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-# trigger: final-incheon-collision-v5
+# trigger: stage6-stem-lexicon-pass-v6
