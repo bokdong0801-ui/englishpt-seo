@@ -272,6 +272,59 @@ STAGE5_SIGNATURE_LEXICON = {
 }
 
 
+
+STAGE5_GLOBAL_LEXICON = {
+    "점검합니다":["점검합니다","확인합니다","검토합니다","살핍니다","봅니다"],
+    "다시":["다시","재차","거듭","새로"],
+    "새로":["새로","다시","재차","거듭"],
+    "상황을":["상황을","조건을","여건을","맥락을"],
+    "전환":["전환","변경","변화","이동"],
+    "질문을":["질문을","질의를","물음을"],
+    "자료나":["자료나","교재나","예시나"],
+    "바꿔도":["바꿔도","고쳐도"],
+    "살핍니다":["살핍니다","봅니다"],
+    "검토합니다":["검토합니다","확인합니다","점검합니다","살펴봅니다"],
+    "변화":["변화","변동","전환","차이"],
+    "확인합니다":["확인합니다","검토합니다","점검합니다","살핍니다"],
+    "항목은":["항목은","요소는","내용은","기준은","사항은"],
+    "시간":["시간","시점","기간"],
+    "계속되는":["계속되는","이어지는","거듭되는"],
+    "살펴봅니다":["살펴봅니다","확인합니다","검토합니다","점검합니다"],
+    "대조합니다":["대조합니다","비교합니다","검토합니다","확인합니다"],
+    "여건을":["여건을","조건을","상황을","환경을"],
+    "중심으로":["중심으로","기준으로","축으로"],
+    "척도를":["척도를","기준을","잣대를"],
+    "비교합니다":["비교합니다","대조합니다","검토합니다","확인합니다"],
+    "검토할":["검토할","확인할","점검할","살필"],
+    "누적":["누적","축적","합산"],
+    "간격":["간격","주기"],
+    "부분을":["부분을","영역을","구간을","범위를"],
+    "구간을":["구간을","영역을","범위를","부분을"],
+    "변하는":["변하는","바뀌는","달라진"],
+    "제한":["제한","제약","한계"],
+    "전제를":["전제를","조건을","가정을"],
+    "측정합니다":["측정합니다","점검합니다","확인합니다","검토합니다"],
+    "점검할":["점검할","확인할","검토할","살필"],
+    "조건과":["조건과","상황과","환경과","여건과"],
+    "조건을":["조건을","상황을","여건을","환경을"],
+    "조건에서":["조건에서","상황에서","환경에서","여건에서"],
+    "범주를":["범주를","범위를","영역을"],
+    "원인을":["원인을","이유를","요인을"],
+    "흔들리는":["흔들리는","약해지는","변하는"],
+    "차례":["차례","순서","단계"],
+    "재검토":["재검토","재확인","점검"],
+    "수정된":["수정된","고쳐진","바뀐"],
+    "변경":["변경","수정","전환"],
+    "요점은":["요점은","핵심은","내용은"],
+    "척도":["척도","기준","잣대"],
+    "문항":["문항","문제","질문"],
+    "상황":["상황","조건","환경","맥락"],
+    "재확인":["재확인","재검토","점검"],
+    "내용은":["내용은","항목은","사항은","정보는"],
+    "지속":["지속","유지","계속"],
+    "다음":["다음","이후","후속","차후"],
+}
+
 def apply_stage5_signature_lexicon(raw: str, row: dict, intent: str) -> str:
     """Break rank+100 lexical collisions without increasing visible text length."""
     rank = int(row.get("_stage5_global_rank", 0))
@@ -291,6 +344,52 @@ def apply_stage5_signature_lexicon(raw: str, row: dict, intent: str) -> str:
                 f"{row['region_slug']}|{intent}|{token}|stage5-signature-v3".encode("utf-8")
             ).hexdigest()[:8], 16)
             idx = (rank + lane * 37 + salt + regional_salt) % len(values)
+            return values[idx]
+        return STAGE5_TOKEN_RE.sub(repl, text)
+
+    parts = re.split(r"(<[^>]+>)", raw)
+    skip_tag = None
+    for i, part in enumerate(parts):
+        if not part:
+            continue
+        if part.startswith("<"):
+            m = re.match(r"<\s*(/?)\s*([A-Za-z0-9]+)", part)
+            if not m:
+                continue
+            closing, tag = m.group(1), m.group(2).lower()
+            if skip_tag:
+                if closing and tag == skip_tag:
+                    skip_tag = None
+                continue
+            if not closing and tag in {"script", "style", "h1", "title"}:
+                skip_tag = tag
+                continue
+            if not closing and tag == "p" and re.search(r'class="[^"]*\bkicker\b[^"]*"', part):
+                skip_tag = "p"
+                continue
+        elif skip_tag is None:
+            parts[i] = replace_text(part)
+    return "".join(parts)
+
+
+
+def apply_stage5_global_lexicon(raw: str, row: dict, intent: str) -> str:
+    """Diversify high-frequency study vocabulary after the signature pass."""
+    rank = int(row.get("_stage5_global_rank", 0))
+    lane = rank // 100
+    slug = row["region_slug"]
+
+    def replace_text(text: str) -> str:
+        def repl(m):
+            token = m.group(0)
+            values = STAGE5_GLOBAL_LEXICON.get(token)
+            if not values:
+                return token
+            values = [v for v in values if len(v) <= len(token)] or [token]
+            salt = int(hashlib.sha256(
+                f"{slug}|{intent}|{token}|stage5-global-v1".encode("utf-8")
+            ).hexdigest()[:8], 16)
+            idx = (rank + lane * 53 + salt) % len(values)
             return values[idx]
         return STAGE5_TOKEN_RE.sub(repl, text)
 
@@ -696,6 +795,7 @@ def main() -> None:
             raw = raw.replace("Stage 3 dry-run · production 미배포", "Stage 5 full generation · production 미배포")
             raw = apply_stage5_natural_lexicon(raw, row, intent)
             raw = apply_stage5_signature_lexicon(raw, row, intent)
+            raw = apply_stage5_global_lexicon(raw, row, intent)
             raw = fix_stage5_quoted_particles(raw)
             raw = compact_stage5_visible_text(raw, s4.visible)
             process_page(row, intent, "service", f"{row['dong_name']} {p['service_h1']}", p["blueprint"], raw)
@@ -713,6 +813,7 @@ def main() -> None:
             raw = raw.replace("Stage 3 dry-run · production 미배포", "Stage 5 full generation · production 미배포")
             raw = apply_stage5_natural_lexicon(raw, row, intent)
             raw = apply_stage5_signature_lexicon(raw, row, intent)
+            raw = apply_stage5_global_lexicon(raw, row, intent)
             raw = fix_stage5_quoted_particles(raw)
             raw = compact_stage5_visible_text(raw, s4.visible)
             process_page(row, intent, "exam", f"{row['dong_name']} {e['service']}", e["blueprint"], raw, exam=key)
