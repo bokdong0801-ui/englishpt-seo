@@ -56,7 +56,8 @@ jobs:
           python3 scripts/stage6-global-cross-shard-qa.py \
             --work-root stage5-work \
             --output stage6-global \
-            --expected-pages 66937
+            --expected-pages 66937 \
+            --block-size 512
 
       - name: Assert Stage 6 final safety gate
         run: |
