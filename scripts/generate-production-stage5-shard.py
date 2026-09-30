@@ -418,6 +418,124 @@ def apply_stage5_global_lexicon(raw: str, row: dict, intent: str) -> str:
     return "".join(parts)
 
 
+STAGE5_STEM_LEXICON = {
+    "학습":["공부","훈련"],
+    "수업":["지도","과정"],
+    "문제":["문항","과제"],
+    "목표":["방향","과제"],
+    "답변":["응답"],
+    "응답":["답변","반응"],
+    "연습":["훈련","실습"],
+    "시험":["평가"],
+    "정리":["요약","구성"],
+    "내용":["사항","정보"],
+    "방법":["방식","절차"],
+    "이유":["원인","근거"],
+    "단계":["순서","과정"],
+    "점수":["성적"],
+    "표현":["문구","발화"],
+    "상황":["조건","환경","여건"],
+    "기준":["척도","잣대"],
+    "기록":["메모","정리"],
+    "확인":["점검","검토"],
+    "시간":["시점","기간"],
+    "과정":["절차","흐름"],
+    "결과":["성과","결론"],
+    "부분":["영역","구간"],
+    "선택":["결정","판단"],
+    "자료":["교재","예시"],
+    "오답":["오류","실수"],
+    "일정":["계획","시점"],
+    "수행":["실행","실천"],
+    "활용":["적용","사용"],
+    "집중":["몰입","초점"],
+    "질문":["질의","물음"],
+    "피드백":["첨삭","교정"],
+    "전략":["방식","설계"],
+    "설명":["안내","해설"],
+    "평가":["측정","검토"],
+    "원인":["이유","요인"],
+    "단어":["어휘"],
+    "듣기":["청취"],
+    "말하기":["발화"],
+    "읽기":["독해"],
+    "쓰기":["작문"],
+    "교정":["첨삭","수정"],
+    "실력":["역량","수준"],
+    "수준":["단계","역량"],
+    "계획":["설계","일정"],
+    "관리":["점검","운영"],
+    "준비":["대비","정비"],
+    "변화":["전환","차이"],
+    "주제":["화제","내용"],
+    "발화":["응답","표현"],
+}
+STAGE5_STEM_SUFFIXES = {
+    "은","는","이","가","을","를","과","와",
+    "의","에","에서","에게","도","만","부터","까지","보다","처럼","마다",
+    "에서는","에도","에서만","에게도","에게는","까지는","부터는",
+    "들","들은","들이","들을","들과","들도",
+}
+STAGE5_AGREE_PARTICLES = {"은","는","이","가","을","를","과","와"}
+
+
+def apply_stage5_stem_lexicon(raw: str, row: dict, intent: str) -> str:
+    """Diversify common study stems when Korean particles are attached."""
+    rank = int(row.get("_stage5_global_rank", 0))
+    slug = row["region_slug"]
+    stems = sorted(STAGE5_STEM_LEXICON, key=len, reverse=True)
+
+    def replace_unquoted(text: str) -> str:
+        def repl(m):
+            token = m.group(0)
+            for stem in stems:
+                if not token.startswith(stem) or len(token) <= len(stem):
+                    continue
+                suffix = token[len(stem):]
+                if suffix not in STAGE5_STEM_SUFFIXES:
+                    continue
+                values = [v for v in STAGE5_STEM_LEXICON[stem] if len(v) <= len(stem)]
+                if not values:
+                    return token
+                salt = int(hashlib.sha256(
+                    f"{slug}|{intent}|{token}|stage5-stem-v1".encode("utf-8")
+                ).hexdigest()[:8], 16)
+                alt = values[(rank * 17 + salt) % len(values)]
+                if suffix in STAGE5_AGREE_PARTICLES:
+                    suffix = _stage5_expected_particle(alt, suffix)
+                return alt + suffix
+            return token
+        return STAGE5_TOKEN_RE.sub(repl, text)
+
+    def replace_text(text: str) -> str:
+        parts = re.split(r"('[^']*')", text)
+        return "".join(part if i % 2 else replace_unquoted(part) for i, part in enumerate(parts))
+
+    parts = re.split(r"(<[^>]+>)", raw)
+    skip_tag = None
+    for i, part in enumerate(parts):
+        if not part:
+            continue
+        if part.startswith("<"):
+            m = re.match(r"<\s*(/?)\s*([A-Za-z0-9]+)", part)
+            if not m:
+                continue
+            closing, tag = m.group(1), m.group(2).lower()
+            if skip_tag:
+                if closing and tag == skip_tag:
+                    skip_tag = None
+                continue
+            if not closing and tag in {"script","style","h1","title"}:
+                skip_tag = tag
+                continue
+            if not closing and tag == "p" and re.search(r'class="[^"]*\bkicker\b[^"]*"', part):
+                skip_tag = "p"
+                continue
+        elif skip_tag is None:
+            parts[i] = replace_text(part)
+    return "".join(parts)
+
+
 def _stage5_expected_particle(label: str, particle: str) -> str:
     label = label.rstrip()
     if not label:
@@ -796,6 +914,7 @@ def main() -> None:
             raw = apply_stage5_natural_lexicon(raw, row, intent)
             raw = apply_stage5_signature_lexicon(raw, row, intent)
             raw = apply_stage5_global_lexicon(raw, row, intent)
+            raw = apply_stage5_stem_lexicon(raw, row, intent)
             raw = fix_stage5_quoted_particles(raw)
             raw = compact_stage5_visible_text(raw, s4.visible)
             process_page(row, intent, "service", f"{row['dong_name']} {p['service_h1']}", p["blueprint"], raw)
@@ -814,6 +933,7 @@ def main() -> None:
             raw = apply_stage5_natural_lexicon(raw, row, intent)
             raw = apply_stage5_signature_lexicon(raw, row, intent)
             raw = apply_stage5_global_lexicon(raw, row, intent)
+            raw = apply_stage5_stem_lexicon(raw, row, intent)
             raw = fix_stage5_quoted_particles(raw)
             raw = compact_stage5_visible_text(raw, s4.visible)
             process_page(row, intent, "exam", f"{row['dong_name']} {e['service']}", e["blueprint"], raw, exam=key)
