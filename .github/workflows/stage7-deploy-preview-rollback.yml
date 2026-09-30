@@ -1,0 +1,170 @@
+name: Stage 7 Sitemap Deploy Preview Rollback
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - '.github/workflows/stage7-deploy-preview-rollback.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: stage7-deploy-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stage7:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify preserved 95 URLs and 74 redirects
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+      - name: Download base 26 Stage 5 shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: stage5-shard-*
+          path: stage5-packages-base
+          merge-multiple: true
+          run-id: 36671864892
+          github-token: ${{ github.token }}
+
+      - name: Download final refreshed shard 1 and 8 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: stage5-final-shard-*
+          path: stage5-packages-refresh
+          merge-multiple: true
+          run-id: 36676434790
+          github-token: ${{ github.token }}
+
+      - name: Download successful Stage 6 global QA proof
+        uses: actions/download-artifact@v4
+        with:
+          name: stage6-global-cross-shard-review
+          path: stage6-global
+          run-id: 36677053139
+          github-token: ${{ github.token }}
+
+      - name: Download successful Stage 6 incremental proof
+        uses: actions/download-artifact@v4
+        with:
+          name: stage6-incremental-final-proof
+          path: stage6-incremental
+          run-id: 36677407709
+          github-token: ${{ github.token }}
+
+      - name: Assemble final proven 26-shard set
+        run: |
+          mkdir -p stage5-packages
+          cp stage5-packages-base/*.tar.zst stage5-packages/
+          rm -f stage5-packages/stage5-shard-002-of-026.tar.zst
+          rm -f stage5-packages/stage5-shard-009-of-026.tar.zst
+          cp stage5-packages-refresh/*.tar.zst stage5-packages/
+          test "$(find stage5-packages -name '*.tar.zst' | wc -l)" -eq 26
+          test -f stage5-packages/stage5-shard-002-of-026.tar.zst
+          test -f stage5-packages/stage5-shard-009-of-026.tar.zst
+
+      - name: Extract final 66,937-page proven set
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          mkdir -p stage7-work
+          for f in stage5-packages/*.tar.zst; do
+            tar --zstd -xf "$f" -C stage7-work
+          done
+          test "$(find stage7-work/stage5-full-generation -name '*.html' | wc -l)" -eq 66937
+
+      - name: Build Stage 7 sitemap deploy preview and rollback
+        run: |
+          python3 scripts/build-stage7-deploy-preview.py \
+            --work-root stage7-work \
+            --package-root stage5-packages \
+            --stage6-global stage6-global/STAGE6_GLOBAL_CROSS_SHARD_QA_V1.json \
+            --stage6-incremental stage6-incremental/STAGE6_INCREMENTAL_GLOBAL_PROOF_V1.json \
+            --output stage7-preview
+
+      - name: Assert Stage 7 safety and package gate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          assert q['status']=='PASS_STAGE7_DEPLOY_PREVIEW_ROLLBACK_READY_NOT_PRODUCTION',q['status']
+          assert q['counts']['new_pages']==66937
+          assert q['counts']['preserved_pages']==95
+          assert q['counts']['deploy_html_total']==67032
+          assert q['counts']['localities']==5149
+          assert q['counts']['intents']==13
+          assert q['counts']['legacy_redirects']==74
+          assert q['counts']['final_shard_packages']==26
+          assert q['sitemap_preview']['urls']==67032
+          assert q['sitemap_preview']['shards']==135
+          assert len(q['representative_13']['pages'])==13
+          assert q['source_proof']['stage6_global_status']=='PASS_STAGE6_GLOBAL_CROSS_SHARD_QA_NOT_PRODUCTION'
+          assert q['source_proof']['stage6_incremental_status']=='PASS_STAGE6_INCREMENTAL_GLOBAL_PROOF_NOT_PRODUCTION'
+          assert q['safety']['main_merge'] is False
+          assert q['safety']['production_deploy'] is False
+          assert q['safety']['sitemap_live'] is False
+          assert q['safety']['bulk_index_request'] is False
+          assert q['approval_gate']['next_stage']=='STAGE8_EXPLICIT_PRODUCTION_APPROVAL'
+          print(json.dumps({
+            'status':'PASS',
+            'new_pages':q['counts']['new_pages'],
+            'preserved':q['counts']['preserved_pages'],
+            'total':q['counts']['deploy_html_total'],
+            'sitemap_urls':q['sitemap_preview']['urls'],
+            'sitemap_shards':q['sitemap_preview']['shards'],
+            'redirects':q['counts']['legacy_redirects'],
+            'stage6_max_cosine':q['source_proof']['stage6_max_cosine'],
+            'next_stage':q['approval_gate']['next_stage'],
+          },ensure_ascii=False))
+          PY
+
+      - name: HTTP-check representative 13-page preview
+        run: |
+          python3 -m http.server 8000 --directory stage7-preview/sample-site >/tmp/stage7-http.log 2>&1 &
+          sleep 2
+          python3 - <<'PY'
+          import json, urllib.request
+          from pathlib import Path
+          q=json.loads(Path('stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          for row in q['representative_13']['pages']:
+              url='http://127.0.0.1:8000/'+row['file']
+              with urllib.request.urlopen(url,timeout=10) as r:
+                  assert r.status==200,(row['file'],r.status)
+                  body=r.read()
+                  assert b'<html' in body.lower(),row['file']
+          print('PASS representative 13 HTTP preview')
+          PY
+
+      - name: Package rollback baseline
+        run: |
+          tar -I 'zstd -19 -T0' -cf stage7-rollback-95-baseline.tar.zst -C stage7-preview rollback-root
+          tar -I 'zstd -19 -T0' -cf stage7-preview-metadata.tar.zst stage7-preview
+          ls -lh stage7-rollback-95-baseline.tar.zst stage7-preview-metadata.tar.zst
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage7-deploy-preview-rollback
+          path: |
+            stage7-preview/
+            stage7-rollback-95-baseline.tar.zst
+            stage7-preview-metadata.tar.zst
+            stage5-packages/*.tar.zst
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: error
