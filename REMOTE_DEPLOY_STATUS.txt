@@ -1,8 +1,14 @@
 REMOTE DEPLOY STATUS
-GitHub upload: COMPLETE
+GitHub preparation: COMPLETE
 Repository: bokdong0801-ui/englishpt-seo
 Host selected: Netlify
-Public deployment: PAUSED by user request
-Reason: final production domain has not been purchased/decided yet
+Final production domain: https://englishpt.kr
+Final domain status: CONFIRMED
+Stage 6 global QA: PASS
+Stage 7 deploy preview / rollback: PASS
+Public production deployment: NOT YET EXECUTED
+Main branch merge: NOT YET EXECUTED
+Sitemap live submission: NOT YET EXECUTED
 
-The repository is Netlify-ready. Once the final domain is chosen, replace the placeholder domain across canonical/Schema/sitemap/robots, then connect the repository to Netlify and deploy main.
+The release is ready for the Stage 8 explicit production-approval gate.
+Until that gate is explicitly executed, keep production_deploy=false, main_merge=false and sitemap_live=false.

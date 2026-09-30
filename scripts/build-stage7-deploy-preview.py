@@ -133,6 +133,13 @@ def main() -> None:
     if len(all_urls) != EXPECTED_TOTAL:
         failures.append({"total_sitemap_urls": [len(all_urls), EXPECTED_TOTAL]})
 
+    wrong_new_domain = [u for u in canonicals if not u.startswith(BASE_URL + "/")]
+    wrong_preserved_domain = [u for u in preserved_urls if not u.startswith(BASE_URL + "/")]
+    if wrong_new_domain:
+        failures.append({"new_canonical_domain_mismatch": wrong_new_domain[:10]})
+    if wrong_preserved_domain:
+        failures.append({"preserved_canonical_domain_mismatch": wrong_preserved_domain[:10]})
+
     global_qa = json.loads(Path(args.stage6_global).read_text(encoding="utf-8"))
     incremental = json.loads(Path(args.stage6_incremental).read_text(encoding="utf-8"))
     if global_qa.get("status") != "PASS_STAGE6_GLOBAL_CROSS_SHARD_QA_NOT_PRODUCTION":
@@ -245,7 +252,7 @@ def main() -> None:
     )
     (out / "robots.preview.txt").write_text(preview_robots, encoding="utf-8")
     (out / "robots.production.template.txt").write_text(
-        "User-agent: *\nAllow: /\n\nSitemap: {{FINAL_DOMAIN}}/sitemap-index.xml\n",
+        f"User-agent: *\nAllow: /\n\nSitemap: {BASE_URL}/sitemap-index.xml\n",
         encoding="utf-8",
     )
     safe_copy(ROOT / "_redirects", out / "_redirects.preview")
@@ -278,7 +285,7 @@ def main() -> None:
         },
         "sitemap_preview": {
             "base_url": BASE_URL,
-            "domain_status": "PLACEHOLDER_REQUIRES_EXPLICIT_FINAL_DOMAIN_CONFIRMATION",
+            "domain_status": "CONFIRMED_FINAL_DOMAIN",
             "live": False,
             "index": f"sitemaps/{index_name}",
             "shards": len(sitemap_names),
@@ -297,7 +304,9 @@ def main() -> None:
         },
         "approval_gate": {
             "next_stage": "STAGE8_EXPLICIT_PRODUCTION_APPROVAL",
-            "requires_final_domain": True,
+            "requires_final_domain": False,
+            "final_domain_confirmed": True,
+            "final_domain": BASE_URL,
             "requires_user_approval": True,
         },
         "failures": failures,
@@ -327,7 +336,7 @@ def main() -> None:
         "- Production deploy: false",
         "- Main merge: false",
         "- Sitemap live: false",
-        "- Final domain confirmation required before Stage 8.",
+        f"- Final domain: {BASE_URL} (confirmed)",
         "",
         "## Representative 13 URLs",
     ]

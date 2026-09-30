@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
-"""Replace the placeholder production domain across ENGLISH PT SEO files.
+"""Verify the locked ENGLISH PT production domain.
 
-Usage:
-  python scripts/set-domain.py https://example.com
-
-Run this once after the final domain is decided and before the first public deploy.
+The final production domain was confirmed as https://englishpt.kr on 2026-09-30.
+This script no longer performs an arbitrary domain migration; it verifies that the
+requested domain matches the locked production host.
 """
 from pathlib import Path
 import sys
 
-PLACEHOLDER = "https://englishpt.kr"
-TARGET_FILES = {"sitemap.xml", "robots.txt", "README_DEPLOY.txt"}
+FINAL_DOMAIN = "https://englishpt.kr"
+TARGET_FILES = {"sitemap.xml", "sitemap-index.xml", "robots.txt", "README_DEPLOY.txt", "REMOTE_DEPLOY_STATUS.txt"}
 
 
 def normalize_domain(value: str) -> str:
@@ -21,30 +20,28 @@ def normalize_domain(value: str) -> str:
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("Usage: python scripts/set-domain.py https://example.com")
+    domain = normalize_domain(sys.argv[1]) if len(sys.argv) == 2 else FINAL_DOMAIN
+    if domain != FINAL_DOMAIN:
+        print(f"ERROR: production domain is locked to {FINAL_DOMAIN}; received {domain}")
         return 2
 
-    domain = normalize_domain(sys.argv[1])
     root = Path(__file__).resolve().parents[1]
     files = list(root.glob("*.html"))
     files += [root / name for name in TARGET_FILES if (root / name).exists()]
 
-    changed_files = 0
-    replacements = 0
+    mismatches = []
+    checked = 0
     for path in files:
-        text = path.read_text(encoding="utf-8")
-        count = text.count(PLACEHOLDER)
-        if not count:
-            continue
-        path.write_text(text.replace(PLACEHOLDER, domain), encoding="utf-8")
-        changed_files += 1
-        replacements += count
-        print(f"updated {path.relative_to(root)}: {count} replacement(s)")
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        checked += 1
+        if "englishup.kr" in text or "example.com" in text or "{{FINAL_DOMAIN}}" in text:
+            mismatches.append(str(path.relative_to(root)))
 
-    print(f"done: {changed_files} file(s), {replacements} replacement(s), domain={domain}")
-    if changed_files == 0:
-        print("warning: placeholder domain was not found. It may already have been replaced.")
+    if mismatches:
+        print("ERROR: stale/placeholder domain references:", ", ".join(mismatches[:20]))
+        return 1
+
+    print(f"PASS: domain locked to {FINAL_DOMAIN}; checked {checked} repository file(s)")
     return 0
 
 

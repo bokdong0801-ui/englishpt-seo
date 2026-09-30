@@ -7,6 +7,9 @@ on:
       - reset-english-service-seo-v3
     paths:
       - '.github/workflows/stage7-deploy-preview-rollback.yml'
+      - 'scripts/build-stage7-deploy-preview.py'
+      - 'README_DEPLOY.txt'
+      - 'REMOTE_DEPLOY_STATUS.txt'
 
 permissions:
   contents: read
@@ -112,6 +115,11 @@ jobs:
           assert q['counts']['final_shard_packages']==26
           assert q['sitemap_preview']['urls']==67032
           assert q['sitemap_preview']['shards']==135
+          assert q['sitemap_preview']['base_url']=='https://englishpt.kr'
+          assert q['sitemap_preview']['domain_status']=='CONFIRMED_FINAL_DOMAIN'
+          assert q['approval_gate']['requires_final_domain'] is False
+          assert q['approval_gate']['final_domain_confirmed'] is True
+          assert q['approval_gate']['final_domain']=='https://englishpt.kr'
           assert len(q['representative_13']['pages'])==13
           assert q['source_proof']['stage6_global_status']=='PASS_STAGE6_GLOBAL_CROSS_SHARD_QA_NOT_PRODUCTION'
           assert q['source_proof']['stage6_incremental_status']=='PASS_STAGE6_INCREMENTAL_GLOBAL_PROOF_NOT_PRODUCTION'
@@ -132,6 +140,12 @@ jobs:
             'next_stage':q['approval_gate']['next_stage'],
           },ensure_ascii=False))
           PY
+
+      - name: Verify confirmed production-domain templates
+        run: |
+          grep -F "Sitemap: https://englishpt.kr/sitemap-index.xml" stage7-preview/robots.production.template.txt
+          grep -F "https://englishpt.kr/" stage7-preview/sitemaps/sitemap-stage7-preview-index.xml
+          ! grep -R -E "englishup\.kr|example\.com|\{\{FINAL_DOMAIN\}\}" stage7-preview/robots.production.template.txt stage7-preview/sitemaps
 
       - name: HTTP-check representative 13-page preview
         run: |
