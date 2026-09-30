@@ -53,9 +53,20 @@ jobs:
 
       - name: Verify Netlify credentials are configured
         run: |
-          test -n "$NETLIFY_AUTH_TOKEN" || { echo "::error::NETLIFY_AUTH_TOKEN (or NETLIFY_TOKEN) GitHub secret is missing"; exit 1; }
-          test -n "$NETLIFY_SITE_ID" || { echo "::error::NETLIFY_SITE_ID/ENGLISHPT_NETLIFY_SITE_ID secret or variable is missing"; exit 1; }
-          echo "PASS Netlify credentials present (values hidden)"
+          missing=0
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "::error::NETLIFY_AUTH_TOKEN (or NETLIFY_TOKEN) GitHub secret is missing"
+            missing=1
+          else
+            echo "PASS Netlify auth token present (value hidden)"
+          fi
+          if [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "::error::NETLIFY_SITE_ID/ENGLISHPT_NETLIFY_SITE_ID secret or variable is missing"
+            missing=1
+          else
+            echo "PASS Netlify site id present (value hidden)"
+          fi
+          exit "$missing"
 
       - name: Re-run preserved 95 URLs and 74 redirects regression
         run: python3 scripts/regression_95_and_batch_manifest.py
