@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "stage": "STAGE9_PRODUCTION_DEPLOY",
+  "approved": true,
+  "domain": "https://englishpt.kr",
+  "approval_basis": "Explicit user approval in ChatGPT conversation on 2026-09-30",
+  "approved_release": {
+    "stage7_run": 36694432423,
+    "stage8_run": 36694845460,
+    "deploy_html_total": 67032,
+    "new_pages": 66937,
+    "preserved_pages": 95,
+    "sitemap_shards": 135,
+    "legacy_redirects": 74
+  },
+  "indexing_transition": "Stage 9 changes the 66,937 generated pages from noindex,nofollow to index,follow before public deployment.",
+  "rollback": "Stage 7 95-page rollback baseline is automatically redeployed if live verification fails."
+}
