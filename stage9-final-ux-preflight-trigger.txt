@@ -1,1 +1,1 @@
-Run V4.4 production UI + Stage 9 Gold + Title V2 final preflight before Netlify preview.
+Run reader-friendly V4.4 + Stage 9 Gold preflight after humanizing visible copy and meta descriptions.
