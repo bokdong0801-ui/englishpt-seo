@@ -1,1 +1,1 @@
-Run Netlify domain diagnostic using confirmed default Netlify domain.
+Run Netlify domain diagnostic with public WHOIS routing fields.
