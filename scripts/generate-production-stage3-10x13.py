@@ -442,12 +442,24 @@ def render_page(row,d,intent,family,facts,svc,ex):
  intro2=f"{INTRO[d['intro_pattern']].split('.')[0]}. {guide(row,70)}"
  mid=guide(row,23)
  related=links(row,intent,svc,ex)
+ theme_class = (
+  {
+   "elem-tutor":"theme-elem intent-audience",
+   "mid-conv":"theme-mid intent-audience",
+   "high-conv":"theme-high intent-audience",
+   "univ-conv":"theme-univ intent-audience",
+   "jobseeker-conv":"theme-job intent-audience",
+   "biz-business-conv":"theme-worker intent-audience",
+   "housewife-conv":"theme-housewife intent-audience",
+  }.get(intent,"theme-generic intent-audience")
+  if family=="service" else "theme-test intent-test"
+ )
 
  return f'''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{esc(h1)} | ENGLISH PT</title><meta name="description" content="{esc(desc)}"><meta name="robots" content="noindex,nofollow"><link rel="canonical" href="{canonical}">
 <meta property="og:title" content="{esc(h1)} | ENGLISH PT"><meta property="og:url" content="{canonical}"><link rel="stylesheet" href="pilot.css">
 <script type="application/ld+json">{js}</script><script defer src="pilot.js"></script></head>
-<body class="theme-test" data-production-deploy="false">
+<body class="{theme_class}" data-production-deploy="false">
 <header><div class="wrap header"><a href="../englishpt.html" class="brand">ENGLISH PT</a><span>PRODUCTION DRY-RUN · noindex</span></div></header><main>
 <section class="hero"><div class="wrap"><p class="eyebrow">{esc(row["jurisdiction_full"])} · ENGLISH PT</p><h1>{esc(h1)}</h1><div class="hero-actions"><a class="btn primary" href="{PHONE_HREF}">{PHONE_LABEL}</a><a class="btn ghost" href="#detail">내용 보기</a><a class="btn ghost" href="#consultation-preview">상담 신청</a></div></div></section>
 {decision_strip(d,family)}
