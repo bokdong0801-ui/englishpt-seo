@@ -64,6 +64,14 @@ jobs:
           dig +short @ns1.hosting.co.kr A englishpt.kr || true
           echo "=== AUTHORITATIVE CNAME www.englishpt.kr @ ns1.hosting.co.kr ==="
           dig +short @ns1.hosting.co.kr CNAME www.englishpt.kr || true
+          echo "=== GOOGLE A englishpt.kr @ 8.8.8.8 ==="
+          dig +short @8.8.8.8 A englishpt.kr || true
+          echo "=== CLOUDFLARE A englishpt.kr @ 1.1.1.1 ==="
+          dig +short @1.1.1.1 A englishpt.kr || true
+          echo "=== GOOGLE CNAME www.englishpt.kr @ 8.8.8.8 ==="
+          dig +short @8.8.8.8 CNAME www.englishpt.kr || true
+          echo "=== CLOUDFLARE CNAME www.englishpt.kr @ 1.1.1.1 ==="
+          dig +short @1.1.1.1 CNAME www.englishpt.kr || true
 
       - name: Inspect public WHOIS routing fields only
         run: |
@@ -72,6 +80,13 @@ jobs:
           whois -h whois.nic.or.kr englishpt.kr 2>/dev/null \
             | grep -Ei 'Domain Name|Registered Date|Last Updated Date|Expiration Date|Authorized Agency|Host Name|Registrar|Name Server' \
             || true
+
+      - name: Probe Netlify custom domain directly at Netlify apex IP
+        run: |
+          echo "=== DIRECT ROBOTS VIA NETLIFY IP ==="
+          curl -sSIL --max-time 20 --resolve englishpt.kr:443:75.2.60.5 https://englishpt.kr/robots.txt || true
+          echo "=== DIRECT SITEMAP VIA NETLIFY IP ==="
+          curl -sSIL --max-time 20 --resolve englishpt.kr:443:75.2.60.5 https://englishpt.kr/sitemap-index.xml || true
 
       - name: Probe current endpoints
         run: |
