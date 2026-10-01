@@ -1,1 +1,1 @@
-Assign englishpt.kr to the approved Netlify production project and prepare Netlify DNS.
+Ensure englishpt.kr and www.englishpt.kr are assigned to the approved Netlify project.
