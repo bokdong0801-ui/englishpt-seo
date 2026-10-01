@@ -1,0 +1,1 @@
+Assign englishpt.kr to the approved Netlify production project and prepare Netlify DNS.
