@@ -1,1 +1,1 @@
-Re-run reader-friendly Stage 9 preflight after removing internal bottleneck terminology from all service pages.
+Run final reader-friendly Stage 9 preflight with locality names excluded from language QA.
