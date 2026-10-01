@@ -60,6 +60,10 @@ jobs:
           dig +short A www.englishpt.kr || true
           echo "=== NS englishpt.kr ==="
           dig +short NS englishpt.kr || true
+          echo "=== AUTHORITATIVE A englishpt.kr @ ns1.hosting.co.kr ==="
+          dig +short @ns1.hosting.co.kr A englishpt.kr || true
+          echo "=== AUTHORITATIVE CNAME www.englishpt.kr @ ns1.hosting.co.kr ==="
+          dig +short @ns1.hosting.co.kr CNAME www.englishpt.kr || true
 
       - name: Inspect public WHOIS routing fields only
         run: |
