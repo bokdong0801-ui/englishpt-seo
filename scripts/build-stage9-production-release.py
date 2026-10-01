@@ -5,12 +5,27 @@ from __future__ import annotations
 
 import argparse
 import html
+import importlib.util
 import json
 import re
 import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_module(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    if not spec or not spec.loader:
+        raise RuntimeError(path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+CLEAN_RENDERER = _load_module(
+    "stage9_clean_mass_renderer", ROOT / "scripts" / "stage9-clean-mass-renderer.py"
+)
 
 EXPECTED_NEW = 66937
 EXPECTED_PRESERVED = 95
@@ -265,14 +280,16 @@ def main() -> None:
     bad_domain_pages: list[str] = []
     bad_ui_pages: list[dict] = []
     for src in new_pages:
-        raw = src.read_text(encoding="utf-8")
-        raw, n = ROBOTS_RE.subn('<meta name="robots" content="index,follow">', raw, count=1)
-        raw, ui_problems = normalize_production_page(raw, src.name)
+        source_raw = src.read_text(encoding="utf-8")
+        raw, ui_problems = CLEAN_RENDERER.render_production_page(source_raw, src.name)
         if ui_problems:
             bad_ui_pages.append({"file": src.name, "problems": ui_problems})
-        if n != 1:
-            bad_robot_pages.append(src.name)
-        if "noindex" in raw.lower() or "nofollow" in raw.lower():
+        low = raw.lower()
+        if (
+            '<meta name="robots" content="index,follow">' not in low
+            or "noindex" in low
+            or "nofollow" in low
+        ):
             bad_robot_pages.append(src.name)
         canonical = re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']', raw, re.I)
         if not canonical or not canonical.group(1).startswith(BASE_URL + "/"):
@@ -382,6 +399,7 @@ def main() -> None:
         "source": {
             "stage7_status": q7.get("status"),
             "stage8_status": q8.get("status"),
+            "mass_renderer": "stage9-clean-gold-v1",
         },
         "failures": failures,
     }
