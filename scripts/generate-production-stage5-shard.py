@@ -167,7 +167,7 @@ def apply_stage5_natural_lexicon(raw: str, row: dict, intent: str) -> str:
                 if closing and tag == skip_tag:
                     skip_tag = None
                 continue
-            if not closing and tag in {"script", "style", "h1", "title"}:
+            if not closing and tag in {"script", "style", "h1", "h2", "h3", "title", "button", "summary", "label"}:
                 skip_tag = tag
                 continue
             if not closing and tag == "p" and re.search(r'class="[^"]*\bkicker\b[^"]*"', part):
@@ -361,7 +361,7 @@ def apply_stage5_signature_lexicon(raw: str, row: dict, intent: str) -> str:
                 if closing and tag == skip_tag:
                     skip_tag = None
                 continue
-            if not closing and tag in {"script", "style", "h1", "title"}:
+            if not closing and tag in {"script", "style", "h1", "h2", "h3", "title", "button", "summary", "label"}:
                 skip_tag = tag
                 continue
             if not closing and tag == "p" and re.search(r'class="[^"]*\bkicker\b[^"]*"', part):
@@ -407,7 +407,7 @@ def apply_stage5_global_lexicon(raw: str, row: dict, intent: str) -> str:
                 if closing and tag == skip_tag:
                     skip_tag = None
                 continue
-            if not closing and tag in {"script", "style", "h1", "title"}:
+            if not closing and tag in {"script", "style", "h1", "h2", "h3", "title", "button", "summary", "label"}:
                 skip_tag = tag
                 continue
             if not closing and tag == "p" and re.search(r'class="[^"]*\bkicker\b[^"]*"', part):
@@ -525,7 +525,7 @@ def apply_stage5_stem_lexicon(raw: str, row: dict, intent: str) -> str:
                 if closing and tag == skip_tag:
                     skip_tag = None
                 continue
-            if not closing and tag in {"script","style","h1","title"}:
+            if not closing and tag in {"script","style","h1","h2","h3","title","button","summary","label"}:
                 skip_tag = tag
                 continue
             if not closing and tag == "p" and re.search(r'class="[^"]*\bkicker\b[^"]*"', part):
@@ -680,7 +680,7 @@ def apply_stage5_final_exact_lexicon(raw: str, row: dict, intent: str) -> str:
                 if closing and tag == skip_tag:
                     skip_tag = None
                 continue
-            if not closing and tag in {"script", "style", "h1", "title"}:
+            if not closing and tag in {"script", "style", "h1", "h2", "h3", "title", "button", "summary", "label"}:
                 skip_tag = tag
                 continue
             if not closing and tag == "p" and re.search(r'class="[^"]*\bkicker\b[^"]*"', part):
@@ -748,7 +748,7 @@ def apply_stage5_final_pair_override(raw: str, row: dict, intent: str) -> str:
                 if closing and tag == skip_tag:
                     skip_tag = None
                 continue
-            if not closing and tag in {"script","style","h1","title"}:
+            if not closing and tag in {"script","style","h1","h2","h3","title","button","summary","label"}:
                 skip_tag = tag
                 continue
             if not closing and tag == "p" and re.search(r'class="[^"]*\bkicker\b[^"]*"', part):
@@ -865,7 +865,7 @@ def compact_stage5_visible_text(raw: str, visible_func) -> str:
                 if closing and tag == skip_tag:
                     skip_tag = None
                 continue
-            if not closing and tag in {"script","style","h1","title"}:
+            if not closing and tag in {"script","style","h1","h2","h3","title","button","summary","label"}:
                 skip_tag = tag
                 continue
             if not closing and tag == "p" and re.search(r'class="[^"]*\bkicker\b[^"]*"', part):
