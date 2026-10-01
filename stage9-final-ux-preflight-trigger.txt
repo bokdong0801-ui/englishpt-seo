@@ -1,1 +1,1 @@
-Run reader-friendly V4.4 + Stage 9 Gold preflight after humanizing visible copy and meta descriptions.
+Re-run reader-friendly Stage 9 preflight after removing internal bottleneck terminology from all service pages.
