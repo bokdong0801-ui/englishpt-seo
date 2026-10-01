@@ -15124,14 +15124,14 @@
     "deployed": false
   },
   "package_sizing": {
-    "stage4_html_bytes": 71629516,
-    "stage4_html_mib": 68.31,
-    "avg_html_bytes": 55099.6,
-    "min_html_bytes": 52783,
-    "max_html_bytes": 58465,
-    "estimated_66937_html_bytes": 3688203779,
-    "estimated_66937_html_mib": 3517.35,
-    "estimated_66937_html_gib": 3.435,
+    "stage4_html_bytes": 71648416,
+    "stage4_html_mib": 68.33,
+    "avg_html_bytes": 55114.2,
+    "min_html_bytes": 52799,
+    "max_html_bytes": 58477,
+    "estimated_66937_html_bytes": 3689176940,
+    "estimated_66937_html_mib": 3518.27,
+    "estimated_66937_html_gib": 3.436,
     "note": "HTML-only estimate; production deploy package will additionally include shared assets, sitemap shards and redirects."
   },
   "safety": {
