@@ -1,1 +1,1 @@
-Deploy exact V4.4 + Stage 9 Gold Production-renderer representative preview to Netlify.
+Redeploy reader-friendly V4.4 + Stage 9 Gold exact Production preview to the same Netlify alias.
