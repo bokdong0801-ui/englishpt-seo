@@ -26,7 +26,10 @@ jobs:
 
       - name: Read Netlify project domain state
         run: |
-          curl -fsS             -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID"             -o /tmp/site.json
+          curl -fsS \
+            -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/sites/englishpt-seo.netlify.app" \
+            -o /tmp/site.json
           python3 - <<'PY'
           import json
           d=json.load(open('/tmp/site.json',encoding='utf-8'))
