@@ -94,6 +94,8 @@ jobs:
           js=Path('stage9-release/pilot.js').read_text(encoding='utf-8')
           for theme in ['theme-elem','theme-mid','theme-high','theme-univ','theme-job','theme-worker','theme-housewife','theme-test']:
               assert theme in css, theme
+          for token in ['.simple-hero','.intro-grid','.snapshot','.trust-in','.mobile-sticky','@media(max-width:760px)']:
+              assert token in css, token
           assert 'emailjs.send' in js
           assert '실제 상담 전송은 비활성화' not in js
           machine_phrases=[
@@ -106,6 +108,13 @@ jobs:
               raw=p.read_text(encoding='utf-8')
               assert 'data-stage9-clean="true"' in raw, p.name
               assert 'class="section mass-context"' in raw, p.name
+              assert 'class="site-header"' in raw, p.name
+              assert 'class="hero simple-hero"' in raw, p.name
+              assert 'class="snapshot"' in raw, p.name
+              assert 'class="trust"' in raw, p.name
+              title=raw.split('<title>',1)[1].split('</title>',1)[0]
+              assert 'ENGLISH PT' not in title, (p.name,title)
+              assert ' | ' in title, (p.name,title)
               assert all(x not in raw for x in machine_phrases), p.name
               assert raw.count('href="/') >= 13, p.name
           print('PASS_STAGE9_FINAL_UX_PREFLIGHT')
