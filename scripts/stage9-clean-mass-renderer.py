@@ -358,7 +358,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         f'<body class="{theme}" data-production-deploy="true" data-stage9-clean="true">',
         'name="name"','name="phone"','name="consent"',
         'class="breadcrumb wrap"','class="mobile-sticky"',
-        EMAILJS_TAG,'class="mass-context"',
+        EMAILJS_TAG,'class="section mass-context"',
     ]
     if any(x not in raw for x in required):
         problems.append("production_contract")
