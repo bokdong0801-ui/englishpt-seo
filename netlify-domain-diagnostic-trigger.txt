@@ -1,1 +1,1 @@
-Run Netlify domain diagnostic after normalizing site ID.
+Run Netlify domain diagnostic using confirmed default Netlify domain.
