@@ -27,7 +27,7 @@ jobs:
           curl -fsS -X PATCH \
             -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
             -H "Content-Type: application/json" \
-            --data '{"custom_domain":"englishpt.kr"}' \
+            --data '{"custom_domain":"englishpt.kr","domain_aliases":["www.englishpt.kr"]}' \
             "https://api.netlify.com/api/v1/sites/englishpt-seo.netlify.app" \
             -o /tmp/site.json
           python3 - <<'PY'
@@ -44,6 +44,7 @@ jobs:
             'state':d.get('state'),
           },ensure_ascii=False,indent=2))
           assert d.get('custom_domain')=='englishpt.kr'
+          assert 'www.englishpt.kr' in (d.get('domain_aliases') or [])
           PY
 
       - name: Configure Netlify DNS zone for englishpt.kr
