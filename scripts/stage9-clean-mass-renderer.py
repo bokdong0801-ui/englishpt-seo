@@ -316,7 +316,7 @@ TOPIC_MODULES = [
 
 def _topic_modules(loc: dict, intent: str, family: str, audience: str) -> list[dict]:
     pool=[m for m in TOPIC_MODULES if family in m["families"]]
-    count=11
+    count=14
     ranked=sorted(
         pool,
         key=lambda m: hashlib.sha256(
@@ -431,6 +431,31 @@ def trim_gold_page(raw: str, seed: str, family: str) -> str:
     if fq:
         body=select_items(fq.group(2),r'<details>.*?</details>',3,"faq")
         raw=raw[:fq.start()]+fq.group(1)+body+fq.group(3)+raw[fq.end():]
+
+    # Opening detail: keep the core intent question plus a locality-specific
+    # subset of explanatory paragraphs instead of repeating the whole Gold intro.
+    det=re.search(
+        r'(<section id="detail" class="section"><div class="wrap narrow"><p class="kicker">.*?</p><h2>.*?</h2>)(.*?)(</div></section>)',
+        raw,re.S
+    )
+    if det:
+        ps=re.findall(r'<p>.*?</p>',det.group(2),re.S)
+        if ps:
+            keep=3 if family=="service" else 2
+            body=select_items("".join(ps),r'<p>.*?</p>',keep,"detail")
+            raw=raw[:det.start()]+det.group(1)+body+det.group(3)+raw[det.end():]
+
+    # Process/fit section: two concise paragraphs are sufficient; the topic
+    # modules carry the broader comparison questions.
+    fit=re.search(
+        r'(<section class="section"><div class="wrap narrow"><p class="kicker">(?:과정 선택|시험 선택)</p>.*?<h2>.*?</h2>)(.*?)(</div></section>)',
+        raw,re.S
+    )
+    if fit:
+        ps=re.findall(r'<p>.*?</p>',fit.group(2),re.S)
+        if ps:
+            body=select_items("".join(ps),r'<p>.*?</p>',min(2,len(ps)),"fit")
+            raw=raw[:fit.start()]+fit.group(1)+body+fit.group(3)+raw[fit.end():]
 
     # Service Gold pages contain a long generic diagnosis section. Keep its
     # heading + first and last explanatory paragraph only; topic modules carry
