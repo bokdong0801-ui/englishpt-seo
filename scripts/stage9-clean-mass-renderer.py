@@ -868,7 +868,6 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         "흐름 Band","시점 배분","직접 방식 방식","회수 회수","상기 횟수",
         "이어지는 정체가 어디서 생기는지 검토합니다",
         "근거를 찾을 수 되는지","반복되는 문제가 어디서 생기는지 검토합니다",
-        "현재 장면","가장 막히는 장면","최근 막힌 장면","병목","재점검","재검증",
     ]
     required=[
         '<meta name="robots" content="index,follow">',
@@ -887,6 +886,10 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         problems.append("cluster_links")
     visible = re.sub(r'<script.*?</script>|<style.*?</style>|<[^>]+>', ' ', raw, flags=re.S|re.I)
     visible = re.sub(r'\s+',' ',html.unescape(visible)).strip()
+    stiff_visible = ["현재 장면","가장 막히는 장면","최근 막힌 장면","병목","재점검","재검증"]
+    stiff_found = [x for x in stiff_visible if x in visible]
+    if stiff_found:
+        problems.append("stiff_visible_copy:"+",".join(stiff_found))
     if not (5200 <= len(visible) <= 16000):
         problems.append(f"visible_chars:{len(visible)}")
     return raw,problems
