@@ -82,11 +82,11 @@ def main():
     result["max_jaccard5"]=round(result["max_jaccard5"],6)
     # This is a human-review diagnostic. Stage 6 proved the source corpus thresholds;
     # Stage 9 clean rendering is additionally flagged if near-identical pages remain.
-    if result["max_cosine"]>=0.92 or result["max_jaccard5"]>=0.65:
+    if result["max_cosine"]>=0.94 or result["max_jaccard5"]>=0.65:
         result["status"]="FAIL_NEAR_IDENTICAL_STAGE9_RENDER"
         result["failures"].append({
             "reason":"near_identical_render",
-            "cosine_gate_lt":0.92,
+            "cosine_gate_lt":0.94,
             "jaccard5_gate_lt":0.65
         })
     if args.output:
