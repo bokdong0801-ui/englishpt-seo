@@ -597,6 +597,7 @@ def humanize_visible_copy(raw: str, family: str) -> str:
         "재사용 테스트": "다른 문제에 적용해보는 확인",
         "경험 재사용": "같은 경험을 다른 질문에도 활용",
         "재사용": "다른 상황에도 활용",
+        "병목": "가장 어려운 부분",
     }
     if family == "exam":
         replacements.update({
