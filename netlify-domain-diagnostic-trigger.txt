@@ -1,1 +1,1 @@
-Check HOSTING.KR authoritative DNS for englishpt.kr after A and CNAME creation.
+Re-check external recursive DNS propagation for englishpt.kr after authoritative records became visible.
