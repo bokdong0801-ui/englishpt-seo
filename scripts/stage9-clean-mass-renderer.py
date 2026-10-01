@@ -888,7 +888,8 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     visible = re.sub(r'<script.*?</script>|<style.*?</style>|<[^>]+>', ' ', raw, flags=re.S|re.I)
     visible = re.sub(r'\s+',' ',html.unescape(visible)).strip()
     stiff_visible = ["현재 장면","가장 막히는 장면","최근 막힌 장면","병목","재점검","재검증"]
-    stiff_found = [x for x in stiff_visible if x in visible]
+    visible_for_language_qa = visible.replace(loc["dong"], "")
+    stiff_found = [x for x in stiff_visible if x in visible_for_language_qa]
     if stiff_found:
         problems.append("stiff_visible_copy:"+",".join(stiff_found))
     if not (5200 <= len(visible) <= 16000):
