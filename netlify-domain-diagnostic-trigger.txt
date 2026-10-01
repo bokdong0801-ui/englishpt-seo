@@ -1,1 +1,1 @@
-Run Netlify domain diagnostic with public WHOIS routing fields.
+Re-check englishpt.kr DNS propagation after HOSTING.KR A and CNAME records were added.
