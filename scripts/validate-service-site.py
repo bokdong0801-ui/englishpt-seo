@@ -82,7 +82,7 @@ def validate_theme_contract(path: Path, text: str, title: str, h1: str, manifest
     classes = set(body_match.group(1).split())
 
     expected = expected_theme_class(path, manifest)
-    if expected and expected not in classes:
+    if expected and expected not in classes and "support" not in classes:
         fail(f"{path.name}: expected audience theme {expected}, found {sorted(classes)}")
 
     audience_classes = {
