@@ -61,6 +61,14 @@ jobs:
           echo "=== NS englishpt.kr ==="
           dig +short NS englishpt.kr || true
 
+      - name: Inspect public WHOIS routing fields only
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq whois
+          whois -h whois.nic.or.kr englishpt.kr 2>/dev/null \
+            | grep -Ei 'Domain Name|Registered Date|Last Updated Date|Expiration Date|Authorized Agency|Host Name|Registrar|Name Server' \
+            || true
+
       - name: Probe current endpoints
         run: |
           python3 - <<'PY'
