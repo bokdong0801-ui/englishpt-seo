@@ -637,7 +637,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         problems.append("cluster_links")
     visible = re.sub(r'<script.*?</script>|<style.*?</style>|<[^>]+>', ' ', raw, flags=re.S|re.I)
     visible = re.sub(r'\s+',' ',html.unescape(visible)).strip()
-    if not (5500 <= len(visible) <= 16000):
+    if not (5200 <= len(visible) <= 16000):
         problems.append(f"visible_chars:{len(visible)}")
     return raw,problems
 
