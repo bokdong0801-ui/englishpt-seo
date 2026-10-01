@@ -63,6 +63,9 @@ def load_theme_manifest() -> dict:
 
 def expected_theme_class(path: Path, manifest: dict) -> str | None:
     name = path.name
+    # Adult/senior certification hubs intentionally use the dedicated test theme.
+    if name.endswith("-adult-cert.html") or name.endswith("-senior-cert.html"):
+        return "theme-test"
     for token, theme_key in TARGET_THEME_BY_TOKEN.items():
         if f"-{token}-" in name:
             theme = manifest.get("themes", {}).get(theme_key, {})
