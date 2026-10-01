@@ -44,7 +44,7 @@ LIVE_FORM = '''<form id="pilotForm" class="lead-form">
 <label>이름 <span>*</span><input name="name" autocomplete="name" required></label>
 <label>연락처 <span>*</span><input name="phone" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required></label>
 <label class="full">가장 가까운 일정<input name="deadline" placeholder="시험·발표·면접·사용 일정"></label>
-<label class="full">가장 막히는 장면<textarea name="difficulty" rows="3" placeholder="최근 어려웠던 문제·응답·상황"></textarea></label>
+<label class="full">가장 어려운 부분<textarea name="difficulty" rows="3" placeholder="최근 어려웠던 문제·답변·상황을 편하게 적어주세요"></textarea></label>
 <label class="privacy-check"><input name="consent" type="checkbox" required><span>상담을 위한 개인정보 수집·이용에 동의합니다.</span></label>
 <div class="submit-row"><button class="btn primary" type="submit">무료 PT 진단 신청 →</button><a class="btn phone" href="tel:+821050068027">전화 010-5006-8027</a></div>
 <p class="pilot-status" aria-live="polite"></p>
@@ -530,6 +530,125 @@ def title_for(loc: dict, intent: str) -> str:
     return f'{loc["dong"]} {loc["service"]} | {suffix}'
 
 
+def description_for(loc: dict, intent: str) -> str:
+    templates = {
+        "elem-tutor": f'{loc["dong"]} 초등학생영어과외 안내. 읽기·기초 문장·학교영어에서 어려운 부분을 확인하고 현재 수준에 맞는 수업 방향과 상담 기준을 정리했습니다.',
+        "mid-conv": f'{loc["dong"]} 중학생영어회화 안내. 수행평가·발표·질문 대응과 학교영어에서 어려운 부분을 확인하고 필요한 연습 순서를 살펴보세요.',
+        "high-conv": f'{loc["dong"]} 고등학생영어회화 안내. 수행평가·발표·면접과 학교영어 일정을 기준으로 현재 어려운 부분과 수업 방향을 확인하세요.',
+        "univ-conv": f'{loc["dong"]} 대학생영어회화 안내. 발표·세미나·교환학생·면접처럼 실제 영어가 필요한 상황에 맞춰 준비할 내용을 확인하세요.',
+        "jobseeker-conv": f'{loc["dong"]} 취준생영어회화 안내. 영어면접·자기소개·경험 답변에서 어려운 부분을 확인하고 답변 연습과 피드백 방식을 살펴보세요.',
+        "biz-business-conv": f'{loc["dong"]} 직장인비즈니스영어 안내. 회의·발표·전화·고객 대응처럼 가까운 업무 일정에 필요한 영어를 중심으로 수업 방향을 확인하세요.',
+        "housewife-conv": f'{loc["dong"]} 주부영어회화 안내. 여행·생활영어·기초회화를 현재 수준과 가능한 학습 시간에 맞춰 어떻게 시작할지 확인하세요.',
+        "toeic": f'{loc["dong"]} 토익과외 안내. 목표 점수와 시험일을 기준으로 LC·RC 약점, 오답 원인, 시간 관리와 실전 연습 방향을 확인하세요.',
+        "toeic-speaking": f'{loc["dong"]} 토익스피킹과외 안내. 답변 구조·첫 문장·시간 관리·파트별 어려운 부분을 확인하고 실전 말하기 연습 방향을 살펴보세요.',
+        "opic": f'{loc["dong"]} 오픽과외 안내. 목표 등급과 시험일을 기준으로 돌발 질문, 답변 구성, 경험 활용과 말하기 연습 방향을 확인하세요.',
+        "ielts": f'{loc["dong"]} 아이엘츠과외 안내. IELTS Listening·Reading·Writing·Speaking 4영역의 현재 약점과 목표 Band, 시험일까지의 준비 방향을 확인하세요.',
+        "duolingo": f'{loc["dong"]} 듀오링고영어테스트 안내. DET 목표 점수와 제출 일정을 기준으로 영역별 약점, 말하기·쓰기 응답과 실전 연습 방향을 확인하세요.',
+        "toefl": f'{loc["dong"]} 토플과외 안내. TOEFL Reading·Listening·Speaking·Writing 4영역의 약점과 시간 관리, 실전 연습 방향을 확인하세요.',
+    }
+    return templates[intent]
+
+
+def humanize_visible_copy(raw: str, family: str) -> str:
+    """Make user-facing Korean conversational while leaving head SEO/schema untouched."""
+    if "</head>" not in raw:
+        return raw
+    head, body = raw.split("</head>", 1)
+
+    # Exact phrases first; generic replacements later.
+    replacements = {
+        "현재 장면과 다음 일정을 먼저 알려주세요": "지금 가장 어려운 부분과 가까운 일정을 알려주세요",
+        "최근 막힌 장면 하나": "최근 가장 어려웠던 상황 하나",
+        "최근 막힌 장면": "최근 어려웠던 상황",
+        "가장 막히는 장면": "가장 어려운 부분",
+        "최근 영어가 막혔던 순간": "최근 영어가 특히 어려웠던 순간",
+        "현재 필요한 영어 장면": "지금 영어가 필요한 상황",
+        "다음 실제 사용 장면": "다음에 실제로 영어를 써야 하는 상황",
+        "실제 사용 장면": "실제로 영어를 쓰는 상황",
+        "실제 업무 장면": "실제 업무 상황",
+        "학교 장면": "학교에서 영어가 필요한 상황",
+        "캠퍼스 장면": "학교생활 속 상황",
+        "생활 장면": "생활 속 상황",
+        "장면 기록": "어려웠던 상황 기록",
+        "장면 기록형": "최근 어려웠던 상황을 기준으로 보는 방식",
+        "장면 전용 암기": "특정 상황에만 맞춘 암기",
+        "다음 행동": "다음에 연습할 내용",
+        "실제 행동": "실제로 해야 하는 내용",
+        "결과 행동": "실제로 해야 하는 내용",
+        "독립 수행 범위": "혼자 할 수 있는 범위",
+        "현재 수행": "최근 결과",
+        "현재 독립 수행 범위": "현재 혼자 할 수 있는 범위",
+        "재점검": "다시 확인",
+        "재검증": "다시 확인",
+        "재검사": "다시 확인",
+        "재평가": "다시 확인",
+        "재답변": "질문을 바꿔 다시 답하기",
+        "재작성": "고쳐서 다시 쓰기",
+        "태깅": "원인별로 구분",
+        "open response": "말하기·쓰기 응답",
+        "productive response": "직접 말하기·쓰기 응답",
+        "adaptive format": "난이도가 달라지는 시험 방식",
+        "Skill별": "영역별",
+        "skill별": "영역별",
+        "skill": "영역",
+        "실전 조건": "실제 시험처럼 시간 제한을 둔 상태" if family == "exam" else "실제 상황",
+        "재사용 범위": "다른 문제에서도 적용되는 범위",
+        "재사용 확인": "다른 문제에서도 적용되는지 확인",
+        "재사용 테스트": "다른 문제에 적용해보는 확인",
+        "경험 재사용": "같은 경험을 다른 질문에도 활용",
+        "재사용": "다른 상황에도 활용",
+    }
+    if family == "exam":
+        replacements.update({
+            "실제 병목 파트": "점수를 가장 많이 깎는 파트",
+            "파트별 병목": "파트별 약점",
+            "Band 병목": "목표 Band를 막는 영역",
+            "영역별 병목": "영역별 약점",
+            "skill별 병목": "영역별 약점",
+            "기초 병목": "기초 약점",
+            "현재 병목": "현재 약점",
+            "병목 영역": "가장 약한 영역",
+            "병목": "약점",
+        })
+
+    for old, new in replacements.items():
+        body = body.replace(old, new)
+
+    # '장면' was overused throughout Gold copy. '상황' is natural across
+    # school, work, daily conversation and test contexts.
+    body = body.replace("장면", "상황")
+
+    heading_replacements = {
+        '<p class="kicker">실제 상황</p>': '<p class="kicker">자주 어려운 상황</p>',
+        '<p class="kicker">막히는 이유</p>': '<p class="kicker">어려운 이유</p>',
+        '<p class="kicker">우선순위</p>': '<p class="kicker">먼저 준비할 것</p>',
+        '<p class="kicker">수업 흐름</p>': '<p class="kicker">수업 진행</p>',
+        '<p class="kicker">중간 확인</p>': '<p class="kicker">중간 점검</p>',
+        '<p class="kicker">판단 기준</p>': '<p class="kicker">변화 확인</p>',
+        '<p class="kicker">피드백 예시</p>': '<p class="kicker">수업 기록 예시</p>',
+        '<p class="kicker">과정 선택</p>': '<p class="kicker">수업 선택</p>',
+        '<p class="kicker">지역별 비교 기준</p>': '<p class="kicker">수업 비교 기준</p>',
+        '<p class="kicker">상담 안내</p>': '<p class="kicker">상담 전 확인</p>',
+    }
+    for old, new in heading_replacements.items():
+        body = body.replace(old, new)
+
+    body = body.replace(
+        "실제 후기가 아니라 수업 기록 형식을 보여주는 예시입니다",
+        "수업에서는 이런 내용을 확인하고 기록합니다",
+    )
+    body = body.replace(
+        "무엇을 관찰하고 다음에 무엇을 다시 확인하는지 보여주기 위한 예시 형식입니다.",
+        "특정 학생의 후기가 아니라, 수업에서 어떤 부분을 확인하고 다음 연습으로 이어가는지 보여주는 예시입니다.",
+    )
+    body = body.replace(
+        "등록보다 먼저 현재 상태와 목표부터 확인하세요.",
+        "바로 결정하기보다 지금 필요한 수업부터 확인해보세요.",
+    )
+
+    return head + "</head>" + body
+
+
 def v44_header() -> str:
     return (
         '<header class="site-header"><div class="wrap header">'
@@ -546,14 +665,14 @@ def v44_snapshot(loc: dict, family: str) -> str:
     if family == "exam":
         rows = [
             ("GOAL", "목표 점수·등급과 가장 가까운 시험 일정"),
-            ("CURRENT", "최근 문제·답변에서 반복되는 실제 병목"),
-            ("NEXT", "실전 조건에서 다시 확인할 한두 가지 행동"),
+            ("CURRENT", "최근 문제·답변에서 자주 어려운 부분"),
+            ("NEXT", "다음 수업에서 먼저 연습할 내용"),
         ]
     else:
         rows = [
             ("GOAL", "다음 발표·면접·학교·생활 영어 장면"),
-            ("CURRENT", "최근 막힌 장면과 혼자 가능한 범위"),
-            ("PLAN", "수업 밖에서도 반복 가능한 시간과 방식"),
+            ("CURRENT", "최근 어려웠던 부분과 혼자 할 수 있는 범위"),
+            ("PLAN", "수업 밖에서도 이어갈 수 있는 시간과 방식"),
         ]
     body = ''.join(
         f'<div class="snaprow"><small>{esc(k)}</small><strong>{esc(v)}</strong></div>'
@@ -622,6 +741,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     h1 = plain_h1(raw)
     canonical = f'{BASE_URL}/{loc["slug"]}-{intent}.html'
     page_title = title_for(loc, intent)
+    page_description = description_for(loc, intent)
     theme = (
         gold_modules()[0].PROFILES[intent]["theme"] + " intent-audience"
         if family=="service" else "theme-test intent-test"
@@ -639,6 +759,12 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     raw = raw.replace('src="pilot.js"','src="pilot.js"')
     raw = raw.replace('src="../pilot-v45-5x7/pilot.js"','src="pilot.js"')
     raw = re.sub(r'<title>.*?</title>', f'<title>{esc(page_title)}</title>', raw, count=1, flags=re.S)
+    raw = re.sub(
+        r'<meta name="description" content="[^"]*">',
+        f'<meta name="description" content="{esc(page_description)}">',
+        raw,
+        count=1,
+    )
     raw = re.sub(
         r'<meta property="og:title" content="[^"]*">',
         f'<meta property="og:title" content="{esc(page_title)}">',
@@ -725,7 +851,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     # Add missing social description from the audited meta description.
     dm = re.search(r'<meta name="description" content="([^"]*)">',raw)
     if dm and 'property="og:description"' not in raw:
-        raw=raw.replace(dm.group(0),dm.group(0)+f'<meta property="og:description" content="{esc(html.unescape(dm.group(1)))}">',1)
+        raw=raw.replace(dm.group(0),dm.group(0)+f'<meta property="og:description" content="{esc(page_description)}">',1)
     if 'property="og:type"' not in raw:
         raw=raw.replace('<meta property="og:title"', '<meta property="og:type" content="website"><meta property="og:title"',1)
 
@@ -734,6 +860,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         problems.append("breadcrumb_schema")
     raw = rewrite_schema_page_title(raw, page_title)
 
+    raw = humanize_visible_copy(raw, family)
     raw = raw.replace('</body>','<div class="mobile-sticky"><a href="#consultation-preview">무료 PT 진단 신청</a></div></body>',1)
 
     forbidden=[
@@ -741,6 +868,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         "흐름 Band","시점 배분","직접 방식 방식","회수 회수","상기 횟수",
         "이어지는 정체가 어디서 생기는지 검토합니다",
         "근거를 찾을 수 되는지","반복되는 문제가 어디서 생기는지 검토합니다",
+        "현재 장면","가장 막히는 장면","최근 막힌 장면","병목","재점검","재검증",
     ]
     required=[
         '<meta name="robots" content="index,follow">',
