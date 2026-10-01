@@ -1,0 +1,80 @@
+name: Netlify Production Domain Setup
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'netlify-domain-setup-trigger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  setup-domain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: Verify Netlify auth
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN"
+          echo "PASS Netlify auth present (value hidden)"
+
+      - name: Assign englishpt.kr as production custom domain
+        run: |
+          curl -fsS -X PATCH \
+            -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"custom_domain":"englishpt.kr"}' \
+            "https://api.netlify.com/api/v1/sites/englishpt-seo.netlify.app" \
+            -o /tmp/site.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/site.json',encoding='utf-8'))
+          print(json.dumps({
+            'name':d.get('name'),
+            'url':d.get('url'),
+            'ssl_url':d.get('ssl_url'),
+            'custom_domain':d.get('custom_domain'),
+            'domain_aliases':d.get('domain_aliases'),
+            'managed_dns':d.get('managed_dns'),
+            'force_ssl':d.get('force_ssl'),
+            'state':d.get('state'),
+          },ensure_ascii=False,indent=2))
+          assert d.get('custom_domain')=='englishpt.kr'
+          PY
+
+      - name: Configure Netlify DNS zone for englishpt.kr
+        run: |
+          curl -fsS -X PUT \
+            -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/sites/englishpt-seo.netlify.app/dns" \
+            -o /tmp/dns.json
+          python3 - <<'PY'
+          import json
+          raw=json.load(open('/tmp/dns.json',encoding='utf-8'))
+          zones=raw if isinstance(raw,list) else [raw]
+          print('NETLIFY_DNS_ZONE_COUNT',len(zones))
+          for z in zones:
+              safe={
+                'name':z.get('name'),
+                'domain':z.get('domain'),
+                'dns_servers':z.get('dns_servers'),
+                'errors':z.get('errors'),
+                'ipv6_enabled':z.get('ipv6_enabled'),
+              }
+              print(json.dumps(safe,ensure_ascii=False,indent=2))
+          PY
+
+      - name: Check current public DNS after setup
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq dnsutils
+          echo "=== NS englishpt.kr ==="
+          dig +short NS englishpt.kr || true
+          echo "=== A englishpt.kr ==="
+          dig +short A englishpt.kr || true
+          echo "=== A www.englishpt.kr ==="
+          dig +short A www.englishpt.kr || true
