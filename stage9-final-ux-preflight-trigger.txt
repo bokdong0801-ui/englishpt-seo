@@ -1,1 +1,1 @@
-Run final reduced-common-copy clean Gold ENGLISH PT Stage 9 UX preflight with locality similarity QA.
+Run max-diversity clean Gold ENGLISH PT Stage 9 UX preflight with locality similarity QA.
