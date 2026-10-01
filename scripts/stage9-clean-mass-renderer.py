@@ -185,37 +185,230 @@ def service_source(intent: str):
     return svc.extract_source(matches[0])
 
 
-def mass_context(loc: dict, intent: str, family: str, audience: str = "") -> str:
-    slug = loc["slug"]
-    values = {
-        "dong": loc["dong"],
-        "jurisdiction": loc["jurisdiction"],
-        "service": loc["service"],
-        "audience": audience or "학습자",
-    }
-    chosen = []
-    for i, slot in enumerate(MASS_SLOTS):
-        h = hashlib.sha256(f"{slug}|{intent}|slot-{i}|stage9-clean-v1".encode()).hexdigest()
-        text = slot[int(h[:8], 16) % len(slot)].format(**values)
-        chosen.append(text)
+TOPIC_MODULES = [
+    {
+        "key":"goal-deadline","families":{"service","exam"},"title":"목표와 가장 가까운 일정을 먼저 맞춥니다",
+        "p1":"{service}를 시작하기 전에 다음 시험·발표·면접·사용 일정 가운데 가장 가까운 날짜를 하나 정합니다. 일정이 선명해야 지금 필요한 연습과 뒤로 미뤄도 되는 범위를 나눌 수 있습니다.",
+        "p2":"남은 날짜만 세지 않고 실제로 연습할 수 있는 횟수까지 함께 봅니다. 시간이 짧다면 새 범위를 넓히기보다 현재 결과를 가장 크게 흔드는 행동부터 안정시키는 편이 현실적입니다."
+    },
+    {
+        "key":"baseline-material","families":{"service","exam"},"title":"최근 자료 하나가 가장 좋은 출발점이 될 수 있습니다",
+        "p1":"점수표 전체가 없어도 최근 문제·답변·녹음·글 가운데 하나면 현재 상태를 확인할 수 있습니다. 무엇을 틀렸는지보다 어디에서 멈췄고 어떤 도움 뒤에 다시 이어졌는지를 함께 봅니다.",
+        "p2":"이미 혼자 되는 부분은 유지 확인으로 넘기고 조건이 바뀌면 흔들리는 부분만 다음 연습으로 남깁니다. 이렇게 하면 처음부터 전 범위를 다시 시작하는 일을 줄일 수 있습니다."
+    },
+    {
+        "key":"error-tags","families":{"service","exam"},"title":"오답과 막힘은 원인별로 나눠 기록합니다",
+        "p1":"같은 실패처럼 보여도 지식 부족, 질문 이해, 시간 압박, 표현 회수, 답변 구조처럼 원인은 다를 수 있습니다. 원인이 다르면 다음에 반복할 연습도 달라져야 합니다.",
+        "p2":"정답 설명을 길게 옮기기보다 왜 그렇게 선택했는지 한 문장, 다음에는 무엇을 확인할지 한 문장 정도로 남깁니다. 새 자료에서 같은 원인이 다시 나타나는지가 실제 재점검 기준입니다."
+    },
+    {
+        "key":"transfer","families":{"service","exam"},"title":"같은 문제를 맞히는 것보다 새 조건에서 다시 되는지 봅니다",
+        "p1":"설명을 들은 직후 맞힌 결과만으로 변화라고 판단하지 않습니다. 질문 표현·자료·순서·준비 시간 가운데 한 조건을 바꿔도 같은 기준을 사용할 수 있는지 다시 확인합니다.",
+        "p2":"새 조건에서 다시 막히면 새로운 내용을 바로 추가하기보다 어떤 단서가 사라졌을 때 문제가 생겼는지부터 찾습니다. 끝까지 필요한 도움은 다음 수업의 첫 연습 항목이 됩니다."
+    },
+    {
+        "key":"minimum-routine","families":{"service","exam"},"title":"바쁜 주에도 다시 시작하기 쉬운 최소 루틴을 둡니다",
+        "p1":"매일 긴 시간을 확보하는 계획보다 중단 뒤 다시 돌아오기 쉬운 최소 단위를 정하는 편이 유지에 도움이 됩니다. 짧은 문제 세트, 답변 한 번, 글 한 단락처럼 실제로 지킬 수 있는 크기로 시작합니다.",
+        "p2":"여유가 있는 날에만 분량을 추가하고 기본 루틴이 유지되는지를 먼저 봅니다. 계획이 밀렸을 때 누적 과제를 쌓기보다 마지막으로 안정된 지점에서 다시 시작합니다."
+    },
+    {
+        "key":"feedback","families":{"service","exam"},"title":"피드백은 다음 행동을 정하는 기록이어야 합니다",
+        "p1":"진도나 평가 문장만 남기지 않고 혼자 된 부분, 짧은 도움 뒤 수정된 부분, 새 조건에서 다시 볼 부분을 구분합니다. 그래야 다음 수업에서 무엇부터 확인할지 바로 이어집니다.",
+        "p2":"한 번에 모든 오류를 고치려 하지 않습니다. 반복해서 나타나는 한두 가지 기준을 다음 연습의 체크포인트로 정하고 새 자료에서 실제로 줄었는지를 확인합니다."
+    },
+    {
+        "key":"cost-scope","families":{"service","exam"},"title":"비용은 횟수보다 포함 범위를 함께 비교합니다",
+        "p1":"월 총액만 비교하면 수업 구성을 알기 어렵습니다. 주당 횟수, 한 회 시간, 진단·첨삭·녹음·과제 피드백과 재점검이 어디까지 포함되는지를 함께 확인하는 편이 좋습니다.",
+        "p2":"현재 목표에 필요하지 않은 관리까지 많이 포함됐다고 항상 유리한 것은 아닙니다. 가까운 일정에 직접 필요한 피드백 범위를 먼저 정하면 적절한 횟수와 방식을 비교하기 쉬워집니다."
+    },
+    {
+        "key":"online-visit","families":{"service","exam"},"title":"방문과 온라인은 실제 반복 가능성을 기준으로 비교합니다",
+        "p1":"어느 방식이 무조건 낫다고 정하지 않습니다. 자료를 공유하기 쉬운지, 말하기·쓰기 피드백이 필요한지, 이동 시간을 포함해 일정 안에서 반복을 유지할 수 있는지를 확인합니다.",
+        "p2":"형식보다 수업 뒤 혼자 다시 적용할 시간이 확보되는지가 중요합니다. 방문이든 온라인이든 다음 피드백까지 실제 행동을 이어갈 수 있는 구성이 더 적합할 수 있습니다."
+    },
+    {
+        "key":"consult-questions","families":{"service","exam"},"title":"상담에서는 같은 질문으로 여러 곳을 비교해보세요",
+        "p1":"현재 목표, 가장 가까운 일정, 최근 막힌 장면 세 가지를 같은 기준으로 설명하면 과정마다 무엇을 다르게 제안하는지 비교하기 쉽습니다. 자료는 한두 개만 있어도 충분합니다.",
+        "p2":"등록을 바로 결정하기보다 진단 기준, 수업 흐름, 수업 밖 피드백, 재점검 방식이 얼마나 구체적으로 설명되는지를 확인하세요. 비교 기준이 같아야 가격과 횟수의 차이도 해석하기 쉬워집니다."
+    },
+    {
+        "key":"progress-evidence","families":{"service","exam"},"title":"변화는 느낌보다 관찰 가능한 행동으로 확인합니다",
+        "p1":"정답률이나 점수도 참고하지만 그것만으로 수업 효과를 단정하지 않습니다. 첫 반응이 빨라졌는지, 필요한 힌트가 줄었는지, 근거를 설명할 수 있는지처럼 실제 행동을 함께 봅니다.",
+        "p2":"한 번의 좋은 결과보다 비슷한 새 조건에서도 같은 행동이 유지되는지가 중요합니다. 안정된 항목은 반복을 줄이고 끝까지 흔들리는 항목만 다음 우선순위로 남깁니다."
+    },
+    {
+        "key":"materials","families":{"service","exam"},"title":"교재보다 다음 행동을 반복할 수 있는 자료인지 봅니다",
+        "p1":"자료가 많다고 항상 좋은 것은 아닙니다. 다음 일정에서 필요한 행동을 실제로 연습하고 결과를 다시 확인할 수 있는지에 따라 문제·녹음·글쓰기·첨삭 자료의 비중을 정합니다.",
+        "p2":"새 자료를 계속 늘리기보다 이미 확인한 병목을 다른 예시에서 다시 적용할 수 있는 자료를 우선합니다. 자료 선택의 기준도 학습량이 아니라 재사용 가능성에 둡니다."
+    },
+    {
+        "key":"priority-reset","families":{"service","exam"},"title":"일정이 바뀌면 우선순위도 다시 조정합니다",
+        "p1":"처음 세운 계획을 끝까지 고정하지 않습니다. 시험·발표·면접 날짜가 가까워지거나 새로운 결과가 나오면 이미 안정된 영역의 비중은 낮추고 다음 결과에 직접 필요한 행동으로 시간을 옮깁니다.",
+        "p2":"단기 일정이 끝난 뒤에는 그동안 미뤄둔 기초 항목을 다시 꺼냅니다. 이렇게 하면 한 번의 대비가 끝난 뒤 모든 계획을 처음부터 다시 세우지 않아도 됩니다."
+    },
+    {
+        "key":"speaking-record","families":{"service","exam"},"title":"말하기는 녹음으로 첫 반응과 반복 패턴을 확인할 수 있습니다",
+        "p1":"말하는 동안에는 공백, 반복 표현, 답변 길이를 스스로 정확히 느끼기 어렵습니다. 짧게 녹음해 첫 문장까지 걸린 시간과 중간에 끊긴 지점을 표시하면 수정 기준이 구체적으로 보입니다.",
+        "p2":"좋은 문장을 외우는 것보다 질문을 조금 바꿔 다시 답해보는 과정이 중요합니다. 같은 구조를 다른 질문에서도 만들 수 있어야 실제 사용 범위가 넓어졌다고 보기 쉽습니다."
+    },
+    {
+        "key":"writing-revision","families":{"service","exam"},"title":"쓰기는 첨삭을 읽는 데서 끝내지 않고 다시 써봅니다",
+        "p1":"수정된 문장을 이해해도 새 주제에서 같은 오류가 반복될 수 있습니다. 논리, 문단 역할, 근거의 구체성, 표현 오류 가운데 반복되는 항목을 골라 직접 재작성합니다.",
+        "p2":"재작성 뒤에는 다른 문제에서도 같은 기준을 적용합니다. 첨삭 횟수보다 스스로 수정할 수 있는 범위가 넓어지는지가 다음 학습 비중을 정하는 자료가 됩니다."
+    },
+    {
+        "key":"reading-evidence","families":{"service","exam"},"title":"읽기는 정답보다 근거를 어디에서 찾았는지 확인합니다",
+        "p1":"내용을 대략 이해했다고 해도 제한 시간 안에 핵심 근거를 찾는 과정에서 흔들릴 수 있습니다. 답을 고른 위치와 이유를 짧게 표시하면 어휘 문제인지 구조 문제인지 구분하기 쉬워집니다.",
+        "p2":"같은 지문을 반복해 맞히는 것보다 새로운 지문에서 근거 찾는 순서를 다시 적용합니다. 시간이 부족한 경우에는 읽기 실력뿐 아니라 풀이 순서와 머무는 시간도 함께 기록합니다."
+    },
+    {
+        "key":"listening-process","families":{"service","exam"},"title":"듣기는 모든 문장을 번역하기보다 놓친 정보의 종류를 봅니다",
+        "p1":"듣는 동안 대략 이해했는데 답변이나 선택으로 이어지지 않는다면 핵심어, 관계, 숫자·고유명사, 질문 의도 중 어디에서 정보가 빠지는지 구분합니다.",
+        "p2":"다시 들을 때는 정답을 기억하는지보다 이전에 놓친 단서를 실제로 잡는지를 확인합니다. 다른 음원에서도 같은 정보 유형을 놓치는지 보면 연습 범위를 좁힐 수 있습니다."
+    },
+    {
+        "key":"vocab-recall","families":{"service","exam"},"title":"단어는 아는지보다 문장 안에서 다시 꺼낼 수 있는지 봅니다",
+        "p1":"뜻을 보고 아는 단어와 듣거나 말할 때 바로 나오는 단어는 다를 수 있습니다. 현재 목표에 자주 필요한 표현을 문장 안에서 사용하고 며칠 뒤 다시 꺼내보는 방식으로 확인합니다.",
+        "p2":"단어 목록을 무작정 늘리기보다 실제 문제·답변·글에서 반복해서 막히는 표현을 우선합니다. 이미 안정적으로 쓰는 표현은 유지 확인만 하고 새로운 표현과 혼동되는 부분에 시간을 더 씁니다."
+    },
+    {
+        "key":"grammar-transfer","families":{"service","exam"},"title":"문법은 규칙 설명보다 새 문장에 적용되는지 확인합니다",
+        "p1":"규칙을 설명할 수 있어도 말하거나 쓸 때 같은 구조를 바로 사용하지 못할 수 있습니다. 현재 필요한 문장 안에서 적용하고 주어·시제·질문 형태를 바꿔도 다시 만들 수 있는지 봅니다.",
+        "p2":"모든 문법을 처음부터 다시 보는 대신 최근 오류와 실제 목표에 직접 연결되는 구조부터 다룹니다. 새 문장에서 스스로 수정할 수 있게 되면 다음 항목으로 이동합니다."
+    },
+    {
+        "key":"alternative-path","families":{"service","exam"},"title":"현재 목적에 더 직접적인 다른 경로가 있는지도 확인합니다",
+        "p1":"{service}가 익숙한 이름이라고 해서 항상 지금 목표에 가장 가까운 선택은 아닙니다. 제출처 요구조건, 학교 일정, 면접, 실제 대화처럼 결과가 다른 경우에는 다른 과정이 더 직접적일 수 있습니다.",
+        "p2":"상담에서 맞지 않는 경로까지 억지로 연결하지 않는 것이 중요합니다. 지금 해야 하는 행동과 평가 방식이 다른 과정에 더 가깝다면 그 이유를 먼저 비교한 뒤 선택할 수 있습니다."
+    },
+    {
+        "key":"locality-honesty","families":{"service","exam"},"title":"지역 정보는 서비스 범위를 구분하는 데만 사용합니다",
+        "p1":"{jurisdiction} {dong}이라는 위치만으로 학습 성향이나 생활 패턴을 임의로 만들지 않습니다. 지역명은 수업 가능 범위를 찾기 쉽게 구분하고 학습 계획은 실제 자료·목표·일정을 기준으로 정합니다.",
+        "p2":"같은 {dong} 안에서도 필요한 영어와 가능한 시간은 서로 다를 수 있습니다. 페이지의 지역 정보보다 상담에서 확인되는 현재 조건을 우선해 수업 방식과 비중을 조정합니다."
+    },
+    {
+        "key":"exam-official","families":{"exam"},"title":"시험 형식과 제출 조건은 최신 공식 안내를 다시 확인합니다",
+        "p1":"시험 시간, 문항 구성, 점수 체계, 접수 정책과 지원기관의 인정 기준은 바뀔 수 있습니다. 실제 응시와 제출 일정을 정하기 전에는 시험 주관기관과 제출기관의 최신 안내를 직접 확인해야 합니다.",
+        "p2":"공식 정보는 공부 방향과 분리하지 않습니다. 형식이 바뀌면 실전 연습 조건도 달라질 수 있으므로 최신 구조를 확인한 뒤 현재 병목을 그 조건 안에서 다시 점검합니다."
+    },
+    {
+        "key":"exam-simulation","families":{"exam"},"title":"시험이 가까워질수록 실제 시간 조건으로 재확인합니다",
+        "p1":"마감이 가까울 때는 새로운 자료를 많이 추가하기보다 이미 정한 풀이·답변 기준이 제한 시간에서도 유지되는지를 확인합니다. 시작 순서와 멈춘 지점도 함께 기록합니다.",
+        "p2":"실전 세트는 새로운 공부라기보다 재검증 자료로 사용합니다. 점수 하나보다 어느 영역에서 시간이 무너졌고 어떤 오류가 다시 나타났는지를 다음 연습에 연결합니다."
+    },
+    {
+        "key":"exam-choice","families":{"exam"},"title":"공인시험은 제출 목적과 자신의 강점을 함께 비교합니다",
+        "p1":"비슷한 영어시험이라도 요구하는 행동과 제출처가 다를 수 있습니다. 점수 이름만 보고 선택하기보다 실제 지원기관 요구조건과 자신이 상대적으로 안정적인 기능을 함께 확인합니다.",
+        "p2":"시험을 바꾸는 것이 항상 답은 아니지만 현재 강점과 형식이 크게 맞지 않는다면 비교할 가치는 있습니다. 마감과 응시 가능 횟수까지 놓고 현실적인 경로를 정합니다."
+    },
+    {
+        "key":"service-family","families":{"service"},"title":"대상별 목표와 가까운 실제 장면을 중심으로 수업을 좁힙니다",
+        "p1":"{audience} 과정이라도 같은 방식으로 고정하지 않습니다. 학교 일정, 발표·면접, 업무, 생활 대화처럼 실제 사용 장면을 먼저 확인하고 그 장면에 필요한 기능을 우선합니다.",
+        "p2":"연령이나 신분만으로 교재와 진도를 정하지 않습니다. 현재 혼자 가능한 범위와 다음 일정, 수업 밖에서 실제로 반복할 수 있는 시간을 함께 놓고 범위를 조정합니다."
+    },
+    {
+        "key":"service-output","families":{"service"},"title":"회화와 과외는 실제로 꺼내 쓰는 장면까지 연결합니다",
+        "p1":"설명을 이해한 것과 질문을 받았을 때 직접 말하거나 쓰는 것은 다른 행동입니다. 배운 표현과 기준을 실제 질문·발표·서술·대화에 옮겨보고 어디에서 다시 멈추는지 확인합니다.",
+        "p2":"준비한 문장을 그대로 외우는 것만으로 끝내지 않습니다. 질문이나 상대가 바뀌어도 핵심을 다시 구성할 수 있도록 의미 단위와 근거를 나눠 연습합니다."
+    },
+]
 
-    groups = []
-    for g in range(3):
-        block = chosen[g*4:(g+1)*4]
-        order = sorted(
-            range(4),
-            key=lambda j: hashlib.sha256(f"{slug}|{intent}|group-{g}|{j}".encode()).hexdigest(),
-        )
-        title_h = hashlib.sha256(f"{slug}|{intent}|title-{g}".encode()).hexdigest()
-        title = SECTION_TITLES[g][int(title_h[:8],16) % len(SECTION_TITLES[g])]
-        ps = "".join(f"<p>{esc(block[j])}</p>" for j in order)
-        groups.append(f'<article class="context-block"><h3>{esc(title)}</h3>{ps}</article>')
+
+def _topic_modules(loc: dict, intent: str, family: str, audience: str) -> list[dict]:
+    pool=[m for m in TOPIC_MODULES if family in m["families"]]
+    count=8
+    ranked=sorted(
+        pool,
+        key=lambda m: hashlib.sha256(
+            f'{loc["slug"]}|{intent}|{m["key"]}|stage9-topic-v2'.encode()
+        ).hexdigest()
+    )
+    chosen=ranked[:count]
+    values={
+        "dong":loc["dong"],"jurisdiction":loc["jurisdiction"],
+        "service":loc["service"],"audience":audience or "학습자",
+    }
+    return [
+        {
+            "key":m["key"],
+            "title":m["title"].format(**values),
+            "p1":m["p1"].format(**values),
+            "p2":m["p2"].format(**values),
+        }
+        for m in chosen
+    ]
+
+
+def mass_context(loc: dict, intent: str, family: str, audience: str = "") -> str:
+    modules=_topic_modules(loc,intent,family,audience)
+    cards="".join(
+        f'<article class="context-block" data-topic="{esc(m["key"])}">'
+        f'<h3>{esc(m["title"])}</h3><p>{esc(m["p1"])}</p><p>{esc(m["p2"])}</p></article>'
+        for m in modules
+    )
     return (
         '<section class="section mass-context"><div class="wrap narrow">'
         '<p class="kicker">지역별 비교 기준</p>'
         f'<h2>{esc(loc["dong"])}에서 {esc(loc["service"])}를 비교할 때 확인할 내용</h2>'
-        + "".join(groups) + '</div></section>'
+        + cards + '</div></section>'
     )
+
+
+def _select_by_seed(items: list[str], count: int, seed: str) -> list[str]:
+    if len(items) <= count:
+        return items
+    ranked=sorted(
+        enumerate(items),
+        key=lambda x: hashlib.sha256(f"{seed}|{x[0]}".encode()).hexdigest()
+    )
+    keep={i for i,_ in ranked[:count]}
+    return [item for i,item in enumerate(items) if i in keep]
+
+
+def trim_gold_page(raw: str, seed: str, family: str) -> str:
+    # Keep the core intent facts, but vary supporting proof/deep/FAQ material so
+    # locality pages are not just full-copy replicas of one Gold document.
+    def trim_container(text: str, cls: str, item_pattern: str, keep: int, salt: str) -> str:
+        pat=re.compile(r'(<(?:div|ul) class="' + re.escape(cls) + r'">)(.*?)(</(?:div|ul)>)',re.S)
+        m=pat.search(text)
+        if not m:
+            return text
+        items=re.findall(item_pattern,m.group(2),re.S)
+        if not items:
+            return text
+        chosen=_select_by_seed(items,keep,f"{seed}|{salt}")
+        return text[:m.start()] + m.group(1) + "".join(chosen) + m.group(3) + text[m.end():]
+
+    # FAQ: four questions per page from the audited pool.
+    raw=trim_container(raw,"faq",r'<details>.*?</details>',4,"faq")
+    # Feedback: two examples are enough to demonstrate the record format.
+    # There are several grid4 blocks, so target the one after the feedback kicker.
+    fm=re.search(r'(<p class="kicker">피드백 예시</p>.*?<div class="grid4">)(.*?)(</div>)',raw,re.S)
+    if fm:
+        cards=re.findall(r'<article class="card">.*?</article>',fm.group(2),re.S)
+        if cards:
+            chosen=_select_by_seed(cards,2,f"{seed}|feedback")
+            raw=raw[:fm.start()] + fm.group(1) + "".join(chosen) + fm.group(3) + raw[fm.end():]
+    # Deep guide: two cards from the intent-specific Gold pool.
+    dm=re.search(r'(<p class="kicker">더 깊게 보기</p>.*?<div class="grid4">)(.*?)(</div>)',raw,re.S)
+    if dm:
+        cards=re.findall(r'<article class="card">.*?</article>',dm.group(2),re.S)
+        if cards:
+            chosen=_select_by_seed(cards,2,f"{seed}|deep")
+            raw=raw[:dm.start()] + dm.group(1) + "".join(chosen) + dm.group(3) + raw[dm.end():]
+    # Four proof points keep the decision support concise.
+    raw=trim_container(raw,"proofs",r'<li>.*?</li>',4,"proof")
+    # The exam Gold has a long generic learning-frame section. The diverse topic
+    # modules replace it in production; exam-specific deep/official sections stay.
+    if family=="exam":
+        raw=re.sub(
+            r'<section class="section"><div class="wrap narrow"><p class="kicker">학습 프레임</p>.*?</section>',
+            '',
+            raw,
+            count=1,
+            flags=re.S,
+        )
+    return raw
 
 
 def all_related(loc: dict, current_intent: str) -> str:
@@ -265,6 +458,7 @@ def add_breadcrumb_schema(raw: str, h1: str, canonical: str) -> tuple[str, bool]
 
 def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,list[str]]:
     problems=[]
+    raw = trim_gold_page(raw, loc["slug"] + "|" + intent, family)
     h1 = plain_h1(raw)
     canonical = f'{BASE_URL}/{loc["slug"]}-{intent}.html'
     theme = (
