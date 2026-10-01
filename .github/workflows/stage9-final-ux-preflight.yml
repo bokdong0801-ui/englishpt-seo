@@ -1,0 +1,121 @@
+name: Stage 9 Final UX Preflight
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-final-ux-preflight-trigger.txt'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile changed production scripts
+        run: |
+          python -m py_compile scripts/build-stage9-production-release.py
+          python -m py_compile scripts/generate-production-stage3-10x13.py
+          python -m py_compile scripts/generate-production-stage5-shard.py
+
+      - name: Re-run preserved baseline regression
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+      - name: Download approved Stage 7 source
+        uses: actions/download-artifact@v4
+        with:
+          name: stage7-deploy-preview-rollback
+          path: stage7-source
+          run-id: 36694432423
+          github-token: ${{ github.token }}
+
+      - name: Download approved Stage 8 packet
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8-production-approval-packet
+          path: stage8-source
+          run-id: 36694845460
+          github-token: ${{ github.token }}
+
+      - name: Extract all 66,937 proven generated pages
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          mkdir -p stage9-work
+          mapfile -t PKGS < <(find stage7-source -name 'stage5-shard-*-of-026.tar.zst' | sort)
+          test "${#PKGS[@]}" -eq 26
+          for f in "${PKGS[@]}"; do
+            tar --zstd -xf "$f" -C stage9-work
+          done
+          test "$(find stage9-work/stage5-full-generation -name '*.html' | wc -l)" -eq 66937
+
+      - name: Assemble final production package without deploying
+        run: |
+          python3 scripts/build-stage9-production-release.py \
+            --stage7-root stage7-source/stage7-preview \
+            --stage8-root stage8-source \
+            --work-root stage9-work \
+            --output stage9-release
+
+      - name: Assert final production UX contract
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
+          assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
+          assert q['counts']['new_pages']==66937
+          assert q['counts']['html_total']==67032
+          assert q['counts']['sitemap_shards']==135
+          assert q['counts']['sitemap_urls']==67032
+          assert q['indexing']['noindex_pages']==0
+          assert q['indexing']['production_ui_failures']==0
+          assert q['indexing']['robots_txt_allows_crawl'] is True
+          css=Path('stage9-release/pilot.css').read_text(encoding='utf-8')
+          js=Path('stage9-release/pilot.js').read_text(encoding='utf-8')
+          for theme in ['theme-elem','theme-mid','theme-high','theme-univ','theme-job','theme-worker','theme-housewife','theme-test']:
+              assert theme in css, theme
+          assert 'emailjs.send' in js
+          assert '실제 상담 전송은 비활성화' not in js
+          print('PASS_STAGE9_FINAL_UX_PREFLIGHT')
+          PY
+
+      - name: Package representative 13 final production pages
+        run: |
+          mkdir -p stage9-final-ux-samples
+          python3 - <<'PY'
+          import json, shutil
+          from pathlib import Path
+          q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          out=Path('stage9-final-ux-samples')
+          pages=[]
+          for row in q['representative_13']['pages']:
+              name=row['canonical'].rsplit('/',1)[-1]
+              src=Path('stage9-release')/name
+              assert src.exists(), name
+              shutil.copy2(src,out/name)
+              pages.append(name)
+          shutil.copy2('stage9-release/pilot.css',out/'pilot.css')
+          shutil.copy2('stage9-release/pilot.js',out/'pilot.js')
+          links=''.join(f'<li><a href="{x}">{x}</a></li>' for x in pages)
+          (out/'index.html').write_text(
+              '<!doctype html><meta charset="utf-8"><title>ENGLISH PT Final UX Samples</title>'
+              '<h1>ENGLISH PT Final UX Samples</h1><ul>'+links+'</ul>',
+              encoding='utf-8'
+          )
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage9-final-ux-samples
+          path: stage9-final-ux-samples
+          retention-days: 30
