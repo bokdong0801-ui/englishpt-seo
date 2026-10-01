@@ -316,7 +316,7 @@ TOPIC_MODULES = [
 
 def _topic_modules(loc: dict, intent: str, family: str, audience: str) -> list[dict]:
     pool=[m for m in TOPIC_MODULES if family in m["families"]]
-    count=14
+    count=8
     ranked=sorted(
         pool,
         key=lambda m: hashlib.sha256(
