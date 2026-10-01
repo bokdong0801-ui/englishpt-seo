@@ -105,7 +105,7 @@ def validate_theme_contract(path: Path, text: str, title: str, h1: str, manifest
 def validate_html(path: Path) -> None:
     text = read(path)
     title = extract_one(r"<title>(.*?)</title>", text, "title", path)
-    extract_one(r"<h1\b[^>]*>(.*?)</h1>", text, "H1", path)
+    h1 = extract_one(r"<h1\b[^>]*>(.*?)</h1>", text, "H1", path)
     extract_one(r"<link\b[^>]*rel=[\"']canonical[\"'][^>]*href=[\"']([^\"']+)[\"'][^>]*>", text, "canonical", path)
 
     plain_title = re.sub(r"<[^>]+>", "", title)
