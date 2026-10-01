@@ -1,0 +1,178 @@
+name: Stage 9 V4.4 Gold Netlify Preview
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-v44-preview-trigger.txt'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID || secrets.ENGLISHPT_NETLIFY_SITE_ID || vars.NETLIFY_SITE_ID || vars.ENGLISHPT_NETLIFY_SITE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify preview credentials
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN"
+          test -n "$NETLIFY_SITE_ID"
+
+      - name: Download approved Stage 7 source
+        uses: actions/download-artifact@v4
+        with:
+          name: stage7-deploy-preview-rollback
+          path: stage7-source
+          run-id: 36694432423
+          github-token: ${{ github.token }}
+
+      - name: Download approved Stage 8 packet
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8-production-approval-packet
+          path: stage8-source
+          run-id: 36694845460
+          github-token: ${{ github.token }}
+
+      - name: Extract all proven Stage 5 source pages
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          mkdir -p stage9-work
+          mapfile -t PKGS < <(find stage7-source -name 'stage5-shard-*-of-026.tar.zst' | sort)
+          test "${#PKGS[@]}" -eq 26
+          for f in "${PKGS[@]}"; do
+            tar --zstd -xf "$f" -C stage9-work
+          done
+          test "$(find stage9-work/stage5-full-generation -name '*.html' | wc -l)" -eq 66937
+
+      - name: Assemble exact current Production output
+        run: |
+          python3 scripts/build-stage9-production-release.py \
+            --stage7-root stage7-source/stage7-preview \
+            --stage8-root stage8-source \
+            --work-root stage9-work \
+            --output stage9-release
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
+          assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
+          assert q['counts']['html_total']==67032, q
+          assert q['indexing']['production_ui_failures']==0, q
+          assert q['source']['mass_renderer']=='stage9-clean-gold-v1', q
+          print('PASS_EXACT_PRODUCTION_ASSEMBLY')
+          PY
+
+      - name: Build 13-page preview from exact Production files
+        run: |
+          rm -rf stage9-v44-preview
+          mkdir -p stage9-v44-preview
+          cp stage9-release/pilot.css stage9-v44-preview/
+          cp stage9-release/pilot.js stage9-v44-preview/
+          cp stage9-release/englishpt.html stage9-v44-preview/ 2>/dev/null || true
+          python3 - <<'PY'
+          import html, json, shutil
+          from pathlib import Path
+          q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          out=Path('stage9-v44-preview')
+          pages=[]
+          for row in q['representative_13']['pages']:
+              name=row['canonical'].rsplit('/',1)[-1]
+              src=Path('stage9-release')/name
+              assert src.exists(), name
+              raw=src.read_text(encoding='utf-8')
+              assert 'class="site-header"' in raw, name
+              assert 'class="hero simple-hero"' in raw, name
+              assert 'class="snapshot"' in raw, name
+              assert 'class="trust"' in raw, name
+              title=raw.split('<title>',1)[1].split('</title>',1)[0]
+              assert 'ENGLISH PT' not in title, (name,title)
+              assert ' | ' in title, (name,title)
+              shutil.copy2(src,out/name)
+              pages.append((name,title))
+          cards=''.join(
+              f'<a class="card" href="/{html.escape(name)}"><b>{html.escape(title)}</b><span>페이지 열기 →</span></a>'
+              for name,title in pages
+          )
+          index=f'''<!doctype html><html lang="ko"><head><meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <meta name="robots" content="noindex,nofollow">
+          <title>ENGLISH PT V4.4 + Stage 9 Gold Preview</title>
+          <style>
+          *{{box-sizing:border-box}}body{{margin:0;font-family:Pretendard,"Apple SD Gothic Neo",Arial,sans-serif;background:#F5F2EA;color:#14201A}}
+          .wrap{{width:min(1050px,calc(100% - 36px));margin:0 auto;padding:54px 0}}
+          h1{{font-size:clamp(30px,5vw,52px);line-height:1.12;margin:0 0 12px}}p{{color:#66716B;line-height:1.7}}
+          .note{{background:#fff;border:1px solid #D7DDD8;border-radius:18px;padding:18px;margin:24px 0}}
+          .grid{{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}}
+          .card{{display:grid;gap:8px;background:#fff;border:1px solid #D7DDD8;border-radius:17px;padding:18px;color:inherit;text-decoration:none}}
+          .card b{{font-size:15px}}.card span{{font-size:12px;color:#315F4C;font-weight:800}}
+          @media(max-width:700px){{.grid{{grid-template-columns:1fr}}.wrap{{padding:36px 0}}}}
+          </style></head><body><main class="wrap"><p>NETLIFY PREVIEW · 실제 Production renderer 산출물</p>
+          <h1>V4.4 디자인 + Stage 9 Gold</h1>
+          <p>아래 13개 페이지는 별도 시안이 아니라 현재 67,032페이지 Production 생성기에서 그대로 뽑은 대표 페이지입니다.</p>
+          <div class="note"><b>확인 포인트</b><p>PC와 모바일에서 Hero, Snapshot, 카드 간격, 상담 CTA, 제목 키워드, 하단 고정 CTA를 확인해주세요. Preview 도메인만 X-Robots-Tag로 색인을 막습니다.</p></div>
+          <div class="grid">{cards}</div></main></body></html>'''
+          (out/'index.html').write_text(index,encoding='utf-8')
+          (out/'_headers').write_text('/*\n  X-Robots-Tag: noindex, nofollow\n',encoding='utf-8')
+          PY
+
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli@latest
+
+      - name: Deploy isolated Netlify preview
+        run: |
+          netlify deploy \
+            --dir=stage9-v44-preview \
+            --site="$NETLIFY_SITE_ID" \
+            --auth="$NETLIFY_AUTH_TOKEN" \
+            --alias=stage9-v44-gold-preview | tee /tmp/netlify-preview.txt
+          echo "PREVIEW_URL=https://stage9-v44-gold-preview--englishpt-seo.netlify.app" >> "$GITHUB_ENV"
+
+      - name: Verify preview URL and representative pages
+        run: |
+          curl -fsSIL --max-time 30 "$PREVIEW_URL/" | head
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          base='https://stage9-v44-gold-preview--englishpt-seo.netlify.app'
+          for row in q['representative_13']['pages']:
+              name=row['canonical'].rsplit('/',1)[-1]
+              subprocess.run(['curl','-fsSIL','--max-time','30',f'{base}/{name}'],check=True,stdout=subprocess.DEVNULL)
+          print('PASS_STAGE9_V44_GOLD_NETLIFY_PREVIEW')
+          PY
+
+      - name: Write preview report
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report={
+            "status":"PASS_STAGE9_V44_GOLD_NETLIFY_PREVIEW",
+            "preview_url":"https://stage9-v44-gold-preview--englishpt-seo.netlify.app",
+            "source":"exact current Stage 9 production renderer",
+            "production_affected":False,
+            "representative_pages":13,
+            "preview_indexing":"blocked by X-Robots-Tag only"
+          }
+          Path('STAGE9_V44_GOLD_PREVIEW_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage9-v44-gold-netlify-preview-report
+          path: STAGE9_V44_GOLD_PREVIEW_REPORT.json
+          retention-days: 30
