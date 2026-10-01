@@ -1,1 +1,1 @@
-Run final calibrated clean ENGLISH PT Stage 9 UX preflight and representative sample packaging.
+Run V4.4 production UI + Stage 9 Gold + Title V2 final preflight before Netlify preview.
