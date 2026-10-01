@@ -26,6 +26,7 @@ jobs:
         run: |
           python -m py_compile scripts/build-stage9-production-release.py
           python -m py_compile scripts/stage9-clean-mass-renderer.py
+          python -m py_compile scripts/stage9-clean-similarity-qa.py
           python -m py_compile scripts/generate-production-stage3-10x13.py
           python -m py_compile scripts/generate-production-stage5-shard.py
 
@@ -66,6 +67,13 @@ jobs:
             --stage8-root stage8-source \
             --work-root stage9-work \
             --output stage9-release
+
+      - name: Check clean-render locality similarity
+        run: |
+          python3 scripts/stage9-clean-similarity-qa.py \
+            --root stage9-release \
+            --samples-per-intent 60 \
+            --output stage9-release/STAGE9_CLEAN_SIMILARITY_QA_V1.json
 
       - name: Assert final production UX contract
         run: |
