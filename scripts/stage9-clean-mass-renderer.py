@@ -316,7 +316,7 @@ TOPIC_MODULES = [
 
 def _topic_modules(loc: dict, intent: str, family: str, audience: str) -> list[dict]:
     pool=[m for m in TOPIC_MODULES if family in m["families"]]
-    count=8
+    count=11
     ranked=sorted(
         pool,
         key=lambda m: hashlib.sha256(
@@ -366,48 +366,97 @@ def _select_by_seed(items: list[str], count: int, seed: str) -> list[str]:
 
 
 def trim_gold_page(raw: str, seed: str, family: str) -> str:
-    # Keep the core intent facts, but vary supporting proof/deep/FAQ material so
-    # locality pages are not just full-copy replicas of one Gold document.
-    def trim_container(text: str, cls: str, item_pattern: str, keep: int, salt: str) -> str:
-        pat=re.compile(r'(<(?:div|ul) class="' + re.escape(cls) + r'">)(.*?)(</(?:div|ul)>)',re.S)
-        m=pat.search(text)
-        if not m:
-            return text
-        items=re.findall(item_pattern,m.group(2),re.S)
+    """Keep audited intent facts while varying the support modules by locality."""
+    def select_items(body: str, pattern: str, keep: int, salt: str) -> str:
+        items=re.findall(pattern,body,re.S)
         if not items:
-            return text
-        chosen=_select_by_seed(items,keep,f"{seed}|{salt}")
-        return text[:m.start()] + m.group(1) + "".join(chosen) + m.group(3) + text[m.end():]
+            return body
+        chosen=_select_by_seed(items,min(keep,len(items)),f"{seed}|{salt}")
+        return "".join(chosen)
 
-    # FAQ: four questions per page from the audited pool.
-    raw=trim_container(raw,"faq",r'<details>.*?</details>',4,"faq")
-    # Feedback: two examples are enough to demonstrate the record format.
-    # There are several grid4 blocks, so target the one after the feedback kicker.
-    fm=re.search(r'(<p class="kicker">피드백 예시</p>.*?<div class="grid4">)(.*?)(</div>)',raw,re.S)
+    # Situation/problem cards: two concrete scenes per locality. The intent still
+    # remains explicit in hero, goal, priority and deep sections.
+    sm=re.search(
+        r'(<p class="kicker">(?:실제 장면|실제 막힘)</p>.*?<div class="grid4">)(.*?)(</div>)',
+        raw,re.S
+    )
+    if sm:
+        body=select_items(sm.group(2),r'<article class="card">.*?</article>',2,"scenes")
+        raw=raw[:sm.start()]+sm.group(1)+body+sm.group(3)+raw[sm.end():]
+
+    # Priority bullets: keep three relevant priorities.
+    pm=re.search(
+        r'(<p class="kicker">우선순위</p>.*?<ul>)(.*?)(</ul>)',
+        raw,re.S
+    )
+    if pm:
+        body=select_items(pm.group(2),r'<li>.*?</li>',3,"priority")
+        raw=raw[:pm.start()]+pm.group(1)+body+pm.group(3)+raw[pm.end():]
+
+    # Training flow: retain three steps, selected in source order.
+    fm=re.search(
+        r'(<p class="kicker">수업 흐름</p>.*?<ol class="steps">)(.*?)(</ol>)',
+        raw,re.S
+    )
     if fm:
-        cards=re.findall(r'<article class="card">.*?</article>',fm.group(2),re.S)
-        if cards:
-            chosen=_select_by_seed(cards,2,f"{seed}|feedback")
-            raw=raw[:fm.start()] + fm.group(1) + "".join(chosen) + fm.group(3) + raw[fm.end():]
-    # Deep guide: two cards from the intent-specific Gold pool.
-    dm=re.search(r'(<p class="kicker">더 깊게 보기</p>.*?<div class="grid4">)(.*?)(</div>)',raw,re.S)
+        body=select_items(fm.group(2),r'<li>.*?</li>',3,"flow")
+        raw=raw[:fm.start()]+fm.group(1)+body+fm.group(3)+raw[fm.end():]
+
+    # Proof points: three visible evidence points.
+    pr=re.search(r'(<ul class="proofs">)(.*?)(</ul>)',raw,re.S)
+    if pr:
+        body=select_items(pr.group(2),r'<li>.*?</li>',3,"proof")
+        raw=raw[:pr.start()]+pr.group(1)+body+pr.group(3)+raw[pr.end():]
+
+    # Feedback: two examples are enough to demonstrate the record format.
+    fb=re.search(
+        r'(<p class="kicker">피드백 예시</p>.*?<div class="grid4">)(.*?)(</div>)',
+        raw,re.S
+    )
+    if fb:
+        body=select_items(fb.group(2),r'<article class="card">.*?</article>',2,"feedback")
+        raw=raw[:fb.start()]+fb.group(1)+body+fb.group(3)+raw[fb.end():]
+
+    # Intent-specific deep guide: two cards from the audited Gold pool.
+    dm=re.search(
+        r'(<p class="kicker">더 깊게 보기</p>.*?<div class="grid4">)(.*?)(</div>)',
+        raw,re.S
+    )
     if dm:
-        cards=re.findall(r'<article class="card">.*?</article>',dm.group(2),re.S)
-        if cards:
-            chosen=_select_by_seed(cards,2,f"{seed}|deep")
-            raw=raw[:dm.start()] + dm.group(1) + "".join(chosen) + dm.group(3) + raw[dm.end():]
-    # Four proof points keep the decision support concise.
-    raw=trim_container(raw,"proofs",r'<li>.*?</li>',4,"proof")
-    # The exam Gold has a long generic learning-frame section. The diverse topic
-    # modules replace it in production; exam-specific deep/official sections stay.
+        body=select_items(dm.group(2),r'<article class="card">.*?</article>',2,"deep")
+        raw=raw[:dm.start()]+dm.group(1)+body+dm.group(3)+raw[dm.end():]
+
+    # FAQ: three questions per locality from the audited pool.
+    fq=re.search(r'(<div class="faq">)(.*?)(</div>)',raw,re.S)
+    if fq:
+        body=select_items(fq.group(2),r'<details>.*?</details>',3,"faq")
+        raw=raw[:fq.start()]+fq.group(1)+body+fq.group(3)+raw[fq.end():]
+
+    # Service Gold pages contain a long generic diagnosis section. Keep its
+    # heading + first and last explanatory paragraph only; topic modules carry
+    # the locality-specific decision support.
+    if family=="service":
+        dg=re.search(
+            r'(<p class="kicker">막히는 이유</p><h2>.*?</h2>)(.*?)(</div></section>)',
+            raw,re.S
+        )
+        if dg:
+            ps=re.findall(r'<p>.*?</p>',dg.group(2),re.S)
+            chosen=[]
+            if ps:
+                chosen.append(ps[0])
+                if len(ps)>1: chosen.append(ps[-1])
+            raw=raw[:dg.start()]+dg.group(1)+"".join(chosen)+dg.group(3)+raw[dg.end():]
+
+    # Exam Gold has a long generic learning-frame section. Diverse topic modules
+    # replace it; exam-specific deep guide and official-information sections remain.
     if family=="exam":
         raw=re.sub(
             r'<section class="section"><div class="wrap narrow"><p class="kicker">학습 프레임</p>.*?</section>',
             '',
-            raw,
-            count=1,
-            flags=re.S,
+            raw,count=1,flags=re.S,
         )
+
     return raw
 
 
