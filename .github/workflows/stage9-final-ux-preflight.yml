@@ -105,7 +105,7 @@ jobs:
           for p in sample_pages:
               raw=p.read_text(encoding='utf-8')
               assert 'data-stage9-clean="true"' in raw, p.name
-              assert 'class="mass-context"' in raw, p.name
+              assert 'class="section mass-context"' in raw, p.name
               assert all(x not in raw for x in machine_phrases), p.name
               assert raw.count('href="/') >= 13, p.name
           print('PASS_STAGE9_FINAL_UX_PREFLIGHT')
