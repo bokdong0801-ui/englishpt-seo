@@ -25,6 +25,7 @@ jobs:
       - name: Compile changed production scripts
         run: |
           python -m py_compile scripts/build-stage9-production-release.py
+          python -m py_compile scripts/stage9-clean-mass-renderer.py
           python -m py_compile scripts/generate-production-stage3-10x13.py
           python -m py_compile scripts/generate-production-stage5-shard.py
 
@@ -80,12 +81,25 @@ jobs:
           assert q['indexing']['noindex_pages']==0
           assert q['indexing']['production_ui_failures']==0
           assert q['indexing']['robots_txt_allows_crawl'] is True
+          assert q['source']['mass_renderer']=='stage9-clean-gold-v1'
           css=Path('stage9-release/pilot.css').read_text(encoding='utf-8')
           js=Path('stage9-release/pilot.js').read_text(encoding='utf-8')
           for theme in ['theme-elem','theme-mid','theme-high','theme-univ','theme-job','theme-worker','theme-housewife','theme-test']:
               assert theme in css, theme
           assert 'emailjs.send' in js
           assert '실제 상담 전송은 비활성화' not in js
+          machine_phrases=[
+              '흐름 Band','시점 배분','직접 방식 방식','회수 회수','상기 횟수',
+              '근거를 찾을 수 되는지','이어지는 정체가 어디서 생기는지 검토합니다',
+              'production 미배포','실제 상담 전송은 비활성화'
+          ]
+          sample_pages=sorted(Path('stage9-release').glob('*.html'))[95::997]
+          for p in sample_pages:
+              raw=p.read_text(encoding='utf-8')
+              assert 'data-stage9-clean="true"' in raw, p.name
+              assert 'class="mass-context"' in raw, p.name
+              assert all(x not in raw for x in machine_phrases), p.name
+              assert raw.count('href="/') >= 13, p.name
           print('PASS_STAGE9_FINAL_UX_PREFLIGHT')
           PY
 
