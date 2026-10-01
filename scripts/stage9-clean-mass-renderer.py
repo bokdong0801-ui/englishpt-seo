@@ -23,6 +23,22 @@ SERVICE_ORDER = [
 EXAM_ORDER = ["toeic","toeic-speaking","opic","ielts","duolingo","toefl"]
 VARIATIONS = ["scene","deadline","error","use","reuse"]
 
+TITLE_VARIANTS = {
+    "elem-tutor": ["읽기·문장기초 진단", "학교영어·기초문장", "기초영어·문장훈련"],
+    "mid-conv": ["수행평가·질문대응", "발표·말하기훈련", "학교영어·회화훈련"],
+    "high-conv": ["수행평가·발표·질문대응", "발표·면접·말하기훈련", "학교영어·실전말하기"],
+    "univ-conv": ["발표·세미나·면접영어", "대학수업·발표영어", "교환학생·면접·회화"],
+    "jobseeker-conv": ["영어면접·답변훈련", "취업면접·자기소개", "면접질문·답변구성"],
+    "biz-business-conv": ["회의·발표·업무영어", "비즈니스 회의·발표", "업무회화·회의영어"],
+    "housewife-conv": ["여행·생활영어", "기초회화·여행영어", "생활회화·말하기기초"],
+    "toeic": ["LC·RC 오답·시간관리", "파트별 약점·실전훈련", "시험일·오답원인 진단"],
+    "toeic-speaking": ["답변구조·시간훈련", "파트별 답변·실전훈련", "말하기 약점·답변구성"],
+    "opic": ["돌발질문·답변구성", "목표등급·실전답변", "말하기 약점·답변훈련"],
+    "ielts": ["IELTS 4영역·Band 진단", "Writing·Speaking 피드백", "목표 Band·4영역 훈련"],
+    "duolingo": ["실전유형·시간훈련", "DET 유형·실전훈련", "목표점수·문항대응"],
+    "toefl": ["4영역·실전훈련", "TOEFL 4영역·시간관리", "Reading·Listening·말하기·쓰기"],
+}
+
 EMAILJS_TAG = '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>'
 LIVE_FORM = '''<form id="pilotForm" class="lead-form">
 <label>이름 <span>*</span><input name="name" autocomplete="name" required></label>
@@ -507,6 +523,76 @@ def all_related(loc: dict, current_intent: str) -> str:
     )
 
 
+def title_for(loc: dict, intent: str) -> str:
+    variants = TITLE_VARIANTS[intent]
+    digest = hashlib.sha256(f'{loc["slug"]}|{intent}|title-v2'.encode()).hexdigest()
+    suffix = variants[int(digest[:8], 16) % len(variants)]
+    return f'{loc["dong"]} {loc["service"]} | {suffix}'
+
+
+def v44_header() -> str:
+    return (
+        '<header class="site-header"><div class="wrap header">'
+        '<a href="/englishpt.html" class="brand"><span class="brand-mark">PT</span><span class="brand-name">ENGLISH PT</span></a>'
+        '<nav class="nav" aria-label="주요 메뉴">'
+        '<a class="phone-cta" href="tel:+821050068027">전화 010-5006-8027</a>'
+        '<a class="nav-link" href="#detail">수업 보기</a>'
+        '<a class="nav-cta" href="#consultation-preview">무료 PT 진단</a>'
+        '</nav></div></header>'
+    )
+
+
+def v44_snapshot(loc: dict, family: str) -> str:
+    if family == "exam":
+        rows = [
+            ("GOAL", "목표 점수·등급과 가장 가까운 시험 일정"),
+            ("CURRENT", "최근 문제·답변에서 반복되는 실제 병목"),
+            ("NEXT", "실전 조건에서 다시 확인할 한두 가지 행동"),
+        ]
+    else:
+        rows = [
+            ("GOAL", "다음 발표·면접·학교·생활 영어 장면"),
+            ("CURRENT", "최근 막힌 장면과 혼자 가능한 범위"),
+            ("PLAN", "수업 밖에서도 반복 가능한 시간과 방식"),
+        ]
+    body = ''.join(
+        f'<div class="snaprow"><small>{esc(k)}</small><strong>{esc(v)}</strong></div>'
+        for k, v in rows
+    )
+    return (
+        '<aside class="snapshot">'
+        '<h3>처음 상담에서 먼저 보는 것</h3>'
+        '<p>레벨 이름보다 현재 목표와 다음 행동부터 확인합니다.</p>'
+        + body + '</aside>'
+    )
+
+
+def v44_trust(family: str) -> str:
+    items = (
+        ["✓ 목표·시험일 기준", "✓ 최근 병목부터 진단", "✓ 실전 조건에서 재확인"]
+        if family == "exam"
+        else ["✓ 현재 수준부터 확인", "✓ 실제 사용 장면 중심", "✓ 가능한 일정과 반복 기준"]
+    )
+    return '<div class="trust"><div class="wrap trust-in">' + ''.join(f'<div>{x}</div>' for x in items) + '</div></div>'
+
+
+def rewrite_schema_page_title(raw: str, page_title: str) -> str:
+    m = re.search(r'<script type="application/ld\+json">(.*?)</script>', raw, re.S)
+    if not m:
+        return raw
+    try:
+        data = json.loads(m.group(1))
+        graph = data.get("@graph")
+        if isinstance(graph, list):
+            for node in graph:
+                if isinstance(node, dict) and node.get("@type") == "WebPage":
+                    node["name"] = page_title
+        rep = '<script type="application/ld+json">' + json.dumps(data,ensure_ascii=False,separators=(",",":")) + '</script>'
+        return raw[:m.start()] + rep + raw[m.end():]
+    except Exception:
+        return raw
+
+
 def add_breadcrumb_schema(raw: str, h1: str, canonical: str) -> tuple[str, bool]:
     m = re.search(r'<script type="application/ld\+json">(.*?)</script>', raw, re.S)
     if not m:
@@ -535,6 +621,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     raw = trim_gold_page(raw, loc["slug"] + "|" + intent, family)
     h1 = plain_h1(raw)
     canonical = f'{BASE_URL}/{loc["slug"]}-{intent}.html'
+    page_title = title_for(loc, intent)
     theme = (
         gold_modules()[0].PROFILES[intent]["theme"] + " intent-audience"
         if family=="service" else "theme-test intent-test"
@@ -551,6 +638,13 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     raw = raw.replace('href="../pilot-v45-5x7/pilot.css"','href="pilot.css"')
     raw = raw.replace('src="pilot.js"','src="pilot.js"')
     raw = raw.replace('src="../pilot-v45-5x7/pilot.js"','src="pilot.js"')
+    raw = re.sub(r'<title>.*?</title>', f'<title>{esc(page_title)}</title>', raw, count=1, flags=re.S)
+    raw = re.sub(
+        r'<meta property="og:title" content="[^"]*">',
+        f'<meta property="og:title" content="{esc(page_title)}">',
+        raw,
+        count=1,
+    )
     raw = re.sub(
         r'<body class="[^"]*"[^>]*data-production-deploy="false">',
         f'<body class="{theme}" data-production-deploy="true" data-stage9-clean="true">',
@@ -558,10 +652,36 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         count=1,
     )
     raw = re.sub(
-        r'<header><div class="wrap header"><a href="/englishpt.html" class="brand">ENGLISH PT</a><span>.*?</span></div></header>',
-        '<header><div class="wrap header"><a href="/englishpt.html" class="brand">ENGLISH PT</a><span>지역별 맞춤 영어 안내</span></div></header>',
+        r'<header>.*?</header>',
+        v44_header(),
         raw, count=1, flags=re.S,
     )
+
+    hero_html = (
+        '<section class="hero simple-hero"><div class="wrap simple-hero-inner">'
+        f'<p class="eyebrow">ENGLISH PT · {esc(loc["dong"])}</p>'
+        f'<h1>{esc(h1)}</h1>'
+        '<div class="hero-actions">'
+        '<a class="btn primary" href="#detail">내용 보기</a>'
+        '<a class="btn ghost" href="#consultation-preview">무료 PT 진단</a>'
+        '</div></div></section>'
+    )
+    raw = re.sub(r'<section class="hero">.*?</section>', hero_html, raw, count=1, flags=re.S)
+
+    detail = re.search(
+        r'<section id="detail" class="section"><div class="wrap narrow">(.*?)</div></section>',
+        raw, re.S,
+    )
+    if detail:
+        intro_html = (
+            '<section class="section intro-detail" id="detail"><div class="wrap"><div class="intro-grid">'
+            '<div class="intro-copy">' + detail.group(1) + '</div>'
+            + v44_snapshot(loc, family)
+            + '</div></div></section>' + v44_trust(family)
+        )
+        raw = raw[:detail.start()] + intro_html + raw[detail.end():]
+    else:
+        problems.append("v44_intro")
 
     if EMAILJS_TAG not in raw:
         raw = raw.replace('<script defer src="pilot.js"></script>', EMAILJS_TAG+'<script defer src="pilot.js"></script>',1)
@@ -612,6 +732,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     raw, schema_ok = add_breadcrumb_schema(raw,h1,canonical)
     if not schema_ok:
         problems.append("breadcrumb_schema")
+    raw = rewrite_schema_page_title(raw, page_title)
 
     raw = raw.replace('</body>','<div class="mobile-sticky"><a href="#consultation-preview">무료 PT 진단 신청</a></div></body>',1)
 
@@ -627,6 +748,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         'name="name"','name="phone"','name="consent"',
         'class="breadcrumb wrap"','class="mobile-sticky"',
         EMAILJS_TAG,'class="section mass-context"',
+        'class="site-header"','class="hero simple-hero"','class="snapshot"','class="trust"',
     ]
     if any(x not in raw for x in required):
         problems.append("production_contract")
