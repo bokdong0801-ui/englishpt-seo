@@ -1,1 +1,1 @@
-Run final pre-Production Stage 9 QA with five academy-search intents across all 5,149 localities.
+Run expanded 22-intent Stage 9 preflight with exam academy pages plus English conversation academy/adult/worker/beginner pages.
