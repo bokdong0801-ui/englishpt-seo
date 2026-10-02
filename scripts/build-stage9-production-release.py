@@ -38,6 +38,53 @@ SITEMAP_CHUNK = 500
 EXPECTED_REDIRECTS = 74
 BASE_URL = "https://englishpt.kr"
 
+VISUAL_FAMILIES = ["school","school-talk","campus","interview","business","conversation","toeic","speaking","four-skills","digital-test"]
+
+def write_visual_assets(out: Path) -> None:
+    assets = out / "assets" / "images"
+    assets.mkdir(parents=True, exist_ok=True)
+    palettes = {
+        "school":("#EAF4F1","#2F7E86","#173038"),
+        "school-talk":("#EAF0F5","#536EA7","#192A39"),
+        "campus":("#EEF2F5","#4C6987","#1A2937"),
+        "interview":("#EDF2F1","#395D68","#17282C"),
+        "business":("#F1EEE5","#315F4C","#121A17"),
+        "conversation":("#F3EEE8","#B99479","#222920"),
+        "toeic":("#EAF1F8","#2867A6","#172A3B"),
+        "speaking":("#F1ECF4","#725184","#302438"),
+        "four-skills":("#F5ECEE","#8A4653","#38252A"),
+        "digital-test":("#EAF3ED","#2D7B5D","#1C3529"),
+    }
+    labels={
+        "school":"BOOK","school-talk":"SPEAK","campus":"PRESENT","interview":"INTERVIEW",
+        "business":"MEETING","conversation":"CONVERSATION","toeic":"LC · RC","speaking":"SPEAKING",
+        "four-skills":"4 SKILLS","digital-test":"DIGITAL TEST",
+    }
+    for family in VISUAL_FAMILIES:
+        bg,accent,ink=palettes[family]
+        for variant in range(1,4):
+            shift=variant*24
+            svg=f'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+<rect width="1200" height="720" fill="{bg}"/>
+<circle cx="{955-shift}" cy="{145+shift}" r="{112+variant*8}" fill="{accent}" opacity=".13"/>
+<circle cx="{180+shift}" cy="{600-shift}" r="{145-variant*6}" fill="{accent}" opacity=".09"/>
+<rect x="95" y="88" width="1010" height="544" rx="38" fill="#fff" stroke="{accent}" stroke-opacity=".20"/>
+<rect x="150" y="146" width="360" height="26" rx="13" fill="{accent}" opacity=".16"/>
+<rect x="150" y="198" width="245" height="18" rx="9" fill="{ink}" opacity=".10"/>
+<rect x="150" y="235" width="300" height="18" rx="9" fill="{ink}" opacity=".08"/>
+<rect x="150" y="325" width="395" height="192" rx="26" fill="{bg}" stroke="{accent}" stroke-opacity=".24"/>
+<path d="M190 462 C260 {340+shift//3}, 330 {520-shift//4}, 500 370" fill="none" stroke="{accent}" stroke-width="16" stroke-linecap="round"/>
+<circle cx="205" cy="430" r="22" fill="{accent}"/><circle cx="340" cy="405" r="22" fill="{accent}" opacity=".72"/><circle cx="490" cy="375" r="22" fill="{accent}" opacity=".46"/>
+<rect x="625" y="175" width="365" height="315" rx="30" fill="{ink}"/>
+<rect x="662" y="215" width="290" height="190" rx="18" fill="{bg}"/>
+<circle cx="807" cy="310" r="58" fill="{accent}" opacity=".20"/>
+<path d="M770 315 q37 -55 74 0 q-37 50 -74 0z" fill="{accent}" opacity=".86"/>
+<rect x="725" y="440" width="165" height="14" rx="7" fill="#fff" opacity=".55"/>
+<text x="150" y="585" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="{accent}" letter-spacing="3">{labels[family]}</text>
+</svg>'''
+            (assets / f"{family}-{variant}.svg").write_text(svg, encoding="utf-8")
+
+
 ROBOTS_RE = re.compile(
     r'<meta\s+name=["\']robots["\']\s+content=["\']noindex\s*,\s*nofollow["\']\s*/?>',
     re.I,
@@ -334,6 +381,8 @@ def main() -> None:
             src = first_pages_dir / asset
             if src.exists():
                 shutil.copy2(src, out / asset)
+    write_visual_assets(out)
+
     production_assets = {
         "pilot.css": ROOT / "assets" / "stage9-mass-production.css",
         "pilot.js": ROOT / "assets" / "stage9-mass-production.js",
