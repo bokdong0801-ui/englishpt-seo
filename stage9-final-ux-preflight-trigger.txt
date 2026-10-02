@@ -1,1 +1,1 @@
-Re-run 22-intent Stage 9 expansion preflight after simplifying TOEIC Speaking generic comparison modules.
+Run expanded Stage 9 preflight for 23 intents: 13 source + 6 exam academy + 3 conversation academy + beginner conversation.
