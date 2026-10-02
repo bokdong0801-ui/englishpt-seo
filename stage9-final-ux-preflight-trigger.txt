@@ -1,1 +1,1 @@
-Run final 92,777-page preflight after increasing locality-specific support on exam and academy pages.
+Run final 92,777-page preflight after adding locality depth for TOEIC Speaking and OPIc.
