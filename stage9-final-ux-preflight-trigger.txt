@@ -1,1 +1,1 @@
-Run final reader-first Stage 9 preflight with one extra comparison item for university, jobseeker and TOEIC intents.
+Run 92,777-page Stage 9 preflight with five academy intents, exam-specific colors, reader-first copy and detailed management.
