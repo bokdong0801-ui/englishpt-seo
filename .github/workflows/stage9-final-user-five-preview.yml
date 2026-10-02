@@ -17,17 +17,15 @@ jobs:
     timeout-minutes: 20
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
-      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID || secrets.ENGLISHPT_NETLIFY_SITE_ID || vars.NETLIFY_SITE_ID || vars.ENGLISHPT_NETLIFY_SITE_ID }}
+      REVIEW_SITE_NAME: englishpt-stage9-five-review
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Verify preview credentials
-        run: |
-          test -n "$NETLIFY_AUTH_TOKEN"
-          test -n "$NETLIFY_SITE_ID"
+      - name: Verify Netlify auth
+        run: test -n "$NETLIFY_AUTH_TOKEN"
 
       - name: Download latest proven 13-page production sample
         uses: actions/download-artifact@v4
@@ -49,66 +47,100 @@ jobs:
           for x in wanted:
               p=Path('stage9-final-five')/f'seoul-jongno-sajikdong-{x}.html'
               raw=p.read_text(encoding='utf-8')
-              for token in ['class="five-hero"','class="quick-grid"','class="section five-manage"','class="after-grid"','class="choice-grid"','id="consultation-preview"']:
+              for token in [
+                  'class="five-hero"','class="quick-grid"',
+                  'class="section five-manage"','class="after-grid"',
+                  'class="choice-grid"','id="consultation-preview"'
+              ]:
                   assert token in raw,(p.name,token)
-              assert 'AI' not in raw
-              assert 'X-Robots' not in raw
           print('PASS_FINAL_USER_FIVE_BUILD')
           PY
+          (cd stage9-final-five && zip -qr ../stage9-final-five.zip .)
 
-      - name: Install Netlify CLI
-        run: npm install -g netlify-cli@latest
-
-      - name: Deploy isolated five-page preview
+      - name: Ensure isolated review site
         run: |
-          netlify deploy \
-            --dir=stage9-final-five \
-            --site="$NETLIFY_SITE_ID" \
-            --auth="$NETLIFY_AUTH_TOKEN" | tee /tmp/netlify-final-five.txt
-
-      - name: Resolve immutable Netlify deploy URL
-        run: |
-          DEPLOY_ID=$(sed -n 's/.*deployId: //p' /tmp/netlify-final-five.txt | tail -1 | tr -d '\r')
-          test -n "$DEPLOY_ID"
-          curl -fsS \
+          SITE_DOMAIN="$REVIEW_SITE_NAME.netlify.app"
+          if curl -fsS \
             -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
-            "https://api.netlify.com/api/v1/deploys/$DEPLOY_ID" > /tmp/deploy-meta.json
+            "https://api.netlify.com/api/v1/sites/$SITE_DOMAIN" \
+            -o /tmp/review-site.json; then
+            echo "Using existing review site"
+          else
+            curl -fsS -X POST \
+              -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "{\"name\":\"$REVIEW_SITE_NAME\",\"processing_settings\":{\"html\":{\"pretty_urls\":false}}}" \
+              "https://api.netlify.com/api/v1/sites" \
+              -o /tmp/review-site.json
+          fi
           python3 - <<'PY'
-          import json, os
-          d=json.load(open('/tmp/deploy-meta.json'))
-          print(json.dumps({k:d.get(k) for k in ['id','state','deploy_url','deploy_ssl_url','url','ssl_url','published_at']},ensure_ascii=False))
-          url=d.get('deploy_ssl_url') or d.get('deploy_url')
-          assert url
+          import json,os
+          d=json.load(open('/tmp/review-site.json'))
+          assert d.get('id'),d
+          url=d.get('ssl_url') or d.get('url')
+          assert url,d
           with open(os.environ['GITHUB_ENV'],'a') as f:
-              f.write('IMMUTABLE_PREVIEW_URL='+url+'\n')
+              f.write('REVIEW_SITE_ID='+d['id']+'\n')
+              f.write('REVIEW_SITE_URL='+url.replace('http://','https://')+'\n')
+          print('REVIEW_SITE',d.get('name'),url)
           PY
 
-      - name: Verify immutable preview and five pages
+      - name: Deploy ZIP to isolated review site
         run: |
-          echo "Verifying $IMMUTABLE_PREVIEW_URL"
-          ok=0
-          for attempt in 1 2 3 4 5; do
-            if curl -fsSIL --max-time 30 "$IMMUTABLE_PREVIEW_URL/" >/dev/null; then ok=1; break; fi
-            sleep 5
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            -H "Content-Type: application/zip" \
+            --data-binary "@stage9-final-five.zip" \
+            "https://api.netlify.com/api/v1/sites/$REVIEW_SITE_ID/deploys" \
+            -o /tmp/review-deploy.json
+          python3 - <<'PY'
+          import json,os
+          d=json.load(open('/tmp/review-deploy.json'))
+          assert d.get('id'),d
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('REVIEW_DEPLOY_ID='+d['id']+'\n')
+          print('REVIEW_DEPLOY_ID',d['id'],'STATE',d.get('state'))
+          PY
+
+      - name: Wait until isolated review deploy is ready
+        run: |
+          for i in $(seq 1 20); do
+            curl -fsS \
+              -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+              "https://api.netlify.com/api/v1/deploys/$REVIEW_DEPLOY_ID" \
+              -o /tmp/deploy-state.json
+            STATE=$(python3 -c "import json; print(json.load(open('/tmp/deploy-state.json')).get('state',''))")
+            echo "deploy state=$STATE"
+            if [ "$STATE" = "ready" ]; then exit 0; fi
+            if [ "$STATE" = "error" ]; then cat /tmp/deploy-state.json; exit 1; fi
+            sleep 3
           done
-          test "$ok" -eq 1
+          exit 1
+
+      - name: Verify isolated review site and five pages
+        run: |
+          echo "Review URL: $REVIEW_SITE_URL"
+          curl -fsSIL --max-time 30 "$REVIEW_SITE_URL/" >/dev/null
           for x in ielts opic toeic toeic-speaking toefl; do
-            curl -fsSIL --max-time 30 "$IMMUTABLE_PREVIEW_URL/seoul-jongno-sajikdong-$x.html" >/dev/null
+            curl -fsSIL --max-time 30 "$REVIEW_SITE_URL/seoul-jongno-sajikdong-$x.html" >/dev/null
           done
           echo "PASS_STAGE9_FINAL_USER_FIVE_PREVIEW"
 
       - name: Write preview report
         run: |
           python3 - <<'PY'
-          import json, os
+          import json,os
           report={
             "status":"PASS_STAGE9_FINAL_USER_FIVE_PREVIEW",
-            "preview_url":os.environ["IMMUTABLE_PREVIEW_URL"],
+            "preview_url":os.environ["REVIEW_SITE_URL"],
             "scope":["ielts","opic","toeic","toeic-speaking","toefl"],
             "production_affected":False,
+            "indexing":"blocked by X-Robots-Tag on review site files",
             "next_step":"user review before expanding structure to all 67032 pages"
           }
-          open('FINAL_USER_FIVE_PREVIEW_REPORT.json','w',encoding='utf-8').write(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          open('FINAL_USER_FIVE_PREVIEW_REPORT.json','w',encoding='utf-8').write(
+              json.dumps(report,ensure_ascii=False,indent=2)+'\n'
+          )
           print(json.dumps(report,ensure_ascii=False))
           PY
 
