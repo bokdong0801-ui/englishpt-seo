@@ -67,36 +67,51 @@ jobs:
             --auth="$NETLIFY_AUTH_TOKEN" \
             --alias=stage9-v44-gold-preview | tee /tmp/netlify-final-five.txt
 
-      - name: Verify preview and five pages
+      - name: Resolve immutable Netlify deploy URL
         run: |
-          BASE="https://stage9-v44-gold-preview--englishpt-seo.netlify.app"
+          DEPLOY_ID=$(sed -n 's/.*deployId: //p' /tmp/netlify-final-five.txt | tail -1 | tr -d '\r')
+          test -n "$DEPLOY_ID"
+          curl -fsS \
+            -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/deploys/$DEPLOY_ID" > /tmp/deploy-meta.json
+          python3 - <<'PY'
+          import json, os
+          d=json.load(open('/tmp/deploy-meta.json'))
+          print(json.dumps({k:d.get(k) for k in ['id','state','deploy_url','deploy_ssl_url','url','ssl_url','published_at']},ensure_ascii=False))
+          url=d.get('deploy_ssl_url') or d.get('deploy_url')
+          assert url
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('IMMUTABLE_PREVIEW_URL='+url+'\n')
+          PY
+
+      - name: Verify immutable preview and five pages
+        run: |
+          echo "Verifying $IMMUTABLE_PREVIEW_URL"
           ok=0
           for attempt in 1 2 3 4 5; do
-            if curl -fsSIL --max-time 30 "$BASE/" >/dev/null; then ok=1; break; fi
+            if curl -fsSIL --max-time 30 "$IMMUTABLE_PREVIEW_URL/" >/dev/null; then ok=1; break; fi
             sleep 5
           done
           test "$ok" -eq 1
           for x in ielts opic toeic toeic-speaking toefl; do
-            ok=0
-            for attempt in 1 2 3 4 5; do
-              if curl -fsSIL --max-time 30 "$BASE/seoul-jongno-sajikdong-$x.html" >/dev/null; then ok=1; break; fi
-              sleep 3
-            done
-            test "$ok" -eq 1
+            curl -fsSIL --max-time 30 "$IMMUTABLE_PREVIEW_URL/seoul-jongno-sajikdong-$x.html" >/dev/null
           done
           echo "PASS_STAGE9_FINAL_USER_FIVE_PREVIEW"
 
       - name: Write preview report
         run: |
-          cat > FINAL_USER_FIVE_PREVIEW_REPORT.json <<'EOF'
-          {
-            "status": "PASS_STAGE9_FINAL_USER_FIVE_PREVIEW",
-            "preview_url": "https://stage9-v44-gold-preview--englishpt-seo.netlify.app",
-            "scope": ["ielts","opic","toeic","toeic-speaking","toefl"],
-            "production_affected": false,
-            "next_step": "user review before expanding structure to all 67032 pages"
+          python3 - <<'PY'
+          import json, os
+          report={
+            "status":"PASS_STAGE9_FINAL_USER_FIVE_PREVIEW",
+            "preview_url":os.environ["IMMUTABLE_PREVIEW_URL"],
+            "scope":["ielts","opic","toeic","toeic-speaking","toefl"],
+            "production_affected":False,
+            "next_step":"user review before expanding structure to all 67032 pages"
           }
-          EOF
+          open('FINAL_USER_FIVE_PREVIEW_REPORT.json','w',encoding='utf-8').write(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          print(json.dumps(report,ensure_ascii=False))
+          PY
 
       - uses: actions/upload-artifact@v4
         with:
