@@ -281,6 +281,12 @@ button,a{-webkit-tap-highlight-color:transparent}
 }
 .links a:hover{border-color:var(--accent);color:var(--accent)}
 
+/* Page visual */
+.visual-break{padding:28px 0 18px;background:var(--paper)}
+.learning-visual{margin:0;overflow:hidden;border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow)}
+.learning-visual img{display:block;width:100%;height:auto;aspect-ratio:5/3;object-fit:cover;background:var(--soft)}
+.learning-visual figcaption{padding:15px 18px;color:var(--muted);font-size:13.5px;line-height:1.65}
+
 /* Consultation */
 .consult{background:var(--soft)}
 .consult>.wrap{width:min(860px,calc(100% - 48px))}
@@ -290,12 +296,21 @@ button,a{-webkit-tap-highlight-color:transparent}
 }
 .lead-form label{display:grid;gap:7px;font-size:13px;font-weight:800}
 .lead-form label.full,.lead-form .full{grid-column:1/-1}
-.lead-form input,.lead-form textarea{
+.lead-form input,.lead-form textarea,.lead-form select{
   width:100%;border:1px solid var(--line);border-radius:11px;padding:13px 14px;
   background:#fff;color:var(--ink);outline:none
 }
 .lead-form input:focus,.lead-form textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(49,95,76,.08)}
 .lead-form textarea{resize:vertical;min-height:92px}
+.lead-form fieldset{margin:0;border:1px solid var(--line);border-radius:14px;padding:14px}
+.lead-form legend{padding:0 6px;font-size:13px;font-weight:900}
+.lead-form .choice{display:flex;grid-auto-flow:column;justify-content:start;align-items:center;gap:8px;padding:7px 0;font-weight:650;color:var(--ink)}
+.lead-form .choice input{width:auto}
+.privacy-detail{border-top:1px solid var(--line);padding-top:8px}
+.privacy-detail summary{cursor:pointer;font-size:12.5px;font-weight:800;color:var(--muted)}
+.privacy-detail p{margin:9px 0 0;color:var(--muted);font-size:12px}
+.form-alt{margin:0;color:var(--muted);font-size:12.5px}
+.form-alt a{color:var(--accent);font-weight:800}
 .lead-form .privacy-check{
   display:flex;grid-column:1/-1;gap:9px;align-items:flex-start;
   color:var(--muted);font-weight:600;font-size:12.5px
