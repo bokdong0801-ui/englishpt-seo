@@ -98,6 +98,7 @@ jobs:
           for token in ['.simple-hero','.intro-grid','.snapshot','.trust-in','.mobile-sticky','@media(max-width:760px)']:
               assert token in css, token
           assert 'emailjs.send' in js
+          assert len(list(Path('stage9-release/assets/images').glob('*.svg'))) == 30
           assert '실제 상담 전송은 비활성화' not in js
           machine_phrases=[
               '흐름 Band','시점 배분','직접 방식 방식','회수 회수','상기 횟수',
@@ -113,6 +114,10 @@ jobs:
               assert 'class="hero simple-hero"' in raw, p.name
               assert 'class="snapshot"' in raw, p.name
               assert 'class="trust"' in raw, p.name
+              assert 'class="learning-visual"' in raw, p.name
+              assert 'name="area"' in raw, p.name
+              assert 'name="purpose"' in raw, p.name
+              assert 'name="difficulty"' in raw, p.name
               title=raw.split('<title>',1)[1].split('</title>',1)[0]
               assert 'ENGLISH PT' not in title, (p.name,title)
               assert ' | ' in title, (p.name,title)
