@@ -8,7 +8,8 @@ from pathlib import Path
 INTENTS=[
  "elem-tutor","mid-conv","high-conv","univ-conv","jobseeker-conv",
  "biz-business-conv","housewife-conv","toeic","toeic-speaking","opic",
- "ielts","duolingo","toefl"
+ "ielts","duolingo","toefl",
+ "toeic-academy","toeic-speaking-academy","opic-academy","ielts-academy","toefl-academy"
 ]
 TAG_RE=re.compile(r"<script.*?</script>|<style.*?</style>|<[^>]+>",re.S|re.I)
 TOK_RE=re.compile(r"[가-힣A-Za-z0-9]+")
