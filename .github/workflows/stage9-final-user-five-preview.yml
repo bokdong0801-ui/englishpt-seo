@@ -1,0 +1,95 @@
+name: Stage 9 Final User Five Preview
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-final-five-trigger.txt'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID || secrets.ENGLISHPT_NETLIFY_SITE_ID || vars.NETLIFY_SITE_ID || vars.ENGLISHPT_NETLIFY_SITE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify preview credentials
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN"
+          test -n "$NETLIFY_SITE_ID"
+
+      - name: Download latest proven 13-page production sample
+        uses: actions/download-artifact@v4
+        with:
+          name: stage9-final-ux-samples
+          path: stage9-source
+          run-id: 36967098337
+          github-token: ${{ github.token }}
+
+      - name: Build five reader-first exam pages
+        run: |
+          python3 scripts/build-final-user-five-preview.py \
+            --source stage9-source \
+            --output stage9-final-five
+          test "$(find stage9-final-five -maxdepth 1 -name 'seoul-jongno-sajikdong-*.html' | wc -l)" -eq 5
+          python3 - <<'PY'
+          from pathlib import Path
+          wanted=['ielts','opic','toeic','toeic-speaking','toefl']
+          for x in wanted:
+              p=Path('stage9-final-five')/f'seoul-jongno-sajikdong-{x}.html'
+              raw=p.read_text(encoding='utf-8')
+              for token in ['class="five-hero"','class="quick-grid"','class="section five-manage"','class="after-grid"','class="choice-grid"','id="consultation-preview"']:
+                  assert token in raw,(p.name,token)
+              assert 'AI' not in raw
+              assert 'X-Robots' not in raw
+          print('PASS_FINAL_USER_FIVE_BUILD')
+          PY
+
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli@latest
+
+      - name: Deploy isolated five-page preview
+        run: |
+          netlify deploy \
+            --dir=stage9-final-five \
+            --site="$NETLIFY_SITE_ID" \
+            --auth="$NETLIFY_AUTH_TOKEN" \
+            --alias=stage9-final-five-preview | tee /tmp/netlify-final-five.txt
+
+      - name: Verify preview and five pages
+        run: |
+          BASE="https://stage9-final-five-preview--englishpt-seo.netlify.app"
+          curl -fsSIL --max-time 30 "$BASE/" >/dev/null
+          for x in ielts opic toeic toeic-speaking toefl; do
+            curl -fsSIL --max-time 30 "$BASE/seoul-jongno-sajikdong-$x.html" >/dev/null
+          done
+          echo "PASS_STAGE9_FINAL_USER_FIVE_PREVIEW"
+
+      - name: Write preview report
+        run: |
+          cat > FINAL_USER_FIVE_PREVIEW_REPORT.json <<'EOF'
+          {
+            "status": "PASS_STAGE9_FINAL_USER_FIVE_PREVIEW",
+            "preview_url": "https://stage9-final-five-preview--englishpt-seo.netlify.app",
+            "scope": ["ielts","opic","toeic","toeic-speaking","toefl"],
+            "production_affected": false,
+            "next_step": "user review before expanding structure to all 67032 pages"
+          }
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage9-final-user-five-preview-report
+          path: FINAL_USER_FIVE_PREVIEW_REPORT.json
+          retention-days: 30
