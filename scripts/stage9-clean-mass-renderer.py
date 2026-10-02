@@ -37,6 +37,148 @@ ACADEMY_SERVICE = {
     "ielts-academy": "아이엘츠학원",
     "toefl-academy": "토플학원",
 }
+
+CONV_DERIVED_BASE = {
+    "english-conv-academy": "housewife-conv",
+    "adult-english-conv-academy": "housewife-conv",
+    "worker-english-conv-academy": "biz-business-conv",
+    "beginner-english-conv": "housewife-conv",
+}
+CONV_DERIVED_ORDER = list(CONV_DERIVED_BASE)
+CONV_DERIVED_SERVICE = {
+    "english-conv-academy": "영어회화학원",
+    "adult-english-conv-academy": "성인영어회화학원",
+    "worker-english-conv-academy": "직장인영어회화학원",
+    "beginner-english-conv": "왕초보영어회화",
+}
+CONV_ACADEMY_INTENTS = {
+    "english-conv-academy",
+    "adult-english-conv-academy",
+    "worker-english-conv-academy",
+}
+
+CONV_DERIVED_PROFILE = {
+    "english-conv-academy": {
+        "audience":"영어회화를 배우려는 학습자",
+        "service_h1":"영어회화학원","service_body":"영어회화 수업",
+        "theme":"theme-univ","blueprint":"v4-derived-general-conv-academy",
+        "intro_q":"영어회화학원을 알아볼 때, 수업 인원보다 내가 직접 말하고 피드백받는 시간을 확인해보셨나요?",
+        "scope":"영어회화는 문법 설명을 많이 듣는 것보다 질문을 듣고 직접 답하고, 고친 표현을 다시 말해보는 시간이 중요합니다.",
+        "boundary":"정해진 진도와 그룹 활동이 잘 맞는 경우도 있고, 현재 수준과 목적에 맞춰 말하기 비중과 피드백을 조정해야 하는 경우도 있습니다.",
+        "priority":["현재 말하기 수준 확인","질문을 듣고 첫 문장 시작","문장을 조금씩 길게 확장","피드백 후 다른 질문으로 다시 말하기"],
+        "deep":[
+            ["말하는 시간이 실제로 얼마나 되는지 확인합니다","영어회화 수업은 수업 시간이 길어도 직접 말하는 시간이 짧으면 연습량이 부족할 수 있습니다. 설명과 활동 비중보다 내가 질문을 받고 답하는 시간이 충분한지 확인하는 편이 좋습니다."],
+            ["피드백은 바로 다시 말해볼 수 있어야 합니다","틀린 표현을 알려주는 것에서 끝나지 않고 고친 문장을 다시 말해보면 어떤 부분이 아직 어려운지 확인하기 쉽습니다."],
+            ["수업 밖 복습도 짧고 구체적으로 잡습니다","많은 숙제보다 수업에서 고친 문장 몇 개를 다시 말하거나 짧게 녹음하는 방식이 회화 복습에는 더 직접적일 수 있습니다."],
+        ],
+        "faq":[
+            ["영어를 거의 못해도 시작할 수 있나요?","가능합니다. 현재 할 수 있는 인사·자기소개·짧은 답변부터 확인하고 문장 길이를 단계적으로 늘립니다."],
+            ["문법도 같이 배우나요?","말할 때 반복해서 막히는 문법은 필요한 만큼 설명하고 바로 문장으로 다시 사용합니다."],
+            ["원어민 수업이 꼭 필요한가요?","강사의 국적보다 현재 수준에서 충분히 말하고 이해 가능한 피드백을 받을 수 있는지가 더 중요합니다."],
+            ["수업은 얼마나 자주 하는 게 좋나요?","목표와 가능한 복습 시간에 따라 다릅니다. 무리한 횟수보다 수업 사이에 짧게 다시 말해볼 시간이 있는지 함께 봅니다."],
+            ["여행영어와 일상회화를 같이 할 수 있나요?","가능합니다. 가까운 여행 일정이 있다면 여행 상황 비중을 높이고, 이후에는 일상회화로 범위를 넓힐 수 있습니다."],
+            ["변화는 어떻게 확인하나요?","첫 문장을 시작하는 속도, 질문이 달라졌을 때 답을 이어가는지, 같은 표현을 다른 상황에도 쓰는지 확인합니다."],
+        ],
+        "reader_intro":{"kicker":"영어회화 수업 선택","h2":"영어회화학원을 고를 때는 ‘얼마나 직접 말하는지’부터 확인해보세요","p1":"회화는 설명을 많이 듣는 것보다 질문을 듣고 직접 답하고, 바로 피드백받은 뒤 다시 말해보는 시간이 중요합니다.","p2":"현재 수준과 목적을 먼저 확인하고 일상·여행·학교·업무처럼 실제로 영어가 필요한 상황에 맞춰 수업 비중을 정합니다."},
+        "management_focus":["매 수업 직접 말하는 시간을 충분히 확보","고친 표현은 바로 다시 말해보며 확인","수업 후 짧은 복습을 다음 수업과 연결"],
+    },
+    "adult-english-conv-academy": {
+        "audience":"성인","service_h1":"성인영어회화학원","service_body":"성인 영어회화 수업",
+        "theme":"theme-housewife","blueprint":"v4-derived-adult-conv-academy",
+        "intro_q":"성인영어회화학원을 찾고 있지만, 여행·생활·자기계발 중 어떤 영어가 가장 필요한지 정해보셨나요?",
+        "scope":"성인 회화는 영어를 다시 시작하는 이유와 가능한 학습 시간이 사람마다 다릅니다. 기초 문장부터 여행·생활 대화까지 현재 목적에 맞춰 범위를 좁히는 편이 좋습니다.",
+        "boundary":"공인시험 점수가 급하거나 업무 발표·면접처럼 목적이 뚜렷하다면 해당 목적에 맞춘 과정이 일반 성인회화보다 더 직접적일 수 있습니다.",
+        "priority":["현재 말할 수 있는 문장 확인","생활·여행 등 가까운 목적 선택","짧은 질문·답변 반복","꾸준히 이어갈 복습량 정하기"],
+        "deep":[
+            ["오랜만에 영어를 시작해도 기초부터 다시 잡을 수 있습니다","처음부터 어려운 표현을 외우기보다 지금 말할 수 있는 짧은 문장을 확인하고 자주 필요한 상황부터 표현을 늘립니다."],
+            ["생활에 맞는 복습량이 중요합니다","성인은 일정이 자주 바뀔 수 있으므로 매일 많은 양보다 10분 안팎으로 다시 말해볼 수 있는 분량을 정하는 편이 지속하기 쉽습니다."],
+            ["목표가 바뀌면 수업 내용도 조정합니다","여행을 앞두고 있다면 여행 표현을 먼저 보고 일정이 끝난 뒤에는 일상 대화나 자기계발 목표로 자연스럽게 전환할 수 있습니다."],
+        ],
+        "faq":[
+            ["나이가 있어도 회화를 시작하기 늦지 않나요?","나이보다 현재 수준과 실제 사용할 목적이 더 중요합니다. 짧은 문장부터 시작할 수 있습니다."],
+            ["기초 문법을 다 끝내고 회화를 해야 하나요?","모든 문법을 먼저 끝낼 필요는 없습니다. 자주 쓰는 문장을 말하면서 필요한 문법을 함께 정리할 수 있습니다."],
+            ["여행을 앞두고 단기간 준비도 가능한가요?","가능합니다. 출국 일정과 자주 사용할 상황을 기준으로 범위를 줄여 준비합니다."],
+            ["숙제가 많으면 부담스러운데 괜찮을까요?","가능한 시간에 맞춰 짧게 반복할 수 있는 분량을 정합니다."],
+            ["온라인과 방문 중 어떤 방식이 좋나요?","이동 시간, 말하기 환경, 자료 공유 방식과 일정에 따라 편한 방식을 비교하는 것이 좋습니다."],
+            ["변화는 어떻게 확인하나요?","익숙한 질문에 답하는 것뿐 아니라 질문 표현이 달라졌을 때도 문장을 시작하고 이어갈 수 있는지 봅니다."],
+        ],
+        "reader_intro":{"kicker":"성인 영어회화","h2":"다시 시작하는 영어라면, 어려운 표현보다 자주 쓸 문장부터 시작합니다","p1":"여행·생활영어·자기계발처럼 영어를 다시 시작하는 이유를 먼저 확인하고 현재 말할 수 있는 수준에서 시작합니다.","p2":"짧은 질문과 답변을 반복하고, 수업에서 고친 표현을 생활 속 다른 상황에서도 다시 쓸 수 있게 연습합니다."},
+        "management_focus":["생활·여행 등 가까운 목표부터 정리","현재 수준에서 바로 말할 수 있는 문장부터 시작","부담 없는 복습량으로 꾸준히 이어가기"],
+    },
+    "worker-english-conv-academy": {
+        "audience":"직장인","service_h1":"직장인영어회화학원","service_body":"직장인 영어회화 수업",
+        "theme":"theme-worker","blueprint":"v4-derived-worker-conv-academy",
+        "intro_q":"직장인영어회화학원을 찾는 이유가 막연한 회화보다 다음 회의·발표·전화 때문은 아닌가요?",
+        "scope":"직장인 회화는 업무에서 실제로 영어를 쓰는 상황이 분명한 경우가 많습니다. 회의·발표·전화·고객 응대 중 가까운 일정부터 준비하면 범위를 줄일 수 있습니다.",
+        "boundary":"TOEIC·OPIc·TOEIC Speaking 등 점수나 등급 제출이 목적이라면 일반 직장인 회화보다 해당 시험 과정이 더 직접적입니다.",
+        "priority":["가장 가까운 업무 일정 확인","회의·발표·전화 중 우선 상황 선택","실제 업무 표현을 직접 말해보기","피드백 후 다른 업무 질문으로 확장"],
+        "deep":[
+            ["업무에서 바로 쓸 문장을 먼저 준비합니다","회화 전체를 배우기보다 다음 회의에서 의견 말하기, 발표에서 수치 설명하기처럼 실제 업무 행동으로 범위를 줄입니다."],
+            ["회의 영어는 길게 말하는 것만 중요하지 않습니다","짧게 의견을 내고, 확인 질문을 하고, 상대 의견에 반응하는 표현도 실제 회의 참여에 중요합니다."],
+            ["민감한 업무자료는 일반화해서 연습합니다","회사명·금액·고객정보는 가상의 내용으로 바꾸고 설명 구조와 질문 방식만 살려 연습할 수 있습니다."],
+        ],
+        "faq":[
+            ["비즈니스영어와 일반 회화가 많이 다른가요?","기본 대화 구조는 겹치지만 회의·발표·전화처럼 업무 목적이 분명해 필요한 표현과 피드백이 달라질 수 있습니다."],
+            ["업무자료를 수업에 가져가도 되나요?","민감정보를 제거하거나 일반화한 뒤 필요한 설명·질문 구조만 활용하는 편이 안전합니다."],
+            ["회의와 발표를 같이 준비할 수 있나요?","가능하지만 가장 가까운 일정에 더 많은 시간을 배정합니다."],
+            ["영어가 기초인데 업무회화를 바로 시작해도 되나요?","가능합니다. 업무에서 꼭 필요한 짧은 문장부터 정리하면서 기초 표현을 함께 보완할 수 있습니다."],
+            ["전화영어처럼 말하기만 하나요?","말하기가 중심이지만 필요한 듣기, 이메일·슬라이드 설명과 연결할 수도 있습니다."],
+            ["변화는 어떻게 확인하나요?","실제 업무 질문에 첫 문장을 시작하는 속도, 핵심을 짧게 설명하는지, 추가 질문에 대응하는지 확인합니다."],
+        ],
+        "reader_intro":{"kicker":"직장인 영어회화","h2":"회의·발표·전화처럼 실제 업무에서 필요한 영어부터 준비합니다","p1":"업무에서 영어를 쓰는 상황과 가장 가까운 일정을 먼저 확인하면 불필요하게 넓은 범위를 공부하지 않아도 됩니다.","p2":"실제 업무에 가까운 질문과 설명을 직접 말해보고, 피드백 후 같은 내용을 다른 표현으로 다시 말해보며 준비합니다."},
+        "management_focus":["가장 가까운 회의·발표·전화 일정부터 준비","실제 업무 표현을 직접 말하고 바로 교정","업무 변화에 따라 다음 수업 주제를 유연하게 조정"],
+    },
+    "beginner-english-conv": {
+        "audience":"왕초보","service_h1":"왕초보영어회화","service_body":"왕초보 영어회화",
+        "theme":"theme-housewife","blueprint":"v4-derived-beginner-conv",
+        "intro_q":"영어를 보면 아는 단어는 있는데, 막상 한 문장을 말하려면 어디서 시작해야 할지 모르겠나요?",
+        "scope":"왕초보 회화는 많은 문법과 단어를 먼저 끝내기보다 인사·자기소개·기본 질문처럼 자주 쓰는 짧은 문장을 직접 말하는 데서 시작합니다.",
+        "boundary":"시험 점수나 면접 일정이 급하다면 왕초보 회화 전체보다 해당 목표에 필요한 표현을 먼저 보는 편이 직접적일 수 있습니다.",
+        "priority":["인사·자기소개 한두 문장","be동사와 기본 문장 구조","짧은 질문을 듣고 한 문장으로 답하기","생활 표현을 조금씩 늘리기"],
+        "deep":[
+            ["문법을 다 끝낸 뒤 말하기를 시작하지 않습니다","기본 문장을 말하면서 필요한 문법을 함께 확인하면 배운 내용이 실제 표현과 연결되기 쉽습니다."],
+            ["한 문장을 여러 상황에 바꿔 써봅니다","외운 예문 하나로 끝내지 않고 사람·장소·시간을 바꿔 같은 문장 구조를 여러 번 사용합니다."],
+            ["짧게 자주 말하는 것이 중요합니다","처음부터 긴 대화를 목표로 하기보다 하루에 몇 문장이라도 소리 내어 말하고 다음 수업에서 다시 확인합니다."],
+        ],
+        "faq":[
+            ["알파벳만 아는 수준도 가능한가요?","현재 읽기와 듣기 수준을 먼저 확인하고 필요한 경우 아주 짧은 기초 문장부터 시작할 수 있습니다."],
+            ["문법책부터 한 권 끝내야 하나요?","모든 문법을 먼저 끝낼 필요는 없습니다. 말할 때 필요한 기본 구조부터 함께 정리합니다."],
+            ["단어를 많이 외워야 하나요?","자주 쓸 단어부터 늘리되 단어만 외우지 않고 문장 안에서 직접 사용합니다."],
+            ["발음이 좋지 않아도 괜찮나요?","완벽한 발음보다 상대가 이해할 수 있게 말하고 듣는 것이 먼저입니다. 반복해서 막히는 소리는 필요한 만큼 교정합니다."],
+            ["얼마나 해야 말이 나오기 시작하나요?","기간을 단정하기보다 처음에는 인사·소개·기본 질문처럼 확인 가능한 작은 목표를 정합니다."],
+            ["복습은 어떻게 하나요?","수업에서 사용한 짧은 문장을 다시 말하거나 녹음하고, 다음 수업에서 질문을 조금 바꿔 다시 답해봅니다."],
+        ],
+        "reader_intro":{"kicker":"왕초보 영어회화","h2":"문법책 한 권보다, 오늘 직접 말할 한 문장부터 시작합니다","p1":"아는 단어는 있지만 문장으로 말하기 어렵다면 인사·자기소개·기본 질문처럼 자주 쓰는 표현부터 직접 말해봅니다.","p2":"짧은 문장을 충분히 익힌 뒤 사람·장소·시간을 바꿔 다시 말하면서 자연스럽게 문장 범위를 넓혀갑니다."},
+        "management_focus":["인사·자기소개 등 가장 쉬운 말하기부터 시작","기본 문장 구조를 실제 말하기와 함께 정리","짧은 복습으로 같은 문장을 다른 질문에도 사용"],
+    },
+}
+
+CONV_DERIVED_SOURCE = {
+    "english-conv-academy": {
+        "cards":[("첫 문장 시작","질문은 이해했지만 첫 문장을 바로 시작하기 어려운 경우입니다."),("질문에 답하기","외운 문장은 말할 수 있지만 질문 표현이 달라지면 답이 짧아지는 경우입니다."),("문장 확장","한두 단어로 답한 뒤 이유나 예시를 붙이는 것이 어려운 경우입니다."),("다른 상황에 적용","수업에서 배운 표현을 다른 사람·장소·주제에서도 다시 쓰기 어려운 경우입니다.")],
+        "steps":["현재 말하기 확인","필요한 표현 정리","질문·답변 연습","피드백 후 다시 말하기","짧은 복습과 다음 수업 연결"],
+        "proofs":["첫 문장 반응","질문 이해","문장 길이","표현 교정","다른 질문 대응","수업 후 복습"],
+        "feedback":"짧은 질문에는 바로 답할 수 있었지만 이유를 붙일 때 문장이 끊겼다면, 다음 수업에서는 이유를 연결하는 표현 두세 개를 먼저 연습합니다.",
+    },
+    "adult-english-conv-academy": {
+        "cards":[("기초 문장","아는 단어는 있지만 문장으로 연결하는 것이 어려운 경우입니다."),("생활 대화","여행·식당·쇼핑처럼 익숙한 상황에서도 바로 표현이 떠오르지 않는 경우입니다."),("듣고 답하기","천천히 들으면 이해하지만 바로 답하는 데 시간이 필요한 경우입니다."),("꾸준한 복습","수업 때는 되지만 며칠 뒤 같은 표현을 다시 꺼내기 어려운 경우입니다.")],
+        "steps":["현재 수준 확인","가까운 목표 선택","기본 문장 연습","상황을 바꿔 다시 말하기","생활에 맞는 복습 정리"],
+        "proofs":["기본문장","첫 반응","생활표현","듣기 이해","다른 상황 적용","복습 유지"],
+        "feedback":"여행 상황에서는 준비한 표현을 말했지만 질문이 조금 달라지면 멈췄다면, 같은 의미의 질문을 여러 방식으로 듣고 답하는 연습을 이어갑니다.",
+    },
+    "worker-english-conv-academy": {
+        "cards":[("회의 참여","의견은 있지만 영어로 끼어드는 첫 문장이 늦는 경우입니다."),("업무 설명","제품·프로젝트·수치를 짧고 명확하게 설명하기 어려운 경우입니다."),("전화·화상","못 들은 부분을 다시 묻거나 확인하는 표현이 바로 나오지 않는 경우입니다."),("발표·Q&A","준비한 발표는 가능하지만 추가 질문에서 답이 길어지거나 끊기는 경우입니다.")],
+        "steps":["업무 일정 확인","핵심 표현 정리","실제 질문으로 말하기","피드백 후 다시 답하기","다음 업무에 맞춰 조정"],
+        "proofs":["회의 첫 반응","업무 설명","확인 질문","발표 구조","추가 질문 대응","실제 업무 적용"],
+        "feedback":"회의에서 의견의 핵심은 말했지만 근거를 붙이는 데 시간이 길어졌다면, 다음에는 결론 한 문장과 이유 한 문장을 묶어 여러 안건으로 연습합니다.",
+    },
+    "beginner-english-conv": {
+        "cards":[("인사와 자기소개","이름과 기본 정보도 영어로 말하려면 문장을 먼저 떠올려야 하는 경우입니다."),("기본문장 만들기","단어는 알지만 주어와 동사를 넣어 한 문장으로 만드는 것이 어려운 경우입니다."),("짧은 질문·대답","질문을 들었을 때 Yes/No 뒤에 한 문장을 이어 말하기 어려운 경우입니다."),("생활 표현","배운 문장을 실제 생활 상황으로 바꾸어 쓰는 것이 아직 익숙하지 않은 경우입니다.")],
+        "steps":["현재 기초 확인","가장 쉬운 문장 만들기","소리 내어 반복","질문을 바꿔 다시 답하기","짧은 복습으로 연결"],
+        "proofs":["인사·소개","기본문장","질문 이해","한 문장 답변","생활표현","다른 질문 적용"],
+        "feedback":"자기소개는 준비한 순서대로 말할 수 있지만 질문 순서가 바뀌면 멈췄다면, 같은 내용을 질문형으로 바꿔 짧게 답하는 연습을 추가합니다.",
+    },
+}
 EXAM_THEME = {
     "toeic": "theme-toeic",
     "toeic-speaking": "theme-toeic-speaking",
@@ -66,6 +208,10 @@ TITLE_VARIANTS = {
     "opic-academy": ["돌발·롤플레이 관리 비교", "학원수업·1:1 답변 피드백", "녹음·답변관리 방식 비교"],
     "ielts-academy": ["4영역·첨삭관리 비교", "IELTS 학원수업·1:1 비교", "Writing·Speaking 관리 확인"],
     "toefl-academy": ["4영역·통합형 관리 비교", "TOEFL 학원수업·1:1 비교", "Speaking·Writing 피드백 비교"],
+    "english-conv-academy": ["말하기시간·피드백 방식 비교", "영어회화 수업·관리방식 비교", "기초·실전회화 수업 비교"],
+    "adult-english-conv-academy": ["기초·생활·여행회화 비교", "성인회화 수업·관리 비교", "초보부터 생활회화까지"],
+    "worker-english-conv-academy": ["회의·발표·업무회화 비교", "직장인회화 수업·관리 비교", "업무 말하기·피드백 방식"],
+    "beginner-english-conv": ["기초문장·첫 말하기", "왕초보 기초회화·말하기", "인사·자기소개부터 시작"],
 }
 
 EMAILJS_TAG = '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>'
@@ -182,7 +328,7 @@ def esc(x: str) -> str:
 
 
 def intent_from_name(name: str) -> tuple[str, str]:
-    for intent in sorted(SERVICE_ORDER + EXAM_ORDER + ACADEMY_ORDER, key=len, reverse=True):
+    for intent in sorted(SERVICE_ORDER + EXAM_ORDER + ACADEMY_ORDER + CONV_DERIVED_ORDER, key=len, reverse=True):
         suffix = f"-{intent}.html"
         if name.endswith(suffix):
             return name[:-len(suffix)], intent
@@ -201,6 +347,8 @@ def location_from_source(raw: str, name: str, intent: str) -> dict:
         service = svc.PROFILES[intent]["service_h1"]
     elif intent in ACADEMY_BASE:
         service = ACADEMY_SERVICE[intent]
+    elif intent in CONV_DERIVED_BASE:
+        service = CONV_DERIVED_SERVICE[intent]
     else:
         service = next(v["service"] for v in ex.EXAMS.values() if v["intent"] == intent)
     dong = h1[:-len(service)].strip() if h1.endswith(service) else h1.split()[0]
@@ -546,10 +694,13 @@ def base_exam_intent(intent: str) -> str:
 
 
 def is_academy_intent(intent: str) -> bool:
-    return intent in ACADEMY_BASE
+    return intent in ACADEMY_BASE or intent in CONV_ACADEMY_INTENTS
 
 
 def theme_for_intent(intent: str, family: str) -> str:
+    if intent in CONV_DERIVED_PROFILE:
+        suffix = " intent-academy" if intent in CONV_ACADEMY_INTENTS else " intent-audience"
+        return CONV_DERIVED_PROFILE[intent]["theme"] + suffix
     if family == "service":
         return gold_modules()[0].PROFILES[intent]["theme"] + " intent-audience"
     base = base_exam_intent(intent)
@@ -557,8 +708,44 @@ def theme_for_intent(intent: str, family: str) -> str:
     return theme + (" intent-academy" if is_academy_intent(intent) else " intent-test")
 
 
+def conversation_academy_compare_section(loc: dict, intent: str) -> str:
+    service = CONV_DERIVED_SERVICE[intent]
+    focus = {
+        "english-conv-academy":"직접 말하는 시간·개인 피드백·복습 연결",
+        "adult-english-conv-academy":"기초 수준·생활/여행 목표·꾸준한 복습",
+        "worker-english-conv-academy":"회의·발표·전화 등 업무 상황별 피드백",
+    }[intent]
+    cards = [
+        ("수업 인원과 말하기 시간","몇 명이 함께 듣는지보다 한 수업에서 내가 실제로 질문을 받고 말하는 시간이 얼마나 되는지 확인합니다."),
+        ("현재 수준에 맞는 시작점","정해진 교재 진도를 그대로 따라가는지, 현재 말할 수 있는 범위에서 시작점을 조정하는지 비교합니다."),
+        ("피드백 방식","표현을 고쳐주는 데서 끝나는지, 고친 문장을 다시 말해보고 다음 질문에도 적용하는지 확인합니다."),
+        ("수업 후 관리",f"{focus}이 수업 밖 복습과 다음 수업에 어떻게 이어지는지 살펴봅니다."),
+    ]
+    digest = int(hashlib.sha256(f'{loc["slug"]}|{intent}|conv-academy'.encode()).hexdigest()[:8],16)
+    shift = digest % len(cards)
+    cards = cards[shift:] + cards[:shift]
+    card_html = ''.join(
+        f'<article><span>{i:02d}</span><h3>{esc(t)}</h3><p>{esc(p)}</p></article>'
+        for i,(t,p) in enumerate(cards,1)
+    )
+    return (
+        '<section class="section academy-choice"><div class="wrap">'
+        '<p class="kicker">수업 방식 비교</p>'
+        f'<h2>{esc(loc["dong"])} {esc(service)}, 학원 이름보다 실제 말하기와 피드백 방식을 먼저 비교해보세요</h2>'
+        '<p class="academy-disclosure">ENGLISH PT는 특정 오프라인 학원으로 소개하는 페이지가 아닙니다. '
+        '영어회화학원을 검색하는 분이 그룹형 수업과 1:1 맞춤 수업의 차이를 비교할 수 있도록 수업 방식과 관리 기준을 정리했습니다.</p>'
+        '<div class="academy-compare">' + card_html + '</div>'
+        '<div class="academy-fit">'
+        '<div><b>학원형 수업이 잘 맞을 수 있는 경우</b><p>정해진 시간과 커리큘럼을 따라 꾸준히 배우는 방식이 편하고, 여러 학습자와 함께 연습하는 환경이 잘 맞는 경우입니다.</p></div>'
+        '<div><b>1:1 방식이 잘 맞을 수 있는 경우</b><p>현재 수준이나 목적이 분명하고, 직접 말하는 시간과 개인 피드백을 더 많이 확보하고 싶은 경우입니다.</p></div>'
+        '</div></div></section>'
+    )
+
+
 def academy_compare_section(loc: dict, intent: str) -> str:
-    if not is_academy_intent(intent):
+    if intent in CONV_ACADEMY_INTENTS:
+        return conversation_academy_compare_section(loc, intent)
+    if intent not in ACADEMY_BASE:
         return ""
     base = base_exam_intent(intent)
     exam_label = {
@@ -689,6 +876,11 @@ def all_related(loc: dict, current_intent: str) -> str:
         if intent == current_intent:
             continue
         label = f'{loc["dong"]} {ACADEMY_SERVICE[intent]}'
+        links.append(f'<a href="/{loc["slug"]}-{intent}.html">{esc(label)}</a>')
+    for intent in CONV_DERIVED_ORDER:
+        if intent == current_intent:
+            continue
+        label = f'{loc["dong"]} {CONV_DERIVED_SERVICE[intent]}'
         links.append(f'<a href="/{loc["slug"]}-{intent}.html">{esc(label)}</a>')
     return (
         '<section class="section related"><div class="wrap">'
@@ -987,6 +1179,8 @@ MANAGEMENT_FOCUS = {
 
 
 def intro_content(intent: str) -> dict:
+    if intent in CONV_DERIVED_PROFILE:
+        return CONV_DERIVED_PROFILE[intent]["reader_intro"]
     if intent not in ACADEMY_BASE:
         return INTRO_CONTENT[intent]
     base = ACADEMY_BASE[intent]
@@ -1001,7 +1195,12 @@ def intro_content(intent: str) -> dict:
 
 
 def management_section(loc: dict, intent: str, family: str) -> str:
-    focus = MANAGEMENT_FOCUS[base_exam_intent(intent)] if intent in ACADEMY_BASE else MANAGEMENT_FOCUS[intent]
+    if intent in ACADEMY_BASE:
+        focus = MANAGEMENT_FOCUS[base_exam_intent(intent)]
+    elif intent in CONV_DERIVED_PROFILE:
+        focus = CONV_DERIVED_PROFILE[intent]["management_focus"]
+    else:
+        focus = MANAGEMENT_FOCUS[intent]
     intro_variants = [
         ("수업만 하고 끝내지 않고, 다음 수업까지 이어서 관리합니다",
          "진도를 많이 나가는 것보다 지금 필요한 내용을 정확히 연습하고, 수업 후에도 다시 써볼 수 있게 만드는 데 초점을 둡니다."),
@@ -1065,6 +1264,15 @@ def rewrite_reader_headings(raw: str, loc: dict, intent: str, family: str) -> st
 
 
 def description_for(loc: dict, intent: str) -> str:
+    if intent in CONV_DERIVED_PROFILE:
+        service = CONV_DERIVED_SERVICE[intent]
+        desc = {
+            "english-conv-academy":"영어회화학원을 비교할 때 직접 말하는 시간, 현재 수준에 맞는 진도, 개인 피드백과 수업 후 복습 관리 기준을 확인하세요.",
+            "adult-english-conv-academy":"성인영어회화학원을 비교할 때 기초 수준, 생활·여행 목적, 말하기 피드백과 꾸준히 이어갈 수 있는 관리 방식을 확인하세요.",
+            "worker-english-conv-academy":"직장인영어회화학원을 비교할 때 회의·발표·전화 등 실제 업무 상황, 개인 피드백과 수업 후 관리 방식을 확인하세요.",
+            "beginner-english-conv":"왕초보영어회화 안내. 인사·자기소개·기본 질문부터 직접 말하고, 기초 문장을 다른 상황에도 사용할 수 있게 연습하는 방법을 확인하세요.",
+        }[intent]
+        return f'{loc["dong"]} {service} 안내. ' + desc
     if intent in ACADEMY_BASE:
         base = ACADEMY_BASE[intent]
         exam_name = {
@@ -1377,7 +1585,11 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     # Replace family-limited related links with the full 13-intent local cluster.
     raw = re.sub(r'<section class="section related">.*?</section>', all_related(loc,intent), raw, count=1, flags=re.S)
     related_marker = '<section class="section related">'
-    ctx = mass_context(loc,intent,family, gold_modules()[0].PROFILES[intent]["audience"] if family=="service" else "")
+    if family == "service":
+        audience = CONV_DERIVED_PROFILE[intent]["audience"] if intent in CONV_DERIVED_PROFILE else gold_modules()[0].PROFILES[intent]["audience"]
+    else:
+        audience = ""
+    ctx = mass_context(loc,intent,family,audience)
     if related_marker in raw:
         raw = raw.replace(related_marker, ctx + related_marker, 1)
     else:
@@ -1438,7 +1650,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     bad=[x for x in forbidden if x in raw]
     if bad:
         problems.append("stale_or_machine_copy:"+",".join(bad))
-    min_cluster_links = 17
+    min_cluster_links = 21
     if raw.count('href="/'+loc["slug"]+'-') < min_cluster_links:
         problems.append("cluster_links")
     if is_academy_intent(intent) and 'class="section academy-choice"' not in raw:
@@ -1477,6 +1689,35 @@ def render_academy_page(source_raw: str, source_name: str, academy_intent: str) 
     rendered = rendered.replace('"serviceType":"영어시험 과외"', '"serviceType":"영어시험 수업 비교 및 1:1 맞춤 수업 안내"')
     rendered = rendered.replace('"serviceType": "영어시험 과외"', '"serviceType": "영어시험 수업 비교 및 1:1 맞춤 수업 안내"')
     return productionize(rendered, loc, academy_intent, "exam")
+
+
+def render_conversation_derived_page(source_raw: str, source_name: str, derived_intent: str) -> tuple[str,list[str]]:
+    if derived_intent not in CONV_DERIVED_BASE:
+        raise ValueError(f"not conversation derived intent: {derived_intent}")
+    svc, _ = gold_modules()
+    source_slug, source_intent = intent_from_name(source_name)
+    base = CONV_DERIVED_BASE[derived_intent]
+    if source_intent != base:
+        raise ValueError(f"conversation source mismatch: {source_name} -> {derived_intent}")
+    base_loc = location_from_source(source_raw, source_name, base)
+    loc = dict(base_loc)
+    loc["service"] = CONV_DERIVED_SERVICE[derived_intent]
+    profile = CONV_DERIVED_PROFILE[derived_intent]
+    source = CONV_DERIVED_SOURCE[derived_intent]
+    rendered = svc.render_page(
+        source_slug, loc, derived_intent, profile,
+        source["cards"], source["steps"], source["proofs"], source["feedback"]
+    )
+    if derived_intent in CONV_ACADEMY_INTENTS:
+        rendered = rendered.replace(
+            '"serviceType":"영어교육"',
+            '"serviceType":"영어회화 수업 비교 및 1:1 맞춤 수업 안내"'
+        )
+        rendered = rendered.replace(
+            '"serviceType": "영어교육"',
+            '"serviceType": "영어회화 수업 비교 및 1:1 맞춤 수업 안내"'
+        )
+    return productionize(rendered, loc, derived_intent, "service")
 
 
 def render_production_page(source_raw: str, name: str) -> tuple[str,list[str]]:
