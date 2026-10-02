@@ -1,1 +1,1 @@
-Redeploy final user-flow five-exam preview to proven stage9-v44-gold-preview Netlify alias.
+Deploy and verify the five-exam reader-first preview through the immutable Netlify deploy URL.
