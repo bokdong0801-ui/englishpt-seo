@@ -82,10 +82,10 @@ jobs:
           from pathlib import Path
           q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
           assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
-          assert q['counts']['new_pages']==113278
-          assert q['counts']['html_total']==113373
-          assert q['counts']['sitemap_shards']==227
-          assert q['counts']['sitemap_urls']==113373
+          assert q['counts']['new_pages']==118427
+          assert q['counts']['html_total']==118522
+          assert q['counts']['sitemap_shards']==238
+          assert q['counts']['sitemap_urls']==118522
           assert q['indexing']['noindex_pages']==0
           assert q['indexing']['production_ui_failures']==0
           assert q['indexing']['robots_txt_allows_crawl'] is True
@@ -121,7 +121,7 @@ jobs:
           print('PASS_STAGE9_FINAL_UX_PREFLIGHT')
           PY
 
-      - name: Package representative 22 final production pages
+      - name: Package representative 23 final production pages
         run: |
           mkdir -p stage9-final-ux-samples
           python3 - <<'PY'
@@ -136,7 +136,7 @@ jobs:
               assert src.exists(), name
               shutil.copy2(src,out/name)
               pages.append(name)
-          academy_bases=['toeic','toeic-speaking','opic','ielts','toefl']
+          academy_bases=['toeic','toeic-speaking','opic','ielts','duolingo','toefl']
           for base in academy_bases:
               source=next((x for x in pages if x.endswith(f'-{base}.html')),None)
               assert source, base
@@ -169,7 +169,7 @@ jobs:
                   assert 'intent-audience' in raw, name
               shutil.copy2(src,out/name)
               pages.append(name)
-          assert len(pages)==22, len(pages)
+          assert len(pages)==23, len(pages)
           shutil.copy2('stage9-release/pilot.css',out/'pilot.css')
           shutil.copy2('stage9-release/pilot.js',out/'pilot.js')
           links=''.join(f'<li><a href="{x}">{x}</a></li>' for x in pages)
