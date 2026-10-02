@@ -65,14 +65,24 @@ jobs:
             --dir=stage9-final-five \
             --site="$NETLIFY_SITE_ID" \
             --auth="$NETLIFY_AUTH_TOKEN" \
-            --alias=stage9-final-five-preview | tee /tmp/netlify-final-five.txt
+            --alias=stage9-v44-gold-preview | tee /tmp/netlify-final-five.txt
 
       - name: Verify preview and five pages
         run: |
-          BASE="https://stage9-final-five-preview--englishpt-seo.netlify.app"
-          curl -fsSIL --max-time 30 "$BASE/" >/dev/null
+          BASE="https://stage9-v44-gold-preview--englishpt-seo.netlify.app"
+          ok=0
+          for attempt in 1 2 3 4 5; do
+            if curl -fsSIL --max-time 30 "$BASE/" >/dev/null; then ok=1; break; fi
+            sleep 5
+          done
+          test "$ok" -eq 1
           for x in ielts opic toeic toeic-speaking toefl; do
-            curl -fsSIL --max-time 30 "$BASE/seoul-jongno-sajikdong-$x.html" >/dev/null
+            ok=0
+            for attempt in 1 2 3 4 5; do
+              if curl -fsSIL --max-time 30 "$BASE/seoul-jongno-sajikdong-$x.html" >/dev/null; then ok=1; break; fi
+              sleep 3
+            done
+            test "$ok" -eq 1
           done
           echo "PASS_STAGE9_FINAL_USER_FIVE_PREVIEW"
 
@@ -81,7 +91,7 @@ jobs:
           cat > FINAL_USER_FIVE_PREVIEW_REPORT.json <<'EOF'
           {
             "status": "PASS_STAGE9_FINAL_USER_FIVE_PREVIEW",
-            "preview_url": "https://stage9-final-five-preview--englishpt-seo.netlify.app",
+            "preview_url": "https://stage9-v44-gold-preview--englishpt-seo.netlify.app",
             "scope": ["ielts","opic","toeic","toeic-speaking","toefl"],
             "production_affected": false,
             "next_step": "user review before expanding structure to all 67032 pages"
