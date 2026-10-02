@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
+      STAGE9_EXAM_UX_PILOT: "1"
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
       NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID || secrets.ENGLISHPT_NETLIFY_SITE_ID || vars.NETLIFY_SITE_ID || vars.ENGLISHPT_NETLIFY_SITE_ID }}
     steps:
@@ -75,7 +76,7 @@ jobs:
           print('PASS_EXACT_PRODUCTION_ASSEMBLY')
           PY
 
-      - name: Build 13-page preview from exact Production files
+      - name: Build 5-exam reader-first preview from exact renderer output
         run: |
           rm -rf stage9-v44-preview
           mkdir -p stage9-v44-preview
@@ -87,9 +88,12 @@ jobs:
           from pathlib import Path
           q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
           out=Path('stage9-v44-preview')
+          wanted=('ielts.html','opic.html','toeic.html','toeic-speaking.html','toefl.html')
           pages=[]
           for row in q['representative_13']['pages']:
               name=row['canonical'].rsplit('/',1)[-1]
+              if not any(name.endswith('-'+x) for x in wanted):
+                  continue
               src=Path('stage9-release')/name
               assert src.exists(), name
               raw=src.read_text(encoding='utf-8')
@@ -97,11 +101,15 @@ jobs:
               assert 'class="hero simple-hero"' in raw, name
               assert 'class="snapshot"' in raw, name
               assert 'class="trust"' in raw, name
+              assert 'data-exam-reader-pilot="true"' in raw, name
+              assert 'class="exam-roadmap-grid"' in raw, name
+              assert 'class="exam-reader-outputs"' in raw, name
               title=raw.split('<title>',1)[1].split('</title>',1)[0]
               assert 'ENGLISH PT' not in title, (name,title)
               assert ' | ' in title, (name,title)
               shutil.copy2(src,out/name)
               pages.append((name,title))
+          assert len(pages)==5, pages
           cards=''.join(
               f'<a class="card" href="/{html.escape(name)}"><b>{html.escape(title)}</b><span>페이지 열기 →</span></a>'
               for name,title in pages
@@ -109,7 +117,7 @@ jobs:
           index=f'''<!doctype html><html lang="ko"><head><meta charset="utf-8">
           <meta name="viewport" content="width=device-width,initial-scale=1">
           <meta name="robots" content="noindex,nofollow">
-          <title>ENGLISH PT V4.4 + Stage 9 Gold Preview</title>
+          <title>ENGLISH PT 시험 5종 최종 사용자형 Preview</title>
           <style>
           *{{box-sizing:border-box}}body{{margin:0;font-family:Pretendard,"Apple SD Gothic Neo",Arial,sans-serif;background:#F5F2EA;color:#14201A}}
           .wrap{{width:min(1050px,calc(100% - 36px));margin:0 auto;padding:54px 0}}
@@ -120,9 +128,9 @@ jobs:
           .card b{{font-size:15px}}.card span{{font-size:12px;color:#315F4C;font-weight:800}}
           @media(max-width:700px){{.grid{{grid-template-columns:1fr}}.wrap{{padding:36px 0}}}}
           </style></head><body><main class="wrap"><p>NETLIFY PREVIEW · 실제 Production renderer 산출물</p>
-          <h1>V4.4 디자인 + Stage 9 Gold</h1>
-          <p>아래 13개 페이지는 별도 시안이 아니라 현재 67,032페이지 Production 생성기에서 그대로 뽑은 대표 페이지입니다.</p>
-          <div class="note"><b>확인 포인트</b><p>PC와 모바일에서 Hero, Snapshot, 카드 간격, 상담 CTA, 제목 키워드, 하단 고정 CTA를 확인해주세요. Preview 도메인만 X-Robots-Tag로 색인을 막습니다.</p></div>
+          <h1>시험 5종 최종 사용자형 구조</h1>
+          <p>IELTS · OPIc · TOEIC · TOEIC Speaking · TOEFL만 먼저 새 읽기 흐름을 적용한 승인 전 Preview입니다. 실제 Production에는 아직 반영하지 않았습니다.</p>
+          <div class="note"><b>확인 포인트</b><p>첫 30~60초 안에 시험별 수업 방식과 관리 흐름이 이해되는지, 시험별 차이가 분명한지, PC와 모바일 모두 자연스럽게 읽히는지 확인해주세요.</p></div>
           <div class="grid">{cards}</div></main></body></html>'''
           (out/'index.html').write_text(index,encoding='utf-8')
           (out/'_headers').write_text('/*\n  X-Robots-Tag: noindex, nofollow\n',encoding='utf-8')
@@ -148,10 +156,16 @@ jobs:
           from pathlib import Path
           q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
           base='https://stage9-v44-gold-preview--englishpt-seo.netlify.app'
+          wanted=('ielts.html','opic.html','toeic.html','toeic-speaking.html','toefl.html')
+          checked=0
           for row in q['representative_13']['pages']:
               name=row['canonical'].rsplit('/',1)[-1]
+              if not any(name.endswith('-'+x) for x in wanted):
+                  continue
               subprocess.run(['curl','-fsSIL','--max-time','30',f'{base}/{name}'],check=True,stdout=subprocess.DEVNULL)
-          print('PASS_STAGE9_V44_GOLD_NETLIFY_PREVIEW')
+              checked+=1
+          assert checked==5, checked
+          print('PASS_STAGE9_FIVE_EXAM_READER_PREVIEW')
           PY
 
       - name: Write preview report
@@ -160,11 +174,11 @@ jobs:
           import json
           from pathlib import Path
           report={
-            "status":"PASS_STAGE9_V44_GOLD_NETLIFY_PREVIEW",
+            "status":"PASS_STAGE9_FIVE_EXAM_READER_PREVIEW",
             "preview_url":"https://stage9-v44-gold-preview--englishpt-seo.netlify.app",
-            "source":"exact current Stage 9 production renderer",
+            "source":"current Stage 9 renderer with preview-only five-exam UX pilot",
             "production_affected":False,
-            "representative_pages":13,
+            "representative_pages":5,
             "preview_indexing":"blocked by X-Robots-Tag only"
           }
           Path('STAGE9_V44_GOLD_PREVIEW_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
