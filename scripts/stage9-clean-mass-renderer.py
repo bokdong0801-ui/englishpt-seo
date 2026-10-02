@@ -901,11 +901,21 @@ MANAGEMENT_FOCUS = {
 
 
 def intro_content(intent: str) -> dict:
-    return INTRO_CONTENT[intent]
+    if intent not in ACADEMY_BASE:
+        return INTRO_CONTENT[intent]
+    base = ACADEMY_BASE[intent]
+    base_intro = INTRO_CONTENT[base]
+    service = ACADEMY_SERVICE[intent]
+    return {
+        "kicker": f"{service} 선택",
+        "h2": f"{service}을 알아볼 때는 진도보다 내 시험일과 피드백 방식을 먼저 확인합니다",
+        "p1": "학원을 찾는 이유가 정해진 일정과 체계적인 관리 때문인지, 특정 약점을 빠르게 보완하기 위해서인지 먼저 생각해보면 수업방식을 비교하기 쉬워집니다.",
+        "p2": base_intro["p2"],
+    }
 
 
 def management_section(loc: dict, intent: str, family: str) -> str:
-    focus = MANAGEMENT_FOCUS[intent]
+    focus = MANAGEMENT_FOCUS[base_exam_intent(intent)] if intent in ACADEMY_BASE else MANAGEMENT_FOCUS[intent]
     intro_variants = [
         ("수업만 하고 끝내지 않고, 다음 수업까지 이어서 관리합니다",
          "진도를 많이 나가는 것보다 지금 필요한 내용을 정확히 연습하고, 수업 후에도 다시 써볼 수 있게 만드는 데 초점을 둡니다."),
@@ -969,6 +979,15 @@ def rewrite_reader_headings(raw: str, loc: dict, intent: str, family: str) -> st
 
 
 def description_for(loc: dict, intent: str) -> str:
+    if intent in ACADEMY_BASE:
+        base = ACADEMY_BASE[intent]
+        exam_name = {
+            "toeic":"TOEIC","toeic-speaking":"TOEIC Speaking","opic":"OPIc","ielts":"IELTS","toefl":"TOEFL"
+        }[base]
+        return (
+            f'{loc["dong"]} {ACADEMY_SERVICE[intent]} 검색 안내. {exam_name} 학원형 수업과 1:1 맞춤 수업을 비교할 때 '
+            '진도·피드백·시험일 관리와 영역별 보완 방식을 확인할 수 있도록 정리했습니다.'
+        )
     templates = {
         "elem-tutor": f'{loc["dong"]} 초등학생영어과외 안내. 읽기·기초 문장·학교영어에서 어려운 부분을 확인하고 현재 수준에 맞는 수업 방향과 상담 기준을 정리했습니다.',
         "mid-conv": f'{loc["dong"]} 중학생영어회화 안내. 수행평가·발표·질문 대응과 학교영어에서 어려운 부분을 확인하고 필요한 연습 순서를 살펴보세요.',
@@ -1185,10 +1204,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     canonical = f'{BASE_URL}/{loc["slug"]}-{intent}.html'
     page_title = title_for(loc, intent)
     page_description = description_for(loc, intent)
-    theme = (
-        gold_modules()[0].PROFILES[intent]["theme"] + " intent-audience"
-        if family=="service" else "theme-test intent-test"
-    )
+    theme = theme_for_intent(intent, family)
 
     raw = re.sub(
         r'<meta name="robots" content="noindex,nofollow">',
@@ -1253,7 +1269,9 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
             '<section class="section intro-detail" id="detail"><div class="wrap"><div class="intro-grid">'
             '<div class="intro-copy">' + intro_copy + '</div>'
             + v44_snapshot(loc, family)
-            + '</div></div></section>' + v44_trust(family) + management_section(loc,intent,family)
+            + '</div></div></section>' + v44_trust(family)
+            + academy_compare_section(loc,intent)
+            + management_section(loc,intent,family)
         )
         raw = raw[:detail.start()] + intro_html + raw[detail.end():]
     else:
@@ -1312,7 +1330,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
 
     raw = humanize_visible_copy(raw, family)
     raw = rewrite_reader_headings(raw, loc, intent, family)
-    raw = apply_exam_reader_pilot(raw, intent)
+    raw = apply_exam_reader_pilot(raw, base_exam_intent(intent))
     raw = raw.replace('</body>','<div class="mobile-sticky"><a href="#consultation-preview">무료 PT 진단 신청</a></div></body>',1)
 
     forbidden=[
@@ -1334,8 +1352,11 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     bad=[x for x in forbidden if x in raw]
     if bad:
         problems.append("stale_or_machine_copy:"+",".join(bad))
-    if raw.count('href="/'+loc["slug"]+'-') < 12:
+    min_cluster_links = 17
+    if raw.count('href="/'+loc["slug"]+'-') < min_cluster_links:
         problems.append("cluster_links")
+    if is_academy_intent(intent) and 'class="section academy-choice"' not in raw:
+        problems.append("academy_choice_missing")
     visible = re.sub(r'<script.*?</script>|<style.*?</style>|<[^>]+>', ' ', raw, flags=re.S|re.I)
     visible = re.sub(r'\s+',' ',html.unescape(visible)).strip()
     stiff_visible = ["현재 장면","가장 막히는 장면","최근 막힌 장면","병목","재점검","재검증","상태으로","상황형"]
@@ -1343,10 +1364,32 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     stiff_found = [x for x in stiff_visible if x in visible_for_language_qa]
     if stiff_found:
         problems.append("stiff_visible_copy:"+",".join(stiff_found))
-    min_visible = 4000 if exam_reader_pilot_enabled(intent) else 5200
+    min_visible = 4000 if exam_reader_pilot_enabled(base_exam_intent(intent)) else 5200
     if not (min_visible <= len(visible) <= 16000):
         problems.append(f"visible_chars:{len(visible)}")
     return raw,problems
+
+
+def render_academy_page(source_raw: str, source_name: str, academy_intent: str) -> tuple[str,list[str]]:
+    if academy_intent not in ACADEMY_BASE:
+        raise ValueError(f"not academy intent: {academy_intent}")
+    svc, ex = gold_modules()
+    source_slug, source_intent = intent_from_name(source_name)
+    base = ACADEMY_BASE[academy_intent]
+    if source_intent != base:
+        raise ValueError(f"academy source mismatch: {source_name} -> {academy_intent}")
+    base_loc = location_from_source(source_raw, source_name, base)
+    loc = dict(base_loc)
+    loc["service"] = ACADEMY_SERVICE[academy_intent]
+    key = next(k for k,v in ex.EXAMS.items() if v["intent"] == base)
+    exam = dict(ex.EXAMS[key])
+    exam["service"] = ACADEMY_SERVICE[academy_intent]
+    exam["intent"] = academy_intent
+    rendered = ex.render(source_slug, loc, key, exam)
+    # Make schema honest: these are comparison/1:1 guidance pages, not a claim
+    # that ENGLISH PT is a physical academy in every locality.
+    rendered = rendered.replace('"serviceType":"영어시험 과외"', '"serviceType":"영어시험 수업 비교 및 1:1 맞춤 수업 안내"')
+    return productionize(rendered, loc, academy_intent, "exam")
 
 
 def render_production_page(source_raw: str, name: str) -> tuple[str,list[str]]:
