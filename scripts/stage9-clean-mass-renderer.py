@@ -1475,6 +1475,137 @@ def rewrite_schema_page_title(raw: str, page_title: str) -> str:
         return raw
 
 
+def _audience_label(intent: str, family: str) -> str:
+    if intent in CONV_DERIVED_PROFILE:
+        return CONV_DERIVED_PROFILE[intent]["audience"]
+    if intent in SERVICE_ORDER:
+        return gold_modules()[0].PROFILES[intent]["audience"]
+    base = base_exam_intent(intent)
+    labels = {
+        "toeic":"TOEIC 준비생",
+        "toeic-speaking":"TOEIC Speaking 준비생",
+        "opic":"OPIc 준비생",
+        "ielts":"IELTS 준비생",
+        "duolingo":"Duolingo English Test 준비생",
+        "toefl":"TOEFL 준비생",
+    }
+    return labels.get(base, "영어 학습자")
+
+
+def enrich_machine_schema(
+    raw: str, loc: dict, intent: str, family: str,
+    h1: str, page_title: str, page_description: str, canonical: str
+) -> tuple[str, bool]:
+    """Create a consistent entity graph for search and AI ingestion."""
+    m = re.search(r'<script type="application/ld\+json">(.*?)</script>', raw, re.S)
+    if not m:
+        return raw, False
+    try:
+        data = json.loads(m.group(1))
+        graph = data.get("@graph")
+        if not isinstance(graph, list):
+            return raw, False
+
+        org_id = BASE_URL + "/#organization"
+        site_id = BASE_URL + "/#website"
+        service_id = canonical + "#service"
+        page_id = canonical + "#webpage"
+
+        def find_type(type_name: str):
+            for node in graph:
+                if isinstance(node, dict) and node.get("@type") == type_name:
+                    return node
+            return None
+
+        org = find_type("EducationalOrganization")
+        if org is None:
+            org = {"@type":"EducationalOrganization"}
+            graph.insert(0, org)
+        org.update({
+            "@id": org_id,
+            "name": "잉글리시PT",
+            "alternateName": "ENGLISH PT",
+            "url": BASE_URL + "/englishpt.html",
+            "telephone": "+82-10-5006-8027",
+            "email": "cicada3865@naver.com",
+            "knowsAbout": [
+                "영어회화","초등 영어","중등 영어","고등 영어","비즈니스 영어",
+                "TOEIC","TOEIC Speaking","OPIc","IELTS","TOEFL","Duolingo English Test"
+            ],
+        })
+        # Organization-level locality must not change page by page.
+        # Local search intent belongs on the Service node instead.
+        org.pop("areaServed", None)
+
+        website = find_type("WebSite")
+        if website is None:
+            website = {
+                "@type":"WebSite","@id":site_id,"url":BASE_URL+"/englishpt.html",
+                "name":"잉글리시PT","alternateName":"ENGLISH PT",
+                "inLanguage":"ko-KR","publisher":{"@id":org_id},
+            }
+            graph.append(website)
+        else:
+            website.update({
+                "@id":site_id,"url":BASE_URL+"/englishpt.html",
+                "name":"잉글리시PT","alternateName":"ENGLISH PT",
+                "inLanguage":"ko-KR","publisher":{"@id":org_id},
+            })
+
+        service = find_type("Service")
+        if service is None:
+            service = {"@type":"Service"}
+            graph.append(service)
+
+        academy_like = is_academy_intent(intent)
+        service_name = (
+            f'{loc["dong"]} {loc["service"]} 수업 비교 안내'
+            if academy_like else h1
+        )
+        service_type = (
+            "영어교육 수업 비교 및 1:1 맞춤 수업 안내"
+            if academy_like else (
+                "영어시험 1:1 맞춤 수업" if family == "exam" else "1:1 맞춤 영어교육"
+            )
+        )
+        service.update({
+            "@id":service_id,
+            "name":service_name,
+            "serviceType":service_type,
+            "description":page_description,
+            "provider":{"@id":org_id},
+            "areaServed":{"@type":"AdministrativeArea","name":loc["full_name"]},
+            "audience":{"@type":"Audience","audienceType":_audience_label(intent,family)},
+            "url":canonical,
+            "inLanguage":"ko-KR",
+        })
+        if academy_like:
+            service["additionalType"] = "https://schema.org/Service"
+
+        webpage = find_type("WebPage")
+        if webpage is None:
+            webpage = {"@type":"WebPage"}
+            graph.append(webpage)
+        webpage.update({
+            "@id":page_id,
+            "url":canonical,
+            "name":page_title,
+            "description":page_description,
+            "inLanguage":"ko-KR",
+            "isPartOf":{"@id":site_id},
+            "publisher":{"@id":org_id},
+            "about":{"@id":service_id},
+            "mainEntity":{"@id":service_id},
+        })
+
+        rep = '<script type="application/ld+json">' + json.dumps(
+            data, ensure_ascii=False, separators=(",",":")
+        ) + '</script>'
+        return raw[:m.start()] + rep + raw[m.end():], True
+    except Exception:
+        return raw, False
+
+
 def add_breadcrumb_schema(raw: str, h1: str, canonical: str) -> tuple[str, bool]:
     m = re.search(r'<script type="application/ld\+json">(.*?)</script>', raw, re.S)
     if not m:
@@ -1632,6 +1763,11 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     if not schema_ok:
         problems.append("breadcrumb_schema")
     raw = rewrite_schema_page_title(raw, page_title)
+    raw, machine_schema_ok = enrich_machine_schema(
+        raw, loc, intent, family, h1, page_title, page_description, canonical
+    )
+    if not machine_schema_ok:
+        problems.append("machine_schema")
 
     raw = humanize_visible_copy(raw, family)
     raw = rewrite_reader_headings(raw, loc, intent, family)
@@ -1651,6 +1787,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         'class="breadcrumb wrap"','class="mobile-sticky"',
         EMAILJS_TAG,'class="section mass-context"',
         'class="site-header"','class="hero simple-hero"','class="snapshot"','class="trust"','class="section management"',
+        '"@type":"Service"','"@type":"WebSite"','"mainEntity":{"@id":',
     ]
     if any(x not in raw for x in required):
         problems.append("production_contract")
