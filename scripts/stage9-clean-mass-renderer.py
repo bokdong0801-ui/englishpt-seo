@@ -1657,7 +1657,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     bad=[x for x in forbidden if x in raw]
     if bad:
         problems.append("stale_or_machine_copy:"+",".join(bad))
-    min_cluster_links = 21
+    min_cluster_links = 22
     if raw.count('href="/'+loc["slug"]+'-') < min_cluster_links:
         problems.append("cluster_links")
     if is_academy_intent(intent) and 'class="section academy-choice"' not in raw:
