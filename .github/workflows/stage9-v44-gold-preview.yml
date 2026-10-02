@@ -81,6 +81,7 @@ jobs:
           mkdir -p stage9-v44-preview
           cp stage9-release/pilot.css stage9-v44-preview/
           cp stage9-release/pilot.js stage9-v44-preview/
+          cp -R stage9-release/assets stage9-v44-preview/
           cp stage9-release/englishpt.html stage9-v44-preview/ 2>/dev/null || true
           python3 - <<'PY'
           import html, json, shutil
