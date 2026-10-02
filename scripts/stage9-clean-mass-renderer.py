@@ -333,7 +333,7 @@ TOPIC_MODULES = [
 def _topic_modules(loc: dict, intent: str, family: str, audience: str) -> list[dict]:
     skip_topics={"locality-honesty","alternative-path","transfer"}
     pool=[m for m in TOPIC_MODULES if family in m["families"] and m["key"] not in skip_topics]
-    count=5
+    count=6
     ranked=sorted(
         pool,
         key=lambda m: hashlib.sha256(
@@ -635,6 +635,16 @@ def intro_content(intent: str) -> dict:
 
 def management_section(loc: dict, intent: str, family: str) -> str:
     focus = MANAGEMENT_FOCUS[intent]
+    intro_variants = [
+        ("수업만 하고 끝내지 않고, 다음 수업까지 이어서 관리합니다",
+         "진도를 많이 나가는 것보다 지금 필요한 내용을 정확히 연습하고, 수업 후에도 다시 써볼 수 있게 만드는 데 초점을 둡니다."),
+        ("매 수업의 결과가 다음 수업으로 이어지도록 관리합니다",
+         "그날 배운 내용을 그날로 끝내지 않고, 잘된 부분과 다시 볼 부분을 나눠 다음 수업의 시작점으로 연결합니다."),
+        ("배운 내용을 실제로 다시 써볼 수 있게 수업 전후를 연결합니다",
+         "한 번 설명하고 넘어가기보다 직접 해보고 피드백한 뒤, 다음 수업에서 다시 확인해 필요한 부분만 이어갑니다."),
+    ]
+    digest = hashlib.sha256(f'{loc["slug"]}|{intent}|manage-copy-v1'.encode()).hexdigest()
+    manage_h2, manage_p = intro_variants[int(digest[:8],16) % len(intro_variants)]
     steps = [
         ("01","처음 상담","목표와 가장 가까운 일정, 최근 결과나 어려웠던 부분을 확인합니다."),
         ("02","수업 계획","한 번에 많은 내용을 잡기보다 먼저 바꿔야 할 한두 가지를 정합니다."),
@@ -653,8 +663,8 @@ def management_section(loc: dict, intent: str, family: str) -> str:
         '<div class="wrap manage-layout">'
         '<div class="manage-copy">'
         f'<p class="kicker">{label}</p>'
-        '<h2>수업만 하고 끝내지 않고, 다음 수업까지 이어서 관리합니다</h2>'
-        '<p>진도를 많이 나가는 것보다 지금 필요한 내용을 정확히 연습하고, 수업 후에도 다시 써볼 수 있게 만드는 데 초점을 둡니다.</p>'
+        f'<h2>{esc(manage_h2)}</h2>'
+        f'<p>{esc(manage_p)}</p>'
         '<ul class="manage-focus">' + focus_html + '</ul>'
         '</div>'
         '<div class="manage-steps">' + step_html + '</div>'
