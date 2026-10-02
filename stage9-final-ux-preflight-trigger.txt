@@ -1,1 +1,1 @@
-Run final reader-first + AI discovery Stage 9 preflight before production deploy.
+Run Stage 9 preflight after matching Songhyeondong consultation form and adding per-intent page images.
