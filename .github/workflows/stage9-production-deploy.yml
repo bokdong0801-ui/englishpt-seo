@@ -119,10 +119,10 @@ jobs:
           q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
           assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY',q
           assert q['final_domain']=='https://englishpt.kr'
-          assert q['counts']['new_pages']==92682
-          assert q['counts']['html_total']==92777
-          assert q['counts']['sitemap_shards']==186
-          assert q['counts']['sitemap_urls']==92777
+          assert q['counts']['new_pages']==113278
+          assert q['counts']['html_total']==113373
+          assert q['counts']['sitemap_shards']==227
+          assert q['counts']['sitemap_urls']==113373
           assert q['indexing']['noindex_pages']==0
           assert q['indexing']['robots_txt_allows_crawl'] is True
           print('PASS Stage 9 release package')
@@ -145,7 +145,7 @@ jobs:
             --dir=stage9-release \
             --site="$NETLIFY_SITE_ID" \
             --auth="$NETLIFY_AUTH_TOKEN" \
-            --message="ENGLISH PT Stage 9 production release - 92,777 HTML" \
+            --message="ENGLISH PT Stage 9 production release - 113,373 HTML" \
             --json | tee stage9-netlify-deploy.json
           python3 - <<'PY'
           import json
@@ -170,6 +170,16 @@ jobs:
               source=next((u for u in rep if u.endswith(f'-{base}.html')),None)
               assert source, base
               urls.append(source[:-len(base+'.html')] + base + '-academy.html')
+          conversation_specs=[
+              ('housewife-conv','english-conv-academy'),
+              ('housewife-conv','adult-english-conv-academy'),
+              ('biz-business-conv','worker-english-conv-academy'),
+              ('housewife-conv','beginner-english-conv'),
+          ]
+          for base_intent,derived in conversation_specs:
+              source=next((u for u in rep if u.endswith(f'-{base_intent}.html')),None)
+              assert source, base_intent
+              urls.append(source[:-len(base_intent+'.html')] + derived + '.html')
           last=None
           for attempt in range(18):
               try:
@@ -183,7 +193,7 @@ jobs:
                               assert 'Sitemap: https://englishpt.kr/sitemap-index.xml' in body
                               assert 'Disallow: /' not in body
                           elif url.endswith('/sitemap-index.xml'):
-                              assert body.count('<sitemap><loc>') == 186
+                              assert body.count('<sitemap><loc>') == 227
                           else:
                               low=body.lower()
                               assert 'noindex' not in low and 'nofollow' not in low, url
@@ -192,6 +202,9 @@ jobs:
                               if url.endswith('-academy.html'):
                                   assert 'class="section academy-choice"' in body, url
                                   assert 'intent-academy' in body, url
+                              if url.endswith('-beginner-english-conv.html'):
+                                  assert '왕초보영어회화' in body, url
+                                  assert 'intent-audience' in body, url
                   print(json.dumps({'status':'PASS_LIVE','checked_urls':len(urls)},ensure_ascii=False))
                   break
               except Exception as e:
