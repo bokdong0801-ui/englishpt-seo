@@ -1,1 +1,1 @@
-Run final 92,777-page preflight after adding locality depth for TOEIC Speaking and OPIc.
+Run final pre-Production Stage 9 QA with five academy-search intents across all 5,149 localities.
