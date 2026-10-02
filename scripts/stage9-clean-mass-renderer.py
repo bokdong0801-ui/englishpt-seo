@@ -27,6 +27,7 @@ ACADEMY_BASE = {
     "toeic-speaking-academy": "toeic-speaking",
     "opic-academy": "opic",
     "ielts-academy": "ielts",
+    "duolingo-academy": "duolingo",
     "toefl-academy": "toefl",
 }
 ACADEMY_ORDER = list(ACADEMY_BASE)
@@ -35,6 +36,7 @@ ACADEMY_SERVICE = {
     "toeic-speaking-academy": "토익스피킹학원",
     "opic-academy": "오픽학원",
     "ielts-academy": "아이엘츠학원",
+    "duolingo-academy": "듀오링고학원",
     "toefl-academy": "토플학원",
 }
 
@@ -207,6 +209,7 @@ TITLE_VARIANTS = {
     "toeic-speaking-academy": ["문항별 피드백·수업방식 비교", "학원수업·1:1 말하기 관리", "녹음·답변 피드백 비교"],
     "opic-academy": ["돌발·롤플레이 관리 비교", "학원수업·1:1 답변 피드백", "녹음·답변관리 방식 비교"],
     "ielts-academy": ["4영역·첨삭관리 비교", "IELTS 학원수업·1:1 비교", "Writing·Speaking 관리 확인"],
+    "duolingo-academy": ["DET 유형·응답관리 비교", "듀오링고 학원수업·1:1 비교", "Speaking·Writing 관리 확인"],
     "toefl-academy": ["4영역·통합형 관리 비교", "TOEFL 학원수업·1:1 비교", "Speaking·Writing 피드백 비교"],
     "english-conv-academy": ["말하기시간·피드백 방식 비교", "영어회화 수업·관리방식 비교", "기초·실전회화 수업 비교"],
     "adult-english-conv-academy": ["기초·생활·여행회화 비교", "성인회화 수업·관리 비교", "초보부터 생활회화까지"],
@@ -755,6 +758,7 @@ def academy_compare_section(loc: dict, intent: str) -> str:
         "toeic-speaking": "TOEIC Speaking",
         "opic": "OPIc",
         "ielts": "IELTS",
+        "duolingo": "Duolingo English Test",
         "toefl": "TOEFL",
     }[base]
     exam_focus = {
@@ -762,6 +766,7 @@ def academy_compare_section(loc: dict, intent: str) -> str:
         "toeic-speaking": "문항별 답변 구조, 녹음 피드백, 제한시간 연습",
         "opic": "설문·돌발·롤플레이, 답변 흐름, 녹음 피드백",
         "ielts": "Listening·Reading·Writing·Speaking 4영역, 첨삭과 말하기 피드백",
+        "duolingo": "Reading·Listening·Speaking·Writing 응답, 문제 형식 적응과 시간 관리",
         "toefl": "Reading·Listening·Speaking·Writing 4영역과 통합형 연습",
     }[base]
 
@@ -1278,7 +1283,7 @@ def description_for(loc: dict, intent: str) -> str:
     if intent in ACADEMY_BASE:
         base = ACADEMY_BASE[intent]
         exam_name = {
-            "toeic":"TOEIC","toeic-speaking":"TOEIC Speaking","opic":"OPIc","ielts":"IELTS","toefl":"TOEFL"
+            "toeic":"TOEIC","toeic-speaking":"TOEIC Speaking","opic":"OPIc","ielts":"IELTS","duolingo":"Duolingo English Test","toefl":"TOEFL"
         }[base]
         return (
             f'{loc["dong"]} {ACADEMY_SERVICE[intent]} 검색 안내. {exam_name} 학원형 수업과 1:1 맞춤 수업을 비교할 때 '
