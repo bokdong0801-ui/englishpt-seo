@@ -82,18 +82,19 @@ jobs:
           from pathlib import Path
           q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
           assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
-          assert q['counts']['new_pages']==66937
-          assert q['counts']['html_total']==67032
-          assert q['counts']['sitemap_shards']==135
-          assert q['counts']['sitemap_urls']==67032
+          assert q['counts']['new_pages']==92682
+          assert q['counts']['html_total']==92777
+          assert q['counts']['sitemap_shards']==186
+          assert q['counts']['sitemap_urls']==92777
           assert q['indexing']['noindex_pages']==0
           assert q['indexing']['production_ui_failures']==0
           assert q['indexing']['robots_txt_allows_crawl'] is True
           assert q['source']['mass_renderer']=='stage9-clean-gold-v1'
           css=Path('stage9-release/pilot.css').read_text(encoding='utf-8')
           js=Path('stage9-release/pilot.js').read_text(encoding='utf-8')
-          for theme in ['theme-elem','theme-mid','theme-high','theme-univ','theme-job','theme-worker','theme-housewife','theme-test']:
+          for theme in ['theme-elem','theme-mid','theme-high','theme-univ','theme-job','theme-worker','theme-housewife','theme-toeic','theme-toeic-speaking','theme-opic','theme-ielts','theme-toefl','theme-duolingo']:
               assert theme in css, theme
+          assert '.academy-choice' in css
           for token in ['.simple-hero','.intro-grid','.snapshot','.trust-in','.mobile-sticky','@media(max-width:760px)']:
               assert token in css, token
           assert 'emailjs.send' in js
@@ -116,11 +117,11 @@ jobs:
               assert 'ENGLISH PT' not in title, (p.name,title)
               assert ' | ' in title, (p.name,title)
               assert all(x not in raw for x in machine_phrases), p.name
-              assert raw.count('href="/') >= 13, p.name
+              assert raw.count('href="/') >= 18, p.name
           print('PASS_STAGE9_FINAL_UX_PREFLIGHT')
           PY
 
-      - name: Package representative 13 final production pages
+      - name: Package representative 18 final production pages
         run: |
           mkdir -p stage9-final-ux-samples
           python3 - <<'PY'
@@ -135,6 +136,19 @@ jobs:
               assert src.exists(), name
               shutil.copy2(src,out/name)
               pages.append(name)
+          academy_bases=['toeic','toeic-speaking','opic','ielts','toefl']
+          for base in academy_bases:
+              source=next((x for x in pages if x.endswith(f'-{base}.html')),None)
+              assert source, base
+              academy=source[:-len(base+'.html')] + base + '-academy.html'
+              src=Path('stage9-release')/academy
+              assert src.exists(), academy
+              raw=src.read_text(encoding='utf-8')
+              assert 'class="section academy-choice"' in raw, academy
+              assert 'intent-academy' in raw, academy
+              shutil.copy2(src,out/academy)
+              pages.append(academy)
+          assert len(pages)==18, len(pages)
           shutil.copy2('stage9-release/pilot.css',out/'pilot.css')
           shutil.copy2('stage9-release/pilot.js',out/'pilot.js')
           links=''.join(f'<li><a href="{x}">{x}</a></li>' for x in pages)
