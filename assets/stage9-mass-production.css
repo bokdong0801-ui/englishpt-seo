@@ -174,6 +174,39 @@ button,a{-webkit-tap-highlight-color:transparent}
 .mid-cta h2{margin:5px 0;font-size:clamp(22px,3vw,31px)}
 .mid-actions{display:flex;gap:9px;flex-wrap:wrap}
 
+/* Exam reader pilot */
+.exam-reader-roadmap{background:#fff}
+.exam-reader-roadmap>.wrap{width:min(1040px,calc(100% - 48px))}
+.exam-reader-roadmap h2{max-width:760px;margin-bottom:12px}
+.exam-reader-lead{max-width:760px;margin:0 0 30px;color:var(--muted);font-size:15.5px;line-height:1.8}
+.exam-roadmap-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.exam-roadmap-card{
+  position:relative;background:var(--soft);border:1px solid var(--line);
+  border-radius:19px;padding:23px 22px 22px;min-height:170px
+}
+.exam-roadmap-card>span{
+  display:block;margin-bottom:18px;font-size:11px;font-weight:900;
+  letter-spacing:.08em;color:var(--accent)
+}
+.exam-roadmap-card h3{margin:0 0 8px;font-size:17px;line-height:1.4}
+.exam-roadmap-card p{margin:0;color:var(--muted);font-size:13.8px;line-height:1.75}
+
+.exam-reader-outputs{background:#fff;border-bottom:1px solid var(--line)}
+.exam-output-layout{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:50px;align-items:start}
+.exam-output-copy h2{max-width:480px}
+.exam-output-copy>p:not(.kicker){color:var(--muted);max-width:520px}
+.exam-output-note{
+  margin-top:22px!important;padding:16px 17px;border-radius:14px;
+  background:var(--soft);color:var(--ink)!important;font-weight:700;font-size:13px!important
+}
+.exam-output-list{border-top:1px solid var(--line)}
+.exam-output-row{
+  display:grid;grid-template-columns:130px 1fr;gap:20px;
+  padding:19px 0;border-bottom:1px solid var(--line);align-items:start
+}
+.exam-output-row b{font-size:13.5px;color:var(--accent)}
+.exam-output-row span{font-size:13.8px;color:var(--muted);line-height:1.65}
+
 /* Management */
 .management{background:var(--soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .manage-layout{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr);gap:54px;align-items:start}
@@ -264,6 +297,7 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
   .snapshot{max-width:none}
   .manage-layout{grid-template-columns:1fr;gap:24px}
   .manage-copy{position:static}
+  .exam-output-layout{grid-template-columns:1fr;gap:22px}
   .decision-grid{grid-template-columns:1fr 1fr}
   .decision-grid>div:nth-child(2){border-right:0}
   .decision-grid>div{border-bottom:1px solid var(--line)}
@@ -293,6 +327,10 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
   .trust-in>div{border-right:0;border-bottom:1px solid var(--line);padding:13px}
   .trust-in>div:last-child{border-bottom:0}
   .grid4,.proofs,.decision-list{grid-template-columns:1fr}
+  .exam-roadmap-grid{grid-template-columns:1fr}
+  .exam-reader-roadmap>.wrap{width:calc(100% - 36px)}
+  .exam-roadmap-card{min-height:0;padding:19px}
+  .exam-output-row{grid-template-columns:1fr;gap:5px;padding:16px 0}
   .card,.decision-list>div{padding:18px}
   .manage-steps{padding:6px 17px;border-radius:18px}
   .manage-step{grid-template-columns:38px 1fr;gap:12px;padding:17px 0}
