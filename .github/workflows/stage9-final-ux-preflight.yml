@@ -82,10 +82,10 @@ jobs:
           from pathlib import Path
           q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
           assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
-          assert q['counts']['new_pages']==92682
-          assert q['counts']['html_total']==92777
-          assert q['counts']['sitemap_shards']==186
-          assert q['counts']['sitemap_urls']==92777
+          assert q['counts']['new_pages']==113278
+          assert q['counts']['html_total']==113373
+          assert q['counts']['sitemap_shards']==227
+          assert q['counts']['sitemap_urls']==113373
           assert q['indexing']['noindex_pages']==0
           assert q['indexing']['production_ui_failures']==0
           assert q['indexing']['robots_txt_allows_crawl'] is True
@@ -117,11 +117,11 @@ jobs:
               assert 'ENGLISH PT' not in title, (p.name,title)
               assert ' | ' in title, (p.name,title)
               assert all(x not in raw for x in machine_phrases), p.name
-              assert raw.count('href="/') >= 18, p.name
+              assert raw.count('href="/') >= 22, p.name
           print('PASS_STAGE9_FINAL_UX_PREFLIGHT')
           PY
 
-      - name: Package representative 18 final production pages
+      - name: Package representative 22 final production pages
         run: |
           mkdir -p stage9-final-ux-samples
           python3 - <<'PY'
@@ -148,7 +148,28 @@ jobs:
               assert 'intent-academy' in raw, academy
               shutil.copy2(src,out/academy)
               pages.append(academy)
-          assert len(pages)==18, len(pages)
+          derived_specs=[
+              ('housewife-conv','english-conv-academy',True),
+              ('housewife-conv','adult-english-conv-academy',True),
+              ('biz-business-conv','worker-english-conv-academy',True),
+              ('housewife-conv','beginner-english-conv',False),
+          ]
+          for base,derived,is_academy in derived_specs:
+              source=next((x for x in pages if x.endswith(f'-{base}.html')),None)
+              assert source, base
+              name=source[:-len(base+'.html')] + derived + '.html'
+              src=Path('stage9-release')/name
+              assert src.exists(), name
+              raw=src.read_text(encoding='utf-8')
+              assert derived in name
+              if is_academy:
+                  assert 'class="section academy-choice"' in raw, name
+                  assert 'intent-academy' in raw, name
+              else:
+                  assert 'intent-audience' in raw, name
+              shutil.copy2(src,out/name)
+              pages.append(name)
+          assert len(pages)==22, len(pages)
           shutil.copy2('stage9-release/pilot.css',out/'pilot.css')
           shutil.copy2('stage9-release/pilot.js',out/'pilot.js')
           links=''.join(f'<li><a href="{x}">{x}</a></li>' for x in pages)
