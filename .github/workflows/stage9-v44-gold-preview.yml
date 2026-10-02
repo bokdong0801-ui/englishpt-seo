@@ -69,13 +69,13 @@ jobs:
           from pathlib import Path
           q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
           assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
-          assert q['counts']['html_total']==92777, q
+          assert q['counts']['html_total']==113373, q
           assert q['indexing']['production_ui_failures']==0, q
           assert q['source']['mass_renderer']=='stage9-clean-gold-v1', q
           print('PASS_EXACT_PRODUCTION_ASSEMBLY')
           PY
 
-      - name: Build 18-page reader-first preview from exact renderer output
+      - name: Build 22-page reader-first preview from exact renderer output
         run: |
           rm -rf stage9-v44-preview
           mkdir -p stage9-v44-preview
@@ -117,7 +117,31 @@ jobs:
               shutil.copy2(src,out/academy)
               pages.append((academy,title,'학원검색'))
               academy_names.append(academy)
-          assert len(pages)==18, len(pages)
+          conv_specs=[
+              ('housewife-conv','english-conv-academy','회화학원'),
+              ('housewife-conv','adult-english-conv-academy','회화학원'),
+              ('biz-business-conv','worker-english-conv-academy','회화학원'),
+              ('housewife-conv','beginner-english-conv','왕초보'),
+          ]
+          for base_intent,derived,kind in conv_specs:
+              source=next((name for name,_,_ in pages if name.endswith(f'-{base_intent}.html')),None)
+              assert source, base_intent
+              name=source[:-len(base_intent+'.html')] + derived + '.html'
+              src=Path('stage9-release')/name
+              assert src.exists(), name
+              raw=src.read_text(encoding='utf-8')
+              title=raw.split('<title>',1)[1].split('</title>',1)[0]
+              if derived.endswith('-academy'):
+                  assert 'class="section academy-choice"' in raw, name
+                  assert 'intent-academy' in raw, name
+                  assert '학원' in title, (name,title)
+              else:
+                  assert 'intent-audience' in raw, name
+                  assert '왕초보영어회화' in title, (name,title)
+              shutil.copy2(src,out/name)
+              pages.append((name,title,kind))
+              academy_names.append(name)
+          assert len(pages)==22, len(pages)
           cards=''.join(
               f'<a class="card" href="/{html.escape(name)}"><small>{html.escape(kind)}</small><b>{html.escape(title)}</b><span>페이지 열기 →</span></a>'
               for name,title,kind in pages
@@ -125,7 +149,7 @@ jobs:
           index=f'''<!doctype html><html lang="ko"><head><meta charset="utf-8">
           <meta name="viewport" content="width=device-width,initial-scale=1">
           <meta name="robots" content="noindex,nofollow">
-          <title>ENGLISH PT 18개 최종 후보 Preview</title>
+          <title>ENGLISH PT 22개 최종 후보 Preview</title>
           <style>
           *{{box-sizing:border-box}}body{{margin:0;font-family:Pretendard,"Apple SD Gothic Neo",Arial,sans-serif;background:#F5F2EA;color:#14201A}}
           .wrap{{width:min(1050px,calc(100% - 36px));margin:0 auto;padding:54px 0}}
@@ -136,8 +160,8 @@ jobs:
           .card small{{font-size:10px;font-weight:900;letter-spacing:.08em;color:#7A817D}}.card b{{font-size:15px}}.card span{{font-size:12px;color:#315F4C;font-weight:800}}
           @media(max-width:700px){{.grid{{grid-template-columns:1fr}}.wrap{{padding:36px 0}}}}
           </style></head><body><main class="wrap"><p>NETLIFY PREVIEW · 실제 Production renderer 산출물</p>
-          <h1>V4.4 + Reader-first + 학원 검색의도</h1>
-          <p>기존 13개 대표 페이지와 새 토익·토익스피킹·오픽·IELTS·TOEFL 학원 검색 페이지 5개를 같은 Production 생성기에서 뽑았습니다.</p>
+          <h1>V4.4 + Reader-first + 22개 검색의도</h1>
+          <p>기존 13개 대표 페이지, 시험 학원 검색 페이지 5개, 영어회화학원·성인영어회화학원·직장인영어회화학원·왕초보영어회화 4개를 같은 Production 생성기에서 뽑았습니다.</p>
           <div class="note"><b>확인 포인트</b><p>시험별 색상 변화, 첫 화면의 가독성, 학원 검색 페이지의 비교 설명, 관리 과정, PC/모바일 반응형을 확인해주세요. 이 Preview는 검색엔진 색인을 막아두었습니다.</p></div>
           <div class="grid">{cards}</div></main></body></html>'''
           (out/'index.html').write_text(index,encoding='utf-8')
@@ -167,10 +191,10 @@ jobs:
           base='https://stage9-v44-gold-preview--englishpt-seo.netlify.app'
           names=[row['canonical'].rsplit('/',1)[-1] for row in q['representative_13']['pages']]
           names += json.loads(Path('stage9-v44-preview/ACADEMY_PREVIEW_PAGES.json').read_text(encoding='utf-8'))
-          assert len(names)==18, len(names)
+          assert len(names)==22, len(names)
           for name in names:
               subprocess.run(['curl','-fsSIL','--max-time','30',f'{base}/{name}'],check=True,stdout=subprocess.DEVNULL)
-          print('PASS_STAGE9_18_PAGE_READER_ACADEMY_PREVIEW')
+          print('PASS_STAGE9_22_PAGE_READER_EXPANSION_PREVIEW')
           PY
 
       - name: Write preview report
@@ -179,11 +203,11 @@ jobs:
           import json
           from pathlib import Path
           report={
-            "status":"PASS_STAGE9_18_PAGE_READER_ACADEMY_PREVIEW",
+            "status":"PASS_STAGE9_22_PAGE_READER_EXPANSION_PREVIEW",
             "preview_url":"https://stage9-v44-gold-preview--englishpt-seo.netlify.app",
-            "source":"exact current Stage 9 production renderer with academy intents",
+            "source":"exact current Stage 9 production renderer with exam-academy and conversation expansion intents",
             "production_affected":False,
-            "representative_pages":18,
+            "representative_pages":22,
             "preview_indexing":"blocked by X-Robots-Tag only"
           }
           Path('STAGE9_V44_GOLD_PREVIEW_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
