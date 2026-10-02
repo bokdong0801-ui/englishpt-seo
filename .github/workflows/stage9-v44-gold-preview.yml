@@ -69,7 +69,7 @@ jobs:
           from pathlib import Path
           q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
           assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
-          assert q['counts']['html_total']==113373, q
+          assert q['counts']['html_total']==118522, q
           assert q['indexing']['production_ui_failures']==0, q
           assert q['source']['mass_renderer']=='stage9-clean-gold-v1', q
           print('PASS_EXACT_PRODUCTION_ASSEMBLY')
@@ -101,7 +101,7 @@ jobs:
               assert 'ENGLISH PT' not in title, (name,title)
               shutil.copy2(src,out/name)
               pages.append((name,title,'기존'))
-          academy_bases=['toeic','toeic-speaking','opic','ielts','toefl']
+          academy_bases=['toeic','toeic-speaking','opic','ielts','duolingo','toefl']
           academy_names=[]
           for base in academy_bases:
               source=next((name for name,_,_ in pages if name.endswith(f'-{base}.html')),None)
@@ -141,7 +141,7 @@ jobs:
               shutil.copy2(src,out/name)
               pages.append((name,title,kind))
               academy_names.append(name)
-          assert len(pages)==22, len(pages)
+          assert len(pages)==23, len(pages)
           cards=''.join(
               f'<a class="card" href="/{html.escape(name)}"><small>{html.escape(kind)}</small><b>{html.escape(title)}</b><span>페이지 열기 →</span></a>'
               for name,title,kind in pages
