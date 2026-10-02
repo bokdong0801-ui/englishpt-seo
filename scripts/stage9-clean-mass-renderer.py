@@ -567,21 +567,98 @@ def academy_compare_section(loc: dict, intent: str) -> str:
         "ielts": "Listening·Reading·Writing·Speaking 4영역, 첨삭과 말하기 피드백",
         "toefl": "Reading·Listening·Speaking·Writing 4영역과 통합형 연습",
     }[base]
+
+    intro_variants = [
+        (
+            "학원을 알아보고 있다면",
+            f'{loc["dong"]}에서 {ACADEMY_SERVICE[intent]}을 찾을 때, 수업 이름보다 관리방식을 먼저 비교해보세요',
+            f'{exam_label} 준비는 같은 학원 이름을 보고 고르기보다 진도·질문·피드백이 어떻게 이어지는지 확인하는 편이 좋습니다.'
+        ),
+        (
+            "수업을 고르기 전에",
+            f'{ACADEMY_SERVICE[intent]}을 비교할 때는 내 시험일과 약한 영역부터 기준을 잡아보세요',
+            f'{loc["dong"]}에서 {exam_label} 수업을 찾더라도 정해진 진도를 따라갈지, 필요한 영역을 먼저 보완할지에 따라 맞는 방식이 달라질 수 있습니다.'
+        ),
+        (
+            "학원과 1:1을 비교한다면",
+            f'{loc["dong"]} {ACADEMY_SERVICE[intent]}, 수업 횟수보다 피드백 범위를 먼저 확인해보세요',
+            f'{exam_label}은 문제풀이만으로 끝나지 않는 시험이라 오답·첨삭·녹음·실전연습이 수업 밖에서도 어떻게 이어지는지 보는 것이 중요합니다.'
+        ),
+        (
+            "시험일까지 남은 시간을 본다면",
+            f'{ACADEMY_SERVICE[intent]} 선택은 시험일까지 무엇을 관리해주는지까지 확인해야 합니다',
+            f'같은 {exam_label} 과정이라도 목표와 시험일, 약한 파트가 다르면 필요한 관리가 달라집니다. {loc["dong"]}에서 수업을 비교할 때 이 차이를 먼저 보세요.'
+        ),
+    ]
+    v = int(hashlib.sha256(f'{loc["slug"]}|{intent}|academy-compare-v2'.encode()).hexdigest()[:8],16) % len(intro_variants)
+    kicker, heading, disclosure = intro_variants[v]
+
+    card_sets = [
+        [
+            ("진도와 질문","정해진 진도를 따라가는 방식이 편한지, 현재 약한 부분을 먼저 다루는 방식이 필요한지 확인합니다."),
+            ("피드백 범위","수업 중 설명뿐 아니라 오답·첨삭·녹음처럼 수업 후 확인이 어디까지 이어지는지 비교합니다."),
+            (f"{exam_label} 관리",f"{exam_focus} 중 지금 필요한 항목을 얼마나 구체적으로 관리하는지 살펴봅니다."),
+            ("일정 조정","시험일이 가까워질 때 과제량·실전연습·보완 영역을 실제 일정에 맞춰 조정할 수 있는지 확인합니다."),
+        ],
+        [
+            ("수업 속도","전체 진도를 일정하게 따라갈지, 약한 파트에 시간을 더 쓸 수 있는지 먼저 물어보는 것이 좋습니다."),
+            ("질문과 교정","틀린 이유나 답변 표현을 바로 질문하고 고칠 시간이 충분한지 확인합니다."),
+            ("과제 관리",f"{exam_focus}을 수업 밖에서도 이어갈 수 있도록 무엇을 남겨주는지 비교합니다."),
+            ("시험 전 운영","시험 직전에는 새 범위를 넓히는지, 실전시간과 반복오답 중심으로 바꾸는지 살펴봅니다."),
+        ],
+        [
+            ("현재 수준 확인","첫 수업 전에 최근 점수나 답변을 보고 어디부터 시작할지 정하는 방식인지 확인합니다."),
+            ("개인 피드백","같은 문제를 풀어도 사람마다 틀리는 이유가 다르기 때문에 개인별 설명과 교정 범위를 비교합니다."),
+            ("기록과 복습",f"{exam_label} 수업 후 오답·첨삭·녹음 결과가 다음 수업에 어떻게 이어지는지 살펴봅니다."),
+            ("일정 맞춤","학교·업무 일정과 시험일을 함께 고려해 현실적인 과제량을 조정할 수 있는지 확인합니다."),
+        ],
+        [
+            ("목표부터 확인","목표 점수·등급과 시험일을 먼저 묻고 계획을 잡는지 확인합니다."),
+            ("약한 영역 집중",f"{exam_focus} 가운데 이미 안정된 부분과 더 연습할 부분을 나눠주는지 살펴봅니다."),
+            ("피드백 방식","정답 해설만 하는지, 실제 답변·오답을 고쳐서 다시 해보게 하는지 비교합니다."),
+            ("다음 수업 연결","그날 끝난 진도보다 다음에 다시 확인할 내용이 남는 수업인지 확인합니다."),
+        ],
+    ]
+    cards = card_sets[v]
+    # Rotate card order once more by locality so neighboring pages don't keep
+    # identical paragraph sequences while preserving the same comparison logic.
+    shift = int(hashlib.sha256(f'{loc["slug"]}|{intent}|academy-order'.encode()).hexdigest()[:4],16) % len(cards)
+    cards = cards[shift:] + cards[:shift]
+    card_html = ''.join(
+        f'<article><span>{i:02d}</span><h3>{esc(title)}</h3><p>{esc(body)}</p></article>'
+        for i,(title,body) in enumerate(cards,1)
+    )
+
+    fit_variants = [
+        (
+            "정해진 일정과 진도를 따라가며 꾸준히 학습하는 방식이 편하고, 비슷한 목표의 학습자와 함께 수업하는 환경이 잘 맞는 경우입니다.",
+            "시험일이 촉박하거나 특정 파트만 약하고, 오답·답변·첨삭에 개인 피드백이 많이 필요한 경우입니다."
+        ),
+        (
+            "정해진 커리큘럼과 수업 시간이 학습 리듬을 잡는 데 도움이 되고, 전체 범위를 순서대로 배우고 싶은 경우입니다.",
+            "이미 잘하는 영역은 줄이고 부족한 부분에 시간을 더 쓰거나, 일정에 맞춰 수업 순서를 자주 조정해야 하는 경우입니다."
+        ),
+        (
+            "혼자 계획을 세우기보다 정해진 수업 흐름을 따라가는 편이 편하고, 전체 시험 구조를 처음부터 익혀야 하는 경우입니다.",
+            "특정 유형에서 반복해서 막히거나 말하기·쓰기처럼 개별 교정이 중요한 영역을 집중적으로 준비해야 하는 경우입니다."
+        ),
+        (
+            "일정한 진도와 과제량이 있어야 공부가 꾸준히 이어지고, 전 범위를 균형 있게 확인하고 싶은 경우입니다.",
+            "시험일까지 시간이 많지 않거나 현재 점수에서 부족한 영역이 분명해 개인별 연습량과 피드백을 조정해야 하는 경우입니다."
+        ),
+    ]
+    academy_fit, one_fit = fit_variants[v]
+
     return (
         '<section class="section academy-choice"><div class="wrap">'
-        '<p class="kicker">학원을 알아보고 있다면</p>'
-        f'<h2>{esc(loc["dong"])}에서 {esc(ACADEMY_SERVICE[intent])}을 찾을 때, 수업 이름보다 관리방식을 먼저 비교해보세요</h2>'
+        f'<p class="kicker">{esc(kicker)}</p>'
+        f'<h2>{esc(heading)}</h2>'
         '<p class="academy-disclosure">ENGLISH PT는 특정 오프라인 학원으로 소개하는 페이지가 아닙니다. '
-        f'{esc(exam_label)} 준비를 위해 학원형 수업과 1:1 맞춤 수업을 비교할 때 확인하면 좋은 기준을 정리했습니다.</p>'
-        '<div class="academy-compare">'
-        '<article><span>01</span><h3>진도와 질문</h3><p>정해진 진도를 따라가는 방식이 편한지, 현재 약한 부분을 먼저 다루는 방식이 필요한지 확인합니다.</p></article>'
-        '<article><span>02</span><h3>피드백 범위</h3><p>수업 중 설명뿐 아니라 오답·첨삭·녹음처럼 수업 후 확인이 어디까지 이어지는지 비교합니다.</p></article>'
-        f'<article><span>03</span><h3>{esc(exam_label)} 관리</h3><p>{esc(exam_focus)} 중 지금 필요한 항목을 얼마나 구체적으로 관리하는지 살펴봅니다.</p></article>'
-        '<article><span>04</span><h3>일정 조정</h3><p>시험일이 가까워질 때 과제량·실전연습·보완 영역을 실제 일정에 맞춰 조정할 수 있는지 확인합니다.</p></article>'
-        '</div>'
+        f'{esc(disclosure)}</p>'
+        '<div class="academy-compare">' + card_html + '</div>'
         '<div class="academy-fit">'
-        '<div><b>학원형 수업이 잘 맞을 수 있는 경우</b><p>정해진 진도와 수업 일정이 필요하고, 비슷한 목표의 학습자와 함께 꾸준히 따라가는 방식이 편한 경우입니다.</p></div>'
-        '<div><b>1:1 방식이 잘 맞을 수 있는 경우</b><p>시험일이 촉박하거나 특정 파트·영역만 약하고, 답변·첨삭·오답에 개인 피드백이 많이 필요한 경우입니다.</p></div>'
+        f'<div><b>학원형 수업이 잘 맞을 수 있는 경우</b><p>{esc(academy_fit)}</p></div>'
+        f'<div><b>1:1 방식이 잘 맞을 수 있는 경우</b><p>{esc(one_fit)}</p></div>'
         '</div></div></section>'
     )
 
