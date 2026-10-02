@@ -1,1 +1,1 @@
-Deploy five-exam reader-first preview without alias and verify immutable deploy-specific Netlify URL.
+Deploy five-exam reader-first preview to isolated Netlify review site for user approval.
