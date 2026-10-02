@@ -364,7 +364,13 @@ TOPIC_MODULES = [
 def _topic_modules(loc: dict, intent: str, family: str, audience: str) -> list[dict]:
     skip_topics={"locality-honesty","alternative-path","transfer"}
     pool=[m for m in TOPIC_MODULES if family in m["families"] and m["key"] not in skip_topics]
-    count = 7 if intent in {"univ-conv","jobseeker-conv","toeic"} else 6
+    base_intent = ACADEMY_BASE.get(intent, intent)
+    if family == "exam" and base_intent in EXAM_READER_PILOT_INTENTS:
+        count = 8
+    elif intent in {"univ-conv","jobseeker-conv"}:
+        count = 7
+    else:
+        count = 6
     ranked=sorted(
         pool,
         key=lambda m: hashlib.sha256(
