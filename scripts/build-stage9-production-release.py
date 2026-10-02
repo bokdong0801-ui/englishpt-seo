@@ -360,6 +360,18 @@ def main() -> None:
             else:
                 shutil.copy2(p, dst)
 
+    # Stage 9 AI/search discovery files are controlled by the current branch,
+    # not by the older Stage 8 approval packet.
+    discovery_files = {
+        "robots.txt": ROOT / "robots.txt",
+        "llms.txt": ROOT / "llms.txt",
+    }
+    for name, src in discovery_files.items():
+        if not src.exists():
+            failures.append(f"discovery_file_missing:{name}")
+        else:
+            shutil.copy2(src, out / name)
+
     # Rebuild sitemaps from the exact final HTML set because Stage 9 adds
     # five exam-academy intents plus four conversation-search intents per locality.
     old_sitemap = out / "sitemap.xml"
@@ -425,6 +437,28 @@ def main() -> None:
         failures.append("robots_blocks_all")
     if f"Sitemap: {BASE_URL}/sitemap-index.xml" not in robots:
         failures.append("robots_sitemap_mismatch")
+    for agent in ("OAI-SearchBot","Googlebot","Google-Extended","Yeti"):
+        if f"User-agent: {agent}" not in robots:
+            failures.append(f"robots_missing_agent:{agent}")
+
+    llms_path = out / "llms.txt"
+    if not llms_path.exists():
+        failures.append("llms_missing")
+        llms = ""
+    else:
+        llms = llms_path.read_text(encoding="utf-8")
+        for required in (
+            "https://englishpt.kr/englishpt.html",
+            "https://englishpt.kr/sitemap-index.xml",
+            "physical branch or office",
+            "Academy-keyword pages",
+        ):
+            if required not in llms:
+                failures.append(f"llms_contract_missing:{required}")
+
+    # Naver's nosourceinfo opts pages out of AI-generated source descriptions.
+    if any("nosourceinfo" in p.read_text(encoding="utf-8", errors="ignore").lower() for p in html_files):
+        failures.append("nosourceinfo_present")
 
     rules = count_redirect_rules(out / "_redirects")
     if len(rules) < EXPECTED_REDIRECTS + 1:
@@ -452,6 +486,15 @@ def main() -> None:
             "noindex_pages": len(set(bad_robot_pages)),
             "robots_txt_allows_crawl": "Disallow: /" not in robots,
             "production_ui_failures": len(bad_ui_pages),
+        },
+        "ai_discovery": {
+            "oai_searchbot_allowed": "User-agent: OAI-SearchBot" in robots,
+            "googlebot_allowed": "User-agent: Googlebot" in robots,
+            "google_extended_allowed": "User-agent: Google-Extended" in robots,
+            "yeti_allowed": "User-agent: Yeti" in robots,
+            "llms_txt_present": bool(llms),
+            "nosourceinfo_present": False,
+            "entity_graph": "EducationalOrganization + WebSite + WebPage + Service + BreadcrumbList",
         },
         "source": {
             "stage7_status": q7.get("status"),
