@@ -333,7 +333,7 @@ TOPIC_MODULES = [
 def _topic_modules(loc: dict, intent: str, family: str, audience: str) -> list[dict]:
     skip_topics={"locality-honesty","alternative-path","transfer"}
     pool=[m for m in TOPIC_MODULES if family in m["families"] and m["key"] not in skip_topics]
-    count=6
+    count = 7 if intent in {"univ-conv","jobseeker-conv","toeic"} else 6
     ranked=sorted(
         pool,
         key=lambda m: hashlib.sha256(
