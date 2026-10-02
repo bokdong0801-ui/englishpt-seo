@@ -1,0 +1,67 @@
+{
+  "version": "1.0",
+  "events": [
+    {
+      "event": "pt_page_view",
+      "when": "page load",
+      "properties": [
+        "audience",
+        "intent",
+        "locality",
+        "variant"
+      ]
+    },
+    {
+      "event": "pt_cta_click",
+      "when": "any CTA is clicked",
+      "properties": [
+        "cta_text",
+        "cta_context",
+        "audience",
+        "variant"
+      ]
+    },
+    {
+      "event": "pt_modal_open",
+      "when": "consultation modal opens",
+      "properties": [
+        "source_cta",
+        "audience",
+        "variant"
+      ]
+    },
+    {
+      "event": "pt_form_start",
+      "when": "first editable field receives input",
+      "properties": [
+        "first_field",
+        "audience",
+        "variant"
+      ]
+    },
+    {
+      "event": "pt_form_submit",
+      "when": "valid live form is submitted",
+      "properties": [
+        "audience",
+        "intent",
+        "variant"
+      ]
+    },
+    {
+      "event": "pt_scroll_depth",
+      "when": "25/50/75/90 percent reached",
+      "properties": [
+        "depth",
+        "audience",
+        "variant"
+      ]
+    }
+  ],
+  "primary_metrics": {
+    "cta_click_rate": "pt_cta_click / pt_page_view",
+    "form_start_rate": "pt_form_start / pt_modal_open",
+    "form_submit_rate": "pt_form_submit / pt_page_view",
+    "modal_to_submit": "pt_form_submit / pt_modal_open"
+  }
+}

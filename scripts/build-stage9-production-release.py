@@ -1,0 +1,564 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Assemble the explicitly approved Stage 9 production release."""
+from __future__ import annotations
+
+import argparse
+import html
+import importlib.util
+import json
+import re
+import shutil
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_module(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    if not spec or not spec.loader:
+        raise RuntimeError(path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+CLEAN_RENDERER = _load_module(
+    "stage9_clean_mass_renderer", ROOT / "scripts" / "stage9-clean-mass-renderer.py"
+)
+
+EXPECTED_SOURCE_NEW = 66937
+EXPECTED_ACADEMY_NEW = 30894
+EXPECTED_CONVERSATION_NEW = 20596
+EXPECTED_NEW = EXPECTED_SOURCE_NEW + EXPECTED_ACADEMY_NEW + EXPECTED_CONVERSATION_NEW
+EXPECTED_PRESERVED = 95
+EXPECTED_TOTAL = EXPECTED_NEW + EXPECTED_PRESERVED
+EXPECTED_SITEMAPS = 238
+SITEMAP_CHUNK = 500
+EXPECTED_REDIRECTS = 74
+BASE_URL = "https://englishpt.kr"
+
+VISUAL_FAMILIES = ["school","school-talk","campus","interview","business","conversation","toeic","speaking","four-skills","digital-test"]
+
+def write_visual_assets(out: Path) -> None:
+    assets = out / "assets" / "images"
+    assets.mkdir(parents=True, exist_ok=True)
+    palettes = {
+        "school":("#EAF4F1","#2F7E86","#173038"),
+        "school-talk":("#EAF0F5","#536EA7","#192A39"),
+        "campus":("#EEF2F5","#4C6987","#1A2937"),
+        "interview":("#EDF2F1","#395D68","#17282C"),
+        "business":("#F1EEE5","#315F4C","#121A17"),
+        "conversation":("#F3EEE8","#B99479","#222920"),
+        "toeic":("#EAF1F8","#2867A6","#172A3B"),
+        "speaking":("#F1ECF4","#725184","#302438"),
+        "four-skills":("#F5ECEE","#8A4653","#38252A"),
+        "digital-test":("#EAF3ED","#2D7B5D","#1C3529"),
+    }
+    labels={
+        "school":"BOOK","school-talk":"SPEAK","campus":"PRESENT","interview":"INTERVIEW",
+        "business":"MEETING","conversation":"CONVERSATION","toeic":"LC · RC","speaking":"SPEAKING",
+        "four-skills":"4 SKILLS","digital-test":"DIGITAL TEST",
+    }
+    for family in VISUAL_FAMILIES:
+        bg,accent,ink=palettes[family]
+        for variant in range(1,4):
+            shift=variant*24
+            svg=f'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+<rect width="1200" height="720" fill="{bg}"/>
+<circle cx="{955-shift}" cy="{145+shift}" r="{112+variant*8}" fill="{accent}" opacity=".13"/>
+<circle cx="{180+shift}" cy="{600-shift}" r="{145-variant*6}" fill="{accent}" opacity=".09"/>
+<rect x="95" y="88" width="1010" height="544" rx="38" fill="#fff" stroke="{accent}" stroke-opacity=".20"/>
+<rect x="150" y="146" width="360" height="26" rx="13" fill="{accent}" opacity=".16"/>
+<rect x="150" y="198" width="245" height="18" rx="9" fill="{ink}" opacity=".10"/>
+<rect x="150" y="235" width="300" height="18" rx="9" fill="{ink}" opacity=".08"/>
+<rect x="150" y="325" width="395" height="192" rx="26" fill="{bg}" stroke="{accent}" stroke-opacity=".24"/>
+<path d="M190 462 C260 {340+shift//3}, 330 {520-shift//4}, 500 370" fill="none" stroke="{accent}" stroke-width="16" stroke-linecap="round"/>
+<circle cx="205" cy="430" r="22" fill="{accent}"/><circle cx="340" cy="405" r="22" fill="{accent}" opacity=".72"/><circle cx="490" cy="375" r="22" fill="{accent}" opacity=".46"/>
+<rect x="625" y="175" width="365" height="315" rx="30" fill="{ink}"/>
+<rect x="662" y="215" width="290" height="190" rx="18" fill="{bg}"/>
+<circle cx="807" cy="310" r="58" fill="{accent}" opacity=".20"/>
+<path d="M770 315 q37 -55 74 0 q-37 50 -74 0z" fill="{accent}" opacity=".86"/>
+<rect x="725" y="440" width="165" height="14" rx="7" fill="#fff" opacity=".55"/>
+<text x="150" y="585" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="{accent}" letter-spacing="3">{labels[family]}</text>
+</svg>'''
+            (assets / f"{family}-{variant}.svg").write_text(svg, encoding="utf-8")
+
+
+ROBOTS_RE = re.compile(
+    r'<meta\s+name=["\']robots["\']\s+content=["\']noindex\s*,\s*nofollow["\']\s*/?>',
+    re.I,
+)
+
+SERVICE_THEME_SUFFIXES = {
+    "elem-tutor": "theme-elem intent-audience",
+    "mid-conv": "theme-mid intent-audience",
+    "high-conv": "theme-high intent-audience",
+    "univ-conv": "theme-univ intent-audience",
+    "jobseeker-conv": "theme-job intent-audience",
+    "biz-business-conv": "theme-worker intent-audience",
+    "housewife-conv": "theme-housewife intent-audience",
+}
+EXAM_SUFFIXES = ("toeic", "toeic-speaking", "opic", "ielts", "duolingo", "toefl")
+
+EMAILJS_TAG = '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>'
+LIVE_FORM = '''<form id="pilotForm" class="lead-form">
+<label>이름 <span>*</span><input name="name" autocomplete="name" required></label>
+<label>연락처 <span>*</span><input name="phone" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required></label>
+<label class="full">가장 가까운 일정<input name="deadline" placeholder="시험·발표·면접·사용 일정"></label>
+<label class="full">가장 막히는 장면<textarea name="difficulty" rows="3" placeholder="최근 어려웠던 문제·응답·상황"></textarea></label>
+<label class="privacy-check"><input name="consent" type="checkbox" required><span>상담을 위한 개인정보 수집·이용에 동의합니다.</span></label>
+<div class="submit-row"><button class="btn primary" type="submit">무료 PT 진단 신청 →</button><a class="btn phone" href="tel:+821050068027">전화 010-5006-8027</a></div>
+<p class="pilot-status" aria-live="polite"></p>
+</form>'''
+
+PRODUCTION_TEXT_FIXES = {
+    "복습회수": "복습 횟수",
+    "현재범위": "현재 범위",
+    "차수 차수": "반복 횟수",
+    "상기 차수": "복습 횟수",
+    "회상 차수": "복습 횟수",
+    "기억 회수": "복습 횟수",
+    "암기 차수": "복습 횟수",
+    "후속 기점": "다음 기준",
+    "재검토 동작": "다음 점검",
+    "재확인 동작": "다음 점검",
+    "재확인 행동": "다음 점검",
+    "재검토 행동": "다음 점검",
+}
+
+
+def theme_class_for(name: str) -> str:
+    for suffix, body_class in SERVICE_THEME_SUFFIXES.items():
+        if name.endswith(f"-{suffix}.html"):
+            return body_class
+    if any(name.endswith(f"-{suffix}.html") for suffix in EXAM_SUFFIXES):
+        return "theme-test intent-test"
+    raise ValueError(f"unknown Stage 9 mass-page intent: {name}")
+
+
+def _plain_h1(raw: str) -> str:
+    m = re.search(r"<h1>(.*?)</h1>", raw, re.S | re.I)
+    if not m:
+        return ""
+    return html.unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip()
+
+
+def _replace_kicker_h2(raw: str, kicker: str, heading: str) -> str:
+    pattern = re.compile(
+        r'(<p class="kicker">' + re.escape(kicker) + r'</p><h2>).*?(</h2>)',
+        re.S,
+    )
+    return pattern.sub(lambda m: m.group(1) + html.escape(heading) + m.group(2), raw, count=1)
+
+
+def normalize_production_page(raw: str, name: str) -> tuple[str, list[str]]:
+    problems: list[str] = []
+    body_class = theme_class_for(name)
+    raw, body_n = re.subn(
+        r'<body class="[^"]*" data-production-deploy="false">',
+        f'<body class="{body_class}" data-production-deploy="true">',
+        raw,
+        count=1,
+    )
+    if body_n != 1:
+        problems.append("production_body")
+
+    raw = raw.replace("FULL GENERATION · noindex", "ENGLISH PT · 지역별 맞춤 안내")
+    raw = raw.replace("Stage 5 full generation · production 미배포", "ENGLISH PT · 지역별 맞춤 영어 안내")
+    raw = raw.replace("Stage 3 dry-run · production 미배포", "ENGLISH PT · 지역별 맞춤 영어 안내")
+    raw = raw.replace('href="../englishpt.html"', 'href="/englishpt.html"')
+
+    if '<script defer src="pilot.js"></script>' in raw and EMAILJS_TAG not in raw:
+        raw = raw.replace(
+            '<script defer src="pilot.js"></script>',
+            EMAILJS_TAG + '<script defer src="pilot.js"></script>',
+            1,
+        )
+
+    raw, form_n = re.subn(
+        r'<form id="pilotForm">.*?</form>',
+        LIVE_FORM,
+        raw,
+        count=1,
+        flags=re.S,
+    )
+    if form_n != 1:
+        problems.append("live_form")
+
+    h1 = _plain_h1(raw)
+    if not h1:
+        problems.append("h1_missing_for_ui")
+        h1 = "ENGLISH PT"
+    service = h1.split(maxsplit=1)[1] if len(h1.split(maxsplit=1)) == 2 else h1
+
+    heading_map = {
+        "자기상황 식별": "내 상황과 가까운 장면부터 확인합니다",
+        "선택 기준": "지금 이 과정이 맞는지 다섯 가지 기준으로 확인합니다",
+        "판단 가이드": f"{service}를 실제 목표와 일정에 연결하는 방법",
+        "지역별 판단 방식": f"{service} 선택 전에 확인할 기준",
+        "우선순위": "현재 결과를 가장 크게 막는 지점부터 우선합니다",
+        "수업 흐름": "설명에서 끝내지 않고 실제 행동으로 다시 확인합니다",
+        "중간 확인": "지금 필요한 첫 순서를 상담 전에 정리해보세요",
+        "판단 기준": "변화를 추상적인 표현 대신 실제 행동으로 확인합니다",
+        "피드백 예시": "성과를 약속하지 않고 다음 확인 행동을 남깁니다",
+        "자주 묻는 질문": "상담 전에 자주 확인하는 질문",
+        "더 깊게 보기": f"{service} 선택 전에 확인할 기준을 더 구체적으로 정리했습니다",
+        "판단 루트": "이 페이지에서 확인하는 순서를 정리했습니다",
+        "관련 과정": "같은 지역의 다른 영어 목표도 비교해보세요",
+        "상담 전 체크": "최근 자료와 가장 막힌 장면, 다음 일정을 준비해 주세요",
+    }
+    for kicker, heading in heading_map.items():
+        raw = _replace_kicker_h2(raw, kicker, heading)
+
+    raw = re.sub(
+        r'(<section class="final"><div class="wrap"><h2>).*?(</h2>)',
+        lambda m: m.group(1) + html.escape(f"{h1}, 등록보다 먼저 현재 상태와 목표부터 확인하세요.") + m.group(2),
+        raw,
+        count=1,
+        flags=re.S,
+    )
+
+    for old, new in PRODUCTION_TEXT_FIXES.items():
+        raw = raw.replace(old, new)
+
+    if "<main>" in raw and 'class="breadcrumb wrap"' not in raw:
+        crumb = (
+            '<div class="breadcrumb wrap" aria-label="현재 위치">'
+            '<a href="/englishpt.html">잉글리시PT</a><span aria-hidden="true">/</span>'
+            f'<strong>{html.escape(h1)}</strong></div>'
+        )
+        raw = raw.replace("<main>", "<main>" + crumb, 1)
+
+    schema_match = re.search(r'<script type="application/ld\+json">(.*?)</script>', raw, re.S)
+    canonical_match = re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']', raw, re.I)
+    if schema_match and canonical_match:
+        try:
+            data = json.loads(schema_match.group(1))
+            graph = data.get("@graph")
+            if isinstance(graph, list) and not any(x.get("@type") == "BreadcrumbList" for x in graph if isinstance(x, dict)):
+                graph.append({
+                    "@type": "BreadcrumbList",
+                    "itemListElement": [
+                        {"@type": "ListItem", "position": 1, "name": "잉글리시PT", "item": f"{BASE_URL}/englishpt.html"},
+                        {"@type": "ListItem", "position": 2, "name": h1, "item": canonical_match.group(1)},
+                    ],
+                })
+                replacement = '<script type="application/ld+json">' + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + '</script>'
+                raw = raw[:schema_match.start()] + replacement + raw[schema_match.end():]
+        except Exception:
+            problems.append("breadcrumb_schema")
+
+    if 'class="mobile-sticky"' not in raw:
+        raw = raw.replace(
+            "</body>",
+            '<div class="mobile-sticky"><a href="#consultation-preview">무료 PT 진단 신청</a></div></body>',
+            1,
+        )
+
+    required = [
+        f'<body class="{body_class}" data-production-deploy="true">',
+        'name="name"',
+        'name="phone"',
+        'name="consent"',
+        EMAILJS_TAG,
+        'class="breadcrumb wrap"',
+        'class="mobile-sticky"',
+    ]
+    if any(x not in raw for x in required):
+        problems.append("production_ui_contract")
+    if any(x in raw for x in ("production 미배포", "검수용 페이지", 'data-production-deploy="false"')):
+        problems.append("stale_preview_copy")
+    return raw, problems
+
+
+def count_redirect_rules(path: Path) -> list[str]:
+    return [
+        line.strip() for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--stage7-root", required=True)
+    ap.add_argument("--stage8-root", required=True)
+    ap.add_argument("--work-root", required=True)
+    ap.add_argument("--output", required=True)
+    args = ap.parse_args()
+
+    stage7 = Path(args.stage7_root).resolve()
+    stage8 = Path(args.stage8_root).resolve()
+    work = Path(args.work_root).resolve()
+    out = Path(args.output).resolve()
+
+    if out.exists():
+        shutil.rmtree(out)
+    out.mkdir(parents=True)
+
+    failures: list[object] = []
+
+    q7 = json.loads((stage7 / "STAGE7_DEPLOY_PREVIEW_QA_V1.json").read_text(encoding="utf-8"))
+    q8 = json.loads((stage8 / "STAGE8_PRODUCTION_APPROVAL_PACKET_V1.json").read_text(encoding="utf-8"))
+
+    if q7.get("status") != "PASS_STAGE7_DEPLOY_PREVIEW_ROLLBACK_READY_NOT_PRODUCTION":
+        failures.append("stage7_not_pass")
+    if q8.get("status") != "PASS_STAGE8_PRODUCTION_APPROVAL_PACKET_READY_NOT_DEPLOYED":
+        failures.append("stage8_not_pass")
+    if q8.get("final_domain") != BASE_URL or q8.get("final_domain_confirmed") is not True:
+        failures.append("final_domain_not_confirmed")
+    if q8.get("approval", {}).get("next_stage") != "STAGE9_PRODUCTION_DEPLOY":
+        failures.append("stage8_next_stage_not_stage9")
+    if q8.get("counts", {}).get("new_pages") != EXPECTED_SOURCE_NEW:
+        failures.append("stage8_source_new_page_count")
+    if q8.get("counts", {}).get("preserved_pages") != EXPECTED_PRESERVED:
+        failures.append("stage8_preserved_page_count")
+    if q8.get("counts", {}).get("deploy_html_total") != EXPECTED_SOURCE_NEW + EXPECTED_PRESERVED:
+        failures.append("stage8_source_total_page_count")
+
+    rollback = stage7 / "rollback-root"
+    if not rollback.exists():
+        failures.append("rollback_root_missing")
+    else:
+        shutil.copytree(rollback, out, dirs_exist_ok=True)
+
+    new_pages = sorted((work / "stage5-full-generation").glob("shard-*/pages/*.html"))
+    if len(new_pages) != EXPECTED_SOURCE_NEW:
+        failures.append({"source_new_pages": [len(new_pages), EXPECTED_SOURCE_NEW]})
+
+    transformed_source = 0
+    transformed_academy = 0
+    transformed_conversation = 0
+    bad_robot_pages: list[str] = []
+    bad_domain_pages: list[str] = []
+    bad_ui_pages: list[dict] = []
+
+    def write_checked(name: str, raw: str, ui_problems: list[str]) -> None:
+        if ui_problems:
+            bad_ui_pages.append({"file": name, "problems": ui_problems})
+        low = raw.lower()
+        if (
+            '<meta name="robots" content="index,follow">' not in low
+            or "noindex" in low
+            or "nofollow" in low
+        ):
+            bad_robot_pages.append(name)
+        canonical = re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']', raw, re.I)
+        if not canonical or not canonical.group(1).startswith(BASE_URL + "/"):
+            bad_domain_pages.append(name)
+        (out / name).write_text(raw, encoding="utf-8")
+
+    derived_by_base: dict[str, list[tuple[str, str]]] = {}
+    for academy, base in CLEAN_RENDERER.ACADEMY_BASE.items():
+        derived_by_base.setdefault(base, []).append(("academy", academy))
+    for derived, base in CLEAN_RENDERER.CONV_DERIVED_BASE.items():
+        derived_by_base.setdefault(base, []).append(("conversation", derived))
+
+    for src in new_pages:
+        source_raw = src.read_text(encoding="utf-8")
+        raw, ui_problems = CLEAN_RENDERER.render_production_page(source_raw, src.name)
+        write_checked(src.name, raw, ui_problems)
+        transformed_source += 1
+
+        _, source_intent = CLEAN_RENDERER.intent_from_name(src.name)
+        for derived_kind, derived_intent in derived_by_base.get(source_intent, []):
+            derived_name = src.name[:-len(source_intent + ".html")] + derived_intent + ".html"
+            if derived_kind == "academy":
+                derived_raw, derived_problems = CLEAN_RENDERER.render_academy_page(
+                    source_raw, src.name, derived_intent
+                )
+                transformed_academy += 1
+            else:
+                derived_raw, derived_problems = CLEAN_RENDERER.render_conversation_derived_page(
+                    source_raw, src.name, derived_intent
+                )
+                transformed_conversation += 1
+            write_checked(derived_name, derived_raw, derived_problems)
+
+    first_pages_dir = next(iter((work / "stage5-full-generation").glob("shard-*/pages")), None)
+    if first_pages_dir:
+        for asset in ("pilot.css", "pilot.js"):
+            src = first_pages_dir / asset
+            if src.exists():
+                shutil.copy2(src, out / asset)
+    write_visual_assets(out)
+
+    production_assets = {
+        "pilot.css": ROOT / "assets" / "stage9-mass-production.css",
+        "pilot.js": ROOT / "assets" / "stage9-mass-production.js",
+    }
+    for asset, src in production_assets.items():
+        if not src.exists():
+            failures.append(f"production_asset_missing:{asset}")
+        else:
+            shutil.copy2(src, out / asset)
+    for asset in ("pilot.css", "pilot.js"):
+        if not (out / asset).exists():
+            failures.append(f"{asset}_missing")
+
+    release_config = stage8 / "release-config"
+    if not release_config.exists():
+        failures.append("release_config_missing")
+    else:
+        for p in release_config.iterdir():
+            dst = out / p.name
+            if p.is_dir():
+                if dst.exists():
+                    shutil.rmtree(dst)
+                shutil.copytree(p, dst)
+            else:
+                shutil.copy2(p, dst)
+
+    # Stage 9 AI/search discovery files are controlled by the current branch,
+    # not by the older Stage 8 approval packet.
+    discovery_files = {
+        "robots.txt": ROOT / "robots.txt",
+        "llms.txt": ROOT / "llms.txt",
+    }
+    for name, src in discovery_files.items():
+        if not src.exists():
+            failures.append(f"discovery_file_missing:{name}")
+        else:
+            shutil.copy2(src, out / name)
+
+    # Rebuild sitemaps from the exact final HTML set because Stage 9 adds
+    # five exam-academy intents plus four conversation-search intents per locality.
+    old_sitemap = out / "sitemap.xml"
+    if old_sitemap.exists():
+        old_sitemap.unlink()
+    sitemap_dir = out / "sitemaps"
+    if sitemap_dir.exists():
+        shutil.rmtree(sitemap_dir)
+    sitemap_dir.mkdir(parents=True)
+
+    html_files = sorted(out.glob("*.html"))
+    if len(html_files) != EXPECTED_TOTAL:
+        failures.append({"deploy_html_total": [len(html_files), EXPECTED_TOTAL]})
+
+    canonical_urls: list[str] = []
+    for page in html_files:
+        raw = page.read_text(encoding="utf-8", errors="ignore")
+        m = re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']', raw, re.I)
+        if not m:
+            failures.append({"canonical_missing": page.name})
+            continue
+        canonical_urls.append(m.group(1))
+    canonical_urls = sorted(set(canonical_urls))
+    if len(canonical_urls) != EXPECTED_TOTAL:
+        failures.append({"unique_canonical_urls": [len(canonical_urls), EXPECTED_TOTAL]})
+
+    for shard_no, offset in enumerate(range(0, len(canonical_urls), SITEMAP_CHUNK), 1):
+        urls = canonical_urls[offset:offset + SITEMAP_CHUNK]
+        body = ''.join(f'<url><loc>{html.escape(url)}</loc></url>' for url in urls)
+        (sitemap_dir / f'sitemap-{shard_no:03d}.xml').write_text(
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            + body + '</urlset>\n',
+            encoding="utf-8",
+        )
+
+    sitemap_files = sorted(sitemap_dir.glob("sitemap-*.xml"))
+    if len(sitemap_files) != EXPECTED_SITEMAPS:
+        failures.append({"sitemap_shards": [len(sitemap_files), EXPECTED_SITEMAPS]})
+
+    sitemap_index_body = ''.join(
+        f'<sitemap><loc>{BASE_URL}/sitemaps/{p.name}</loc></sitemap>'
+        for p in sitemap_files
+    )
+    (out / "sitemap-index.xml").write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        + sitemap_index_body + '</sitemapindex>\n',
+        encoding="utf-8",
+    )
+
+    sitemap_urls = len(canonical_urls)
+    if sitemap_urls != EXPECTED_TOTAL:
+        failures.append({"sitemap_urls": [sitemap_urls, EXPECTED_TOTAL]})
+    index = (out / "sitemap-index.xml").read_text(encoding="utf-8")
+    if index.count("<sitemap><loc>") != EXPECTED_SITEMAPS:
+        failures.append("sitemap_index_count")
+    if f"{BASE_URL}/sitemaps/" not in index:
+        failures.append("sitemap_index_domain")
+
+    robots = (out / "robots.txt").read_text(encoding="utf-8")
+    if "Disallow: /" in robots:
+        failures.append("robots_blocks_all")
+    if f"Sitemap: {BASE_URL}/sitemap-index.xml" not in robots:
+        failures.append("robots_sitemap_mismatch")
+    for agent in ("OAI-SearchBot","Googlebot","Google-Extended","Yeti"):
+        if f"User-agent: {agent}" not in robots:
+            failures.append(f"robots_missing_agent:{agent}")
+
+    llms_path = out / "llms.txt"
+    if not llms_path.exists():
+        failures.append("llms_missing")
+        llms = ""
+    else:
+        llms = llms_path.read_text(encoding="utf-8")
+        for required in (
+            "https://englishpt.kr/englishpt.html",
+            "https://englishpt.kr/sitemap-index.xml",
+            "physical branch or office",
+            "Academy-keyword pages",
+        ):
+            if required not in llms:
+                failures.append(f"llms_contract_missing:{required}")
+
+    # Naver's nosourceinfo opts pages out of AI-generated source descriptions.
+    if any("nosourceinfo" in p.read_text(encoding="utf-8", errors="ignore").lower() for p in html_files):
+        failures.append("nosourceinfo_present")
+
+    rules = count_redirect_rules(out / "_redirects")
+    if len(rules) < EXPECTED_REDIRECTS + 1:
+        failures.append({"redirect_rule_count": len(rules)})
+    if not any(x.startswith("/ /englishpt.html 301") for x in rules):
+        failures.append("root_redirect_missing")
+
+    report = {
+        "version": "1.0",
+        "status": "PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY" if not failures else "FAIL_STAGE9_RELEASE_ASSEMBLY",
+        "stage": "STAGE9_PRODUCTION_DEPLOY",
+        "final_domain": BASE_URL,
+        "counts": {
+            "source_pages": transformed_source,
+            "academy_pages": transformed_academy,
+            "conversation_pages": transformed_conversation,
+            "new_pages": transformed_source + transformed_academy + transformed_conversation,
+            "html_total": len(html_files),
+            "sitemap_shards": len(sitemap_files),
+            "sitemap_urls": sitemap_urls,
+            "redirect_rules": len(rules),
+        },
+        "indexing": {
+            "new_page_robots": "index,follow",
+            "noindex_pages": len(set(bad_robot_pages)),
+            "robots_txt_allows_crawl": "Disallow: /" not in robots,
+            "production_ui_failures": len(bad_ui_pages),
+        },
+        "ai_discovery": {
+            "oai_searchbot_allowed": "User-agent: OAI-SearchBot" in robots,
+            "googlebot_allowed": "User-agent: Googlebot" in robots,
+            "google_extended_allowed": "User-agent: Google-Extended" in robots,
+            "yeti_allowed": "User-agent: Yeti" in robots,
+            "llms_txt_present": bool(llms),
+            "nosourceinfo_present": False,
+            "entity_graph": "EducationalOrganization + WebSite + WebPage + Service + BreadcrumbList",
+        },
+        "source": {
+            "stage7_status": q7.get("status"),
+            "stage8_status": q8.get("status"),
+            "mass_renderer": "stage9-clean-gold-v1",
+        },
+        "failures": failures,
+    }
+    (out / "STAGE9_PRODUCTION_RELEASE_QA_V1.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    print(json.dumps(report, ensure_ascii=False))
+    if failures:
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,160 @@
+{
+  "version": "1.0",
+  "status": "READY_FOR_SMALL_PILOT_ONLY",
+  "locality": {
+    "locality_key": "서울특별시|종로구|청운동",
+    "sido": "서울특별시",
+    "sigungu": "종로구",
+    "dong_name": "청운동",
+    "full_name_ko": "서울특별시 종로구 청운동",
+    "region_slug": "seoul-jongno-cheongundong",
+    "entity_mix": "LEGAL_DONG",
+    "legal_dong_ids": [
+      "bjd:1111010100"
+    ],
+    "admin_dong_ids": [],
+    "related_admin_dong_ids": [
+      "adm:1111051500"
+    ],
+    "related_admin_names": [
+      "청운효자동"
+    ],
+    "source_snapshot_date": "2026-07-20"
+  },
+  "page_contracts": [
+    {
+      "page_id": "hub",
+      "page_role": "region",
+      "region_level": "dong",
+      "intent": "local-service-hub",
+      "intent_slug": null,
+      "theme": "theme-local",
+      "primary_keyword": "청운동 영어회화·영어과외",
+      "blueprint": "region-dong-router-v1",
+      "url": "/seoul-jongno-cheongundong.html"
+    },
+    {
+      "page_id": "high_conv",
+      "page_role": "service",
+      "audience": "high",
+      "intent": "high-conversation",
+      "intent_slug": "high-conv",
+      "theme": "theme-high",
+      "primary_keyword": "청운동 고등학생영어회화",
+      "blueprint": "v4-high-priority-deadline-v2",
+      "url": "/seoul-jongno-cheongundong-high-conv.html"
+    },
+    {
+      "page_id": "mid_conv",
+      "page_role": "service",
+      "audience": "mid",
+      "intent": "mid-conversation",
+      "intent_slug": "mid-conv",
+      "theme": "theme-mid",
+      "primary_keyword": "청운동 중학생영어회화",
+      "blueprint": "v4-mid-school-bridge-v2",
+      "url": "/seoul-jongno-cheongundong-mid-conv.html"
+    },
+    {
+      "page_id": "elem_tutor",
+      "page_role": "service",
+      "audience": "elem",
+      "intent": "elem-tutoring",
+      "intent_slug": "elem-tutor",
+      "theme": "theme-elem",
+      "primary_keyword": "청운동 초등학생영어과외",
+      "blueprint": "v4-elem-parent-evidence-v2",
+      "url": "/seoul-jongno-cheongundong-elem-tutor.html"
+    },
+    {
+      "page_id": "univ_conv",
+      "page_role": "service",
+      "audience": "univ",
+      "intent": "univ-conversation",
+      "intent_slug": "univ-conv",
+      "theme": "theme-univ",
+      "primary_keyword": "청운동 대학생영어회화",
+      "blueprint": "v4-univ-campus-output-v2",
+      "url": "/seoul-jongno-cheongundong-univ-conv.html"
+    },
+    {
+      "page_id": "job_conv",
+      "page_role": "service",
+      "audience": "job",
+      "intent": "jobseeker-conversation",
+      "intent_slug": "jobseeker-conv",
+      "theme": "theme-job",
+      "primary_keyword": "청운동 취준생영어회화",
+      "blueprint": "v4-job-interview-evidence-v2",
+      "url": "/seoul-jongno-cheongundong-jobseeker-conv.html"
+    },
+    {
+      "page_id": "worker_business",
+      "page_role": "service",
+      "audience": "worker",
+      "intent": "worker-business-conversation",
+      "intent_slug": "biz-business-conv",
+      "theme": "theme-worker",
+      "primary_keyword": "청운동 직장인비즈니스영어",
+      "blueprint": "v4-worker-work-output-v2",
+      "url": "/seoul-jongno-cheongundong-biz-business-conv.html"
+    },
+    {
+      "page_id": "housewife_conv",
+      "page_role": "service",
+      "audience": "housewife",
+      "intent": "housewife-conversation",
+      "intent_slug": "housewife-conv",
+      "theme": "theme-housewife",
+      "primary_keyword": "청운동 주부영어회화",
+      "blueprint": "v4-housewife-lifefit-v2",
+      "url": "/seoul-jongno-cheongundong-housewife-conv.html"
+    }
+  ],
+  "url_contract": {
+    "hub": "/{region_slug}.html",
+    "service": "/{region_slug}-{intent_slug}.html",
+    "slug_policy": "Preverified manifest tokens only; no render-time guessed romanization.",
+    "id_policy": "Never expose place_id/official_code in public URL."
+  },
+  "safety": {
+    "mass_generation": false,
+    "production_deploy": false,
+    "pilot_indexable": false,
+    "pilot_live_lead_submission": false,
+    "production_requires": "locality variation + duplicate QA + link QA + sitemap/canonical QA + explicit approval"
+  },
+  "v4_blueprint_gate": {
+    "enabled": true,
+    "allowlist_file": "V4_BLUEPRINT_GENERATOR_ALLOWLIST.json",
+    "standard": "CONVERSION_CONTENT_STANDARD_V4_CONVERSATIONAL_COMPACT.md",
+    "reject_unlisted_blueprints": true,
+    "production_deploy": false,
+    "version": "4.5",
+    "presentation_standard": "V4_5_LOCALIZED_MINIMAL_HERO_STANDARD.md",
+    "hero_contract": "localized-minimal-keyword-v4.5",
+    "freeze": "V4.5-7TARGET-FINAL",
+    "all_7_targets_final": true
+  },
+  "v5_proof_layer": {
+    "status": "REVIEW_ONLY",
+    "candidates_file": "V5_DECISION_PROOF_CANDIDATES.json",
+    "proof_contract": "PROOF_DATA_CONTRACT_V1.json",
+    "enabled_for_mass_generation": false,
+    "production_deploy": false
+  },
+  "presentation_gate": {
+    "standard": "V4_5_LOCALIZED_MINIMAL_HERO_STANDARD.md",
+    "hero_contract": "localized-minimal-keyword-v4.5",
+    "phone_cta": {
+      "label": "전화 010-5006-8027",
+      "href": "tel:+821050068027"
+    },
+    "decision_proof_required": true,
+    "sample_feedback_must_be_labeled_example": true,
+    "preserve_title_meta_canonical_intent": true,
+    "production_deploy": false,
+    "h1_locality_prefix_required": true,
+    "detailed_intro_after_hero": true
+  }
+}

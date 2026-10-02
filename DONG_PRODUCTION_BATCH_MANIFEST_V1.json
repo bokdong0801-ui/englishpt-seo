@@ -1,0 +1,83 @@
+{
+  "version": "1.0",
+  "status": "COUNT_LOCKED_ROW_MATERIALIZATION_PENDING_NOT_PRODUCTION",
+  "created_at": "2026-09-22",
+  "scope": "DONG_PHASE_1_SERVICE_PAGES_ONLY",
+  "source_contracts": {
+    "slug_summary": "slug_manifest_summary_v1.json",
+    "gold_sample_freeze": "V4_5_GOLD_SAMPLE_FREEZE_20260922.json",
+    "gold_standard": "V4_5_FULL_DEPTH_7TARGET_GOLD_STANDARD.md",
+    "preserved_urls": "sitemap_95_urls.txt"
+  },
+  "locality_counts": {
+    "resolver_candidates": 5213,
+    "structurally_eligible": 5149,
+    "hold_admin_branch_offices": 64,
+    "check": true
+  },
+  "page_counts": {
+    "targets_per_locality": 7,
+    "production_service_pages": 36043,
+    "region_hubs_not_in_this_batch": 5149,
+    "service_plus_hub_if_future_batch_added": 41192,
+    "preserved_existing_urls": 95,
+    "root_html_after_service_batch_expected": 36138,
+    "reserved_95_conflicts": 0
+  },
+  "targets": [
+    {
+      "intent_slug": "elem-tutor",
+      "blueprint": "v4-elem-parent-evidence-v2",
+      "h1": "{dong_name} 초등학생영어과외"
+    },
+    {
+      "intent_slug": "mid-conv",
+      "blueprint": "v4-mid-school-bridge-v2",
+      "h1": "{dong_name} 중학생영어회화"
+    },
+    {
+      "intent_slug": "high-conv",
+      "blueprint": "v4-high-priority-deadline-v2",
+      "h1": "{dong_name} 고등학생영어회화"
+    },
+    {
+      "intent_slug": "univ-conv",
+      "blueprint": "v4-univ-campus-output-v2",
+      "h1": "{dong_name} 대학생영어회화"
+    },
+    {
+      "intent_slug": "jobseeker-conv",
+      "blueprint": "v4-job-interview-evidence-v2",
+      "h1": "{dong_name} 취준생영어회화"
+    },
+    {
+      "intent_slug": "biz-business-conv",
+      "blueprint": "v4-worker-work-output-v2",
+      "h1": "{dong_name} 직장인비즈니스영어"
+    },
+    {
+      "intent_slug": "housewife-conv",
+      "blueprint": "v4-housewife-lifefit-v2",
+      "h1": "{dong_name} 주부영어회화"
+    }
+  ],
+  "url_contract": {
+    "service": "/{region_slug}-{intent_slug}.html",
+    "hero": "localized-minimal-keyword-v4.5",
+    "render_time_romanization": false
+  },
+  "generation_policy": {
+    "generate_all_eligible_service_files": true,
+    "index_all_immediately": false,
+    "staged_index_promotion_required": true,
+    "row_manifest_required_before_generation": true,
+    "row_manifest_status": "SOURCE_ROWS_NOT_COMMITTED_IN_ENGLISHPT_REPO",
+    "production_deploy": false
+  },
+  "safety": {
+    "preserve_95_urls": true,
+    "preserve_74_redirects": true,
+    "main_merge": false,
+    "production_deploy": false
+  }
+}

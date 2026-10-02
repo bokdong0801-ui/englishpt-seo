@@ -1,0 +1,192 @@
+name: Stage 9 Final UX Preflight
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-final-ux-preflight-trigger.txt'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Compile changed production scripts
+        run: |
+          python -m py_compile scripts/build-stage9-production-release.py
+          python -m py_compile scripts/stage9-clean-mass-renderer.py
+          python -m py_compile scripts/stage9-clean-similarity-qa.py
+          python -m py_compile scripts/generate-production-stage3-10x13.py
+          python -m py_compile scripts/generate-production-stage5-shard.py
+
+      - name: Re-run preserved baseline regression
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+      - name: Download approved Stage 7 source
+        uses: actions/download-artifact@v4
+        with:
+          name: stage7-deploy-preview-rollback
+          path: stage7-source
+          run-id: 36694432423
+          github-token: ${{ github.token }}
+
+      - name: Download approved Stage 8 packet
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8-production-approval-packet
+          path: stage8-source
+          run-id: 36694845460
+          github-token: ${{ github.token }}
+
+      - name: Extract all 66,937 proven generated pages
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          mkdir -p stage9-work
+          mapfile -t PKGS < <(find stage7-source -name 'stage5-shard-*-of-026.tar.zst' | sort)
+          test "${#PKGS[@]}" -eq 26
+          for f in "${PKGS[@]}"; do
+            tar --zstd -xf "$f" -C stage9-work
+          done
+          test "$(find stage9-work/stage5-full-generation -name '*.html' | wc -l)" -eq 66937
+
+      - name: Assemble final production package without deploying
+        run: |
+          python3 scripts/build-stage9-production-release.py \
+            --stage7-root stage7-source/stage7-preview \
+            --stage8-root stage8-source \
+            --work-root stage9-work \
+            --output stage9-release
+
+      - name: Check clean-render locality similarity
+        run: |
+          python3 scripts/stage9-clean-similarity-qa.py \
+            --root stage9-release \
+            --samples-per-intent 60 \
+            --output stage9-release/STAGE9_CLEAN_SIMILARITY_QA_V1.json
+
+      - name: Assert final production UX contract
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
+          assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
+          assert q['counts']['new_pages']==118427
+          assert q['counts']['html_total']==118522
+          assert q['counts']['sitemap_shards']==238
+          assert q['counts']['sitemap_urls']==118522
+          assert q['indexing']['noindex_pages']==0
+          assert q['indexing']['production_ui_failures']==0
+          assert q['indexing']['robots_txt_allows_crawl'] is True
+          assert q['source']['mass_renderer']=='stage9-clean-gold-v1'
+          css=Path('stage9-release/pilot.css').read_text(encoding='utf-8')
+          js=Path('stage9-release/pilot.js').read_text(encoding='utf-8')
+          for theme in ['theme-elem','theme-mid','theme-high','theme-univ','theme-job','theme-worker','theme-housewife','theme-toeic','theme-toeic-speaking','theme-opic','theme-ielts','theme-toefl','theme-duolingo']:
+              assert theme in css, theme
+          assert '.academy-choice' in css
+          for token in ['.simple-hero','.intro-grid','.snapshot','.trust-in','.mobile-sticky','@media(max-width:760px)']:
+              assert token in css, token
+          assert 'emailjs.send' in js
+          assert len(list(Path('stage9-release/assets/images').glob('*.svg'))) == 30
+          assert '실제 상담 전송은 비활성화' not in js
+          machine_phrases=[
+              '흐름 Band','시점 배분','직접 방식 방식','회수 회수','상기 횟수',
+              '근거를 찾을 수 되는지','이어지는 정체가 어디서 생기는지 검토합니다',
+              'production 미배포','실제 상담 전송은 비활성화'
+          ]
+          sample_pages=sorted(Path('stage9-release').glob('*.html'))[95::997]
+          for p in sample_pages:
+              raw=p.read_text(encoding='utf-8')
+              assert 'data-stage9-clean="true"' in raw, p.name
+              assert 'class="section mass-context"' in raw, p.name
+              assert 'class="site-header"' in raw, p.name
+              assert 'class="hero simple-hero"' in raw, p.name
+              assert 'class="snapshot"' in raw, p.name
+              assert 'class="trust"' in raw, p.name
+              assert 'class="learning-visual"' in raw, p.name
+              assert 'name="area"' in raw, p.name
+              assert 'name="purpose"' in raw, p.name
+              assert 'name="difficulty"' in raw, p.name
+              title=raw.split('<title>',1)[1].split('</title>',1)[0]
+              assert 'ENGLISH PT' not in title, (p.name,title)
+              assert ' | ' in title, (p.name,title)
+              assert all(x not in raw for x in machine_phrases), p.name
+              assert raw.count('href="/') >= 22, p.name
+          print('PASS_STAGE9_FINAL_UX_PREFLIGHT')
+          PY
+
+      - name: Package representative 23 final production pages
+        run: |
+          mkdir -p stage9-final-ux-samples
+          python3 - <<'PY'
+          import json, shutil
+          from pathlib import Path
+          q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          out=Path('stage9-final-ux-samples')
+          pages=[]
+          for row in q['representative_13']['pages']:
+              name=row['canonical'].rsplit('/',1)[-1]
+              src=Path('stage9-release')/name
+              assert src.exists(), name
+              shutil.copy2(src,out/name)
+              pages.append(name)
+          academy_bases=['toeic','toeic-speaking','opic','ielts','duolingo','toefl']
+          for base in academy_bases:
+              source=next((x for x in pages if x.endswith(f'-{base}.html')),None)
+              assert source, base
+              academy=source[:-len(base+'.html')] + base + '-academy.html'
+              src=Path('stage9-release')/academy
+              assert src.exists(), academy
+              raw=src.read_text(encoding='utf-8')
+              assert 'class="section academy-choice"' in raw, academy
+              assert 'intent-academy' in raw, academy
+              shutil.copy2(src,out/academy)
+              pages.append(academy)
+          derived_specs=[
+              ('housewife-conv','english-conv-academy',True),
+              ('housewife-conv','adult-english-conv-academy',True),
+              ('biz-business-conv','worker-english-conv-academy',True),
+              ('housewife-conv','beginner-english-conv',False),
+          ]
+          for base,derived,is_academy in derived_specs:
+              source=next((x for x in pages if x.endswith(f'-{base}.html')),None)
+              assert source, base
+              name=source[:-len(base+'.html')] + derived + '.html'
+              src=Path('stage9-release')/name
+              assert src.exists(), name
+              raw=src.read_text(encoding='utf-8')
+              assert derived in name
+              if is_academy:
+                  assert 'class="section academy-choice"' in raw, name
+                  assert 'intent-academy' in raw, name
+              else:
+                  assert 'intent-audience' in raw, name
+              shutil.copy2(src,out/name)
+              pages.append(name)
+          assert len(pages)==23, len(pages)
+          shutil.copy2('stage9-release/pilot.css',out/'pilot.css')
+          shutil.copy2('stage9-release/pilot.js',out/'pilot.js')
+          links=''.join(f'<li><a href="{x}">{x}</a></li>' for x in pages)
+          (out/'index.html').write_text(
+              '<!doctype html><meta charset="utf-8"><title>ENGLISH PT Final UX Samples</title>'
+              '<h1>ENGLISH PT Final UX Samples</h1><ul>'+links+'</ul>',
+              encoding='utf-8'
+          )
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage9-final-ux-samples
+          path: stage9-final-ux-samples
+          retention-days: 30

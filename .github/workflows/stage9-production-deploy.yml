@@ -1,0 +1,289 @@
+name: Stage 9 Production Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-run-trigger.txt'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: stage9-production-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID || secrets.ENGLISHPT_NETLIFY_SITE_ID || vars.NETLIFY_SITE_ID || vars.ENGLISHPT_NETLIFY_SITE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify explicit Stage 9 production approval
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('STAGE9_PRODUCTION_DEPLOY_APPROVAL.json').read_text(encoding='utf-8'))
+          assert a['approved'] is True
+          assert a['domain']=='https://englishpt.kr'
+          assert a['stage']=='STAGE9_PRODUCTION_DEPLOY'
+          print('PASS explicit Stage 9 approval')
+          PY
+
+      - name: Verify Netlify auth token is configured
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN" || { echo "::error::NETLIFY_AUTH_TOKEN (or NETLIFY_TOKEN) GitHub secret is missing"; exit 1; }
+          echo "PASS Netlify auth token present (value hidden)"
+
+      - name: Resolve Netlify project for englishpt.kr
+        run: |
+          if [ -z "$NETLIFY_SITE_ID" ]; then
+            curl -fsS \
+              -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+              "https://api.netlify.com/api/v1/sites/englishpt.kr" \
+              -o /tmp/netlify-site.json
+            SITE_ID="$(python3 - <<'PY'
+          import json
+          print(json.load(open('/tmp/netlify-site.json',encoding='utf-8'))['id'])
+          PY
+            )"
+            test -n "$SITE_ID"
+            echo "NETLIFY_SITE_ID=$SITE_ID" >> "$GITHUB_ENV"
+            echo "PASS resolved Netlify project from englishpt.kr (id hidden)"
+          else
+            echo "PASS using configured Netlify site id (value hidden)"
+          fi
+
+      - name: Re-run preserved 95 URLs and 74 redirects regression
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+      - name: Download approved Stage 7 release source
+        uses: actions/download-artifact@v4
+        with:
+          name: stage7-deploy-preview-rollback
+          path: stage7-source
+          run-id: 36694432423
+          github-token: ${{ github.token }}
+
+      - name: Download approved Stage 8 production packet
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8-production-approval-packet
+          path: stage8-source
+          run-id: 36694845460
+          github-token: ${{ github.token }}
+
+      - name: Extract the final proven 26-shard page set
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          mkdir -p stage9-work
+          mapfile -t PKGS < <(find stage7-source -name 'stage5-shard-*-of-026.tar.zst' | sort)
+          test "${#PKGS[@]}" -eq 26
+          for f in "${PKGS[@]}"; do
+            tar --zstd -xf "$f" -C stage9-work
+          done
+          test "$(find stage9-work/stage5-full-generation -name '*.html' | wc -l)" -eq 66937
+
+      - name: Assemble production release and switch new pages to index follow
+        run: |
+          python3 scripts/build-stage9-production-release.py \
+            --stage7-root stage7-source/stage7-preview \
+            --stage8-root stage8-source \
+            --work-root stage9-work \
+            --output stage9-release
+
+      - name: Assert release package before public deploy
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
+          assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY',q
+          assert q['final_domain']=='https://englishpt.kr'
+          assert q['counts']['new_pages']==118427
+          assert q['counts']['html_total']==118522
+          assert q['counts']['sitemap_shards']==238
+          assert q['counts']['sitemap_urls']==118522
+          assert q['indexing']['noindex_pages']==0
+          assert q['indexing']['robots_txt_allows_crawl'] is True
+          print('PASS Stage 9 release package')
+          PY
+
+      - name: Prepare rollback root
+        run: |
+          mkdir -p stage9-rollback
+          tar --zstd -xf stage7-source/stage7-rollback-95-baseline.tar.zst -C stage9-rollback
+          test -d stage9-rollback/rollback-root
+
+      - name: Install Netlify CLI
+        run: npm install --global netlify-cli@latest
+
+      - name: Deploy to Netlify production
+        id: deploy
+        run: |
+          netlify deploy \
+            --prod \
+            --dir=stage9-release \
+            --site="$NETLIFY_SITE_ID" \
+            --auth="$NETLIFY_AUTH_TOKEN" \
+            --message="ENGLISH PT Stage 9 production release - 113,373 HTML" \
+            --json | tee stage9-netlify-deploy.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('stage9-netlify-deploy.json').read_text(encoding='utf-8'))
+          print('Netlify deploy id:', d.get('deploy_id') or d.get('id'))
+          print('Netlify production url:', d.get('url') or d.get('deploy_url'))
+          PY
+
+      - name: Verify englishpt.kr live release
+        id: live
+        run: |
+          python3 - <<'PY'
+          import json, time, urllib.error, urllib.request
+          from pathlib import Path
+          q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          urls=['https://englishpt.kr/robots.txt','https://englishpt.kr/sitemap-index.xml']
+          rep=[x['canonical'] for x in q['representative_13']['pages']]
+          urls += rep
+          academy_bases=['toeic','toeic-speaking','opic','ielts','duolingo','toefl']
+          for base in academy_bases:
+              source=next((u for u in rep if u.endswith(f'-{base}.html')),None)
+              assert source, base
+              urls.append(source[:-len(base+'.html')] + base + '-academy.html')
+          conversation_specs=[
+              ('housewife-conv','english-conv-academy'),
+              ('housewife-conv','adult-english-conv-academy'),
+              ('biz-business-conv','worker-english-conv-academy'),
+              ('housewife-conv','beginner-english-conv'),
+          ]
+          for base_intent,derived in conversation_specs:
+              source=next((u for u in rep if u.endswith(f'-{base_intent}.html')),None)
+              assert source, base_intent
+              urls.append(source[:-len(base_intent+'.html')] + derived + '.html')
+          last=None
+          for attempt in range(18):
+              try:
+                  for url in urls:
+                      req=urllib.request.Request(url,headers={'User-Agent':'EnglishPT-Stage9-Live-QA/1.0'})
+                      with urllib.request.urlopen(req,timeout=20) as r:
+                          body=r.read().decode('utf-8','ignore')
+                          if r.status != 200:
+                              raise RuntimeError((url,r.status))
+                          if url.endswith('/robots.txt'):
+                              assert 'Sitemap: https://englishpt.kr/sitemap-index.xml' in body
+                              assert 'Disallow: /' not in body
+                          elif url.endswith('/sitemap-index.xml'):
+                              assert body.count('<sitemap><loc>') == 238
+                          else:
+                              low=body.lower()
+                              assert 'noindex' not in low and 'nofollow' not in low, url
+                              assert '<meta name="robots" content="index,follow">' in low, url
+                              assert 'https://englishpt.kr/' in body, url
+                              if url.endswith('-academy.html'):
+                                  assert 'class="section academy-choice"' in body, url
+                                  assert 'intent-academy' in body, url
+                              if url.endswith('-beginner-english-conv.html'):
+                                  assert '왕초보영어회화' in body, url
+                                  assert 'intent-audience' in body, url
+                  print(json.dumps({'status':'PASS_LIVE','checked_urls':len(urls)},ensure_ascii=False))
+                  break
+              except Exception as e:
+                  last=repr(e)
+                  if attempt == 17:
+                      raise
+                  time.sleep(10)
+          PY
+
+      - name: Verify root and one legacy permanent redirect
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.error
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+          opener=urllib.request.build_opener(NoRedirect)
+          checks=[
+              ('https://englishpt.kr/','/englishpt.html'),
+          ]
+          for url,target in checks:
+              try:
+                  opener.open(urllib.request.Request(url,method='HEAD'),timeout=20)
+                  raise RuntimeError('expected redirect: '+url)
+              except urllib.error.HTTPError as e:
+                  assert e.code in (301,302,307,308),(url,e.code)
+                  loc=e.headers.get('Location','')
+                  assert target in loc,(url,loc)
+          print('PASS production root redirect')
+          PY
+
+      - name: Roll back production if live verification failed
+        if: failure() && steps.deploy.outcome == 'success'
+        run: |
+          echo "::warning::Live verification failed. Restoring Stage 7 rollback baseline."
+          netlify deploy \
+            --prod \
+            --dir=stage9-rollback/rollback-root \
+            --site="$NETLIFY_SITE_ID" \
+            --auth="$NETLIFY_AUTH_TOKEN" \
+            --message="ENGLISH PT automatic rollback after Stage 9 live QA failure" \
+            --json | tee stage9-netlify-rollback.json
+
+      - name: Write Stage 9 deployment report
+        if: success()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          deploy=json.loads(Path('stage9-netlify-deploy.json').read_text(encoding='utf-8'))
+          q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
+          out={
+            'status':'PASS_STAGE9_PRODUCTION_DEPLOY_LIVE',
+            'domain':'https://englishpt.kr',
+            'deploy_id':deploy.get('deploy_id') or deploy.get('id'),
+            'deploy_url':deploy.get('url') or deploy.get('deploy_url'),
+            'html_total':q['counts']['html_total'],
+            'new_pages':q['counts']['new_pages'],
+            'sitemap_urls':q['counts']['sitemap_urls'],
+            'sitemap_shards':q['counts']['sitemap_shards'],
+            'indexing':'index,follow',
+            'rollback_available':True,
+            'production_deploy':True,
+            'live_verified':True,
+          }
+          Path('STAGE9_PRODUCTION_DEPLOY_REPORT_V1.json').write_text(
+              json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf-8'
+          )
+          print(json.dumps(out,ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage9-production-deploy-report
+          path: |
+            STAGE9_PRODUCTION_DEPLOY_REPORT_V1.json
+            stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json
+            stage9-netlify-deploy.json
+            stage9-netlify-rollback.json
+          if-no-files-found: ignore
+          retention-days: 30

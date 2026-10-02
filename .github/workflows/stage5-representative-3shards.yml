@@ -1,0 +1,100 @@
+name: Stage 5 Representative 4-Shard Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - '.github/workflows/stage5-representative-3shards.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage5-representative-4shards-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reconstruct frozen 5,149-row manifest
+        run: python3 scripts/materialize-production-localities-5149.py
+      - name: Verify 95 URLs and 74 redirects
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+  representative:
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 12, 17, 25]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reconstruct frozen Stage 5 input
+        run: python3 scripts/materialize-production-localities-5149.py
+      - name: Generate representative shard
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+        run: |
+          python3 scripts/generate-production-stage5-shard.py \
+            --shard-index "$SHARD_INDEX" \
+            --shard-count 26 \
+            --shard-size 200
+      - name: Print representative QA
+        if: always()
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+        run: |
+          SHARD_NUM=$(printf "%03d" $((SHARD_INDEX + 1)))
+          python3 - "$SHARD_NUM" <<'PY'
+          import json,sys
+          from pathlib import Path
+          n=sys.argv[1]
+          p=Path(f"stage5-full-generation/shard-{n}-of-026/STAGE5_SHARD_QA_V1.json")
+          if not p.exists():
+              print("QA file missing")
+              raise SystemExit(0)
+          q=json.loads(p.read_text(encoding="utf-8"))
+          print(json.dumps({
+              "status":q["status"],
+              "shard":q["shard"]["name"],
+              "pages":q["page_count"],
+              "localities":q["locality_count"],
+              "static_failures":q["static_failure_count"],
+              "duplicate_failures":q["duplicate_gate"]["failure_count"],
+              "max_cosine":q["duplicate_gate"]["max_cosine"],
+              "max_jaccard5":q["duplicate_gate"]["max_5_shingle_jaccard"],
+              "visible_chars":q["visible_chars"],
+              "production_deploy":q["safety"]["production_deploy"],
+              "main_merge":q["safety"]["main_merge"],
+          },ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage5-representative-shard-${{ matrix.shard }}
+          path: |
+            stage5-full-generation/shard-*/STAGE5_SHARD_QA_V1.json
+            stage5-full-generation/shard-*/STAGE5_SHARD_MANIFEST_V1.json
+          retention-days: 7
+          if-no-files-found: warn
+
+# trigger: final-exact-lexicon-v7

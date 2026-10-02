@@ -1,0 +1,77 @@
+{
+  "version": "1.0",
+  "status": "PASS_STAGE1_ROW_MANIFEST_READY_NOT_PRODUCTION",
+  "created_at": "2026-09-22",
+  "source": {
+    "original_package": "ENGLISHPT_slug_variation_gate_FINAL_v1_20260918.zip",
+    "original_manifest": "dong_slug_manifest_5213_v1.csv",
+    "original_candidate_rows": 5213
+  },
+  "output": {
+    "eligible_rows": 5149,
+    "hold_rows": 64,
+    "region_slug_unique": 5149,
+    "locality_key_unique": 5149,
+    "csv": "production_locality_rows_5149_v1.csv",
+    "jsonl": "production_locality_rows_5149_v1.jsonl",
+    "hold_jsonl": "hold_admin_branch_offices_64_v1.jsonl",
+    "qa": "PRODUCTION_LOCALITY_ROWS_5149_QA_V1.json",
+    "package": "ENGLISHPT_PRODUCTION_LOCALITY_ROWS_5149_V1_20260922.zip"
+  },
+  "checksums": {
+    "csv_sha256": "b3c91537bb6a95206def1dfb524b1f9790939da0cf7bc31b50cdfae376b3cc4e",
+    "jsonl_sha256": "3fe392df02bf76e0a6f84ef220433f0b901f97ae09a0a091269deeb2eaf8e9f0",
+    "hold_jsonl_sha256": "7ab82c7dcdeef3a07a3461c184a247cef86e18b41006e1e3b1808c8ba3751c8b",
+    "package_sha256": "c3d2fd8f52d08442cedef18d5bb2b610b5c1131561f2dce40f36c9c2b770da60"
+  },
+  "audits": {
+    "hold_name_suffix_all_branch_office": true,
+    "hold_entity_mix": [
+      "ADMIN_DONG"
+    ],
+    "hierarchy_correction_candidates_all": 517,
+    "hierarchy_correction_eligible": 490,
+    "entity_mix_counts": {
+      "ADMIN_DONG": 1493,
+      "ADMIN_DONG+LEGAL_DONG": 663,
+      "LEGAL_DONG": 2993
+    },
+    "slug_resolution_counts": {
+      "BASE_UNIQUE": 5149
+    },
+    "slug_status_counts": {
+      "COLLISION_FREE_NEEDS_LINGUISTIC_REVIEW": 5149
+    }
+  },
+  "examples": [
+    {
+      "locality_key": "서울특별시 서초구|내곡동",
+      "region_slug": "seoul-seocho-naegokdong"
+    },
+    {
+      "locality_key": "강원특별자치도 강릉시|내곡동",
+      "region_slug": "gangwon-gangneung-naegokdong"
+    },
+    {
+      "locality_key": "강원특별자치도 강릉시|강남동",
+      "region_slug": "gangwon-gangneung-gangnamdong"
+    },
+    {
+      "locality_key": "세종특별자치시|고운동",
+      "region_slug": "sejong-goundong"
+    },
+    {
+      "locality_key": "부산광역시 해운대구|중동",
+      "region_slug": "busan-haeundae-jungdong"
+    }
+  ],
+  "stage2_preview_locality": {
+    "locality_key": "서울특별시 종로구|사직동",
+    "region_slug": "seoul-jongno-sajikdong",
+    "variation_pack_id": "Ve4a779a721",
+    "content_seed": "76bc829bb4fb1cf9"
+  },
+  "next_gate": "STAGE2_ONE_LOCALITY_X_13_INTENTS_PREVIEW",
+  "production_deploy": false,
+  "main_merge": false
+}

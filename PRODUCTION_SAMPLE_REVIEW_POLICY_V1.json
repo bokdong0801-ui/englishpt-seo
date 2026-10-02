@@ -1,0 +1,82 @@
+{
+  "version": "1.0",
+  "status": "ENFORCED_FOR_PRODUCTION_GENERATION_STAGES",
+  "created_at": "2026-09-22",
+  "production_deploy": false,
+  "rule": "Every execution stage must emit reviewable example pages before promotion to the next stage.",
+  "stages": [
+    {
+      "stage": 1,
+      "name": "locality-row-manifest",
+      "required_examples": [
+        "5 locality rows",
+        "1 locality x 13 H1 preview"
+      ]
+    },
+    {
+      "stage": 2,
+      "name": "one-locality-13-intent-preview",
+      "generated_pages": 13,
+      "required_examples": [
+        "all 13 filenames and H1s",
+        "4 full content previews"
+      ]
+    },
+    {
+      "stage": 3,
+      "name": "10-locality-dry-run",
+      "generated_pages": 130,
+      "required_examples": [
+        "13 intent representative pages",
+        "highest similarity pair",
+        "longest page",
+        "shortest page"
+      ]
+    },
+    {
+      "stage": 4,
+      "name": "100-locality-preproduction",
+      "generated_pages": 1300,
+      "required_examples": [
+        "13 representative pages",
+        "same-name locality comparisons",
+        "sitemap shard sample"
+      ]
+    },
+    {
+      "stage": 5,
+      "name": "full-generation",
+      "generated_pages": 66937,
+      "required_examples": [
+        "39 representative pages",
+        "deterministic 5-page spot sample",
+        "highest similarity pair",
+        "longest/shortest"
+      ]
+    },
+    {
+      "stage": 6,
+      "name": "bulk-qa",
+      "required_examples": [
+        "13 representative final pages",
+        "all failure examples if any"
+      ]
+    },
+    {
+      "stage": 7,
+      "name": "deploy-preview",
+      "required_examples": [
+        "13 production URL examples",
+        "sitemap shard",
+        "redirect examples",
+        "deploy-preview examples"
+      ]
+    }
+  ],
+  "promotion_policy": {
+    "auto_promote_without_example_review": false,
+    "user_review_surface_required": true,
+    "main_merge_requires_explicit_approval": true,
+    "production_deploy_requires_explicit_approval": true
+  }
+}

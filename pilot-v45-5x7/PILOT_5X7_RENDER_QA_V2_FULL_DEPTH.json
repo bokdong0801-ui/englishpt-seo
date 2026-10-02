@@ -1,0 +1,1275 @@
+{
+  "version": "2.0",
+  "page_count": 35,
+  "render_cases": 70,
+  "failures": 0,
+  "desktop_cases": 35,
+  "mobile_cases": 35,
+  "horizontal_overflow_failures": 0,
+  "console_or_page_error_cases": 0,
+  "status": "PASS",
+  "gold_standard": "V4_5_FULL_DEPTH_7TARGET_GOLD_STANDARD.md",
+  "production_deploy": false,
+  "results": [
+    {
+      "file": "busan-haeundae-jungdong-biz-business-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 직장인비즈니스영어",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-biz-business-conv.html"
+      },
+      "expectedH1": "중동 직장인비즈니스영어"
+    },
+    {
+      "file": "busan-haeundae-jungdong-biz-business-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 직장인비즈니스영어",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-biz-business-conv.html"
+      },
+      "expectedH1": "중동 직장인비즈니스영어"
+    },
+    {
+      "file": "busan-haeundae-jungdong-elem-tutor.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 초등학생영어과외",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-elem-tutor.html"
+      },
+      "expectedH1": "중동 초등학생영어과외"
+    },
+    {
+      "file": "busan-haeundae-jungdong-elem-tutor.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 초등학생영어과외",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-elem-tutor.html"
+      },
+      "expectedH1": "중동 초등학생영어과외"
+    },
+    {
+      "file": "busan-haeundae-jungdong-high-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 고등학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-high-conv.html"
+      },
+      "expectedH1": "중동 고등학생영어회화"
+    },
+    {
+      "file": "busan-haeundae-jungdong-high-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 고등학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-high-conv.html"
+      },
+      "expectedH1": "중동 고등학생영어회화"
+    },
+    {
+      "file": "busan-haeundae-jungdong-housewife-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 주부영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-housewife-conv.html"
+      },
+      "expectedH1": "중동 주부영어회화"
+    },
+    {
+      "file": "busan-haeundae-jungdong-housewife-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 주부영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-housewife-conv.html"
+      },
+      "expectedH1": "중동 주부영어회화"
+    },
+    {
+      "file": "busan-haeundae-jungdong-jobseeker-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 취준생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-jobseeker-conv.html"
+      },
+      "expectedH1": "중동 취준생영어회화"
+    },
+    {
+      "file": "busan-haeundae-jungdong-jobseeker-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 취준생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-jobseeker-conv.html"
+      },
+      "expectedH1": "중동 취준생영어회화"
+    },
+    {
+      "file": "busan-haeundae-jungdong-mid-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 중학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-mid-conv.html"
+      },
+      "expectedH1": "중동 중학생영어회화"
+    },
+    {
+      "file": "busan-haeundae-jungdong-mid-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 중학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-mid-conv.html"
+      },
+      "expectedH1": "중동 중학생영어회화"
+    },
+    {
+      "file": "busan-haeundae-jungdong-univ-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 대학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-univ-conv.html"
+      },
+      "expectedH1": "중동 대학생영어회화"
+    },
+    {
+      "file": "busan-haeundae-jungdong-univ-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "중동 대학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/busan-haeundae-jungdong-univ-conv.html"
+      },
+      "expectedH1": "중동 대학생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-biz-business-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 직장인비즈니스영어",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-biz-business-conv.html"
+      },
+      "expectedH1": "강남동 직장인비즈니스영어"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-biz-business-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 직장인비즈니스영어",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-biz-business-conv.html"
+      },
+      "expectedH1": "강남동 직장인비즈니스영어"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-elem-tutor.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 초등학생영어과외",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-elem-tutor.html"
+      },
+      "expectedH1": "강남동 초등학생영어과외"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-elem-tutor.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 초등학생영어과외",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-elem-tutor.html"
+      },
+      "expectedH1": "강남동 초등학생영어과외"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-high-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 고등학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-high-conv.html"
+      },
+      "expectedH1": "강남동 고등학생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-high-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 고등학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-high-conv.html"
+      },
+      "expectedH1": "강남동 고등학생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-housewife-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 주부영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-housewife-conv.html"
+      },
+      "expectedH1": "강남동 주부영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-housewife-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 주부영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-housewife-conv.html"
+      },
+      "expectedH1": "강남동 주부영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-jobseeker-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 취준생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-jobseeker-conv.html"
+      },
+      "expectedH1": "강남동 취준생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-jobseeker-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 취준생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-jobseeker-conv.html"
+      },
+      "expectedH1": "강남동 취준생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-mid-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 중학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-mid-conv.html"
+      },
+      "expectedH1": "강남동 중학생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-mid-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 중학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-mid-conv.html"
+      },
+      "expectedH1": "강남동 중학생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-univ-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 대학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-univ-conv.html"
+      },
+      "expectedH1": "강남동 대학생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-univ-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "강남동 대학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-gangnamdong-univ-conv.html"
+      },
+      "expectedH1": "강남동 대학생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-biz-business-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 직장인비즈니스영어",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-biz-business-conv.html"
+      },
+      "expectedH1": "내곡동 직장인비즈니스영어"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-biz-business-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 직장인비즈니스영어",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-biz-business-conv.html"
+      },
+      "expectedH1": "내곡동 직장인비즈니스영어"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-elem-tutor.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 초등학생영어과외",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-elem-tutor.html"
+      },
+      "expectedH1": "내곡동 초등학생영어과외"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-elem-tutor.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 초등학생영어과외",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-elem-tutor.html"
+      },
+      "expectedH1": "내곡동 초등학생영어과외"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-high-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 고등학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-high-conv.html"
+      },
+      "expectedH1": "내곡동 고등학생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-high-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 고등학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-high-conv.html"
+      },
+      "expectedH1": "내곡동 고등학생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-housewife-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 주부영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-housewife-conv.html"
+      },
+      "expectedH1": "내곡동 주부영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-housewife-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 주부영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-housewife-conv.html"
+      },
+      "expectedH1": "내곡동 주부영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-jobseeker-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 취준생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-jobseeker-conv.html"
+      },
+      "expectedH1": "내곡동 취준생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-jobseeker-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 취준생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-jobseeker-conv.html"
+      },
+      "expectedH1": "내곡동 취준생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-mid-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 중학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-mid-conv.html"
+      },
+      "expectedH1": "내곡동 중학생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-mid-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 중학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-mid-conv.html"
+      },
+      "expectedH1": "내곡동 중학생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-univ-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 대학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-univ-conv.html"
+      },
+      "expectedH1": "내곡동 대학생영어회화"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-univ-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 대학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/gangwon-gangneung-naegokdong-univ-conv.html"
+      },
+      "expectedH1": "내곡동 대학생영어회화"
+    },
+    {
+      "file": "sejong-goundong-biz-business-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 직장인비즈니스영어",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-biz-business-conv.html"
+      },
+      "expectedH1": "고운동 직장인비즈니스영어"
+    },
+    {
+      "file": "sejong-goundong-biz-business-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 직장인비즈니스영어",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-biz-business-conv.html"
+      },
+      "expectedH1": "고운동 직장인비즈니스영어"
+    },
+    {
+      "file": "sejong-goundong-elem-tutor.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 초등학생영어과외",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-elem-tutor.html"
+      },
+      "expectedH1": "고운동 초등학생영어과외"
+    },
+    {
+      "file": "sejong-goundong-elem-tutor.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 초등학생영어과외",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-elem-tutor.html"
+      },
+      "expectedH1": "고운동 초등학생영어과외"
+    },
+    {
+      "file": "sejong-goundong-high-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 고등학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-high-conv.html"
+      },
+      "expectedH1": "고운동 고등학생영어회화"
+    },
+    {
+      "file": "sejong-goundong-high-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 고등학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-high-conv.html"
+      },
+      "expectedH1": "고운동 고등학생영어회화"
+    },
+    {
+      "file": "sejong-goundong-housewife-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 주부영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-housewife-conv.html"
+      },
+      "expectedH1": "고운동 주부영어회화"
+    },
+    {
+      "file": "sejong-goundong-housewife-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 주부영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-housewife-conv.html"
+      },
+      "expectedH1": "고운동 주부영어회화"
+    },
+    {
+      "file": "sejong-goundong-jobseeker-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 취준생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-jobseeker-conv.html"
+      },
+      "expectedH1": "고운동 취준생영어회화"
+    },
+    {
+      "file": "sejong-goundong-jobseeker-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 취준생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-jobseeker-conv.html"
+      },
+      "expectedH1": "고운동 취준생영어회화"
+    },
+    {
+      "file": "sejong-goundong-mid-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 중학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-mid-conv.html"
+      },
+      "expectedH1": "고운동 중학생영어회화"
+    },
+    {
+      "file": "sejong-goundong-mid-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 중학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-mid-conv.html"
+      },
+      "expectedH1": "고운동 중학생영어회화"
+    },
+    {
+      "file": "sejong-goundong-univ-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 대학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-univ-conv.html"
+      },
+      "expectedH1": "고운동 대학생영어회화"
+    },
+    {
+      "file": "sejong-goundong-univ-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "고운동 대학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/sejong-goundong-univ-conv.html"
+      },
+      "expectedH1": "고운동 대학생영어회화"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-biz-business-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 직장인비즈니스영어",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-biz-business-conv.html"
+      },
+      "expectedH1": "내곡동 직장인비즈니스영어"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-biz-business-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 직장인비즈니스영어",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-biz-business-conv.html"
+      },
+      "expectedH1": "내곡동 직장인비즈니스영어"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-elem-tutor.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 초등학생영어과외",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-elem-tutor.html"
+      },
+      "expectedH1": "내곡동 초등학생영어과외"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-elem-tutor.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 초등학생영어과외",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-elem-tutor.html"
+      },
+      "expectedH1": "내곡동 초등학생영어과외"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-high-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 고등학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-high-conv.html"
+      },
+      "expectedH1": "내곡동 고등학생영어회화"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-high-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 고등학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-high-conv.html"
+      },
+      "expectedH1": "내곡동 고등학생영어회화"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-housewife-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 주부영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-housewife-conv.html"
+      },
+      "expectedH1": "내곡동 주부영어회화"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-housewife-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 주부영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-housewife-conv.html"
+      },
+      "expectedH1": "내곡동 주부영어회화"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-jobseeker-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 취준생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-jobseeker-conv.html"
+      },
+      "expectedH1": "내곡동 취준생영어회화"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-jobseeker-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 취준생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-jobseeker-conv.html"
+      },
+      "expectedH1": "내곡동 취준생영어회화"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-mid-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 중학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-mid-conv.html"
+      },
+      "expectedH1": "내곡동 중학생영어회화"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-mid-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 중학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-mid-conv.html"
+      },
+      "expectedH1": "내곡동 중학생영어회화"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-univ-conv.html",
+      "viewport": "desktop",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 대학생영어회화",
+        "scrollWidth": 1440,
+        "innerWidth": 1440,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-univ-conv.html"
+      },
+      "expectedH1": "내곡동 대학생영어회화"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-univ-conv.html",
+      "viewport": "mobile",
+      "pass": true,
+      "navError": null,
+      "errors": [],
+      "overflow": false,
+      "metrics": {
+        "h1Count": 1,
+        "h1": "내곡동 대학생영어회화",
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "phoneLinks": 3,
+        "robots": "noindex,nofollow",
+        "canonical": "https://englishpt.kr/seoul-seocho-naegokdong-univ-conv.html"
+      },
+      "expectedH1": "내곡동 대학생영어회화"
+    }
+  ]
+}

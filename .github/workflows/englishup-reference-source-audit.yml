@@ -1,0 +1,146 @@
+name: EnglishUp Reference Source Audit
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'englishup-reference-audit-trigger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch current EnglishUp reference sources
+        run: |
+          mkdir -p reference-audit/html
+          cat > /tmp/urls.txt <<'EOF'
+          https://englishup.kr/ilsan-dong-pungdong-ielts
+          https://englishup.kr/giheung-cheongdeokdong-toeic-speaking
+          https://englishup.kr/dongjak-sangdodong-toeic
+          https://englishup.kr/dongjak-sangdodong-toefl
+          https://englishup.kr/dongjak-sangdodong-opic
+          https://englishup.kr/
+          https://englishup.kr/dobong-banghakdong
+          https://englishup.kr/yeongdeungpo-yangpyeongdong-high-english
+          https://englishup.kr/mungyeong-housewife-english
+          EOF
+          : > reference-audit/fetch.tsv
+          n=0
+          while IFS= read -r url; do
+            [ -n "$url" ] || continue
+            n=$((n+1))
+            file=$(printf "reference-audit/html/%02d.html" "$n")
+            code=$(curl -L -A "Mozilla/5.0 (ENGLISH-PT benchmark audit)" --connect-timeout 10 --max-time 40 -sS -o "$file" -w '%{http_code}' "$url" || true)
+            bytes=$(wc -c < "$file" 2>/dev/null || echo 0)
+            printf "%s\t%s\t%s\t%s\n" "$n" "$code" "$bytes" "$url" >> reference-audit/fetch.tsv
+          done < /tmp/urls.txt
+          cat reference-audit/fetch.tsv
+
+      - name: Analyze fetched HTML source
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import json,re
+          rows=[]
+          urls=[]
+          for line in Path('reference-audit/fetch.tsv').read_text(encoding='utf-8').splitlines():
+              i,code,size,url=line.split('\t',3)
+              urls.append((int(i),code,int(size),url))
+          class P(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.title=[];self.in_title=False
+                  self.h1=[];self.h2=[];self.h3=[];self.stack=[]
+                  self.links=[];self.scripts=[];self.styles=[];self.forms=[]
+                  self.buttons=[];self.current_text=None
+                  self.meta=[];self.body_class='';self.jsonld=[]
+                  self._script_type=None;self._script_buf=[]
+              def handle_starttag(self,tag,attrs):
+                  d=dict(attrs)
+                  self.stack.append(tag)
+                  if tag=='title': self.in_title=True
+                  if tag=='body': self.body_class=d.get('class','')
+                  if tag=='meta': self.meta.append(d)
+                  if tag=='a': self.links.append({'href':d.get('href',''),'text':''})
+                  if tag=='script':
+                      self.scripts.append(d.get('src',''))
+                      self._script_type=d.get('type')
+                      self._script_buf=[]
+                  if tag=='link' and d.get('rel'):
+                      rel=d.get('rel','')
+                      if 'stylesheet' in rel: self.styles.append(d.get('href',''))
+                  if tag=='form': self.forms.append(d)
+                  if tag=='button': self.buttons.append('')
+                  if tag in ('h1','h2','h3'): self.current_text=(tag,[])
+              def handle_endtag(self,tag):
+                  if tag=='title': self.in_title=False
+                  if self.current_text and self.current_text[0]==tag:
+                      txt=' '.join(''.join(self.current_text[1]).split())
+                      getattr(self,tag).append(txt)
+                      self.current_text=None
+                  if tag=='script':
+                      if self._script_type=='application/ld+json':
+                          self.jsonld.append(''.join(self._script_buf).strip())
+                      self._script_type=None;self._script_buf=[]
+                  if self.stack:
+                      for j in range(len(self.stack)-1,-1,-1):
+                          if self.stack[j]==tag:
+                              self.stack=self.stack[:j]
+                              break
+              def handle_data(self,data):
+                  if self.in_title:self.title.append(data)
+                  if self.current_text:self.current_text[1].append(data)
+                  if self.links:
+                      # append only while an anchor is the current open tag
+                      if 'a' in self.stack:self.links[-1]['text']+=' '+data.strip()
+                  if self.buttons and 'button' in self.stack:self.buttons[-1]+=' '+data.strip()
+                  if self._script_type=='application/ld+json':self._script_buf.append(data)
+          for i,code,size,url in urls:
+              raw=Path(f'reference-audit/html/{i:02d}.html').read_text(encoding='utf-8',errors='ignore')
+              p=P();p.feed(raw)
+              canon=''
+              desc=''
+              robots=''
+              for m in p.meta:
+                  if m.get('name','').lower()=='description':desc=m.get('content','')
+                  if m.get('name','').lower()=='robots':robots=m.get('content','')
+              cm=re.search(r'<link[^>]+rel=["\']canonical["\'][^>]+href=["\']([^"\']+)',raw,re.I)
+              if not cm:
+                  cm=re.search(r'<link[^>]+href=["\']([^"\']+)["\'][^>]+rel=["\']canonical["\']',raw,re.I)
+              if cm:canon=cm.group(1)
+              classes=sorted(set(re.findall(r'class=["\']([^"\']+)["\']',raw,re.I)))
+              cta=[x for x in p.links if re.search(r'상담|문의|신청|전화|무료|진단|수업',x.get('text',''),re.I)]
+              rows.append({
+                  'index':i,'url':url,'http':code,'bytes':size,
+                  'title':' '.join(''.join(p.title).split()),
+                  'description':desc,'robots':robots,'canonical':canon,
+                  'body_class':p.body_class,
+                  'h1':p.h1,'h2':p.h2,'h3':p.h3,
+                  'forms':p.forms,'buttons':[' '.join(x.split()) for x in p.buttons if x.strip()],
+                  'cta_links':cta[:30],
+                  'stylesheets':[x for x in p.styles if x][:20],
+                  'scripts':[x for x in p.scripts if x][:20],
+                  'link_count':len(p.links),'form_count':len(p.forms),
+                  'jsonld_count':len(p.jsonld),
+                  'class_samples':classes[:80],
+              })
+          Path('reference-audit/analysis.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(rows,ensure_ascii=False,indent=2))
+          failures=[r for r in rows[:5] if r['http']!='200' or r['bytes']<1000]
+          if failures:
+              print('REFERENCE_FETCH_WARNING',json.dumps(failures,ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: englishup-reference-source-audit
+          path: reference-audit
+          retention-days: 30

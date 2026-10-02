@@ -1,0 +1,419 @@
+{
+  "version": "3.0",
+  "status": "locked-for-new-generation",
+  "principle": "Region pages share a neutral ENGLISH PT navigation theme. Audience service pages switch to a target-specific visual and content theme.",
+  "page_roles": {
+    "region": {
+      "body_classes": [
+        "theme-local",
+        "page-role-region"
+      ],
+      "purpose": "service-navigation-hub",
+      "palette": {
+        "accent": "#50665B",
+        "accent2": "#9C927D",
+        "hero": "#EDEAE2",
+        "heroText": "#18211D",
+        "soft": "#F6F4EE",
+        "paper": "#FFFDF8",
+        "ink": "#18211D",
+        "muted": "#6D7771",
+        "line": "#D7DCD7"
+      },
+      "rules": [
+        "Administrative facts are supporting context only.",
+        "Primary job is routing users to English-learning intents and audience pages.",
+        "Audience route cards may preview each audience accent color, but the page background remains neutral.",
+        "Do not create a region page merely because a V5 entity exists."
+      ]
+    },
+    "service": {
+      "body_classes": [
+        "page-role-service",
+        "intent-audience"
+      ],
+      "purpose": "conversion-and-learning-intent",
+      "rules": [
+        "Use exactly one audience theme.",
+        "Audience color, vocabulary, examples, diagnostics and training modules must agree.",
+        "Do not downgrade all audiences into one generic template."
+      ]
+    }
+  },
+  "themes": {
+    "generic": {
+      "body_class": "theme-generic",
+      "label": "1:1/공통 서비스",
+      "palette": {
+        "accent": "#3D6655",
+        "accent2": "#A69270",
+        "hero": "#17231E",
+        "heroText": "#F7F4ED",
+        "soft": "#F1EEE7",
+        "paper": "#FFFDF8",
+        "ink": "#18211D",
+        "muted": "#6A746F",
+        "line": "#D8DDD8"
+      }
+    },
+    "elem": {
+      "body_class": "theme-elem",
+      "label": "초등학생",
+      "palette": {
+        "accent": "#2F7E86",
+        "accent2": "#78AEBE",
+        "hero": "#153E46",
+        "heroText": "#F7FCFB",
+        "soft": "#EAF4F1",
+        "paper": "#FFFEFA",
+        "ink": "#173038",
+        "muted": "#60767A",
+        "line": "#D2E3E2"
+      },
+      "tone": "안정적이고 친근하지만 유아적으로 보이지 않게",
+      "focus": [
+        "기초",
+        "학교영어",
+        "어휘",
+        "읽기",
+        "말하기 자신감",
+        "학습 루틴"
+      ],
+      "avoid": [
+        "수능 중심 전개",
+        "취업영어 중심 전개"
+      ],
+      "modules": [
+        "foundation-check",
+        "reading-vocab",
+        "school-english",
+        "speaking-confidence",
+        "routine"
+      ]
+    },
+    "mid": {
+      "body_class": "theme-mid",
+      "label": "중학생",
+      "palette": {
+        "accent": "#256A74",
+        "accent2": "#536EA7",
+        "hero": "#172F48",
+        "heroText": "#F8FAFC",
+        "soft": "#EAF0F5",
+        "paper": "#FCFDFD",
+        "ink": "#192A39",
+        "muted": "#657482",
+        "line": "#D5DFE7"
+      },
+      "tone": "학습관리와 평가 대비가 선명한 분석형",
+      "focus": [
+        "내신",
+        "수행평가",
+        "문법",
+        "독해",
+        "듣기",
+        "학습관리"
+      ],
+      "avoid": [
+        "성인 시험영어 중심 전개"
+      ],
+      "modules": [
+        "school-diagnosis",
+        "grammar-reading",
+        "performance-test",
+        "error-review",
+        "weekly-plan"
+      ]
+    },
+    "high": {
+      "body_class": "theme-high",
+      "label": "고등학생",
+      "palette": {
+        "accent": "#244967",
+        "accent2": "#A99061",
+        "hero": "#111D2C",
+        "heroText": "#F7F9FA",
+        "soft": "#EDF0F3",
+        "paper": "#FEFEFD",
+        "ink": "#182536",
+        "muted": "#697482",
+        "line": "#D8DEE4"
+      },
+      "tone": "정보밀도가 높고 신뢰감 있는 입시·평가 분석형",
+      "focus": [
+        "내신",
+        "모의고사",
+        "수능",
+        "독해",
+        "듣기",
+        "수행평가",
+        "어휘",
+        "1:1 계획"
+      ],
+      "avoid": [
+        "초등식 기초 루틴 중심 전개",
+        "취업영어 전개"
+      ],
+      "modules": [
+        "grade-diagnosis",
+        "school-exam",
+        "mock-suneung",
+        "reading-listening",
+        "performance-test",
+        "study-plan"
+      ]
+    },
+    "univ": {
+      "body_class": "theme-univ",
+      "label": "대학생",
+      "palette": {
+        "accent": "#4C6987",
+        "accent2": "#A9825E",
+        "hero": "#17283A",
+        "heroText": "#F8FAFC",
+        "soft": "#EEF2F5",
+        "paper": "#FFFEFB",
+        "ink": "#1A2937",
+        "muted": "#667785",
+        "line": "#D6E0E7"
+      },
+      "tone": "자기주도적이고 실용적인 캠퍼스·진로 연결형",
+      "focus": [
+        "캠퍼스 대화",
+        "발표",
+        "세미나 질문",
+        "교환학생",
+        "공인영어",
+        "면접"
+      ],
+      "avoid": [
+        "중고등 내신 중심 전개"
+      ],
+      "modules": [
+        "campus-scene",
+        "presentation",
+        "exchange",
+        "certification",
+        "interview"
+      ]
+    },
+    "job": {
+      "body_class": "theme-job",
+      "label": "취준생",
+      "palette": {
+        "accent": "#395D68",
+        "accent2": "#B38B5D",
+        "hero": "#13252B",
+        "heroText": "#F8FBFA",
+        "soft": "#EDF2F1",
+        "paper": "#FFFEFB",
+        "ink": "#17282C",
+        "muted": "#667779",
+        "line": "#D5DFDE"
+      },
+      "tone": "마감·성과·실전 대응이 분명한 커리어형",
+      "focus": [
+        "자기소개",
+        "경험",
+        "지원동기",
+        "STAR",
+        "꼬리질문",
+        "영어면접",
+        "OPIc",
+        "TOEIC Speaking",
+        "TOEIC"
+      ],
+      "avoid": [
+        "학교 내신 중심 전개"
+      ],
+      "modules": [
+        "deadline",
+        "interview",
+        "star-story",
+        "follow-up",
+        "speaking-test"
+      ]
+    },
+    "worker": {
+      "body_class": "theme-worker",
+      "label": "직장인",
+      "palette": {
+        "accent": "#315F4C",
+        "accent2": "#B39A68",
+        "hero": "#101814",
+        "heroText": "#F4F3ED",
+        "soft": "#F1EEE5",
+        "paper": "#FFFDF8",
+        "ink": "#121A17",
+        "muted": "#68736D",
+        "line": "#D3DAD4"
+      },
+      "tone": "차분하고 전문적인 업무 커뮤니케이션형",
+      "focus": [
+        "회의",
+        "발표",
+        "제안",
+        "협상",
+        "고객",
+        "이해관계자",
+        "비즈니스 영어"
+      ],
+      "avoid": [
+        "학생 과외형 문구",
+        "내신·수능 중심 전개"
+      ],
+      "modules": [
+        "meeting",
+        "presentation",
+        "proposal",
+        "negotiation",
+        "stakeholder"
+      ]
+    },
+    "adult": {
+      "body_class": "theme-adult",
+      "label": "성인",
+      "palette": {
+        "accent": "#667F72",
+        "accent2": "#B79E78",
+        "hero": "#26352F",
+        "heroText": "#F8F5EF",
+        "soft": "#F2EFE8",
+        "paper": "#FFFDF9",
+        "ink": "#1A2420",
+        "muted": "#6D7771",
+        "line": "#D9DDD8"
+      },
+      "tone": "부담을 낮추고 실제 사용 장면을 연결하는 생활형",
+      "focus": [
+        "생활영어",
+        "첫 문장",
+        "이유 붙이기",
+        "질문 이어가기",
+        "여행",
+        "일상 활용"
+      ],
+      "avoid": [
+        "취업·수능 중심 전개"
+      ],
+      "modules": [
+        "daily-scene",
+        "sentence-start",
+        "follow-up",
+        "travel",
+        "restart"
+      ]
+    },
+    "housewife": {
+      "body_class": "theme-housewife",
+      "label": "주부",
+      "palette": {
+        "accent": "#77816B",
+        "accent2": "#B99479",
+        "hero": "#303A31",
+        "heroText": "#FBF8F1",
+        "soft": "#F3EEE8",
+        "paper": "#FFFDF9",
+        "ink": "#222920",
+        "muted": "#72786E",
+        "line": "#DEDDD6"
+      },
+      "tone": "생활 일정과 자기계발을 존중하는 부드러운 실용형",
+      "focus": [
+        "생활영어",
+        "여행",
+        "자기계발",
+        "짧은 학습 루틴",
+        "회화 재시작"
+      ],
+      "avoid": [
+        "취업·수능 중심 전개"
+      ],
+      "modules": [
+        "personal-goal",
+        "daily-routine",
+        "restart",
+        "travel",
+        "reuse"
+      ]
+    },
+    "senior": {
+      "body_class": "theme-senior",
+      "label": "시니어",
+      "palette": {
+        "accent": "#718878",
+        "accent2": "#B6A582",
+        "hero": "#314039",
+        "heroText": "#FBF8F0",
+        "soft": "#F3F0E7",
+        "paper": "#FFFEFA",
+        "ink": "#1D2823",
+        "muted": "#68736D",
+        "line": "#D8DED9"
+      },
+      "tone": "속도보다 이해와 반복 사용을 중시하는 편안한 생활형",
+      "focus": [
+        "일상",
+        "여행",
+        "취미",
+        "가족 대화"
+      ],
+      "avoid": [
+        "입시·취업 중심 전개"
+      ],
+      "modules": [
+        "daily",
+        "travel",
+        "hobby",
+        "family",
+        "repeat"
+      ]
+    },
+    "intl": {
+      "body_class": "theme-intl",
+      "label": "국제학교",
+      "palette": {
+        "accent": "#4A597A",
+        "accent2": "#9E7B62",
+        "hero": "#171D31",
+        "heroText": "#F8F9FD",
+        "soft": "#EEF0F6",
+        "paper": "#FFFEFC",
+        "ink": "#1A2235",
+        "muted": "#687086",
+        "line": "#D7DCE8"
+      },
+      "tone": "학업 수행과 영어 산출물을 연결하는 아카데믹형",
+      "focus": [
+        "Academic Writing",
+        "Reading",
+        "Presentation",
+        "Debate",
+        "SAT",
+        "TOEFL Junior"
+      ],
+      "avoid": [
+        "일반 성인회화 중심 전개"
+      ],
+      "modules": [
+        "academic-writing",
+        "reading",
+        "presentation",
+        "debate",
+        "assessment"
+      ]
+    }
+  },
+  "hierarchy": {
+    "future_order": [
+      "dong",
+      "gu",
+      "si",
+      "newtown",
+      "village",
+      "district"
+    ],
+    "visual_rule": "All region levels use the neutral region theme. Hierarchy is expressed with breadcrumbs, labels and content structure, not a different color system per level.",
+    "rollout_rule": "The design system may support all levels, but generation remains gated by the active rollout phase."
+  }
+}

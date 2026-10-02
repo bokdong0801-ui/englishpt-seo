@@ -9,3 +9,74 @@
 .path-card h3{font-size:23px;letter-spacing:-.04em;margin:18px 0 8px}.path-card p{font-size:14px;color:var(--muted);margin:0}
 .source-note{margin-top:18px!important;padding:14px 16px;border-left:3px solid var(--accent);background:color-mix(in srgb,var(--soft) 75%,white);font-size:14px!important}
 @media(max-width:900px){.path-grid{grid-template-columns:1fr}.path-card{min-height:auto;padding:24px}}
+
+
+/* Theme System V3: centralized page-role + audience tokens */
+body.theme-local,
+body.page-role-region{
+  --accent:#50665B;--accent2:#9C927D;--hero:#EDEAE2;--heroText:#18211D;
+  --soft:#F6F4EE;--paper:#FFFDF8;--ink:#18211D;--muted:#6D7771;--line:#D7DCD7;
+}
+body.theme-generic{
+  --accent:#3D6655;--accent2:#A69270;--hero:#17231E;--heroText:#F7F4ED;
+  --soft:#F1EEE7;--paper:#FFFDF8;--ink:#18211D;--muted:#6A746F;--line:#D8DDD8;
+}
+body.theme-elem{
+  --accent:#2F7E86;--accent2:#78AEBE;--hero:#153E46;--heroText:#F7FCFB;
+  --soft:#EAF4F1;--paper:#FFFEFA;--ink:#173038;--muted:#60767A;--line:#D2E3E2;
+}
+body.theme-mid{
+  --accent:#256A74;--accent2:#536EA7;--hero:#172F48;--heroText:#F8FAFC;
+  --soft:#EAF0F5;--paper:#FCFDFD;--ink:#192A39;--muted:#657482;--line:#D5DFE7;
+}
+body.theme-high{
+  --accent:#244967;--accent2:#A99061;--hero:#111D2C;--heroText:#F7F9FA;
+  --soft:#EDF0F3;--paper:#FEFEFD;--ink:#182536;--muted:#697482;--line:#D8DEE4;
+}
+body.theme-univ{
+  --accent:#4C6987;--accent2:#A9825E;--hero:#17283A;--heroText:#F8FAFC;
+  --soft:#EEF2F5;--paper:#FFFEFB;--ink:#1A2937;--muted:#667785;--line:#D6E0E7;
+}
+body.theme-job{
+  --accent:#395D68;--accent2:#B38B5D;--hero:#13252B;--heroText:#F8FBFA;
+  --soft:#EDF2F1;--paper:#FFFEFB;--ink:#17282C;--muted:#667779;--line:#D5DFDE;
+}
+body.theme-worker{
+  --accent:#315F4C;--accent2:#B39A68;--hero:#101814;--heroText:#F4F3ED;
+  --soft:#F1EEE5;--paper:#FFFDF8;--ink:#121A17;--muted:#68736D;--line:#D3DAD4;
+}
+body.theme-adult{
+  --accent:#667F72;--accent2:#B79E78;--hero:#26352F;--heroText:#F8F5EF;
+  --soft:#F2EFE8;--paper:#FFFDF9;--ink:#1A2420;--muted:#6D7771;--line:#D9DDD8;
+}
+body.theme-housewife{
+  --accent:#77816B;--accent2:#B99479;--hero:#303A31;--heroText:#FBF8F1;
+  --soft:#F3EEE8;--paper:#FFFDF9;--ink:#222920;--muted:#72786E;--line:#DEDDD6;
+}
+body.theme-senior{
+  --accent:#718878;--accent2:#B6A582;--hero:#314039;--heroText:#FBF8F0;
+  --soft:#F3F0E7;--paper:#FFFEFA;--ink:#1D2823;--muted:#68736D;--line:#D8DED9;
+}
+body.theme-intl{
+  --accent:#4A597A;--accent2:#9E7B62;--hero:#171D31;--heroText:#F8F9FD;
+  --soft:#EEF0F6;--paper:#FFFEFC;--ink:#1A2235;--muted:#687086;--line:#D7DCE8;
+}
+
+/* Region pages stay neutral; route cards preview the destination audience theme. */
+.target-route{position:relative;overflow:hidden}
+.target-route::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--target-accent,var(--accent))}
+.target-route[data-theme="elem"]{--target-accent:#2F7E86}
+.target-route[data-theme="mid"]{--target-accent:#256A74}
+.target-route[data-theme="high"]{--target-accent:#A99061}
+.target-route[data-theme="univ"]{--target-accent:#4C6987}
+.target-route[data-theme="job"]{--target-accent:#395D68}
+.target-route[data-theme="worker"]{--target-accent:#315F4C}
+.target-route[data-theme="adult"]{--target-accent:#667F72}
+.target-route[data-theme="housewife"]{--target-accent:#77816B}
+.target-route[data-theme="senior"]{--target-accent:#718878}
+.target-route[data-theme="intl"]{--target-accent:#4A597A}
+.target-route small,.target-route b{color:var(--target-accent,var(--accent))}
+
+/* Region hierarchy is expressed structurally, not by changing the whole palette. */
+.region-level{display:inline-flex;align-items:center;gap:8px;font:750 10px ui-monospace,monospace;letter-spacing:.12em;color:var(--accent)}
+.region-level::before{content:"";width:18px;height:1px;background:currentColor}

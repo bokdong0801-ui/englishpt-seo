@@ -1,5 +1,5 @@
 [build]
-  command = "python scripts/prepare-region-deploy.py"
+  command = "python scripts/validate-service-site.py"
   publish = "."
 
 [build.environment]
