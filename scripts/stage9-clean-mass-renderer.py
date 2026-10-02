@@ -1390,6 +1390,7 @@ def render_academy_page(source_raw: str, source_name: str, academy_intent: str) 
     # Make schema honest: these are comparison/1:1 guidance pages, not a claim
     # that ENGLISH PT is a physical academy in every locality.
     rendered = rendered.replace('"serviceType":"영어시험 과외"', '"serviceType":"영어시험 수업 비교 및 1:1 맞춤 수업 안내"')
+    rendered = rendered.replace('"serviceType": "영어시험 과외"', '"serviceType": "영어시험 수업 비교 및 1:1 맞춤 수업 안내"')
     return productionize(rendered, loc, academy_intent, "exam")
 
 
