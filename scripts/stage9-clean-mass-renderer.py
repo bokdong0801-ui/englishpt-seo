@@ -1255,7 +1255,8 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     stiff_found = [x for x in stiff_visible if x in visible_for_language_qa]
     if stiff_found:
         problems.append("stiff_visible_copy:"+",".join(stiff_found))
-    if not (5200 <= len(visible) <= 16000):
+    min_visible = 4000 if exam_reader_pilot_enabled(intent) else 5200
+    if not (min_visible <= len(visible) <= 16000):
         problems.append(f"visible_chars:{len(visible)}")
     return raw,problems
 
