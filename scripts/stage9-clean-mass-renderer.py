@@ -331,8 +331,9 @@ TOPIC_MODULES = [
 
 
 def _topic_modules(loc: dict, intent: str, family: str, audience: str) -> list[dict]:
-    pool=[m for m in TOPIC_MODULES if family in m["families"]]
-    count=8
+    skip_topics={"locality-honesty","alternative-path","transfer"}
+    pool=[m for m in TOPIC_MODULES if family in m["families"] and m["key"] not in skip_topics]
+    count=5
     ranked=sorted(
         pool,
         key=lambda m: hashlib.sha256(
@@ -364,8 +365,8 @@ def mass_context(loc: dict, intent: str, family: str, audience: str = "") -> str
     )
     return (
         '<section class="section mass-context"><div class="wrap narrow">'
-        '<p class="kicker">지역별 비교 기준</p>'
-        f'<h2>{esc(loc["dong"])}에서 {esc(loc["service"])}를 비교할 때 확인할 내용</h2>'
+        '<p class="kicker">수업 비교 기준</p>'
+        '<h2>수업을 비교할 때는 이런 부분을 확인해보세요</h2>'
         + cards + '</div></section>'
     )
 
@@ -530,6 +531,162 @@ def title_for(loc: dict, intent: str) -> str:
     return f'{loc["dong"]} {loc["service"]} | {suffix}'
 
 
+INTRO_CONTENT = {
+    "elem-tutor": {
+        "kicker":"초등 영어",
+        "h2":"기초를 확인하고, 아이가 직접 말할 수 있는 문장부터 늘립니다",
+        "p1":"처음부터 진도를 많이 나가기보다 읽기·단어·기초 문장 중 어디까지 혼자 할 수 있는지 먼저 확인합니다.",
+        "p2":"학교 영어와 말하기를 함께 보면서 부담 없이 반복할 수 있는 분량을 정하고, 수업에서 배운 표현을 다시 써볼 수 있게 이어갑니다.",
+    },
+    "mid-conv": {
+        "kicker":"중학생 영어",
+        "h2":"학교 영어와 말하기를 따로 떼지 않고 함께 준비합니다",
+        "p1":"수행평가·발표·교과서 영어처럼 당장 필요한 일정과 현재 수준을 먼저 확인합니다.",
+        "p2":"외운 문장을 그대로 말하는 데서 끝내지 않고, 질문이 조금 달라져도 자신의 말로 이어갈 수 있도록 연습합니다.",
+    },
+    "high-conv": {
+        "kicker":"고등학생 영어",
+        "h2":"내신·수행평가·면접, 지금 필요한 영어부터 정합니다",
+        "p1":"고등학생은 해야 할 공부가 많기 때문에 회화를 따로 크게 벌이기보다 학교 일정과 발표·면접처럼 가까운 목표에 맞춰 시작하는 편이 효율적입니다.",
+        "p2":"최근 어려웠던 부분을 확인한 뒤 필요한 말하기·듣기·표현 연습만 골라 수업하고, 다음 일정에 맞춰 비중을 다시 조정합니다.",
+    },
+    "univ-conv": {
+        "kicker":"대학생 영어",
+        "h2":"발표·세미나·면접처럼 실제로 필요한 영어부터 준비합니다",
+        "p1":"막연히 회화를 잘하고 싶다는 목표보다 다음에 영어를 써야 하는 상황을 먼저 정하면 준비 범위를 훨씬 빠르게 좁힐 수 있습니다.",
+        "p2":"수업에서는 필요한 표현을 익힌 뒤 직접 말해보고, 질문이나 주제가 달라져도 자연스럽게 이어갈 수 있도록 피드백합니다.",
+    },
+    "jobseeker-conv": {
+        "kicker":"취업 영어",
+        "h2":"영어면접은 답을 외우기보다 내 경험을 말할 수 있어야 합니다",
+        "p1":"지원 일정과 예상 질문을 확인하고, 자기소개·지원동기·경험 답변처럼 실제 면접에서 필요한 내용부터 준비합니다.",
+        "p2":"완성 문장을 통째로 외우기보다 핵심 내용을 정리한 뒤 질문 표현이 달라져도 다시 말할 수 있도록 반복합니다.",
+    },
+    "biz-business-conv": {
+        "kicker":"비즈니스 영어",
+        "h2":"회의·발표·전화, 실제 업무에서 바로 쓸 영어부터 준비합니다",
+        "p1":"직무와 영어 사용 상황을 먼저 확인하고, 자주 필요한 회의 표현·설명·질문·응답을 실제 업무에 가깝게 연습합니다.",
+        "p2":"수업에서 익힌 표현은 다른 업무 상황에서도 다시 써보며, 자주 막히는 표현과 문장 구조를 중심으로 피드백합니다.",
+    },
+    "housewife-conv": {
+        "kicker":"생활 영어",
+        "h2":"여행과 생활에서 자주 쓰는 영어부터 편하게 시작합니다",
+        "p1":"오랜만에 영어를 다시 시작해도 괜찮습니다. 현재 가능한 표현과 자주 필요한 상황을 먼저 확인해 무리하지 않는 범위에서 시작합니다.",
+        "p2":"듣고 따라 하는 데서 끝내지 않고 직접 질문하고 대답하는 시간을 늘리면서 생활 속에서 쓸 수 있는 표현을 차근차근 넓혀갑니다.",
+    },
+    "toeic": {
+        "kicker":"토익 준비",
+        "h2":"LC·RC를 많이 풀기보다 점수를 자주 깎는 파트부터 찾습니다",
+        "p1":"목표 점수와 시험일, 최근 점수를 먼저 확인한 뒤 LC와 RC에서 반복해서 틀리는 파트를 나눠봅니다.",
+        "p2":"문제 수만 늘리지 않고 오답 이유와 시간 사용을 함께 확인해, 시험일까지 어디에 시간을 더 써야 하는지 정합니다.",
+    },
+    "toeic-speaking": {
+        "kicker":"토익스피킹 준비",
+        "h2":"11문항을 똑같이 연습하지 않고, 자주 흔들리는 유형부터 잡습니다",
+        "p1":"목표 등급과 시험일을 확인한 뒤 첫 문장, 답변 구조, 준비 시간, 말하는 속도 중 무엇이 가장 큰 영향을 주는지 먼저 봅니다.",
+        "p2":"유형별 답변 순서를 익히고 실제 제한 시간에 맞춰 말해본 뒤, 녹음과 피드백으로 반복되는 문제를 줄여갑니다.",
+    },
+    "opic": {
+        "kicker":"오픽 준비",
+        "h2":"외운 답변보다 내 이야기로 자연스럽게 이어가는 연습이 중요합니다",
+        "p1":"목표 등급과 시험일, 자주 사용할 경험 소재를 먼저 정리하고 익숙한 질문부터 답변 흐름을 만듭니다.",
+        "p2":"돌발 질문이나 표현이 달라져도 준비한 경험을 다시 활용할 수 있도록 질문을 바꿔 말해보고 녹음으로 부족한 부분을 확인합니다.",
+    },
+    "ielts": {
+        "kicker":"IELTS 준비",
+        "h2":"네 영역을 똑같이 공부하지 않고, 목표 Band를 막는 영역부터 봅니다",
+        "p1":"지원 목적과 시험 유형, 목표 Band, 시험일을 먼저 확인한 뒤 Listening·Reading·Writing·Speaking을 각각 나눠 현재 수준을 봅니다.",
+        "p2":"Writing은 첨삭 후 다시 써보고, Speaking은 질문을 바꿔 다시 답하며, Reading·Listening은 오답 이유와 시간 사용까지 함께 확인합니다.",
+    },
+    "duolingo": {
+        "kicker":"DET 준비",
+        "h2":"시험 형식에 익숙해지는 것과 영어 실력을 함께 준비합니다",
+        "p1":"목표 점수와 제출 일정을 확인한 뒤 Reading·Listening·Writing·Speaking 중 자주 흔들리는 영역을 나눠봅니다.",
+        "p2":"짧고 빠르게 진행되는 시험 특성에 맞춰 문제 형식에 익숙해지고, 말하기·쓰기 응답은 실제로 끝까지 완성하는 연습을 반복합니다.",
+    },
+    "toefl": {
+        "kicker":"TOEFL 준비",
+        "h2":"4영역을 따로 보되, 통합형 문제까지 연결해서 준비합니다",
+        "p1":"목표 점수와 시험일을 기준으로 Reading·Listening·Speaking·Writing에서 점수를 자주 잃는 부분을 먼저 확인합니다.",
+        "p2":"읽고 들은 내용을 말하거나 쓰는 통합형까지 이어질 수 있도록 메모·내용 정리·답변 구성과 시간 사용을 함께 연습합니다.",
+    },
+}
+
+MANAGEMENT_FOCUS = {
+    "elem-tutor":["읽기·단어·기초 문장 중 필요한 부분부터 시작","학교 진도와 말하기를 함께 확인","짧은 복습으로 수업 내용을 다시 사용"],
+    "mid-conv":["수행평가·발표 일정을 수업 계획에 반영","교과서 표현을 실제 질문·답변으로 연결","수업 후 다시 말해볼 내용과 복습 범위 정리"],
+    "high-conv":["내신·수행평가·면접 일정에 맞춰 비중 조정","발표·질문 대응을 실제 상황처럼 연습","시험기간에는 부담을 줄이고 필요한 영역만 유지"],
+    "univ-conv":["발표·세미나·면접 일정에 맞춘 준비","직접 말한 답변을 바로 교정하고 다시 연습","수업 밖에서도 이어갈 짧은 말하기 과제 설정"],
+    "jobseeker-conv":["지원기업·면접 일정에 맞춰 질문 우선순위 조정","자기소개·경험 답변을 질문별로 정리","모의 질문 후 표현·논리·말하는 속도 피드백"],
+    "biz-business-conv":["회의·발표·전화 등 업무 상황별 표현 준비","실제 업무 문장과 답변을 중심으로 교정","일정과 업무 변화에 따라 다음 수업 주제 조정"],
+    "housewife-conv":["현재 수준과 생활·여행 목표부터 확인","자주 쓰는 짧은 표현을 직접 말하는 연습","부담 없는 복습량으로 꾸준히 이어가기"],
+    "toeic":["LC·RC를 파트별로 나눠 반복 오답 확인","오답 이유를 문법·어휘·근거·시간으로 구분","시험 전에는 실제 시간에 맞춰 풀이 순서 점검"],
+    "toeic-speaking":["11문항을 유형별로 나눠 답변 순서 정리","녹음으로 첫 문장·속도·반복 표현 확인","실제 제한 시간에 맞춰 다시 답하고 피드백"],
+    "opic":["설문과 경험 소재를 먼저 정리","익숙한 질문에서 답변 흐름을 만든 뒤 돌발로 확장","녹음으로 반복 표현·공백·답변 길이 피드백"],
+    "ielts":["4영역을 따로 진단해 공부 비중 조정","Writing 첨삭 후 다시 쓰기, Speaking 질문 변경 후 다시 답하기","Reading·Listening은 오답 근거와 시간 사용까지 기록"],
+    "duolingo":["영역별 약점과 문제 형식 적응을 함께 확인","Speaking·Writing 응답은 끝까지 완성하는 연습","공식 연습문제로 시험 전 결과를 다시 확인"],
+    "toefl":["Reading·Listening·Speaking·Writing을 영역별로 확인","통합형은 메모에서 답변까지 한 흐름으로 연습","Speaking·Writing은 구성과 시간 사용을 함께 피드백"],
+}
+
+
+def intro_content(intent: str) -> dict:
+    return INTRO_CONTENT[intent]
+
+
+def management_section(loc: dict, intent: str, family: str) -> str:
+    focus = MANAGEMENT_FOCUS[intent]
+    steps = [
+        ("01","처음 상담","목표와 가장 가까운 일정, 최근 결과나 어려웠던 부분을 확인합니다."),
+        ("02","수업 계획","한 번에 많은 내용을 잡기보다 먼저 바꿔야 할 한두 가지를 정합니다."),
+        ("03","수업 시간","설명을 들은 뒤 직접 풀고, 말하고, 써보면서 바로 수정합니다."),
+        ("04","수업 후","오늘 잘된 부분과 다시 연습할 내용을 정리해 다음 수업과 연결합니다."),
+        ("05","다음 수업","지난 내용을 짧게 확인한 뒤 결과에 따라 분량과 순서를 다시 조정합니다."),
+    ]
+    step_html = ''.join(
+        f'<div class="manage-step"><span>{n}</span><div><h3>{esc(t)}</h3><p>{esc(p)}</p></div></div>'
+        for n,t,p in steps
+    )
+    focus_html = ''.join(f'<li>{esc(x)}</li>' for x in focus)
+    label = "시험 관리" if family == "exam" else "학습 관리"
+    return (
+        '<section class="section management">'
+        '<div class="wrap manage-layout">'
+        '<div class="manage-copy">'
+        f'<p class="kicker">{label}</p>'
+        '<h2>수업만 하고 끝내지 않고, 다음 수업까지 이어서 관리합니다</h2>'
+        '<p>진도를 많이 나가는 것보다 지금 필요한 내용을 정확히 연습하고, 수업 후에도 다시 써볼 수 있게 만드는 데 초점을 둡니다.</p>'
+        '<ul class="manage-focus">' + focus_html + '</ul>'
+        '</div>'
+        '<div class="manage-steps">' + step_html + '</div>'
+        '</div></section>'
+    )
+
+
+def rewrite_reader_headings(raw: str, loc: dict, intent: str, family: str) -> str:
+    service = loc["service"]
+    mapping = {
+        "자주 어려운 상황": "어디에서 자주 어려워지는지부터 확인합니다",
+        "실제 막힘": "어디에서 자주 어려워지는지부터 확인합니다",
+        "시험 구조와 개인 약점": "시험 방식은 알고, 내 약점은 따로 찾아야 합니다",
+        "어려운 이유": "왜 어려운지 알면 연습 방법도 달라집니다",
+        "먼저 준비할 것": "모든 걸 한꺼번에 하지 않고, 먼저 할 것부터 정합니다",
+        "수업 진행": "설명만 듣고 끝나지 않게 이렇게 진행합니다",
+        "변화 확인": "잘하고 있는지는 이렇게 확인합니다",
+        "수업 기록 예시": "수업 후에는 이런 내용을 남깁니다",
+        "시험 선택": "지금 목표에 맞는 시험인지도 함께 확인합니다",
+        "수업 선택": "지금 목표에 맞는 수업인지도 함께 확인합니다",
+        "더 깊게 보기": f"{service}에서 많이 어려워하는 부분",
+        "자주 묻는 질문": "상담 전에 많이 물어보는 내용",
+        "공식정보 확인": "시험 정보는 공식 안내로 한 번 더 확인하세요",
+        "수업 비교 기준": "수업을 비교할 때는 이런 부분을 확인해보세요",
+        "상담 전 확인": "상담 전에 이 정도만 알려주셔도 됩니다",
+    }
+    for kicker, heading in mapping.items():
+        pattern = re.compile(r'(<p class="kicker">' + re.escape(kicker) + r'</p><h2>).*?(</h2>)', re.S)
+        raw = pattern.sub(lambda m: m.group(1) + esc(heading) + m.group(2), raw, count=1)
+    return raw
+
+
 def description_for(loc: dict, intent: str) -> str:
     templates = {
         "elem-tutor": f'{loc["dong"]} 초등학생영어과외 안내. 읽기·기초 문장·학교영어에서 어려운 부분을 확인하고 현재 수준에 맞는 수업 방향과 상담 기준을 정리했습니다.',
@@ -591,7 +748,9 @@ def humanize_visible_copy(raw: str, family: str) -> str:
         "Skill별": "영역별",
         "skill별": "영역별",
         "skill": "영역",
-        "실전 조건": "실제 시험처럼 시간 제한을 둔 상태" if family == "exam" else "실제 상황",
+        "실전 조건으로": "실제 시험 시간에 맞춰" if family == "exam" else "실제 상황에 맞춰",
+        "실전 조건에서": "실제 시험처럼 연습할 때" if family == "exam" else "실제 상황에서",
+        "실전 조건": "실제 시험 환경" if family == "exam" else "실제 상황",
         "재사용 범위": "다른 문제에서도 적용되는 범위",
         "재사용 확인": "다른 문제에서도 적용되는지 확인",
         "재사용 테스트": "다른 문제에 적용해보는 확인",
@@ -615,9 +774,11 @@ def humanize_visible_copy(raw: str, family: str) -> str:
     for old, new in replacements.items():
         body = body.replace(old, new)
 
-    # '장면' was overused throughout Gold copy. '상황' is natural across
-    # school, work, daily conversation and test contexts.
-    body = body.replace("장면", "상황")
+    # Keep ordinary Korean natural instead of replacing every occurrence mechanically.
+    body = body.replace("장면형에서는", "최근 어려웠던 상황을 기준으로 볼 때는")
+    body = body.replace("사용 장면형에서는", "실제로 영어를 쓰는 상황을 기준으로 볼 때는")
+    body = body.replace("다음 장면", "다음 상황")
+    body = body.replace("같은 장면", "비슷한 상황")
 
     heading_replacements = {
         '<p class="kicker">실제 상황</p>': '<p class="kicker">자주 어려운 상황</p>',
@@ -682,16 +843,16 @@ def v44_snapshot(loc: dict, family: str) -> str:
     return (
         '<aside class="snapshot">'
         '<h3>처음 상담에서 먼저 보는 것</h3>'
-        '<p>레벨 이름보다 현재 목표와 다음 행동부터 확인합니다.</p>'
+        '<p>레벨 이름보다 지금 필요한 목표와 어려운 부분부터 확인합니다.</p>'
         + body + '</aside>'
     )
 
 
 def v44_trust(family: str) -> str:
     items = (
-        ["✓ 목표·시험일 기준", "✓ 최근 병목부터 진단", "✓ 실전 조건에서 재확인"]
+        ["✓ 목표 점수·시험일 확인", "✓ 약한 영역부터 집중", "✓ 실제 시험 시간에 맞춰 연습"]
         if family == "exam"
-        else ["✓ 현재 수준부터 확인", "✓ 실제 사용 장면 중심", "✓ 가능한 일정과 반복 기준"]
+        else ["✓ 현재 수준부터 확인", "✓ 필요한 영어부터 연습", "✓ 수업 후 피드백·복습 연결"]
     )
     return '<div class="trust"><div class="wrap trust-in">' + ''.join(f'<div>{x}</div>' for x in items) + '</div></div>'
 
@@ -800,11 +961,18 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         raw, re.S,
     )
     if detail:
+        intro = intro_content(intent)
+        intro_copy = (
+            f'<p class="kicker">{esc(intro["kicker"])}</p>'
+            f'<h2>{esc(intro["h2"])}</h2>'
+            f'<p>{esc(intro["p1"])}</p>'
+            f'<p>{esc(intro["p2"])}</p>'
+        )
         intro_html = (
             '<section class="section intro-detail" id="detail"><div class="wrap"><div class="intro-grid">'
-            '<div class="intro-copy">' + detail.group(1) + '</div>'
+            '<div class="intro-copy">' + intro_copy + '</div>'
             + v44_snapshot(loc, family)
-            + '</div></div></section>' + v44_trust(family)
+            + '</div></div></section>' + v44_trust(family) + management_section(loc,intent,family)
         )
         raw = raw[:detail.start()] + intro_html + raw[detail.end():]
     else:
@@ -862,6 +1030,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     raw = rewrite_schema_page_title(raw, page_title)
 
     raw = humanize_visible_copy(raw, family)
+    raw = rewrite_reader_headings(raw, loc, intent, family)
     raw = raw.replace('</body>','<div class="mobile-sticky"><a href="#consultation-preview">무료 PT 진단 신청</a></div></body>',1)
 
     forbidden=[
@@ -876,7 +1045,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         'name="name"','name="phone"','name="consent"',
         'class="breadcrumb wrap"','class="mobile-sticky"',
         EMAILJS_TAG,'class="section mass-context"',
-        'class="site-header"','class="hero simple-hero"','class="snapshot"','class="trust"',
+        'class="site-header"','class="hero simple-hero"','class="snapshot"','class="trust"','class="section management"',
     ]
     if any(x not in raw for x in required):
         problems.append("production_contract")
@@ -887,7 +1056,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         problems.append("cluster_links")
     visible = re.sub(r'<script.*?</script>|<style.*?</style>|<[^>]+>', ' ', raw, flags=re.S|re.I)
     visible = re.sub(r'\s+',' ',html.unescape(visible)).strip()
-    stiff_visible = ["현재 장면","가장 막히는 장면","최근 막힌 장면","병목","재점검","재검증"]
+    stiff_visible = ["현재 장면","가장 막히는 장면","최근 막힌 장면","병목","재점검","재검증","상태으로","상황형"]
     visible_for_language_qa = visible.replace(loc["dong"], "")
     stiff_found = [x for x in stiff_visible if x in visible_for_language_qa]
     if stiff_found:
