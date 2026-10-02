@@ -1,1 +1,1 @@
-Redeploy corrected 23-intent Stage 9 preview with all exam-academy and conversation expansion pages.
+Redeploy latest 23-intent Stage 9 preview from current production renderer after AI discovery/GEO additions.
