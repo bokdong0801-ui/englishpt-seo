@@ -1,1 +1,1 @@
-Deploy and verify the five-exam reader-first preview through the immutable Netlify deploy URL.
+Deploy five-exam reader-first preview without alias and verify immutable deploy-specific Netlify URL.
