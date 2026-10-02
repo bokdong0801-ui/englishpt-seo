@@ -513,7 +513,9 @@ def _topic_modules(loc: dict, intent: str, family: str, audience: str) -> list[d
     skip_topics={"locality-honesty","alternative-path","transfer"}
     pool=[m for m in TOPIC_MODULES if family in m["families"] and m["key"] not in skip_topics]
     base_intent = ACADEMY_BASE.get(intent, intent)
-    if family == "exam" and base_intent in {"toeic-speaking","opic"}:
+    if family == "exam" and base_intent == "toeic-speaking":
+        count = 6
+    elif family == "exam" and base_intent == "opic":
         count = 10
     elif family == "exam" and base_intent in EXAM_READER_PILOT_INTENTS:
         count = 8
