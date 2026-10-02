@@ -103,7 +103,7 @@ jobs:
               assert 'class="trust"' in raw, name
               assert 'data-exam-reader-pilot="true"' in raw, name
               assert 'class="exam-roadmap-grid"' in raw, name
-              assert 'class="exam-reader-outputs"' in raw, name
+              assert 'class="section exam-reader-outputs"' in raw, name
               title=raw.split('<title>',1)[1].split('</title>',1)[0]
               assert 'ENGLISH PT' not in title, (name,title)
               assert ' | ' in title, (name,title)
