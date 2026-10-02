@@ -182,7 +182,7 @@ def esc(x: str) -> str:
 
 
 def intent_from_name(name: str) -> tuple[str, str]:
-    for intent in sorted(SERVICE_ORDER + EXAM_ORDER, key=len, reverse=True):
+    for intent in sorted(SERVICE_ORDER + EXAM_ORDER + ACADEMY_ORDER, key=len, reverse=True):
         suffix = f"-{intent}.html"
         if name.endswith(suffix):
             return name[:-len(suffix)], intent
@@ -199,6 +199,8 @@ def location_from_source(raw: str, name: str, intent: str) -> dict:
     h1 = plain_h1(raw)
     if intent in SERVICE_ORDER:
         service = svc.PROFILES[intent]["service_h1"]
+    elif intent in ACADEMY_BASE:
+        service = ACADEMY_SERVICE[intent]
     else:
         service = next(v["service"] for v in ex.EXAMS.values() if v["intent"] == intent)
     dong = h1[:-len(service)].strip() if h1.endswith(service) else h1.split()[0]
@@ -531,6 +533,59 @@ def trim_gold_page(raw: str, seed: str, family: str) -> str:
     return raw
 
 
+def base_exam_intent(intent: str) -> str:
+    return ACADEMY_BASE.get(intent, intent)
+
+
+def is_academy_intent(intent: str) -> bool:
+    return intent in ACADEMY_BASE
+
+
+def theme_for_intent(intent: str, family: str) -> str:
+    if family == "service":
+        return gold_modules()[0].PROFILES[intent]["theme"] + " intent-audience"
+    base = base_exam_intent(intent)
+    theme = EXAM_THEME.get(base, "theme-test")
+    return theme + (" intent-academy" if is_academy_intent(intent) else " intent-test")
+
+
+def academy_compare_section(loc: dict, intent: str) -> str:
+    if not is_academy_intent(intent):
+        return ""
+    base = base_exam_intent(intent)
+    exam_label = {
+        "toeic": "TOEIC",
+        "toeic-speaking": "TOEIC Speaking",
+        "opic": "OPIc",
+        "ielts": "IELTS",
+        "toefl": "TOEFL",
+    }[base]
+    exam_focus = {
+        "toeic": "LC·RC 파트별 약점, 오답관리, 시간 배분",
+        "toeic-speaking": "문항별 답변 구조, 녹음 피드백, 제한시간 연습",
+        "opic": "설문·돌발·롤플레이, 답변 흐름, 녹음 피드백",
+        "ielts": "Listening·Reading·Writing·Speaking 4영역, 첨삭과 말하기 피드백",
+        "toefl": "Reading·Listening·Speaking·Writing 4영역과 통합형 연습",
+    }[base]
+    return (
+        '<section class="section academy-choice"><div class="wrap">'
+        '<p class="kicker">학원을 알아보고 있다면</p>'
+        f'<h2>{esc(loc["dong"])}에서 {esc(ACADEMY_SERVICE[intent])}을 찾을 때, 수업 이름보다 관리방식을 먼저 비교해보세요</h2>'
+        '<p class="academy-disclosure">ENGLISH PT는 특정 오프라인 학원으로 소개하는 페이지가 아닙니다. '
+        f'{esc(exam_label)} 준비를 위해 학원형 수업과 1:1 맞춤 수업을 비교할 때 확인하면 좋은 기준을 정리했습니다.</p>'
+        '<div class="academy-compare">'
+        '<article><span>01</span><h3>진도와 질문</h3><p>정해진 진도를 따라가는 방식이 편한지, 현재 약한 부분을 먼저 다루는 방식이 필요한지 확인합니다.</p></article>'
+        '<article><span>02</span><h3>피드백 범위</h3><p>수업 중 설명뿐 아니라 오답·첨삭·녹음처럼 수업 후 확인이 어디까지 이어지는지 비교합니다.</p></article>'
+        f'<article><span>03</span><h3>{esc(exam_label)} 관리</h3><p>{esc(exam_focus)} 중 지금 필요한 항목을 얼마나 구체적으로 관리하는지 살펴봅니다.</p></article>'
+        '<article><span>04</span><h3>일정 조정</h3><p>시험일이 가까워질 때 과제량·실전연습·보완 영역을 실제 일정에 맞춰 조정할 수 있는지 확인합니다.</p></article>'
+        '</div>'
+        '<div class="academy-fit">'
+        '<div><b>학원형 수업이 잘 맞을 수 있는 경우</b><p>정해진 진도와 수업 일정이 필요하고, 비슷한 목표의 학습자와 함께 꾸준히 따라가는 방식이 편한 경우입니다.</p></div>'
+        '<div><b>1:1 방식이 잘 맞을 수 있는 경우</b><p>시험일이 촉박하거나 특정 파트·영역만 약하고, 답변·첨삭·오답에 개인 피드백이 많이 필요한 경우입니다.</p></div>'
+        '</div></div></section>'
+    )
+
+
 def all_related(loc: dict, current_intent: str) -> str:
     svc, ex = gold_modules()
     links = []
@@ -544,6 +599,11 @@ def all_related(loc: dict, current_intent: str) -> str:
             continue
         exam = next(v for v in ex.EXAMS.values() if v["intent"] == intent)
         label = f'{loc["dong"]} {exam["service"]}'
+        links.append(f'<a href="/{loc["slug"]}-{intent}.html">{esc(label)}</a>')
+    for intent in ACADEMY_ORDER:
+        if intent == current_intent:
+            continue
+        label = f'{loc["dong"]} {ACADEMY_SERVICE[intent]}'
         links.append(f'<a href="/{loc["slug"]}-{intent}.html">{esc(label)}</a>')
     return (
         '<section class="section related"><div class="wrap">'
