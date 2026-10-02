@@ -22,6 +22,29 @@ SERVICE_ORDER = [
     "jobseeker-conv","biz-business-conv","housewife-conv",
 ]
 EXAM_ORDER = ["toeic","toeic-speaking","opic","ielts","duolingo","toefl"]
+ACADEMY_BASE = {
+    "toeic-academy": "toeic",
+    "toeic-speaking-academy": "toeic-speaking",
+    "opic-academy": "opic",
+    "ielts-academy": "ielts",
+    "toefl-academy": "toefl",
+}
+ACADEMY_ORDER = list(ACADEMY_BASE)
+ACADEMY_SERVICE = {
+    "toeic-academy": "토익학원",
+    "toeic-speaking-academy": "토익스피킹학원",
+    "opic-academy": "오픽학원",
+    "ielts-academy": "아이엘츠학원",
+    "toefl-academy": "토플학원",
+}
+EXAM_THEME = {
+    "toeic": "theme-toeic",
+    "toeic-speaking": "theme-toeic-speaking",
+    "opic": "theme-opic",
+    "ielts": "theme-ielts",
+    "duolingo": "theme-duolingo",
+    "toefl": "theme-toefl",
+}
 VARIATIONS = ["scene","deadline","error","use","reuse"]
 
 TITLE_VARIANTS = {
@@ -38,6 +61,11 @@ TITLE_VARIANTS = {
     "ielts": ["IELTS 4영역·Band 진단", "Writing·Speaking 피드백", "목표 Band·4영역 훈련"],
     "duolingo": ["실전유형·시간훈련", "DET 유형·실전훈련", "목표점수·문항대응"],
     "toefl": ["4영역·실전훈련", "TOEFL 4영역·시간관리", "Reading·Listening·말하기·쓰기"],
+    "toeic-academy": ["수업방식·LC·RC 관리 비교", "학원수업·1:1 관리 비교", "시험일·파트별 관리 확인"],
+    "toeic-speaking-academy": ["문항별 피드백·수업방식 비교", "학원수업·1:1 말하기 관리", "녹음·답변 피드백 비교"],
+    "opic-academy": ["돌발·롤플레이 관리 비교", "학원수업·1:1 답변 피드백", "녹음·답변관리 방식 비교"],
+    "ielts-academy": ["4영역·첨삭관리 비교", "IELTS 학원수업·1:1 비교", "Writing·Speaking 관리 확인"],
+    "toefl-academy": ["4영역·통합형 관리 비교", "TOEFL 학원수업·1:1 비교", "Speaking·Writing 피드백 비교"],
 }
 
 EMAILJS_TAG = '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>'
