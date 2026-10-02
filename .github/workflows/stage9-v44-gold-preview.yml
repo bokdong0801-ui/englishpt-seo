@@ -75,7 +75,7 @@ jobs:
           print('PASS_EXACT_PRODUCTION_ASSEMBLY')
           PY
 
-      - name: Build 22-page reader-first preview from exact renderer output
+      - name: Build 23-page reader-first preview from exact renderer output
         run: |
           rm -rf stage9-v44-preview
           mkdir -p stage9-v44-preview
@@ -149,7 +149,7 @@ jobs:
           index=f'''<!doctype html><html lang="ko"><head><meta charset="utf-8">
           <meta name="viewport" content="width=device-width,initial-scale=1">
           <meta name="robots" content="noindex,nofollow">
-          <title>ENGLISH PT 22개 최종 후보 Preview</title>
+          <title>ENGLISH PT 23개 최종 후보 Preview</title>
           <style>
           *{{box-sizing:border-box}}body{{margin:0;font-family:Pretendard,"Apple SD Gothic Neo",Arial,sans-serif;background:#F5F2EA;color:#14201A}}
           .wrap{{width:min(1050px,calc(100% - 36px));margin:0 auto;padding:54px 0}}
@@ -160,8 +160,8 @@ jobs:
           .card small{{font-size:10px;font-weight:900;letter-spacing:.08em;color:#7A817D}}.card b{{font-size:15px}}.card span{{font-size:12px;color:#315F4C;font-weight:800}}
           @media(max-width:700px){{.grid{{grid-template-columns:1fr}}.wrap{{padding:36px 0}}}}
           </style></head><body><main class="wrap"><p>NETLIFY PREVIEW · 실제 Production renderer 산출물</p>
-          <h1>V4.4 + Reader-first + 22개 검색의도</h1>
-          <p>기존 13개 대표 페이지, 시험 학원 검색 페이지 5개, 영어회화학원·성인영어회화학원·직장인영어회화학원·왕초보영어회화 4개를 같은 Production 생성기에서 뽑았습니다.</p>
+          <h1>V4.4 + Reader-first + 23개 검색의도</h1>
+          <p>기존 13개 대표 페이지, 시험 학원 검색 페이지 6개, 영어회화학원·성인영어회화학원·직장인영어회화학원·왕초보영어회화 4개를 같은 Production 생성기에서 뽑았습니다.</p>
           <div class="note"><b>확인 포인트</b><p>시험별 색상 변화, 첫 화면의 가독성, 학원 검색 페이지의 비교 설명, 관리 과정, PC/모바일 반응형을 확인해주세요. 이 Preview는 검색엔진 색인을 막아두었습니다.</p></div>
           <div class="grid">{cards}</div></main></body></html>'''
           (out/'index.html').write_text(index,encoding='utf-8')
@@ -191,10 +191,10 @@ jobs:
           base='https://stage9-v44-gold-preview--englishpt-seo.netlify.app'
           names=[row['canonical'].rsplit('/',1)[-1] for row in q['representative_13']['pages']]
           names += json.loads(Path('stage9-v44-preview/ACADEMY_PREVIEW_PAGES.json').read_text(encoding='utf-8'))
-          assert len(names)==22, len(names)
+          assert len(names)==23, len(names)
           for name in names:
               subprocess.run(['curl','-fsSIL','--max-time','30',f'{base}/{name}'],check=True,stdout=subprocess.DEVNULL)
-          print('PASS_STAGE9_22_PAGE_READER_EXPANSION_PREVIEW')
+          print('PASS_STAGE9_23_PAGE_READER_EXPANSION_PREVIEW')
           PY
 
       - name: Write preview report
@@ -203,11 +203,11 @@ jobs:
           import json
           from pathlib import Path
           report={
-            "status":"PASS_STAGE9_22_PAGE_READER_EXPANSION_PREVIEW",
+            "status":"PASS_STAGE9_23_PAGE_READER_EXPANSION_PREVIEW",
             "preview_url":"https://stage9-v44-gold-preview--englishpt-seo.netlify.app",
             "source":"exact current Stage 9 production renderer with exam-academy and conversation expansion intents",
             "production_affected":False,
-            "representative_pages":22,
+            "representative_pages":23,
             "preview_indexing":"blocked by X-Robots-Tag only"
           }
           Path('STAGE9_V44_GOLD_PREVIEW_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
