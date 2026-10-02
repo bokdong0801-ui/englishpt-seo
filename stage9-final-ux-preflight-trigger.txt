@@ -1,1 +1,1 @@
-Run final reader-friendly Stage 9 preflight with locality names excluded from language QA.
+Run reader-first ENGLISH PT Stage 9 preflight with natural intro, detailed management flow and editorial content layout.
