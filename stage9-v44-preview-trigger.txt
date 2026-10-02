@@ -1,1 +1,1 @@
-Redeploy reader-friendly V4.4 + Stage 9 Gold exact Production preview to the same Netlify alias.
+Redeploy reader-first V4.4 + Stage 9 Gold preview with natural intro, detailed management flow and editorial layout.
