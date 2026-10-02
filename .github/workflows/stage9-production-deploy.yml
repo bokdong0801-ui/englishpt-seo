@@ -119,10 +119,10 @@ jobs:
           q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
           assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY',q
           assert q['final_domain']=='https://englishpt.kr'
-          assert q['counts']['new_pages']==113278
-          assert q['counts']['html_total']==113373
-          assert q['counts']['sitemap_shards']==227
-          assert q['counts']['sitemap_urls']==113373
+          assert q['counts']['new_pages']==118427
+          assert q['counts']['html_total']==118522
+          assert q['counts']['sitemap_shards']==238
+          assert q['counts']['sitemap_urls']==118522
           assert q['indexing']['noindex_pages']==0
           assert q['indexing']['robots_txt_allows_crawl'] is True
           print('PASS Stage 9 release package')
@@ -165,7 +165,7 @@ jobs:
           urls=['https://englishpt.kr/robots.txt','https://englishpt.kr/sitemap-index.xml']
           rep=[x['canonical'] for x in q['representative_13']['pages']]
           urls += rep
-          academy_bases=['toeic','toeic-speaking','opic','ielts','toefl']
+          academy_bases=['toeic','toeic-speaking','opic','ielts','duolingo','toefl']
           for base in academy_bases:
               source=next((u for u in rep if u.endswith(f'-{base}.html')),None)
               assert source, base
@@ -193,7 +193,7 @@ jobs:
                               assert 'Sitemap: https://englishpt.kr/sitemap-index.xml' in body
                               assert 'Disallow: /' not in body
                           elif url.endswith('/sitemap-index.xml'):
-                              assert body.count('<sitemap><loc>') == 227
+                              assert body.count('<sitemap><loc>') == 238
                           else:
                               low=body.lower()
                               assert 'noindex' not in low and 'nofollow' not in low, url
