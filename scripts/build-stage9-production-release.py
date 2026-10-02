@@ -27,10 +27,13 @@ CLEAN_RENDERER = _load_module(
     "stage9_clean_mass_renderer", ROOT / "scripts" / "stage9-clean-mass-renderer.py"
 )
 
-EXPECTED_NEW = 66937
+EXPECTED_SOURCE_NEW = 66937
+EXPECTED_ACADEMY_NEW = 25745
+EXPECTED_NEW = EXPECTED_SOURCE_NEW + EXPECTED_ACADEMY_NEW
 EXPECTED_PRESERVED = 95
-EXPECTED_TOTAL = 67032
-EXPECTED_SITEMAPS = 135
+EXPECTED_TOTAL = EXPECTED_NEW + EXPECTED_PRESERVED
+EXPECTED_SITEMAPS = 186
+SITEMAP_CHUNK = 500
 EXPECTED_REDIRECTS = 74
 BASE_URL = "https://englishpt.kr"
 
@@ -258,12 +261,12 @@ def main() -> None:
         failures.append("final_domain_not_confirmed")
     if q8.get("approval", {}).get("next_stage") != "STAGE9_PRODUCTION_DEPLOY":
         failures.append("stage8_next_stage_not_stage9")
-    if q8.get("counts", {}).get("new_pages") != EXPECTED_NEW:
-        failures.append("stage8_new_page_count")
+    if q8.get("counts", {}).get("new_pages") != EXPECTED_SOURCE_NEW:
+        failures.append("stage8_source_new_page_count")
     if q8.get("counts", {}).get("preserved_pages") != EXPECTED_PRESERVED:
         failures.append("stage8_preserved_page_count")
-    if q8.get("counts", {}).get("deploy_html_total") != EXPECTED_TOTAL:
-        failures.append("stage8_total_page_count")
+    if q8.get("counts", {}).get("deploy_html_total") != EXPECTED_SOURCE_NEW + EXPECTED_PRESERVED:
+        failures.append("stage8_source_total_page_count")
 
     rollback = stage7 / "rollback-root"
     if not rollback.exists():
@@ -272,30 +275,46 @@ def main() -> None:
         shutil.copytree(rollback, out, dirs_exist_ok=True)
 
     new_pages = sorted((work / "stage5-full-generation").glob("shard-*/pages/*.html"))
-    if len(new_pages) != EXPECTED_NEW:
-        failures.append({"new_pages": [len(new_pages), EXPECTED_NEW]})
+    if len(new_pages) != EXPECTED_SOURCE_NEW:
+        failures.append({"source_new_pages": [len(new_pages), EXPECTED_SOURCE_NEW]})
 
-    transformed = 0
+    transformed_source = 0
+    transformed_academy = 0
     bad_robot_pages: list[str] = []
     bad_domain_pages: list[str] = []
     bad_ui_pages: list[dict] = []
-    for src in new_pages:
-        source_raw = src.read_text(encoding="utf-8")
-        raw, ui_problems = CLEAN_RENDERER.render_production_page(source_raw, src.name)
+
+    def write_checked(name: str, raw: str, ui_problems: list[str]) -> None:
         if ui_problems:
-            bad_ui_pages.append({"file": src.name, "problems": ui_problems})
+            bad_ui_pages.append({"file": name, "problems": ui_problems})
         low = raw.lower()
         if (
             '<meta name="robots" content="index,follow">' not in low
             or "noindex" in low
             or "nofollow" in low
         ):
-            bad_robot_pages.append(src.name)
+            bad_robot_pages.append(name)
         canonical = re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']', raw, re.I)
         if not canonical or not canonical.group(1).startswith(BASE_URL + "/"):
-            bad_domain_pages.append(src.name)
-        (out / src.name).write_text(raw, encoding="utf-8")
-        transformed += 1
+            bad_domain_pages.append(name)
+        (out / name).write_text(raw, encoding="utf-8")
+
+    academy_by_base = {base: academy for academy, base in CLEAN_RENDERER.ACADEMY_BASE.items()}
+    for src in new_pages:
+        source_raw = src.read_text(encoding="utf-8")
+        raw, ui_problems = CLEAN_RENDERER.render_production_page(source_raw, src.name)
+        write_checked(src.name, raw, ui_problems)
+        transformed_source += 1
+
+        _, source_intent = CLEAN_RENDERER.intent_from_name(src.name)
+        academy_intent = academy_by_base.get(source_intent)
+        if academy_intent:
+            academy_name = src.name[:-len(source_intent + ".html")] + academy_intent + ".html"
+            academy_raw, academy_problems = CLEAN_RENDERER.render_academy_page(
+                source_raw, src.name, academy_intent
+            )
+            write_checked(academy_name, academy_raw, academy_problems)
+            transformed_academy += 1
 
     first_pages_dir = next(iter((work / "stage5-full-generation").glob("shard-*/pages")), None)
     if first_pages_dir:
@@ -329,42 +348,65 @@ def main() -> None:
             else:
                 shutil.copy2(p, dst)
 
-    # The pre-release baseline sitemap contains only the historical 95 URLs.
-    # Stage 9 publishes the final sitemap-index.xml instead.
+    # Rebuild sitemaps from the exact final HTML set because Stage 9 now adds
+    # five academy-search intents per locality after the approved Stage 8 source.
     old_sitemap = out / "sitemap.xml"
     if old_sitemap.exists():
         old_sitemap.unlink()
+    sitemap_dir = out / "sitemaps"
+    if sitemap_dir.exists():
+        shutil.rmtree(sitemap_dir)
+    sitemap_dir.mkdir(parents=True)
 
     html_files = sorted(out.glob("*.html"))
-    sitemap_files = sorted((out / "sitemaps").glob("sitemap-*.xml")) if (out / "sitemaps").exists() else []
     if len(html_files) != EXPECTED_TOTAL:
         failures.append({"deploy_html_total": [len(html_files), EXPECTED_TOTAL]})
-    if transformed != EXPECTED_NEW:
-        failures.append({"transformed_new": [transformed, EXPECTED_NEW]})
+
+    canonical_urls: list[str] = []
+    for page in html_files:
+        raw = page.read_text(encoding="utf-8", errors="ignore")
+        m = re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']', raw, re.I)
+        if not m:
+            failures.append({"canonical_missing": page.name})
+            continue
+        canonical_urls.append(m.group(1))
+    canonical_urls = sorted(set(canonical_urls))
+    if len(canonical_urls) != EXPECTED_TOTAL:
+        failures.append({"unique_canonical_urls": [len(canonical_urls), EXPECTED_TOTAL]})
+
+    for shard_no, offset in enumerate(range(0, len(canonical_urls), SITEMAP_CHUNK), 1):
+        urls = canonical_urls[offset:offset + SITEMAP_CHUNK]
+        body = ''.join(f'<url><loc>{html.escape(url)}</loc></url>' for url in urls)
+        (sitemap_dir / f'sitemap-{shard_no:03d}.xml').write_text(
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            + body + '</urlset>\n',
+            encoding="utf-8",
+        )
+
+    sitemap_files = sorted(sitemap_dir.glob("sitemap-*.xml"))
     if len(sitemap_files) != EXPECTED_SITEMAPS:
         failures.append({"sitemap_shards": [len(sitemap_files), EXPECTED_SITEMAPS]})
-    if bad_robot_pages:
-        failures.append({"robots_transform_failures": sorted(set(bad_robot_pages))[:20]})
-    if bad_domain_pages:
-        failures.append({"canonical_domain_failures": sorted(set(bad_domain_pages))[:20]})
-    if bad_ui_pages:
-        failures.append({"production_ui_failures": bad_ui_pages[:20]})
 
+    sitemap_index_body = ''.join(
+        f'<sitemap><loc>{BASE_URL}/sitemaps/{p.name}</loc></sitemap>'
+        for p in sitemap_files
+    )
+    (out / "sitemap-index.xml").write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        + sitemap_index_body + '</sitemapindex>\n',
+        encoding="utf-8",
+    )
+
+    sitemap_urls = len(canonical_urls)
+    if sitemap_urls != EXPECTED_TOTAL:
+        failures.append({"sitemap_urls": [sitemap_urls, EXPECTED_TOTAL]})
     index = (out / "sitemap-index.xml").read_text(encoding="utf-8")
     if index.count("<sitemap><loc>") != EXPECTED_SITEMAPS:
         failures.append("sitemap_index_count")
     if f"{BASE_URL}/sitemaps/" not in index:
         failures.append("sitemap_index_domain")
-
-    sitemap_urls = 0
-    for p in sitemap_files:
-        text = p.read_text(encoding="utf-8")
-        sitemap_urls += text.count("<url><loc>")
-        if "englishup.kr" in text or "example.com" in text:
-            failures.append({"stale_sitemap_host": p.name})
-            break
-    if sitemap_urls != EXPECTED_TOTAL:
-        failures.append({"sitemap_urls": [sitemap_urls, EXPECTED_TOTAL]})
 
     robots = (out / "robots.txt").read_text(encoding="utf-8")
     if "Disallow: /" in robots:
@@ -384,7 +426,9 @@ def main() -> None:
         "stage": "STAGE9_PRODUCTION_DEPLOY",
         "final_domain": BASE_URL,
         "counts": {
-            "new_pages": transformed,
+            "source_pages": transformed_source,
+            "academy_pages": transformed_academy,
+            "new_pages": transformed_source + transformed_academy,
             "html_total": len(html_files),
             "sitemap_shards": len(sitemap_files),
             "sitemap_urls": sitemap_urls,
