@@ -29,10 +29,11 @@ CLEAN_RENDERER = _load_module(
 
 EXPECTED_SOURCE_NEW = 66937
 EXPECTED_ACADEMY_NEW = 25745
-EXPECTED_NEW = EXPECTED_SOURCE_NEW + EXPECTED_ACADEMY_NEW
+EXPECTED_CONVERSATION_NEW = 20596
+EXPECTED_NEW = EXPECTED_SOURCE_NEW + EXPECTED_ACADEMY_NEW + EXPECTED_CONVERSATION_NEW
 EXPECTED_PRESERVED = 95
 EXPECTED_TOTAL = EXPECTED_NEW + EXPECTED_PRESERVED
-EXPECTED_SITEMAPS = 186
+EXPECTED_SITEMAPS = 227
 SITEMAP_CHUNK = 500
 EXPECTED_REDIRECTS = 74
 BASE_URL = "https://englishpt.kr"
@@ -280,6 +281,7 @@ def main() -> None:
 
     transformed_source = 0
     transformed_academy = 0
+    transformed_conversation = 0
     bad_robot_pages: list[str] = []
     bad_domain_pages: list[str] = []
     bad_ui_pages: list[dict] = []
@@ -299,7 +301,12 @@ def main() -> None:
             bad_domain_pages.append(name)
         (out / name).write_text(raw, encoding="utf-8")
 
-    academy_by_base = {base: academy for academy, base in CLEAN_RENDERER.ACADEMY_BASE.items()}
+    derived_by_base: dict[str, list[tuple[str, str]]] = {}
+    for academy, base in CLEAN_RENDERER.ACADEMY_BASE.items():
+        derived_by_base.setdefault(base, []).append(("academy", academy))
+    for derived, base in CLEAN_RENDERER.CONV_DERIVED_BASE.items():
+        derived_by_base.setdefault(base, []).append(("conversation", derived))
+
     for src in new_pages:
         source_raw = src.read_text(encoding="utf-8")
         raw, ui_problems = CLEAN_RENDERER.render_production_page(source_raw, src.name)
@@ -307,14 +314,19 @@ def main() -> None:
         transformed_source += 1
 
         _, source_intent = CLEAN_RENDERER.intent_from_name(src.name)
-        academy_intent = academy_by_base.get(source_intent)
-        if academy_intent:
-            academy_name = src.name[:-len(source_intent + ".html")] + academy_intent + ".html"
-            academy_raw, academy_problems = CLEAN_RENDERER.render_academy_page(
-                source_raw, src.name, academy_intent
-            )
-            write_checked(academy_name, academy_raw, academy_problems)
-            transformed_academy += 1
+        for derived_kind, derived_intent in derived_by_base.get(source_intent, []):
+            derived_name = src.name[:-len(source_intent + ".html")] + derived_intent + ".html"
+            if derived_kind == "academy":
+                derived_raw, derived_problems = CLEAN_RENDERER.render_academy_page(
+                    source_raw, src.name, derived_intent
+                )
+                transformed_academy += 1
+            else:
+                derived_raw, derived_problems = CLEAN_RENDERER.render_conversation_derived_page(
+                    source_raw, src.name, derived_intent
+                )
+                transformed_conversation += 1
+            write_checked(derived_name, derived_raw, derived_problems)
 
     first_pages_dir = next(iter((work / "stage5-full-generation").glob("shard-*/pages")), None)
     if first_pages_dir:
@@ -348,8 +360,8 @@ def main() -> None:
             else:
                 shutil.copy2(p, dst)
 
-    # Rebuild sitemaps from the exact final HTML set because Stage 9 now adds
-    # five academy-search intents per locality after the approved Stage 8 source.
+    # Rebuild sitemaps from the exact final HTML set because Stage 9 adds
+    # five exam-academy intents plus four conversation-search intents per locality.
     old_sitemap = out / "sitemap.xml"
     if old_sitemap.exists():
         old_sitemap.unlink()
@@ -428,7 +440,8 @@ def main() -> None:
         "counts": {
             "source_pages": transformed_source,
             "academy_pages": transformed_academy,
-            "new_pages": transformed_source + transformed_academy,
+            "conversation_pages": transformed_conversation,
+            "new_pages": transformed_source + transformed_academy + transformed_conversation,
             "html_total": len(html_files),
             "sitemap_shards": len(sitemap_files),
             "sitemap_urls": sitemap_urls,
