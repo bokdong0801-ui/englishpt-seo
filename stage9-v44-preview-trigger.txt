@@ -1,1 +1,1 @@
-Deploy 22-intent reader-first Stage 9 preview including exam academies and English conversation academy/adult/worker/beginner pages.
+Deploy expanded 23-intent Stage 9 preview including 6 exam academy pages, 3 conversation academy pages, and beginner conversation.
