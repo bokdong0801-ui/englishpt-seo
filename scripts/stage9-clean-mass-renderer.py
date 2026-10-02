@@ -717,7 +717,8 @@ EXAM_READER_PILOT = {
 
 
 def exam_reader_pilot_enabled(intent: str) -> bool:
-    return os.environ.get("STAGE9_EXAM_UX_PILOT") == "1" and intent in EXAM_READER_PILOT_INTENTS
+    # Promoted from preview-only pilot to the production reader-first structure.
+    return intent in EXAM_READER_PILOT_INTENTS
 
 
 def exam_reader_roadmap(intent: str) -> str:
