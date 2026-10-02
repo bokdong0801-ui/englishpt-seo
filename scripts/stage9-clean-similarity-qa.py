@@ -9,7 +9,8 @@ INTENTS=[
  "elem-tutor","mid-conv","high-conv","univ-conv","jobseeker-conv",
  "biz-business-conv","housewife-conv","toeic","toeic-speaking","opic",
  "ielts","duolingo","toefl",
- "toeic-academy","toeic-speaking-academy","opic-academy","ielts-academy","toefl-academy"
+ "toeic-academy","toeic-speaking-academy","opic-academy","ielts-academy","toefl-academy",
+ "english-conv-academy","adult-english-conv-academy","worker-english-conv-academy","beginner-english-conv"
 ]
 TAG_RE=re.compile(r"<script.*?</script>|<style.*?</style>|<[^>]+>",re.S|re.I)
 TOK_RE=re.compile(r"[가-힣A-Za-z0-9]+")
