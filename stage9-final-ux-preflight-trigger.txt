@@ -1,1 +1,1 @@
-Run expanded Stage 9 preflight for 23 intents: 13 source + 6 exam academy + 3 conversation academy + beginner conversation.
+Run final reader-first + AI discovery Stage 9 preflight before production deploy.
