@@ -7,6 +7,7 @@ import hashlib
 import html
 import importlib.util
 import json
+import os
 import re
 from functools import lru_cache
 from pathlib import Path
@@ -531,6 +532,188 @@ def title_for(loc: dict, intent: str) -> str:
     return f'{loc["dong"]} {loc["service"]} | {suffix}'
 
 
+EXAM_READER_PILOT_INTENTS = {"ielts","opic","toeic","toeic-speaking","toefl"}
+
+EXAM_READER_PILOT = {
+    "ielts": {
+        "label":"IELTS 수업",
+        "headline":"4영역을 똑같이 공부하지 않고, 필요한 영역부터 비중을 나눕니다",
+        "sub":"목표 Band와 시험일을 확인한 뒤 Listening·Reading·Writing·Speaking을 따로 보고, 점수에 가장 큰 영향을 주는 영역부터 수업 비중을 조정합니다.",
+        "roadmap":[
+            ("Listening","놓치는 정보와 문제 유형을 확인하고, 다시 들었을 때 같은 부분을 잡을 수 있는지 봅니다."),
+            ("Reading","정답만 확인하지 않고 근거를 찾은 위치와 시간 사용을 함께 봅니다."),
+            ("Writing","첨삭을 읽는 데서 끝내지 않고, 수정 기준을 적용해 직접 다시 써봅니다."),
+            ("Speaking","Part별 답변을 녹음하고, 질문을 바꿔도 같은 내용을 자연스럽게 말할 수 있는지 확인합니다."),
+        ],
+        "outputs":[
+            ("Writing","첨삭 표시 + 다시 쓸 항목"),
+            ("Speaking","녹음 후 공백·반복 표현·답변 길이 체크"),
+            ("Reading","오답 근거와 시간 사용 기록"),
+            ("Listening","놓친 정보 유형과 다시 들을 포인트"),
+        ],
+        "note":"Academic/General 여부와 제출처 요구 점수는 상담 전에 함께 확인합니다.",
+    },
+    "opic": {
+        "label":"OPIc 수업",
+        "headline":"외운 스크립트보다, 질문이 달라져도 내 이야기로 이어가는 연습을 합니다",
+        "sub":"목표 등급과 시험일을 확인하고 설문에서 실제로 말할 수 있는 경험을 먼저 고릅니다. 익숙한 질문에서 답변 흐름을 만든 뒤 돌발·롤플레이로 넓혀갑니다.",
+        "roadmap":[
+            ("설문·주제","말할 경험이 충분한 주제를 골라 답변 소재를 먼저 정리합니다."),
+            ("기본 질문","첫 문장과 이야기 순서를 잡아 짧게라도 끝까지 말해봅니다."),
+            ("돌발 질문","준비한 경험을 다른 질문에도 바꿔 쓸 수 있도록 연습합니다."),
+            ("롤플레이","질문·요청·문제 해결처럼 목적이 있는 대화를 실제처럼 이어봅니다."),
+        ],
+        "outputs":[
+            ("녹음","공백·반복 표현·말하는 속도 확인"),
+            ("답변 흐름","시작-내용-마무리 순서를 짧게 정리"),
+            ("표현","자주 쓰는 표현과 고쳐야 할 표현 구분"),
+            ("다음 연습","다음 수업 전에 다시 말해볼 질문 선정"),
+        ],
+        "note":"답변을 길게 외우기보다 자주 쓰는 경험을 여러 질문에 활용하는 쪽에 초점을 둡니다.",
+    },
+    "toeic": {
+        "label":"TOEIC 수업",
+        "headline":"문제 수를 늘리기 전에, 점수를 자주 잃는 파트와 이유부터 찾습니다",
+        "sub":"최근 점수와 목표 점수, 시험일을 기준으로 LC·RC를 나눠보고 오답이 생기는 이유와 시간 사용을 함께 확인합니다.",
+        "roadmap":[
+            ("LC","Part별로 놓치는 이유가 어휘인지, 발음·속도인지, 질문 의도인지 나눠봅니다."),
+            ("RC","문법·어휘·독해를 구분하고 정답의 근거를 찾는 속도까지 확인합니다."),
+            ("오답","정답 해설을 옮기기보다 왜 틀렸는지 한 줄로 남겨 같은 실수를 줄입니다."),
+            ("시간 관리","실제 시험 순서와 남은 시간을 기준으로 어디에서 오래 머무는지 점검합니다."),
+        ],
+        "outputs":[
+            ("파트별 기록","반복해서 틀리는 유형 정리"),
+            ("오답 이유","문법·어휘·근거·시간 중 원인 표시"),
+            ("시간표","파트별 목표 풀이 시간 확인"),
+            ("다음 범위","다음 수업에서 먼저 볼 파트 선정"),
+        ],
+        "note":"시험이 가까워질수록 새 문제를 많이 추가하기보다 실제 시간 안에서 풀이 순서를 안정시키는 비중을 높입니다.",
+    },
+    "toeic-speaking": {
+        "label":"TOEIC Speaking 수업",
+        "headline":"11문항을 똑같이 연습하지 않고, 자주 흔들리는 유형부터 답하는 순서를 잡습니다",
+        "sub":"목표 등급과 시험일을 확인한 뒤 첫 문장, 답변 구조, 준비 시간, 말하는 속도 중 무엇이 가장 큰 영향을 주는지 먼저 봅니다.",
+        "roadmap":[
+            ("읽기·묘사","발음만 고치기보다 끊어 읽기와 핵심 정보 전달을 함께 봅니다."),
+            ("질문 응답","질문을 듣고 첫 문장을 빠르게 시작하는 연습부터 합니다."),
+            ("정보 활용","표·일정 정보를 확인하고 필요한 내용만 골라 답하는 순서를 익힙니다."),
+            ("의견 말하기","입장-이유-예시 순서로 제한 시간 안에 마무리하는 연습을 합니다."),
+        ],
+        "outputs":[
+            ("녹음","첫 문장까지 걸린 시간과 공백 확인"),
+            ("답변 구조","유형별로 사용할 간단한 답변 순서"),
+            ("표현 교정","반복 표현과 어색한 문장 수정"),
+            ("실전 기록","제한 시간 안에 끝냈는지 확인"),
+        ],
+        "note":"완성 답안을 통째로 외우기보다, 유형별 답변 순서를 익혀 새 질문에도 적용할 수 있게 합니다.",
+    },
+    "toefl": {
+        "label":"TOEFL 수업",
+        "headline":"4영역을 따로 준비하면서도, 통합형 문제는 한 흐름으로 연결합니다",
+        "sub":"목표 점수와 시험일을 기준으로 Reading·Listening·Speaking·Writing의 약점을 나눠보고, 읽고 들은 내용을 말하거나 쓰는 통합형까지 연결해 연습합니다.",
+        "roadmap":[
+            ("Reading","근거 위치와 문제 유형, 지문에 머무는 시간을 함께 확인합니다."),
+            ("Listening","강의·대화의 구조를 따라가며 메모해야 할 정보와 버릴 정보를 구분합니다."),
+            ("Speaking","메모를 짧게 정리하고 제한 시간 안에 핵심부터 말하는 연습을 합니다."),
+            ("Writing","자료 내용을 정리한 뒤 문단별 역할과 근거를 분명하게 써봅니다."),
+        ],
+        "outputs":[
+            ("Reading","문제 유형별 오답과 근거 위치"),
+            ("Listening","메모 방식과 놓친 정보"),
+            ("Speaking","녹음 후 구조·시간·표현 피드백"),
+            ("Writing","첨삭 + 다시 쓸 문장·문단"),
+        ],
+        "note":"통합형은 영역별 공부를 따로 끝낸 뒤 하는 것이 아니라, 읽기·듣기·메모·말하기/쓰기를 함께 연결해 확인합니다.",
+    },
+}
+
+
+def exam_reader_pilot_enabled(intent: str) -> bool:
+    return os.environ.get("STAGE9_EXAM_UX_PILOT") == "1" and intent in EXAM_READER_PILOT_INTENTS
+
+
+def exam_reader_roadmap(intent: str) -> str:
+    d=EXAM_READER_PILOT[intent]
+    cards=''.join(
+        f'<article class="exam-roadmap-card"><span>{i:02d}</span><h3>{esc(title)}</h3><p>{esc(body)}</p></article>'
+        for i,(title,body) in enumerate(d["roadmap"],1)
+    )
+    return (
+        '<section class="section exam-reader-roadmap" data-exam-reader-pilot="true"><div class="wrap">'
+        f'<p class="kicker">{esc(d["label"])}</p>'
+        f'<h2>{esc(d["headline"])}</h2>'
+        f'<p class="exam-reader-lead">{esc(d["sub"])}</p>'
+        f'<div class="exam-roadmap-grid">{cards}</div>'
+        '</div></section>'
+    )
+
+
+def exam_reader_outputs(intent: str) -> str:
+    d=EXAM_READER_PILOT[intent]
+    rows=''.join(
+        f'<div class="exam-output-row"><b>{esc(title)}</b><span>{esc(body)}</span></div>'
+        for title,body in d["outputs"]
+    )
+    return (
+        '<section class="section exam-reader-outputs"><div class="wrap exam-output-layout">'
+        '<div class="exam-output-copy">'
+        '<p class="kicker">수업 후 관리</p>'
+        '<h2>수업이 끝나면, 다음에 무엇을 연습할지가 남아야 합니다</h2>'
+        '<p>진도만 표시하지 않고 그날 잘된 부분과 다시 볼 부분을 나눠 다음 수업과 연결합니다.</p>'
+        f'<p class="exam-output-note">{esc(d["note"])}</p>'
+        '</div>'
+        f'<div class="exam-output-list">{rows}</div>'
+        '</div></section>'
+    )
+
+
+def remove_section_with_kicker(raw: str, kicker: str) -> str:
+    pat=re.compile(
+        r'<section\b[^>]*>(?:(?!</section>).)*?<p class="kicker">'
+        + re.escape(kicker)
+        + r'</p>(?:(?!</section>).)*?</section>',
+        re.S,
+    )
+    return pat.sub('',raw,count=1)
+
+
+def apply_exam_reader_pilot(raw: str, intent: str) -> str:
+    if not exam_reader_pilot_enabled(intent):
+        return raw
+
+    # Remove the report-like sequence that repeats the same diagnosis logic.
+    for kicker in (
+        "실제 막힘","자주 어려운 상황","시험 구조와 개인 약점",
+        "먼저 준비할 것","수업 진행","변화 확인","수업 기록 예시",
+    ):
+        raw=remove_section_with_kicker(raw,kicker)
+
+    roadmap=exam_reader_roadmap(intent)
+    outputs=exam_reader_outputs(intent)
+
+    # Put concrete exam content before the management system.
+    management_marker='<section class="section management">'
+    if management_marker in raw:
+        raw=raw.replace(management_marker,roadmap+management_marker,1)
+    else:
+        raw=raw.replace('</section><div class="trust">','</section>'+roadmap+'<div class="trust">',1)
+
+    # Show what is left after class immediately after the management section.
+    m=re.search(r'<section class="section management">.*?</section>',raw,re.S)
+    if m:
+        raw=raw[:m.end()]+outputs+raw[m.end():]
+    else:
+        raw=raw.replace('<section class="section mass-context">',outputs+'<section class="section mass-context">',1)
+
+    # Keep the page focused: comparison content comes after exam-specific detail.
+    raw=raw.replace(
+        '<p class="kicker">수업 비교 기준</p><h2>수업을 비교할 때는 이런 부분을 확인해보세요</h2>',
+        '<p class="kicker">수업을 고를 때</p><h2>설명보다 실제 관리 범위를 비교해보세요</h2>',
+        1,
+    )
+    return raw
+
+
 INTRO_CONTENT = {
     "elem-tutor": {
         "kicker":"초등 영어",
@@ -1041,6 +1224,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
 
     raw = humanize_visible_copy(raw, family)
     raw = rewrite_reader_headings(raw, loc, intent, family)
+    raw = apply_exam_reader_pilot(raw, intent)
     raw = raw.replace('</body>','<div class="mobile-sticky"><a href="#consultation-preview">무료 PT 진단 신청</a></div></body>',1)
 
     forbidden=[
