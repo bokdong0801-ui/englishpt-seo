@@ -85,6 +85,100 @@ def write_visual_assets(out: Path) -> None:
             (assets / f"{family}-{variant}.svg").write_text(svg, encoding="utf-8")
 
 
+
+REPRESENTATIVE_IMAGE_FAMILIES = {
+    "toeic": {
+        "label": "TOEIC · LC / RC",
+        "palette": ("#EDF4FA","#2E6FA9","#18334A"),
+        "accent2": "#8AB7D8",
+    },
+    "toeic-speaking": {
+        "label": "TOEIC SPEAKING · MIC / TIME",
+        "palette": ("#F2EEF7","#725184","#322640"),
+        "accent2": "#BCA8CB",
+    },
+    "opic": {
+        "label": "OPIc · STORY / ROLEPLAY",
+        "palette": ("#FFF1EA","#C66F3D","#4E2A1E"),
+        "accent2": "#E3A27D",
+    },
+    "ielts": {
+        "label": "IELTS · 4 SKILLS / BAND",
+        "palette": ("#EAF5F3","#258A83","#173D3A"),
+        "accent2": "#8CC8C3",
+    },
+    "toefl": {
+        "label": "TOEFL · R / L / S / W",
+        "palette": ("#F1EEFB","#6957A5","#302851"),
+        "accent2": "#B1A5D8",
+    },
+    "english-conv": {
+        "label": "ENGLISH CONVERSATION · DAILY SPEAK",
+        "palette": ("#FFF2F5","#C05678","#542638"),
+        "accent2": "#E8A7BC",
+    },
+    "adult-conv": {
+        "label": "ADULT CONVERSATION · LIFE / TRAVEL",
+        "palette": ("#F6F0E9","#A8754E","#4A3525"),
+        "accent2": "#D4B394",
+    },
+    "worker-conv": {
+        "label": "BUSINESS SPEAK · MEETING / PRESENT",
+        "palette": ("#EEF1EB","#496650","#1D3022"),
+        "accent2": "#9EB2A1",
+    },
+    "beginner-conv": {
+        "label": "BEGINNER · START SPEAK",
+        "palette": ("#EDF5FB","#3E89B5","#17394F"),
+        "accent2": "#9CC9E2",
+    },
+}
+
+
+def write_representative_candidate_assets(out: Path) -> None:
+    assets = out / "assets" / "images" / "representative"
+    assets.mkdir(parents=True, exist_ok=True)
+    for family, spec in REPRESENTATIVE_IMAGE_FAMILIES.items():
+        bg, accent, ink = spec["palette"]
+        accent2 = spec["accent2"]
+        label = spec["label"]
+        for variant in range(1,4):
+            dx=(variant-2)*28
+            dy=(variant-2)*18
+            # A people-first abstract tutoring scene: learner + tutor + learning object.
+            # It stays intentionally text-light so it works across local pages.
+            svg=f'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+<rect width="1200" height="720" fill="{bg}"/>
+<circle cx="{1020+dx}" cy="{120+dy}" r="150" fill="{accent}" opacity=".10"/>
+<circle cx="{155-dx}" cy="{625-dy}" r="175" fill="{accent2}" opacity=".14"/>
+<rect x="74" y="64" width="1052" height="592" rx="42" fill="#fff" stroke="{accent}" stroke-opacity=".18"/>
+<rect x="120" y="112" width="960" height="64" rx="22" fill="{bg}"/>
+<text x="158" y="154" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="{accent}" letter-spacing="1.5">{label}</text>
+
+<!-- tutor -->
+<circle cx="{420+dx}" cy="{300+dy}" r="72" fill="{accent2}" opacity=".92"/>
+<path d="M{310+dx} {515+dy} q110 -165 220 0 v55 h-220z" fill="{accent2}" opacity=".85"/>
+<!-- learner -->
+<circle cx="{755-dx}" cy="{290-dy}" r="68" fill="{accent}" opacity=".88"/>
+<path d="M{650-dx} {520-dy} q105 -160 210 0 v50 h-210z" fill="{accent}" opacity=".76"/>
+
+<!-- desk / learning object -->
+<rect x="265" y="545" width="670" height="34" rx="17" fill="{ink}" opacity=".16"/>
+<rect x="{535+dx}" y="{400+dy}" width="190" height="118" rx="12" fill="{ink}" opacity=".90"/>
+<rect x="{555+dx}" y="{418+dy}" width="150" height="80" rx="8" fill="{bg}"/>
+<path d="M{585+dx} {463+dy} h92" stroke="{accent}" stroke-width="10" stroke-linecap="round"/>
+<path d="M{600+dx} {488+dy} h62" stroke="{accent2}" stroke-width="8" stroke-linecap="round"/>
+
+<!-- activity accents -->
+<circle cx="{355+dx}" cy="{250+dy}" r="10" fill="{accent}"/>
+<circle cx="{830-dx}" cy="{232-dy}" r="10" fill="{accent2}"/>
+<path d="M{495+dx} {338+dy} C560 290, 650 288, {700-dx} {335-dy}" fill="none" stroke="{accent}" stroke-width="7" stroke-linecap="round" stroke-dasharray="10 14" opacity=".55"/>
+
+<rect x="152" y="606" width="{220+variant*26}" height="14" rx="7" fill="{accent}" opacity=".20"/>
+<rect x="152" y="632" width="{330-variant*22}" height="12" rx="6" fill="{ink}" opacity=".10"/>
+</svg>'''
+            (assets / f"{family}-{variant}.svg").write_text(svg, encoding="utf-8")
+
 ROBOTS_RE = re.compile(
     r'<meta\s+name=["\']robots["\']\s+content=["\']noindex\s*,\s*nofollow["\']\s*/?>',
     re.I,
@@ -382,6 +476,7 @@ def main() -> None:
             if src.exists():
                 shutil.copy2(src, out / asset)
     write_visual_assets(out)
+    write_representative_candidate_assets(out)
 
     production_assets = {
         "pilot.css": ROOT / "assets" / "stage9-mass-production.css",
