@@ -164,8 +164,47 @@ jobs:
           <h1>V4.4 + Reader-first + 23개 검색의도</h1>
           <p>기존 13개 대표 페이지, 시험 학원 검색 페이지 6개, 영어회화학원·성인영어회화학원·직장인영어회화학원·왕초보영어회화 4개를 같은 Production 생성기에서 뽑았습니다.</p>
           <div class="note"><b>확인 포인트</b><p>시험별 색상 변화, 첫 화면의 가독성, 학원 검색 페이지의 비교 설명, 관리 과정, PC/모바일 반응형을 확인해주세요. 이 Preview는 검색엔진 색인을 막아두었습니다.</p></div>
+          <p><a href="/image-review.html" style="display:inline-block;padding:12px 16px;border-radius:999px;background:#14201A;color:#fff;text-decoration:none;font-weight:900">대표이미지 후보 27개 비교하기 →</a></p>
           <div class="grid">{cards}</div></main></body></html>'''
           (out/'index.html').write_text(index,encoding='utf-8')
+
+          image_specs=[
+              ('toeic','토익'),
+              ('toeic-speaking','토익스피킹'),
+              ('opic','오픽'),
+              ('ielts','아이엘츠'),
+              ('toefl','토플'),
+              ('english-conv','영어회화'),
+              ('adult-conv','성인영어회화'),
+              ('worker-conv','직장인영어회화'),
+              ('beginner-conv','왕초보영어회화'),
+          ]
+          image_cards=[]
+          for family,label in image_specs:
+              options=''.join(
+                  f'<figure><img src="/assets/images/representative/{family}-{v}.svg" alt="{html.escape(label)} 대표이미지 후보 {v}"><figcaption>{html.escape(label)} 후보 {v}</figcaption></figure>'
+                  for v in (1,2,3)
+              )
+              image_cards.append(f'<section><h2>{html.escape(label)}</h2><div class="image-grid">{options}</div></section>')
+          image_review=f'''<!doctype html><html lang="ko"><head><meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <meta name="robots" content="noindex,nofollow">
+          <title>ENGLISH PT 대표이미지 후보 비교</title>
+          <style>
+          *{{box-sizing:border-box}}body{{margin:0;font-family:Pretendard,"Apple SD Gothic Neo",Arial,sans-serif;background:#F7F5EF;color:#14201A}}
+          .wrap{{width:min(1180px,calc(100% - 36px));margin:0 auto;padding:46px 0}}
+          a{{color:#315F4C;font-weight:900;text-decoration:none}}h1{{font-size:clamp(30px,5vw,50px);margin:8px 0 14px}}
+          h2{{font-size:22px;margin:34px 0 12px}}p{{color:#66716B;line-height:1.7}}
+          .image-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}}
+          figure{{margin:0;background:#fff;border:1px solid #D7DDD8;border-radius:18px;overflow:hidden}}
+          img{{display:block;width:100%;height:auto;aspect-ratio:5/3;object-fit:cover}}
+          figcaption{{padding:12px 14px;font-size:13px;font-weight:800}}
+          @media(max-width:760px){{.image-grid{{grid-template-columns:1fr}}.wrap{{padding:30px 0}}}}
+          </style></head><body><main class="wrap"><a href="/">← Preview 목록으로</a>
+          <h1>대표이미지 후보 27개</h1>
+          <p>토익·토스·OPIc·IELTS·TOEFL·영어회화·성인·직장인·왕초보 9개 키워드군마다 3개씩 비교할 수 있습니다. 실제 각 페이지에는 현재 후보 1~2 중 하나를 기본 이미지로 연결해두었습니다.</p>
+          {''.join(image_cards)}</main></body></html>'''
+          (out/'image-review.html').write_text(image_review,encoding='utf-8')
           (out/'_headers').write_text('/*\n  X-Robots-Tag: noindex, nofollow\n',encoding='utf-8')
           (out/'ACADEMY_PREVIEW_PAGES.json').write_text(json.dumps(academy_names,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
