@@ -219,28 +219,26 @@ TITLE_VARIANTS = {
 
 EMAILJS_TAG = '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>'
 def consultation_form(loc: dict, h1: str) -> str:
-    return f'''<form id="pilotForm" class="lead-form">
+    return f'''<form id="leadForm" class="lead-form">
 <label>이름 <span>*</span><input id="leadName" name="name" autocomplete="name" required></label>
 <label>연락처 <span>*</span><input id="leadPhone" name="phone" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required></label>
 <label>지역 <span>*</span><input id="leadArea" name="area" value="{esc(loc["dong"])}" required></label>
-<label>영어를 사용하는 목적<select id="leadPurpose" name="purpose">
-<option>회화·말하기</option><option>업무·비즈니스</option><option>시험·자격</option>
-<option>학교 영어</option><option>기초 재정리</option><option>아직 잘 모르겠음</option>
-</select></label>
-<fieldset class="full"><legend>현재 가장 어려운 점</legend>
+<label>영어를 사용하는 목적<select id="leadPurpose" name="purpose"><option>회화·말하기</option><option>업무·비즈니스</option><option>시험·자격</option><option>학교 영어</option><option>기초 재정리</option><option>아직 잘 모르겠음</option></select></label>
+<fieldset><legend>현재 가장 어려운 점</legend>
 <label class="choice"><input type="radio" name="difficulty" value="말이 바로 나오지 않음" checked> 말이 바로 나오지 않음</label>
 <label class="choice"><input type="radio" name="difficulty" value="기초 문장 만들기가 어려움"> 기초 문장 만들기가 어려움</label>
 <label class="choice"><input type="radio" name="difficulty" value="시험·학교 오답 원인을 모르겠음"> 시험·학교 오답 원인을 모르겠음</label>
 <label class="choice"><input type="radio" name="difficulty" value="무엇부터 해야 할지 모르겠음"> 무엇부터 해야 할지 모르겠음</label>
 </fieldset>
-<label class="full">추가로 궁금한 점<textarea id="leadMessage" name="message" rows="3" placeholder="현재 수준, 목표, 일정 등"></textarea></label>
+<label>추가로 궁금한 점<textarea id="leadMessage" name="message" rows="3" placeholder="현재 수준, 목표, 일정 등"></textarea></label>
 <input type="hidden" id="leadClass" name="wantedClass" value="{esc(h1)}">
 <label class="privacy-check"><input id="leadConsent" name="consent" type="checkbox" required> <span>상담을 위한 개인정보 수집·이용에 동의합니다.</span></label>
-<details class="privacy-detail full"><summary>수집·이용 안내</summary><p>수집 항목: 이름, 연락처, 지역, 상담 내용. 이용 목적: 영어 학습 상담 및 연락. 상담 목적이 끝난 개인정보는 관계 법령상 보존 의무가 없는 한 지체 없이 파기합니다.</p></details>
-<div class="submit-row"><button class="btn primary submit-lead" type="submit">무료 PT 진단 신청 →</button><a class="btn phone" href="tel:+821050068027">전화 010-5006-8027</a></div>
-<p class="form-alt full">전송이 어려운 경우 <a href="tel:01050068027">010-5006-8027</a> 또는 <a href="mailto:cicada3865@naver.com">cicada3865@naver.com</a>로 문의할 수 있습니다.</p>
-<p class="pilot-status lead-status full" role="status" aria-live="polite"></p>
+<details class="privacy-detail"><summary>수집·이용 안내</summary><p>수집 항목: 이름, 연락처, 지역, 상담 내용. 이용 목적: 영어 학습 상담 및 연락. 상담 목적이 끝난 개인정보는 관계 법령상 보존 의무가 없는 한 지체 없이 파기합니다.</p></details>
+<button class="submit-lead" type="submit">무료 PT 진단 신청 →</button>
+<p class="form-alt">전송이 어려운 경우 <a href="tel:01050068027">010-5006-8027</a> 또는 <a href="mailto:cicada3865@naver.com">cicada3865@naver.com</a>로 문의할 수 있습니다.</p>
+<div class="pilot-status lead-status" role="status" aria-live="polite"></div>
 </form>'''
+
 
 
 IMAGE_FAMILY = {
@@ -1788,7 +1786,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     if EMAILJS_TAG not in raw:
         raw = raw.replace('<script defer src="pilot.js"></script>', EMAILJS_TAG+'<script defer src="pilot.js"></script>',1)
 
-    raw, n = re.subn(r'<form id="pilotForm">.*?</form>', consultation_form(loc, h1), raw, count=1, flags=re.S)
+    raw, n = re.subn(r'<form id="(?:pilotForm|leadForm)"[^>]*>.*?</form>', consultation_form(loc, h1), raw, count=1, flags=re.S)
     if n!=1:
         problems.append("live_form")
 
