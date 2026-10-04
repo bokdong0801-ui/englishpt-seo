@@ -306,6 +306,17 @@ button,a{-webkit-tap-highlight-color:transparent}
 .lead-form legend{padding:0 6px;font-size:13px;font-weight:900}
 .lead-form .choice{display:flex;grid-auto-flow:column;justify-content:start;align-items:center;gap:8px;padding:7px 0;font-weight:650;color:var(--ink)}
 .lead-form .choice input{width:auto}
+.lead-form fieldset,
+.lead-form .privacy-detail,
+.lead-form .submit-lead,
+.lead-form .form-alt,
+.lead-form .lead-status{grid-column:1/-1}
+.submit-lead{
+  width:100%;border:0;border-radius:999px;padding:14px 18px;
+  background:var(--accent);color:#fff;font-weight:900;cursor:pointer;
+  box-shadow:0 8px 22px rgba(17,31,25,.10)
+}
+.submit-lead:disabled{opacity:.6;cursor:wait}
 .privacy-detail{border-top:1px solid var(--line);padding-top:8px}
 .privacy-detail summary{cursor:pointer;font-size:12.5px;font-weight:800;color:var(--muted)}
 .privacy-detail p{margin:9px 0 0;color:var(--muted);font-size:12px}
