@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "defaults": {
+    "ielts": {
+      "src": "/assets/images/ielts-default.webp",
+      "alt": "아이엘츠 1:1 수업 이미지",
+      "caption": "Listening·Reading·Writing·Speaking 4영역을 나눠 현재 약점부터 확인합니다.",
+      "width": 1200,
+      "height": 720
+    },
+    "opic": {
+      "src": "/assets/images/opic-default.webp",
+      "alt": "오픽 1:1 말하기 수업 이미지",
+      "width": 1200,
+      "height": 720
+    }
+  },
+  "pages": {
+    "dalseo-songhyeondong-ielts.html": {
+      "src": "/assets/images/songhyeondong-ielts.webp",
+      "alt": "송현동 아이엘츠과외 수업 이미지",
+      "caption": "송현동 아이엘츠과외는 목표 Band와 시험일을 확인한 뒤 필요한 영역부터 준비합니다.",
+      "width": 1200,
+      "height": 720
+    },
+    "dalseo-songhyeondong-opic.html": {
+      "src": "https://example.com/songhyeondong-opic.webp",
+      "alt": "송현동 오픽과외 말하기 수업 이미지",
+      "width": 1200,
+      "height": 720
+    }
+  }
+}
