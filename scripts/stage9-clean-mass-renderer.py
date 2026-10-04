@@ -629,8 +629,12 @@ def _topic_modules(loc: dict, intent: str, family: str, audience: str) -> list[d
     base_intent = ACADEMY_BASE.get(intent, intent)
     if family == "exam" and base_intent == "toeic-speaking":
         count = 6
-    elif family == "exam" and base_intent == "opic":
+    elif family == "exam" and base_intent == "opic" and intent in ACADEMY_ORDER:
         count = 6
+    elif family == "exam" and base_intent == "opic":
+        count = 7
+    elif family == "exam" and intent == "toefl-academy":
+        count = 7
     elif family == "exam" and intent in ACADEMY_ORDER and base_intent in EXAM_READER_PILOT_INTENTS:
         count = 6
     elif family == "exam" and base_intent in EXAM_READER_PILOT_INTENTS:
