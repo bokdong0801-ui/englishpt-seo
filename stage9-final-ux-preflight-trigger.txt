@@ -1,1 +1,1 @@
-Run Stage 9 preflight after matching Songhyeondong consultation form and adding per-intent page images.
+Run final Stage 9 preflight after Songhyeondong consultation form alignment and safe per-page image mapping support.
