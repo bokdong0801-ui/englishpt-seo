@@ -1,1 +1,1 @@
-Run Stage 9 final preflight with representative images assigned across 23 intents and 27 candidate visuals generated.
+Run image-enabled Stage 9 preflight after reducing repeated support modules in high-similarity intents.
