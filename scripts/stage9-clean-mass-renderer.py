@@ -281,24 +281,62 @@ IMAGE_CAPTION = {
 }
 
 
-def visual_asset(loc: dict, intent: str) -> tuple[str,str]:
+@lru_cache(maxsize=1)
+def page_image_config() -> dict:
+    path = ROOT / "data" / "stage9-page-images.json"
+    if not path.exists():
+        return {"defaults": {}, "pages": {}}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return {"defaults": {}, "pages": {}}
+        data.setdefault("defaults", {})
+        data.setdefault("pages", {})
+        return data
+    except Exception:
+        return {"defaults": {}, "pages": {}}
+
+
+def visual_asset(loc: dict, intent: str) -> dict | None:
+    config = page_image_config()
+    page_key = f'{loc["slug"]}-{intent}.html'
+    item = config.get("pages", {}).get(page_key)
+    if item is None:
+        item = config.get("defaults", {}).get(intent)
+    if not item:
+        return None
+    if isinstance(item, str):
+        item = {"src": item}
+    if not isinstance(item, dict) or not item.get("src"):
+        return None
     family = IMAGE_FAMILY.get(intent, "conversation")
-    digest = hashlib.sha256(f'{loc["slug"]}|{intent}|visual-v1'.encode()).hexdigest()
-    variant = 1 + (int(digest[:8],16) % 3)
-    return f'/assets/images/{family}-{variant}.svg', family
+    return {
+        "src": item["src"],
+        "alt": item.get("alt") or f'{loc["dong"]} {loc["service"]} 수업 이미지',
+        "caption": item.get("caption") or IMAGE_CAPTION.get(family, ""),
+        "width": int(item.get("width", 1200)),
+        "height": int(item.get("height", 720)),
+        "loading": item.get("loading", "lazy"),
+    }
 
 
 def visual_section(loc: dict, intent: str, h1: str) -> str:
-    src, family = visual_asset(loc,intent)
-    caption = IMAGE_CAPTION[family]
+    asset = visual_asset(loc, intent)
+    if not asset:
+        return ""
+    caption = (
+        f'<figcaption>{esc(asset["caption"])}</figcaption>'
+        if asset.get("caption") else ""
+    )
     return (
         '<section class="visual-break"><div class="wrap">'
         '<figure class="learning-visual">'
-        f'<img src="{src}" width="1200" height="720" loading="lazy" decoding="async" '
-        f'alt="{esc(loc["dong"])} {esc(loc["service"])} 수업 이미지">'
-        f'<figcaption>{esc(caption)}</figcaption>'
+        f'<img src="{esc(asset["src"])}" width="{asset["width"]}" height="{asset["height"]}" '
+        f'loading="{esc(asset["loading"])}" decoding="async" alt="{esc(asset["alt"])}">'
+        + caption +
         '</figure></div></section>'
     )
+
 
 
 MASS_SLOTS = [
@@ -1860,7 +1898,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         'name="name"','name="phone"','name="area"','name="purpose"','name="difficulty"','name="consent"',
         'class="breadcrumb wrap"','class="mobile-sticky"',
         EMAILJS_TAG,'class="section mass-context"',
-        'class="site-header"','class="hero simple-hero"','class="snapshot"','class="trust"','class="section management"','class="visual-break"','class="learning-visual"',
+        'class="site-header"','class="hero simple-hero"','class="snapshot"','class="trust"','class="section management"',
         '"@type":"Service"','"@type":"WebSite"','"mainEntity":{"@id":',
     ]
     if any(x not in raw for x in required):
