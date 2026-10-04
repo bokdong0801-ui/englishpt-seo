@@ -630,9 +630,13 @@ def _topic_modules(loc: dict, intent: str, family: str, audience: str) -> list[d
     if family == "exam" and base_intent == "toeic-speaking":
         count = 6
     elif family == "exam" and base_intent == "opic":
-        count = 10
+        count = 6
+    elif family == "exam" and intent in ACADEMY_ORDER and base_intent in EXAM_READER_PILOT_INTENTS:
+        count = 6
     elif family == "exam" and base_intent in EXAM_READER_PILOT_INTENTS:
         count = 8
+    elif intent == "worker-english-conv-academy":
+        count = 5
     elif intent in {"univ-conv","jobseeker-conv"}:
         count = 7
     else:
