@@ -1,1 +1,1 @@
-Redeploy latest 23-intent Stage 9 preview from current production renderer after AI discovery/GEO additions.
+Redeploy Stage 9 preview with representative images and 27-image comparison page.
