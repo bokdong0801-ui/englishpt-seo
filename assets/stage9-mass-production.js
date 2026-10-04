@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded",()=>{
-  const forms=document.querySelectorAll("#pilotForm");
+  const forms=document.querySelectorAll("#pilotForm,#leadForm");
   if(window.emailjs){try{emailjs.init({publicKey:"eJdMKTqwA8M35JTQJsGTd"});}catch(e){}}
   forms.forEach(form=>{
     form.addEventListener("submit",async e=>{
