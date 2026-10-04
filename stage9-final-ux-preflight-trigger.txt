@@ -1,1 +1,1 @@
-Run final Stage 9 preflight after Songhyeondong consultation form alignment and safe per-page image mapping support.
+Run Stage 9 final preflight with representative images assigned across 23 intents and 27 candidate visuals generated.
