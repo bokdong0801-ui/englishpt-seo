@@ -223,13 +223,13 @@ def consultation_form(loc: dict, h1: str) -> str:
 <label>이름 <span>*</span><input id="leadName" name="name" autocomplete="name" required></label>
 <label>연락처 <span>*</span><input id="leadPhone" name="phone" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required></label>
 <label>지역 <span>*</span><input id="leadArea" name="area" value="{esc(loc["dong"])}" required></label>
-<label class="full">상담 내용 <small>(선택)</small><textarea id="leadMessage" name="message" rows="4" placeholder="영어를 사용하는 목적, 현재 가장 어려운 점, 목표 점수·시험일이 있다면 함께 적어주세요."></textarea></label>
+<label class="full">문의내용 <small>(선택)</small><textarea id="leadMessage" name="message" rows="4" placeholder="궁금한 점이나 상담받고 싶은 내용을 자유롭게 적어주세요."></textarea></label>
 <input type="hidden" id="leadClass" name="wantedClass" value="{esc(h1)}">
 <label class="privacy-check"><input id="leadConsent" name="consent" type="checkbox" required> <span>상담을 위한 개인정보 수집·이용에 동의합니다.</span></label>
-<details class="privacy-detail"><summary>수집·이용 안내</summary><p>수집 항목: 이름, 연락처, 지역, 상담 내용. 이용 목적: 영어 학습 상담 및 연락. 상담 목적이 끝난 개인정보는 관계 법령상 보존 의무가 없는 한 지체 없이 파기합니다.</p></details>
+<details class="privacy-detail"><summary>수집·이용 안내</summary><p>수집 항목: 이름, 연락처, 지역, 문의내용. 이용 목적: 영어 학습 상담 및 연락. 상담 목적이 끝난 개인정보는 관계 법령상 보존 의무가 없는 한 지체 없이 파기합니다.</p></details>
 <button class="submit-lead" type="submit">무료 PT 진단 신청 →</button>
 <p class="form-alt">전송이 어려운 경우 <a href="tel:01050068027">010-5006-8027</a> 또는 <a href="mailto:cicada3865@naver.com">cicada3865@naver.com</a>로 문의할 수 있습니다.</p>
-<div class="pilot-status lead-status" role="status" aria-live="polite"></div>
+<div id="leadStatus" class="pilot-status lead-status" role="status" aria-live="polite"></div>
 </form>'''
 
 
