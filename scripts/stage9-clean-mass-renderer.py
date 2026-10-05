@@ -260,16 +260,16 @@ IMAGE_FAMILY = {
 }
 
 IMAGE_CAPTION = {
-    "school":"학교 일정과 현재 수준을 함께 보면서 필요한 영어부터 차근차근 준비합니다.",
-    "school-talk":"학교 영어와 발표·질문 대응을 실제 말하기 연습으로 연결합니다.",
-    "campus":"발표·세미나·면접처럼 실제 대학생활에서 영어를 써야 하는 상황을 중심으로 준비합니다.",
-    "interview":"자기소개와 경험 답변을 외우는 데서 끝내지 않고 질문이 달라져도 이어갈 수 있게 연습합니다.",
-    "business":"회의·발표·전화처럼 가까운 업무 상황을 기준으로 실제로 쓸 표현을 연습합니다.",
-    "conversation":"설명을 많이 듣는 것보다 직접 질문을 듣고 답하고, 고친 표현을 다시 말하는 시간을 늘립니다.",
-    "toeic":"LC·RC를 나눠 반복 오답과 시간 사용을 확인하고 시험일까지 필요한 파트에 집중합니다.",
-    "speaking":"답변을 직접 녹음하고 다시 들어보며 첫 문장·답변 길이·시간 사용을 구체적으로 확인합니다.",
-    "four-skills":"Listening·Reading·Writing·Speaking을 나눠 보고, 목표 점수를 막는 영역에 더 많은 시간을 배정합니다.",
-    "digital-test":"실제 시험 화면과 시간 흐름에 익숙해지면서 말하기·쓰기 응답까지 끝까지 완성하는 연습을 합니다.",
+    "school":"학교 일정과 현재 수준에 맞춰 필요한 영어부터 준비합니다.",
+    "school-talk":"학교 영어를 발표·질문 대응 말하기로 연결합니다.",
+    "campus":"발표·세미나·면접에 필요한 영어부터 준비합니다.",
+    "interview":"영어면접 답변을 질문에 맞게 말하는 연습을 합니다.",
+    "business":"회의·발표·전화에 필요한 업무 영어를 연습합니다.",
+    "conversation":"직접 말하고 고친 표현을 다시 말하는 시간을 늘립니다.",
+    "toeic":"LC·RC 오답과 시간 사용을 확인해 필요한 파트부터 관리합니다.",
+    "speaking":"답변을 녹음하며 구성과 제한 시간을 함께 점검합니다.",
+    "four-skills":"4영역을 나눠 목표 점수에 필요한 영역부터 준비합니다.",
+    "digital-test":"시험 흐름에 익숙해지며 말하기·쓰기 응답을 연습합니다.",
 }
 
 
@@ -308,7 +308,7 @@ def visual_asset(loc: dict, intent: str) -> dict | None:
         "caption": item.get("caption") or IMAGE_CAPTION.get(family, ""),
         "width": int(item.get("width", 1200)),
         "height": int(item.get("height", 720)),
-        "loading": item.get("loading", "lazy"),
+        "loading": item.get("loading", "eager"),
     }
 
 
@@ -1793,6 +1793,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         '<a class="btn primary" href="#detail">내용 보기</a>'
         '<a class="btn ghost" href="#consultation-preview">무료 PT 진단</a>'
         '</div></div></section>'
+        + visual_section(loc,intent,h1)
     )
     raw = re.sub(r'<section class="hero">.*?</section>', hero_html, raw, count=1, flags=re.S)
 
@@ -1813,7 +1814,6 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
             '<div class="intro-copy">' + intro_copy + '</div>'
             + v44_snapshot(loc, family)
             + '</div></div></section>' + v44_trust(family)
-            + visual_section(loc,intent,h1)
             + academy_compare_section(loc,intent)
             + management_section(loc,intent,family)
         )
