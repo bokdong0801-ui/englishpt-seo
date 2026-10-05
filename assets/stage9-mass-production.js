@@ -10,15 +10,9 @@ document.addEventListener("DOMContentLoaded",()=>{
       const name=form.querySelector('[name="name"]')?.value.trim()||"";
       const phone=form.querySelector('[name="phone"]')?.value.trim()||"";
       const area=form.querySelector('[name="area"]')?.value.trim()||"";
-      const purpose=form.querySelector('[name="purpose"]')?.value.trim()||"";
-      const difficulty=form.querySelector('[name="difficulty"]:checked')?.value||"";
       const extra=form.querySelector('[name="message"]')?.value.trim()||"";
       const wantedClass=form.querySelector('[name="wantedClass"]')?.value.trim()||document.querySelector("h1")?.textContent.trim()||document.title;
-      const message=[
-        "[영어 사용 목적] "+(purpose||"(미입력)"),
-        "[현재 가장 어려운 점] "+(difficulty||"(미입력)"),
-        "[추가 문의] "+(extra||"(미입력)")
-      ].join("\n");
+      const message="[상담 내용] "+(extra||"(미입력)");
       if(btn){btn.disabled=true;btn.textContent="전송 중...";}
       if(status) status.textContent="";
       try{
