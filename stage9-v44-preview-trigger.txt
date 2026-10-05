@@ -5,3 +5,4 @@ Redeploy final V2 thumbnails + homepage SEO + five-page QA.
 Redeploy latest five-page QA preview after preflight pass.
 Redeploy after current homepage production-package fix and final five-page QA.
 Redeploy Korean learning flow and inquiry copy preview.
+Redeploy Hero-first representative image mobile QA preview.
