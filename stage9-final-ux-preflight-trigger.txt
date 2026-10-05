@@ -7,3 +7,4 @@ Run image-enabled Stage 9 preflight after OPIc and TOEFL academy similarity fix.
 2026-10-05 current-homepage-stage9-package-fix
 2026-10-05 remove-stale-home-description-assertion
 2026-10-05 korean-home-flow-and-inquiry-copy-refresh
+2026-10-05 hero-image-first-caption-mobile-qa
