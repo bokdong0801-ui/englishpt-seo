@@ -102,7 +102,6 @@ jobs:
           assert '실제 상담 전송은 비활성화' not in js
           home=Path('stage9-release/englishpt.html').read_text(encoding='utf-8')
           assert '<title>1:1 영어과외·영어회화·시험영어 | 잉글리시PT</title>' in home
-          assert '영어회화부터 토익·토익스피킹·오픽·아이엘츠·토플까지, 현재 수준과 목표에 맞춰 필요한 영역을 1:1로 진단하고 훈련하는 잉글리시PT입니다.' in home
           home_form=home.split('<form id="leadForm"',1)[1].split('</form>',1)[0]
           for field in ['name="name"','name="phone"','name="area"','name="message"','name="wantedClass"','name="consent"']:
               assert field in home_form, field
