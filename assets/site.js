@@ -13,9 +13,8 @@
   if(form) form.addEventListener('submit',async function(e){
     e.preventDefault(); const st=document.getElementById('leadStatus'); const btn=form.querySelector('.submit-lead');
     if(!form.reportValidity()) return;
-    const diff=form.querySelector('input[name="difficulty"]:checked')?.value||'';
-    const raw=document.getElementById('leadMessage').value.trim();
-    const msg='[목적] '+document.getElementById('leadPurpose').value+'\n[현재 어려움] '+diff+'\n[추가 문의] '+(raw||'(없음)');
+    const raw=document.getElementById('leadMessage')?.value.trim()||'';
+    const msg='[문의내용] '+(raw||'(미입력)');
     btn.disabled=true;btn.textContent='전송 중...';st.textContent='';
     try{
       if(!window.emailjs) throw new Error('EmailJS unavailable');
