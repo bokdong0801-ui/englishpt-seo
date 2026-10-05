@@ -115,9 +115,12 @@ jobs:
               assert 'class="snapshot"' in raw, p.name
               assert 'class="trust"' in raw, p.name
               assert 'class="learning-visual"' in raw, p.name
+              assert 'name="name"' in raw, p.name
+              assert 'name="phone"' in raw, p.name
               assert 'name="area"' in raw, p.name
-              assert 'name="purpose"' in raw, p.name
-              assert 'name="difficulty"' in raw, p.name
+              assert 'name="message"' in raw, p.name
+              assert 'name="wantedClass"' in raw, p.name
+              assert 'name="consent"' in raw, p.name
               title=raw.split('<title>',1)[1].split('</title>',1)[0]
               assert 'ENGLISH PT' not in title, (p.name,title)
               assert ' | ' in title, (p.name,title)
