@@ -238,6 +238,28 @@ def _plain_h1(raw: str) -> str:
     return html.unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip()
 
 
+def simplify_preserved_consultation(raw: str) -> tuple[str, bool]:
+    """Keep preserved pages intact except for the shared consultation form contract."""
+    if '<form id="leadForm"' not in raw:
+        return raw, False
+    area_m = re.search(r'id="leadArea"[^>]*value="([^"]*)"', raw, re.I)
+    area = html.unescape(area_m.group(1)).strip() if area_m else "송현동"
+    h1 = _plain_h1(raw) or "잉글리시PT"
+    new_form = CLEAN_RENDERER.consultation_form({"dong": area}, h1)
+    updated, n = re.subn(
+        r'<form id="leadForm"[^>]*>.*?</form>',
+        new_form,
+        raw,
+        count=1,
+        flags=re.S | re.I,
+    )
+    updated = updated.replace(
+        "과정을 먼저 고르지 않아도 됩니다. 현재 목표와 가장 어려운 지점을 남겨주시면 상담에 필요한 내용을 정리해 연락드립니다.",
+        "과정을 먼저 고르지 않아도 됩니다. 궁금한 점이나 상담받고 싶은 내용을 자유롭게 남겨주세요.",
+    )
+    return updated, n == 1
+
+
 def _replace_kicker_h2(raw: str, kicker: str, heading: str) -> str:
     pattern = re.compile(
         r'(<p class="kicker">' + re.escape(kicker) + r'</p><h2>).*?(</h2>)',
@@ -415,6 +437,11 @@ def main() -> None:
         failures.append("rollback_root_missing")
     else:
         shutil.copytree(rollback, out, dirs_exist_ok=True)
+        for preserved_page in sorted(out.glob("*.html")):
+            preserved_raw = preserved_page.read_text(encoding="utf-8")
+            preserved_raw, changed = simplify_preserved_consultation(preserved_raw)
+            if changed:
+                preserved_page.write_text(preserved_raw, encoding="utf-8")
 
     new_pages = sorted((work / "stage5-full-generation").glob("shard-*/pages/*.html"))
     if len(new_pages) != EXPECTED_SOURCE_NEW:
@@ -503,6 +530,15 @@ def main() -> None:
                 shutil.copytree(p, dst)
             else:
                 shutil.copy2(p, dst)
+
+    # Preserved pages use the shared branch-side consultation JavaScript.
+    preserved_assets = out / "assets"
+    preserved_assets.mkdir(parents=True, exist_ok=True)
+    current_site_js = ROOT / "assets" / "site.js"
+    if not current_site_js.exists():
+        failures.append("preserved_site_js_missing")
+    else:
+        shutil.copy2(current_site_js, preserved_assets / "site.js")
 
     # Stage 9 AI/search discovery files are controlled by the current branch,
     # not by the older Stage 8 approval packet.
