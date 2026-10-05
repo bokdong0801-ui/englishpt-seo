@@ -505,6 +505,21 @@ def main() -> None:
     write_visual_assets(out)
     write_representative_candidate_assets(out)
 
+    # Keep user-approved editorial thumbnails as fixed branch assets.
+    custom_rep_src = ROOT / "assets" / "images" / "representative"
+    custom_rep_dst = out / "assets" / "images" / "representative"
+    custom_rep_dst.mkdir(parents=True, exist_ok=True)
+    for name in (
+        "toeic-editorial.svg",
+        "opic-editorial.svg",
+        "english-conv-editorial.svg",
+    ):
+        src = custom_rep_src / name
+        if not src.exists():
+            failures.append(f"custom_representative_missing:{name}")
+        else:
+            shutil.copy2(src, custom_rep_dst / name)
+
     production_assets = {
         "pilot.css": ROOT / "assets" / "stage9-mass-production.css",
         "pilot.js": ROOT / "assets" / "stage9-mass-production.js",
