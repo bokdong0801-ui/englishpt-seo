@@ -108,7 +108,7 @@ jobs:
           assert 'name="purpose"' not in home_form
           assert 'name="difficulty"' not in home_form
           assert '문의내용' in home_form
-          assert '궁금한 점이나 상담받고 싶은 내용을 자유롭게 적어주세요.' in home_form
+          assert '현재 어려운 부분, 목표하는 부분을 자유롭게 작성해주세요.' in home_form
           editorial_assets={
               'toeic':'toeic-editorial.svg',
               'opic':'opic-editorial.svg',
