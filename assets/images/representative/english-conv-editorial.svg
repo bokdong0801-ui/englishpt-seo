@@ -1,31 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
-<title id="title">1:1 영어회화 대표이미지</title>
-<desc id="desc">말하기, 피드백, 실전 대화를 보여주는 ENGLISH PT 영어회화 대표이미지</desc>
-<rect width="1200" height="720" fill="#FFF5ED"/>
-<path d="M0 0h1200v22H0z" fill="#75472F"/>
-<path d="M868 0h332v720H980z" fill="#F4D5C4"/>
-<circle cx="1020" cy="130" r="175" fill="#F8E6D8"/>
-<text x="78" y="92" font-family="Arial, 'Noto Sans KR', sans-serif" font-size="24" font-weight="700" fill="#75472F" letter-spacing="2">ENGLISH PT · CONVERSATION</text>
-<text x="74" y="244" font-family="'Noto Sans KR', Arial, sans-serif" font-size="102" font-weight="800" fill="#43281C">영어회화</text>
-<text x="82" y="316" font-family="'Noto Sans KR', Arial, sans-serif" font-size="34" font-weight="700" fill="#75472F">1:1 맞춤 영어회화</text>
-<line x1="82" y1="350" x2="680" y2="350" stroke="#E6C5B1" stroke-width="2"/>
-<g font-family="'Noto Sans KR', Arial, sans-serif" font-weight="700">
-<rect x="82" y="401" width="170" height="82" rx="20" fill="#FFFFFF"/>
-<text x="112" y="452" font-size="25" fill="#75472F">말하기</text>
-<rect x="272" y="401" width="170" height="82" rx="20" fill="#FFFFFF"/>
-<text x="302" y="452" font-size="25" fill="#75472F">피드백</text>
-<rect x="462" y="401" width="220" height="82" rx="20" fill="#FFFFFF"/>
-<text x="492" y="452" font-size="25" fill="#75472F">실전 대화</text>
+<title id="title">1:1 맞춤 영어회화 대표이미지</title>
+<desc id="desc">기초부터 실전대화, 발음교정, 자연스러운 표현까지 보여주는 ENGLISH PT 영어회화 대표이미지</desc>
+<rect width="1200" height="720" rx="36" fill="#FFF2EA"/>
+<circle cx="1080" cy="96" r="250" fill="#F6D8C7"/>
+<circle cx="1140" cy="625" r="265" fill="#F1C9B5" opacity=".58"/>
+<rect x="0" y="0" width="1200" height="18" rx="9" fill="#7A432E"/>
+<text x="78" y="88" font-family="Arial,'Noto Sans KR',sans-serif" font-size="24" font-weight="800" fill="#7A432E" letter-spacing="1.8">ENGLISH PT · 1:1 CONVERSATION</text>
+<text x="74" y="264" font-family="'Noto Sans KR',Arial,sans-serif" font-size="112" font-weight="900" fill="#542A1B">영어회화</text>
+<text x="80" y="334" font-family="'Noto Sans KR',Arial,sans-serif" font-size="34" font-weight="800" fill="#8A563F">1:1 맞춤 영어회화</text>
+<g font-family="'Noto Sans KR',Arial,sans-serif" font-size="24" font-weight="800" fill="#7A432E">
+<rect x="80" y="398" width="148" height="64" rx="32" fill="#FFFFFF"/><text x="112" y="439">기초부터</text>
+<rect x="244" y="398" width="164" height="64" rx="32" fill="#FFFFFF"/><text x="276" y="439">실전 대화</text>
+<rect x="424" y="398" width="164" height="64" rx="32" fill="#FFFFFF"/><text x="456" y="439">발음 교정</text>
+<rect x="604" y="398" width="210" height="64" rx="32" fill="#FFFFFF"/><text x="636" y="439">자연스러운 표현</text>
 </g>
-<text x="82" y="560" font-family="'Noto Sans KR', Arial, sans-serif" font-size="25" fill="#8B6857">말해보고, 고치고, 다시 말하는 반복</text>
-<g transform="translate(760 155)">
-<rect x="96" y="20" width="262" height="164" rx="42" fill="#C97D58"/>
-<path d="M308 162l36 62-74-48z" fill="#C97D58"/>
-<rect x="6" y="238" width="276" height="156" rx="42" fill="#FFFFFF"/>
-<path d="M64 374l-38 58 86-50z" fill="#FFFFFF"/>
-<g fill="#FFF5ED">
-<circle cx="160" cy="102" r="11"/><circle cx="205" cy="102" r="11"/><circle cx="250" cy="102" r="11"/>
-</g>
-<path d="M68 300h146M68 334h102" stroke="#C97D58" stroke-width="12" stroke-linecap="round" opacity=".72"/>
+<text x="82" y="550" font-family="'Noto Sans KR',Arial,sans-serif" font-size="27" font-weight="700" fill="#956C58">말해보고 → 고치고 → 다른 상황에서 다시 말하기</text>
+<g transform="translate(900 210)" fill="#7A432E" opacity=".22">
+<path d="M0 0h118v118H54l-44 44 12-44H0z"/>
+<path d="M94 146h118v118h-22l12 44-44-44H94z"/>
 </g>
 </svg>
