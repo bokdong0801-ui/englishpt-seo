@@ -100,6 +100,14 @@ jobs:
           assert 'emailjs.send' in js
           assert len(list(Path('stage9-release/assets/images').glob('*.svg'))) == 30
           assert '실제 상담 전송은 비활성화' not in js
+          home=Path('stage9-release/englishpt.html').read_text(encoding='utf-8')
+          home_form=home.split('<form id="leadForm"',1)[1].split('</form>',1)[0]
+          for field in ['name="name"','name="phone"','name="area"','name="message"','name="wantedClass"','name="consent"']:
+              assert field in home_form, field
+          assert 'name="purpose"' not in home_form
+          assert 'name="difficulty"' not in home_form
+          assert '문의내용' in home_form
+          assert '궁금한 점이나 상담받고 싶은 내용을 자유롭게 적어주세요.' in home_form
           machine_phrases=[
               '흐름 Band','시점 배분','직접 방식 방식','회수 회수','상기 횟수',
               '근거를 찾을 수 되는지','이어지는 정체가 어디서 생기는지 검토합니다',
@@ -121,6 +129,9 @@ jobs:
               assert 'name="message"' in raw, p.name
               assert 'name="wantedClass"' in raw, p.name
               assert 'name="consent"' in raw, p.name
+              assert 'name="purpose"' not in raw, p.name
+              assert 'name="difficulty"' not in raw, p.name
+              assert '문의내용' in raw, p.name
               title=raw.split('<title>',1)[1].split('</title>',1)[0]
               assert 'ENGLISH PT' not in title, (p.name,title)
               assert ' | ' in title, (p.name,title)
