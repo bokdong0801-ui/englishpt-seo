@@ -101,6 +101,8 @@ jobs:
           assert len(list(Path('stage9-release/assets/images').glob('*.svg'))) == 30
           assert '실제 상담 전송은 비활성화' not in js
           home=Path('stage9-release/englishpt.html').read_text(encoding='utf-8')
+          assert '<title>1:1 영어과외·영어회화·시험영어 | 잉글리시PT</title>' in home
+          assert '영어회화부터 토익·토익스피킹·오픽·아이엘츠·토플까지, 현재 수준과 목표에 맞춰 필요한 영역을 1:1로 진단하고 훈련하는 잉글리시PT입니다.' in home
           home_form=home.split('<form id="leadForm"',1)[1].split('</form>',1)[0]
           for field in ['name="name"','name="phone"','name="area"','name="message"','name="wantedClass"','name="consent"']:
               assert field in home_form, field
@@ -108,6 +110,18 @@ jobs:
           assert 'name="difficulty"' not in home_form
           assert '문의내용' in home_form
           assert '궁금한 점이나 상담받고 싶은 내용을 자유롭게 적어주세요.' in home_form
+          editorial_assets={
+              'toeic':'toeic-editorial.svg',
+              'opic':'opic-editorial.svg',
+              'english-conv-academy':'english-conv-editorial.svg',
+          }
+          for intent,asset in editorial_assets.items():
+              asset_path=Path('stage9-release/assets/images/representative')/asset
+              assert asset_path.exists(), asset
+              page=next(Path('stage9-release').glob(f'*-{intent}.html'),None)
+              assert page is not None, intent
+              raw=page.read_text(encoding='utf-8')
+              assert f'/assets/images/representative/{asset}' in raw, (intent,asset)
           machine_phrases=[
               '흐름 Band','시점 배분','직접 방식 방식','회수 회수','상기 횟수',
               '근거를 찾을 수 되는지','이어지는 정체가 어디서 생기는지 검토합니다',
