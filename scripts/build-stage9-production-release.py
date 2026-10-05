@@ -440,7 +440,16 @@ def main() -> None:
         for preserved_page in sorted(out.glob("*.html")):
             preserved_raw = preserved_page.read_text(encoding="utf-8")
             preserved_raw, changed = simplify_preserved_consultation(preserved_raw)
-            if changed:
+            if preserved_page.name == "englishpt.html":
+                preserved_raw = preserved_raw.replace(
+                    "잉글리시PT / 1:1 맞춤 영어관리 | ENGLISH PT",
+                    "1:1 영어과외·영어회화·시험영어 | 잉글리시PT",
+                )
+                preserved_raw = preserved_raw.replace(
+                    "영어를 PT처럼 진단하고 훈련하고 기록하고 다시 조정하는 ENGLISH PT. 회화·시험·학교 영어를 현재 상태와 목표에 맞춰 1:1로 관리합니다.",
+                    "영어회화부터 토익·토익스피킹·오픽·아이엘츠·토플까지, 현재 수준과 목표에 맞춰 필요한 영역을 1:1로 진단하고 훈련하는 잉글리시PT입니다.",
+                )
+            if changed or preserved_page.name == "englishpt.html":
                 preserved_page.write_text(preserved_raw, encoding="utf-8")
 
     new_pages = sorted((work / "stage5-full-generation").glob("shard-*/pages/*.html"))
