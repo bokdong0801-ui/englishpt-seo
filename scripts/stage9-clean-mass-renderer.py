@@ -1895,7 +1895,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     required=[
         '<meta name="robots" content="index,follow">',
         f'<body class="{theme}" data-production-deploy="true" data-stage9-clean="true">',
-        'name="name"','name="phone"','name="area"','name="purpose"','name="difficulty"','name="consent"',
+        'name="name"','name="phone"','name="area"','name="message"','name="wantedClass"','name="consent"',
         'class="breadcrumb wrap"','class="mobile-sticky"',
         EMAILJS_TAG,'class="section mass-context"',
         'class="site-header"','class="hero simple-hero"','class="snapshot"','class="trust"','class="section management"',
