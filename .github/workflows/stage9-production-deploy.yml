@@ -145,7 +145,7 @@ jobs:
             --dir=stage9-release \
             --site="$NETLIFY_SITE_ID" \
             --auth="$NETLIFY_AUTH_TOKEN" \
-            --message="ENGLISH PT Stage 9 production release - 113,373 HTML" \
+            --message="ENGLISH PT Stage 9 production release - 118,522 HTML" \
             --json | tee stage9-netlify-deploy.json
           python3 - <<'PY'
           import json
