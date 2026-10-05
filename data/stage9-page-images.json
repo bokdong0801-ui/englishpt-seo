@@ -44,10 +44,11 @@
       "height": 720
     },
     "toeic": {
-      "src": "/assets/images/representative/toeic-1.svg",
+      "src": "/assets/images/representative/toeic-editorial.svg",
       "caption": "LC·RC를 나눠 반복 오답과 시간 사용을 확인하고 필요한 파트에 집중합니다.",
       "width": 1200,
-      "height": 720
+      "height": 720,
+      "alt": "TOEIC 1:1 맞춤 토익 LC·RC·시간관리 대표이미지"
     },
     "toeic-academy": {
       "src": "/assets/images/representative/toeic-2.svg",
@@ -68,10 +69,11 @@
       "height": 720
     },
     "opic": {
-      "src": "/assets/images/representative/opic-1.svg",
+      "src": "/assets/images/representative/opic-editorial.svg",
       "caption": "설문 주제부터 돌발 질문·롤플레이까지 내 경험으로 답하는 연습을 보여줍니다.",
       "width": 1200,
-      "height": 720
+      "height": 720,
+      "alt": "OPIc 1:1 맞춤 오픽 돌발·롤플레이·답변 구성 대표이미지"
     },
     "opic-academy": {
       "src": "/assets/images/representative/opic-2.svg",
@@ -116,10 +118,11 @@
       "height": 720
     },
     "english-conv-academy": {
-      "src": "/assets/images/representative/english-conv-1.svg",
+      "src": "/assets/images/representative/english-conv-editorial.svg",
       "caption": "영어회화학원에서는 직접 말하는 시간과 피드백 후 다시 말해보는 과정이 중요합니다.",
       "width": 1200,
-      "height": 720
+      "height": 720,
+      "alt": "1:1 맞춤 영어회화 말하기·피드백·실전 대화 대표이미지"
     },
     "adult-english-conv-academy": {
       "src": "/assets/images/representative/adult-conv-1.svg",
