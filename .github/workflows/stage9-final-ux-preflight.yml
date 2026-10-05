@@ -129,6 +129,11 @@ jobs:
               assert page is not None, intent
               raw=page.read_text(encoding='utf-8')
               assert f'/assets/images/representative/{asset}' in raw, (intent,asset,page.name)
+          home=Path('stage9-release/englishpt.html').read_text(encoding='utf-8')
+          assert '<title>1:1 영어과외·영어회화·시험영어 | 잉글리시PT</title>' in home
+          assert '<meta name="description" content="1:1 영어과외·영어회화부터 토익·토익스피킹·오픽·아이엘츠·토플까지. 현재 수준과 목표를 진단해 필요한 영역을 맞춤 훈련하는 잉글리시PT입니다.">' in home
+          assert '<meta property="og:title" content="1:1 영어과외·영어회화·시험영어 | 잉글리시PT">' in home
+          assert '"name":"1:1 영어과외·영어회화·시험영어 | 잉글리시PT"' in home
           machine_phrases=[
               '흐름 Band','시점 배분','직접 방식 방식','회수 회수','상기 횟수',
               '근거를 찾을 수 되는지','이어지는 정체가 어디서 생기는지 검토합니다',
