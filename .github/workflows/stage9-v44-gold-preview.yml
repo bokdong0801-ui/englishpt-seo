@@ -209,7 +209,7 @@ jobs:
           (out/'ACADEMY_PREVIEW_PAGES.json').write_text(json.dumps(academy_names,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
 
-      - name: Audit main TOEIC OPIc IELTS and English conversation pages
+      - name: Audit main TOEIC TOEIC Speaking OPIc IELTS TOEFL and English conversation pages
         run: |
           python3 - <<'PY'
           import html, json, re
@@ -223,8 +223,10 @@ jobs:
               return next(name for name in base_names if name.endswith('-'+suffix+'.html'))
 
           toeic=by_suffix('toeic')
+          toeic_speaking=by_suffix('toeic-speaking')
           opic=by_suffix('opic')
           ielts=by_suffix('ielts')
+          toefl=by_suffix('toefl')
           housewife=by_suffix('housewife-conv')
           conv=housewife[:-len('housewife-conv.html')]+'english-conv-academy.html'
 
@@ -282,20 +284,29 @@ jobs:
               'form_fields':sorted(set(re.findall(r'name="([^"]+)"',hf))),
               'has_purpose':'name="purpose"' in hf,
               'has_difficulty':'name="difficulty"' in hf,
-              'schema_songhyeondong':'대구 달서구 송현동' in home_raw,
-              'footer_songhyeondong':'대구 달서구 송현동 · 1:1 맞춤 영어관리' in home_raw,
+              'schema_fixed_songhyeondong':'"areaServed":{"@type":"AdministrativeArea","name":"대구 달서구 송현동"}' in home_raw,
+              'footer_fixed_songhyeondong':'대구 달서구 송현동 · 1:1 맞춤 영어관리' in home_raw,
+              'form_default_songhyeondong':'value="송현동"' in hf,
             },
             'toeic':one(toeic),
+            'toeic_speaking':one(toeic_speaking),
             'opic':one(opic),
             'ielts':one(ielts),
+            'toefl':one(toefl),
             'english_conversation':one(conv),
           }
           assert report['home']['title']=='1:1 영어과외·영어회화·시험영어 | 잉글리시PT',report['home']
           assert '1:1 영어과외·영어회화부터' in report['home']['description'],report['home']
+          assert report['home']['schema_fixed_songhyeondong'] is False,report['home']
+          assert report['home']['footer_fixed_songhyeondong'] is False,report['home']
+          assert report['home']['form_default_songhyeondong'] is False,report['home']
           assert report['toeic']['image_src']=='/assets/images/representative/toeic-editorial.svg',report['toeic']
+          assert report['toeic_speaking']['image_src']=='/assets/images/representative/toeic-speaking-editorial.svg',report['toeic_speaking']
           assert report['opic']['image_src']=='/assets/images/representative/opic-editorial.svg',report['opic']
+          assert report['ielts']['image_src']=='/assets/images/representative/ielts-editorial.svg',report['ielts']
+          assert report['toefl']['image_src']=='/assets/images/representative/toefl-editorial.svg',report['toefl']
           assert report['english_conversation']['image_src']=='/assets/images/representative/english-conv-editorial.svg',report['english_conversation']
-          for key in ('toeic','opic','ielts','english_conversation'):
+          for key in ('toeic','toeic_speaking','opic','ielts','toefl','english_conversation'):
               row=report[key]
               assert row['form_fields']==['area','consent','message','name','phone','wantedClass'],row
               assert row['has_purpose'] is False and row['has_difficulty'] is False,row
@@ -305,7 +316,7 @@ jobs:
               assert row['image_loading_eager'] is True,row
               assert row['image_caption'] and len(row['image_caption'])<=55,row
               assert row['internal_links']>=22,row
-          Path('STAGE9_FIVE_PAGE_QA_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          Path('STAGE9_KEY_PAGE_QA_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           print(json.dumps(report,ensure_ascii=False,indent=2))
           PY
 
@@ -331,6 +342,7 @@ jobs:
               by_suffix('toeic-speaking'),
               by_suffix('opic'),
               by_suffix('ielts'),
+              by_suffix('toefl'),
               conv,
           ]
           Path('mobile-qa/targets.json').write_text(json.dumps(targets,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
@@ -463,7 +475,7 @@ jobs:
           name: stage9-v44-gold-netlify-preview-report
           path: |
             STAGE9_V44_GOLD_PREVIEW_REPORT.json
-            STAGE9_FIVE_PAGE_QA_REPORT.json
+            STAGE9_KEY_PAGE_QA_REPORT.json
             STAGE9_MOBILE_FIRST_SCREEN_QA.json
             mobile-qa/*.png
           retention-days: 30
