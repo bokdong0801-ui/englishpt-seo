@@ -1,3 +1,4 @@
 Redeploy final image-enabled 23-intent Stage 9 preview after targeted OPIc and TOEFL academy similarity fix.
 Redeploy inquiry-only consultation form preview.
 Redeploy editorial thumbnails and optimized homepage SEO preview.
+Redeploy final V2 thumbnails + homepage SEO + five-page QA.
