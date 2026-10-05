@@ -57,10 +57,11 @@
       "height": 720
     },
     "toeic-speaking": {
-      "src": "/assets/images/representative/toeic-speaking-1.svg",
+      "src": "/assets/images/representative/toeic-speaking-editorial.svg",
       "caption": "답변을 녹음하며 문항별 구성과 제한 시간을 점검합니다.",
       "width": 1200,
-      "height": 720
+      "height": 720,
+      "alt": "TOEIC Speaking 1:1 맞춤 토익스피킹 유형·답변·녹음 피드백 대표이미지"
     },
     "toeic-speaking-academy": {
       "src": "/assets/images/representative/toeic-speaking-2.svg",
@@ -82,10 +83,11 @@
       "height": 720
     },
     "ielts": {
-      "src": "/assets/images/representative/ielts-1.svg",
+      "src": "/assets/images/representative/ielts-editorial.svg",
       "caption": "4영역을 나눠 목표 Band에 필요한 영역부터 준비합니다.",
       "width": 1200,
-      "height": 720
+      "height": 720,
+      "alt": "IELTS 1:1 맞춤 아이엘츠 4영역·Band 관리 대표이미지"
     },
     "ielts-academy": {
       "src": "/assets/images/representative/ielts-2.svg",
@@ -106,10 +108,11 @@
       "height": 720
     },
     "toefl": {
-      "src": "/assets/images/representative/toefl-1.svg",
+      "src": "/assets/images/representative/toefl-editorial.svg",
       "caption": "4영역과 통합형 문제를 실제 시험 흐름에 맞춰 준비합니다.",
       "width": 1200,
-      "height": 720
+      "height": 720,
+      "alt": "TOEFL 1:1 맞춤 토플 4영역·통합형 관리 대표이미지"
     },
     "toefl-academy": {
       "src": "/assets/images/representative/toefl-2.svg",
@@ -122,7 +125,7 @@
       "caption": "직접 말하고 고친 표현을 다시 말하는 시간을 늘립니다.",
       "width": 1200,
       "height": 720,
-      "alt": "1:1 맞춤 영어회화 말하기·피드백·실전 대화 대표이미지"
+      "alt": "1:1 맞춤 영어회화 기초·실전대화·표현교정 대표이미지"
     },
     "adult-english-conv-academy": {
       "src": "/assets/images/representative/adult-conv-1.svg",
