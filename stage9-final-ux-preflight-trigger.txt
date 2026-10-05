@@ -4,3 +4,4 @@ Run image-enabled Stage 9 preflight after OPIc and TOEFL academy similarity fix.
 2026-10-05 editorial-thumbnails-home-seo-refresh
 2026-10-05 exact-editorial-page-qa
 2026-10-05 editorial-v2-home-meta-final-qa
+2026-10-05 current-homepage-stage9-package-fix
