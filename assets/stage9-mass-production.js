@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       const area=form.querySelector('[name="area"]')?.value.trim()||"";
       const extra=form.querySelector('[name="message"]')?.value.trim()||"";
       const wantedClass=form.querySelector('[name="wantedClass"]')?.value.trim()||document.querySelector("h1")?.textContent.trim()||document.title;
-      const message="[상담 내용] "+(extra||"(미입력)");
+      const message="[문의내용] "+(extra||"(미입력)");
       if(btn){btn.disabled=true;btn.textContent="전송 중...";}
       if(status) status.textContent="";
       try{
