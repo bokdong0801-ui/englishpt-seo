@@ -315,17 +315,14 @@ jobs:
           test -n "$CHROME"
           "$CHROME" --version
           mkdir -p mobile-qa
-          python3 - <<'PY'
-          import json, re
-          from pathlib import Path
 
-          root=Path('stage9-v44-preview')
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
           q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
           names=[row['canonical'].rsplit('/',1)[-1] for row in q['representative_13']['pages']]
-
           def by_suffix(suffix):
               return next(name for name in names if name.endswith('-'+suffix+'.html'))
-
           housewife=by_suffix('housewife-conv')
           conv=housewife[:-len('housewife-conv.html')]+'english-conv-academy.html'
           targets=[
@@ -336,17 +333,47 @@ jobs:
               by_suffix('ielts'),
               conv,
           ]
-          script=r'''
-          <script>
-          window.addEventListener('load',()=>setTimeout(()=>{
+          Path('mobile-qa/targets.json').write_text(json.dumps(targets,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+
+          python3 -m http.server 8765 --directory stage9-v44-preview >/tmp/stage9-mobile-http.log 2>&1 &
+          SERVER_PID=$!
+          "$CHROME"             --headless=new             --no-sandbox             --disable-gpu             --hide-scrollbars             --remote-debugging-port=9222             --remote-allow-origins='*'             --user-data-dir=/tmp/stage9-chrome-qa             about:blank >/tmp/stage9-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
+          sleep 3
+          python3 -m pip install --quiet pychrome
+
+          python3 - <<'PY'
+          import base64, json, time
+          from pathlib import Path
+          import pychrome
+
+          targets=json.loads(Path('mobile-qa/targets.json').read_text(encoding='utf-8'))
+          browser=pychrome.Browser(url='http://127.0.0.1:9222')
+          tab=browser.new_tab()
+          tab.start()
+          tab.Page.enable()
+          tab.Runtime.enable()
+          tab.call_method(
+              'Emulation.setDeviceMetricsOverride',
+              width=390,
+              height=844,
+              deviceScaleFactor=1,
+              mobile=True,
+              screenWidth=390,
+              screenHeight=844,
+              dontSetVisibleSize=False,
+          )
+          expression=r'''(()=>{
             const box=(s)=>{
               const e=document.querySelector(s);
               if(!e)return null;
               const r=e.getBoundingClientRect();
               return {top:Math.round(r.top),bottom:Math.round(r.bottom),height:Math.round(r.height),width:Math.round(r.width)};
             };
-            const out={
-              viewport:{width:window.innerWidth,height:window.innerHeight},
+            return {
+              viewport:{width:window.innerWidth,height:window.innerHeight,dpr:window.devicePixelRatio},
               hero:box('.hero.simple-hero'),
               actions:box('.hero-actions'),
               visual:box('.visual-break'),
@@ -354,72 +381,32 @@ jobs:
               caption:box('.learning-visual figcaption'),
               intro:box('.section.intro-detail')
             };
-            const pre=document.createElement('pre');
-            pre.id='mobile-qa-output';
-            pre.textContent=JSON.stringify(out);
-            document.body.appendChild(pre);
-          },350));
-          </script>
-          '''
-          manifest=[]
-          for i,name in enumerate(targets,1):
-              raw=(root/name).read_text(encoding='utf-8')
-              assert '</body>' in raw,name
-              qa_name=f'qa-mobile-{i}.html'
-              (root/qa_name).write_text(raw.replace('</body>',script+'</body>',1),encoding='utf-8')
-              manifest.append({'source':name,'qa':qa_name,'shot':f'mobile-qa/{i:02d}-{name}.png'})
-          Path('mobile-qa/manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-          PY
-
-          python3 -m http.server 8765 --directory stage9-v44-preview >/tmp/stage9-mobile-http.log 2>&1 &
-          SERVER_PID=$!
-          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
-          sleep 2
-
-          python3 - <<'PY'
-          import html, json, os, re, subprocess
-          from pathlib import Path
-
-          chrome=os.environ.get('CHROME_BIN')
-          if not chrome:
-              for p in ['google-chrome','google-chrome-stable','chromium','chromium-browser']:
-                  try:
-                      out=subprocess.check_output(['bash','-lc',f'command -v {p} || true'],text=True).strip()
-                  except Exception:
-                      out=''
-                  if out:
-                      chrome=out
-                      break
-          assert chrome, 'chrome binary missing'
-
-          manifest=json.loads(Path('mobile-qa/manifest.json').read_text(encoding='utf-8'))
+          })()'''
           rows=[]
-          for item in manifest:
-              url='http://127.0.0.1:8765/'+item['qa']
-              dump=subprocess.check_output([
-                  chrome,'--headless=new','--no-sandbox','--disable-gpu','--hide-scrollbars',
-                  '--window-size=390,844','--virtual-time-budget=1800','--dump-dom',url
-              ],text=True,stderr=subprocess.DEVNULL)
-              m=re.search(r'<pre id="mobile-qa-output">(.*?)</pre>',dump,re.S)
-              assert m,item
-              metrics=json.loads(html.unescape(m.group(1)))
-              subprocess.run([
-                  chrome,'--headless=new','--no-sandbox','--disable-gpu','--hide-scrollbars',
-                  '--window-size=390,844','--virtual-time-budget=1800',
-                  '--screenshot='+item['shot'],url
-              ],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-              assert 360 <= metrics['viewport']['width'] <= 400,(item,metrics)
-              assert metrics['hero'] and metrics['visual'] and metrics['intro'] and metrics['actions'],(item,metrics)
-              assert abs(metrics['visual']['top']-metrics['hero']['bottom']) <= 3,(item,metrics)
-              assert metrics['actions']['height'] <= 62,(item,metrics)
-              assert metrics['hero']['height'] <= 315,(item,metrics)
-              assert metrics['visual']['height'] <= 330,(item,metrics)
-              assert metrics['intro']['top'] <= 820,(item,metrics)
-              rows.append({'page':item['source'],**metrics,'screenshot':item['shot']})
+          for i,name in enumerate(targets,1):
+              url='http://127.0.0.1:8765/'+name
+              tab.Page.navigate(url=url)
+              time.sleep(1.2)
+              result=tab.Runtime.evaluate(expression=expression,returnByValue=True)
+              metrics=result['result']['value']
+              shot=tab.Page.captureScreenshot(format='png',fromSurface=True,captureBeyondViewport=False)
+              shot_path=Path('mobile-qa')/f'{i:02d}-{name}.png'
+              shot_path.write_bytes(base64.b64decode(shot['data']))
+              assert metrics['viewport']['width']==390,(name,metrics)
+              assert metrics['viewport']['height']==844,(name,metrics)
+              assert metrics['hero'] and metrics['visual'] and metrics['intro'] and metrics['actions'],(name,metrics)
+              assert abs(metrics['visual']['top']-metrics['hero']['bottom']) <= 3,(name,metrics)
+              assert metrics['actions']['height'] <= 62,(name,metrics)
+              assert metrics['hero']['height'] <= 315,(name,metrics)
+              assert metrics['visual']['height'] <= 330,(name,metrics)
+              assert metrics['intro']['top'] <= 820,(name,metrics)
+              rows.append({'page':name,**metrics,'screenshot':str(shot_path)})
+          tab.stop()
+          browser.close_tab(tab)
           report={
               'status':'PASS_MOBILE_FIRST_SCREEN_QA',
-              'viewport':'390x844',
-              'rule':'Hero -> representative image -> intro; CTA stays one row; intro begins within first 820px',
+              'viewport':'390x844 CSS px',
+              'rule':'Hero -> representative image -> intro; CTA remains one row; intro begins within first 820px',
               'pages':rows,
           }
           Path('STAGE9_MOBILE_FIRST_SCREEN_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
