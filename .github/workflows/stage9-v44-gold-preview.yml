@@ -209,6 +209,97 @@ jobs:
           (out/'ACADEMY_PREVIEW_PAGES.json').write_text(json.dumps(academy_names,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
 
+      - name: Audit main TOEIC OPIc IELTS and English conversation pages
+        run: |
+          python3 - <<'PY'
+          import html, json, re
+          from pathlib import Path
+
+          root=Path('stage9-v44-preview')
+          q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          base_names=[row['canonical'].rsplit('/',1)[-1] for row in q['representative_13']['pages']]
+
+          def by_suffix(suffix):
+              return next(name for name in base_names if name.endswith('-'+suffix+'.html'))
+
+          toeic=by_suffix('toeic')
+          opic=by_suffix('opic')
+          ielts=by_suffix('ielts')
+          housewife=by_suffix('housewife-conv')
+          conv=housewife[:-len('housewife-conv.html')]+'english-conv-academy.html'
+
+          def one(name):
+              p=root/name
+              raw=p.read_text(encoding='utf-8')
+              def first(pattern, flags=re.I|re.S):
+                  m=re.search(pattern,raw,flags)
+                  return html.unescape(re.sub(r'<[^>]+>','',m.group(1))).strip() if m else None
+              form=''
+              fm=re.search(r'<form id="leadForm"[^>]*>(.*?)</form>',raw,re.I|re.S)
+              if fm: form=fm.group(1)
+              img=re.search(r'<figure class="learning-visual">.*?<img[^>]*src="([^"]+)"[^>]*alt="([^"]*)"[^>]*>.*?(?:<figcaption>(.*?)</figcaption>)?.*?</figure>',raw,re.I|re.S)
+              return {
+                'file':name,
+                'title':first(r'<title>(.*?)</title>'),
+                'description':first(r'<meta name="description" content="([^"]*)"'),
+                'canonical':first(r'<link rel="canonical" href="([^"]*)"'),
+                'h1':first(r'<h1>(.*?)</h1>'),
+                'image_src':html.unescape(img.group(1)) if img else None,
+                'image_alt':html.unescape(img.group(2)) if img else None,
+                'image_caption':html.unescape(re.sub(r'<[^>]+>','',img.group(3))).strip() if img and img.group(3) else None,
+                'form_fields':sorted(set(re.findall(r'name="([^"]+)"',form))),
+                'has_purpose': 'name="purpose"' in form,
+                'has_difficulty': 'name="difficulty"' in form,
+                'internal_links': raw.count('href="/'),
+                'markers': {
+                  'site_header':'class="site-header"' in raw,
+                  'hero':'class="hero simple-hero"' in raw,
+                  'snapshot':'class="snapshot"' in raw,
+                  'trust':'class="trust"' in raw,
+                  'management':'class="section management"' in raw,
+                  'learning_visual':'class="learning-visual"' in raw,
+                }
+              }
+
+          home_raw=(root/'englishpt.html').read_text(encoding='utf-8')
+          def hfirst(pattern):
+              m=re.search(pattern,home_raw,re.I|re.S)
+              return html.unescape(re.sub(r'<[^>]+>','',m.group(1))).strip() if m else None
+          home_form=re.search(r'<form id="leadForm"[^>]*>(.*?)</form>',home_raw,re.I|re.S)
+          hf=home_form.group(1) if home_form else ''
+          report={
+            'home':{
+              'file':'englishpt.html',
+              'title':hfirst(r'<title>(.*?)</title>'),
+              'description':hfirst(r'<meta name="description" content="([^"]*)"'),
+              'canonical':hfirst(r'<link rel="canonical" href="([^"]*)"'),
+              'h1':hfirst(r'<h1>(.*?)</h1>'),
+              'form_fields':sorted(set(re.findall(r'name="([^"]+)"',hf))),
+              'has_purpose':'name="purpose"' in hf,
+              'has_difficulty':'name="difficulty"' in hf,
+              'schema_songhyeondong':'대구 달서구 송현동' in home_raw,
+              'footer_songhyeondong':'대구 달서구 송현동 · 1:1 맞춤 영어관리' in home_raw,
+            },
+            'toeic':one(toeic),
+            'opic':one(opic),
+            'ielts':one(ielts),
+            'english_conversation':one(conv),
+          }
+          assert report['home']['title']=='1:1 영어과외·영어회화·시험영어 | 잉글리시PT',report['home']
+          assert '1:1 영어과외·영어회화부터' in report['home']['description'],report['home']
+          assert report['toeic']['image_src']=='/assets/images/representative/toeic-editorial.svg',report['toeic']
+          assert report['opic']['image_src']=='/assets/images/representative/opic-editorial.svg',report['opic']
+          assert report['english_conversation']['image_src']=='/assets/images/representative/english-conv-editorial.svg',report['english_conversation']
+          for key in ('toeic','opic','ielts','english_conversation'):
+              row=report[key]
+              assert row['form_fields']==['area','consent','message','name','phone','wantedClass'],row
+              assert row['has_purpose'] is False and row['has_difficulty'] is False,row
+              assert all(row['markers'].values()),row
+              assert row['internal_links']>=22,row
+          Path('STAGE9_FIVE_PAGE_QA_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+
       - name: Install Netlify CLI
         run: npm install -g netlify-cli@latest
 
@@ -257,5 +348,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: stage9-v44-gold-netlify-preview-report
-          path: STAGE9_V44_GOLD_PREVIEW_REPORT.json
+          path: |
+            STAGE9_V44_GOLD_PREVIEW_REPORT.json
+            STAGE9_FIVE_PAGE_QA_REPORT.json
           retention-days: 30
