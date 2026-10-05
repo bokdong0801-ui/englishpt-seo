@@ -118,10 +118,17 @@ jobs:
           for intent,asset in editorial_assets.items():
               asset_path=Path('stage9-release/assets/images/representative')/asset
               assert asset_path.exists(), asset
-              page=next(Path('stage9-release').glob(f'*-{intent}.html'),None)
+              candidates=list(Path('stage9-release').glob(f'*-{intent}.html'))
+              if intent == 'english-conv-academy':
+                  candidates=[
+                      p for p in candidates
+                      if not p.name.endswith('-adult-english-conv-academy.html')
+                      and not p.name.endswith('-worker-english-conv-academy.html')
+                  ]
+              page=next(iter(candidates),None)
               assert page is not None, intent
               raw=page.read_text(encoding='utf-8')
-              assert f'/assets/images/representative/{asset}' in raw, (intent,asset)
+              assert f'/assets/images/representative/{asset}' in raw, (intent,asset,page.name)
           machine_phrases=[
               '흐름 Band','시점 배분','직접 방식 방식','회수 회수','상기 횟수',
               '근거를 찾을 수 되는지','이어지는 정체가 어디서 생기는지 검토합니다',
