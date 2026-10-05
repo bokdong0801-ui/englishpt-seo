@@ -104,6 +104,8 @@ jobs:
           assert '실제 상담 전송은 비활성화' not in js
           home=Path('stage9-release/englishpt.html').read_text(encoding='utf-8')
           assert '<title>1:1 영어과외·영어회화·시험영어 | 잉글리시PT</title>' in home
+          assert '대구 달서구 송현동 · 1:1 맞춤 영어관리' not in home
+          assert '"areaServed":{"@type":"AdministrativeArea","name":"대구 달서구 송현동"}' not in home
           home_form=home.split('<form id="leadForm"',1)[1].split('</form>',1)[0]
           for field in ['name="name"','name="phone"','name="area"','name="message"','name="wantedClass"','name="consent"']:
               assert field in home_form, field
@@ -111,9 +113,13 @@ jobs:
           assert 'name="difficulty"' not in home_form
           assert '문의내용' in home_form
           assert '현재 어려운 부분, 목표하는 부분을 자유롭게 작성해주세요.' in home_form
+          assert 'value="송현동"' not in home_form
           editorial_assets={
               'toeic':'toeic-editorial.svg',
+              'toeic-speaking':'toeic-speaking-editorial.svg',
               'opic':'opic-editorial.svg',
+              'ielts':'ielts-editorial.svg',
+              'toefl':'toefl-editorial.svg',
               'english-conv-academy':'english-conv-editorial.svg',
           }
           for intent,asset in editorial_assets.items():
