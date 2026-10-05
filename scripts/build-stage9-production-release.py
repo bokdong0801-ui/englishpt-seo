@@ -526,7 +526,10 @@ def main() -> None:
     custom_rep_dst.mkdir(parents=True, exist_ok=True)
     for name in (
         "toeic-editorial.svg",
+        "toeic-speaking-editorial.svg",
         "opic-editorial.svg",
+        "ielts-editorial.svg",
+        "toefl-editorial.svg",
         "english-conv-editorial.svg",
     ):
         src = custom_rep_src / name
