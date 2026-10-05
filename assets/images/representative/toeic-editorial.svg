@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+<title id="title">TOEIC 1:1 맞춤 토익 대표이미지</title>
+<desc id="desc">LC, RC, 시간관리 핵심 훈련을 보여주는 ENGLISH PT 토익 대표이미지</desc>
+<rect width="1200" height="720" fill="#F2F6FA"/>
+<path d="M0 0h1200v22H0z" fill="#163B67"/>
+<path d="M930 0h270v720H820z" fill="#DCE8F5"/>
+<path d="M1020 0h180v720H930z" fill="#C8D9ED" opacity=".8"/>
+<text x="78" y="92" font-family="Arial, 'Noto Sans KR', sans-serif" font-size="24" font-weight="700" fill="#163B67" letter-spacing="2">ENGLISH PT · EXAM</text>
+<text x="74" y="252" font-family="Arial, 'Noto Sans KR', sans-serif" font-size="118" font-weight="800" fill="#0E2D52">TOEIC</text>
+<text x="82" y="316" font-family="Arial, 'Noto Sans KR', sans-serif" font-size="34" font-weight="700" fill="#294C72">1:1 맞춤 토익</text>
+<line x1="82" y1="350" x2="670" y2="350" stroke="#A9BED6" stroke-width="2"/>
+<g font-family="Arial, 'Noto Sans KR', sans-serif" font-weight="700">
+<rect x="82" y="401" width="158" height="82" rx="20" fill="#FFFFFF"/>
+<text x="112" y="452" font-size="29" fill="#163B67">LC</text>
+<rect x="260" y="401" width="158" height="82" rx="20" fill="#FFFFFF"/>
+<text x="290" y="452" font-size="29" fill="#163B67">RC</text>
+<rect x="438" y="401" width="230" height="82" rx="20" fill="#FFFFFF"/>
+<text x="470" y="452" font-size="26" fill="#163B67">시간관리</text>
+</g>
+<text x="82" y="560" font-family="Arial, 'Noto Sans KR', sans-serif" font-size="25" fill="#56718D">오답 원인부터 파트별 우선순위까지</text>
+<g transform="translate(815 160)">
+<rect x="0" y="0" width="286" height="360" rx="32" fill="#FFFFFF" opacity=".96"/>
+<rect x="35" y="42" width="122" height="18" rx="9" fill="#163B67" opacity=".18"/>
+<rect x="35" y="82" width="202" height="12" rx="6" fill="#163B67" opacity=".10"/>
+<rect x="35" y="110" width="176" height="12" rx="6" fill="#163B67" opacity=".10"/>
+<g fill="none" stroke="#4A79A8" stroke-width="5">
+<circle cx="62" cy="174" r="15"/><circle cx="112" cy="174" r="15"/><circle cx="162" cy="174" r="15"/><circle cx="212" cy="174" r="15"/>
+<circle cx="62" cy="228" r="15"/><circle cx="112" cy="228" r="15"/><circle cx="162" cy="228" r="15"/><circle cx="212" cy="228" r="15"/>
+</g>
+<circle cx="112" cy="174" r="9" fill="#163B67"/>
+<circle cx="212" cy="228" r="9" fill="#163B67"/>
+<path d="M55 292h172" stroke="#D1DFEC" stroke-width="10" stroke-linecap="round"/>
+<path d="M55 292h118" stroke="#163B67" stroke-width="10" stroke-linecap="round"/>
+<text x="55" y="330" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="#163B67">TIME / ACCURACY</text>
+</g>
+</svg>
