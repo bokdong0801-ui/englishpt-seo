@@ -452,6 +452,12 @@ def main() -> None:
             if changed or preserved_page.name == "englishpt.html":
                 preserved_page.write_text(preserved_raw, encoding="utf-8")
 
+    current_home = ROOT / "englishpt.html"
+    if not current_home.exists():
+        failures.append("current_homepage_missing")
+    else:
+        shutil.copy2(current_home, out / "englishpt.html")
+
     new_pages = sorted((work / "stage5-full-generation").glob("shard-*/pages/*.html"))
     if len(new_pages) != EXPECTED_SOURCE_NEW:
         failures.append({"source_new_pages": [len(new_pages), EXPECTED_SOURCE_NEW]})
