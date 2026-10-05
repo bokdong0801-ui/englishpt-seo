@@ -95,8 +95,10 @@ jobs:
           for theme in ['theme-elem','theme-mid','theme-high','theme-univ','theme-job','theme-worker','theme-housewife','theme-toeic','theme-toeic-speaking','theme-opic','theme-ielts','theme-toefl','theme-duolingo']:
               assert theme in css, theme
           assert '.academy-choice' in css
-          for token in ['.simple-hero','.intro-grid','.snapshot','.trust-in','.mobile-sticky','@media(max-width:760px)']:
+          for token in ['.simple-hero','.intro-grid','.snapshot','.trust-in','.mobile-sticky','.visual-break','.learning-visual','@media(max-width:760px)']:
               assert token in css, token
+          assert '.visual-break{padding:14px 0 10px}' in css
+          assert '.hero-actions{grid-template-columns:1fr 1fr}' in css
           assert 'emailjs.send' in js
           assert len(list(Path('stage9-release/assets/images').glob('*.svg'))) == 30
           assert '실제 상담 전송은 비활성화' not in js
@@ -148,6 +150,14 @@ jobs:
               assert 'class="snapshot"' in raw, p.name
               assert 'class="trust"' in raw, p.name
               assert 'class="learning-visual"' in raw, p.name
+              hero_i=raw.index('class="hero simple-hero"')
+              visual_i=raw.index('class="visual-break"')
+              intro_i=raw.index('class="section intro-detail"')
+              assert hero_i < visual_i < intro_i, (p.name,hero_i,visual_i,intro_i)
+              assert raw.count('class="visual-break"') == 1, p.name
+              cap_m=__import__('re').search(r'<figcaption>(.*?)</figcaption>',raw,__import__('re').S)
+              assert cap_m and len(__import__('html').unescape(__import__('re').sub(r'<[^>]+>','',cap_m.group(1))).strip()) <= 55, p.name
+              assert 'loading="eager"' in raw, p.name
               assert 'name="name"' in raw, p.name
               assert 'name="phone"' in raw, p.name
               assert 'name="area"' in raw, p.name
