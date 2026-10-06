@@ -18,21 +18,52 @@ jobs:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect latest failed production deploy
+      - name: Inspect production credit block state
         run: |
           test -n "$NETLIFY_AUTH_TOKEN"
-          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/englishpt.kr/deploys?production=true&per_page=10"             -o /tmp/deploys.json
-          DEPLOY_ID="$(python3 - <<'PY'
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/englishpt.kr" -o /tmp/site.json
+          ACCOUNT_ID="$(python3 - <<'PY'
           import json
-          rows=json.load(open('/tmp/deploys.json',encoding='utf-8'))
-          row=next((x for x in rows if x.get('state')=='error'), rows[0])
-          print(row['id'])
+          print(json.load(open('/tmp/site.json',encoding='utf-8'))['account_id'])
           PY
           )"
-          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/englishpt.kr/deploys/$DEPLOY_ID"             -o /tmp/deploy.json
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/accounts/$ACCOUNT_ID" -o /tmp/account.json
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/englishpt.kr/deploys?per_page=12" -o /tmp/deploys.json
           python3 - <<'PY'
           import json
-          d=json.load(open('/tmp/deploy.json',encoding='utf-8'))
-          safe={k:d.get(k) for k in ('id','state','context','branch','title','error_message','created_at','updated_at','published_at','skipped','locked','review_id','draft','framework')}
+          a=json.load(open('/tmp/account.json',encoding='utf-8'))
+          s=json.load(open('/tmp/site.json',encoding='utf-8'))
+          ds=json.load(open('/tmp/deploys.json',encoding='utf-8'))
+          cap=a.get('capabilities') or {}
+          def pick(d, keys):
+              return {k:d.get(k) for k in keys if k in d}
+          safe={
+            'account':{
+              'slug':a.get('slug'),
+              'type_name':a.get('type_name'),
+              'billing_period':a.get('billing_period'),
+              'in_operational_mode':a.get('in_operational_mode'),
+              'usages_exceeded':a.get('usages_exceeded'),
+              'configurable_limits_exceeded':a.get('configurable_limits_exceeded'),
+              'sites_with_usage_exceeded':a.get('sites_with_usage_exceeded'),
+              'credits_capability':cap.get('credits'),
+              'block_builds_when_usage_exceeded':cap.get('block_builds_when_usage_exceeded'),
+              'accumulate_overages':cap.get('accumulate_overages'),
+              'credit_features':cap.get('credit_features'),
+            },
+            'site':{
+              'name':s.get('name'),
+              'url':s.get('url'),
+              'ssl_url':s.get('ssl_url'),
+              'state':s.get('state'),
+              'disabled':s.get('disabled'),
+              'processing_settings':s.get('processing_settings'),
+              'published_deploy':pick(s.get('published_deploy') or {},['id','state','context','created_at','published_at','locked']),
+            },
+            'recent_deploys':[
+              pick(d,['id','state','context','title','created_at','published_at','error_message','draft','locked'])
+              for d in ds[:12]
+            ],
+          }
           print(json.dumps(safe,ensure_ascii=False,indent=2))
           PY
