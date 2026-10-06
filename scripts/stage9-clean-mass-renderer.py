@@ -674,6 +674,60 @@ def mass_context(loc: dict, intent: str, family: str, audience: str = "") -> str
     )
 
 
+LOCAL_DECISION_POOL = [
+    ("가까운 일정부터", "{dong}에서 {service}를 알아볼 때는 공부 범위를 넓히기 전에 가장 가까운 시험·발표·면접·사용 일정을 먼저 적어보는 편이 좋습니다. 날짜가 정해지면 지금 필요한 연습과 나중에 해도 되는 내용을 나누기 쉬워집니다."),
+    ("최근 막힌 장면", "최근 영어를 쓰다가 멈춘 장면을 하나만 떠올려도 시작점이 선명해집니다. {dong} {service} 상담에서는 막연한 레벨보다 그때 무엇이 어려웠는지부터 확인하면 수업의 첫 순서를 정하기가 수월합니다."),
+    ("오답의 이유", "문제를 많이 푸는 것보다 같은 실수가 왜 반복되는지 구분하는 과정이 먼저일 수 있습니다. {dong}에서 {service}를 비교한다면 정답 개수뿐 아니라 틀린 이유를 설명할 수 있는지도 함께 확인해보세요."),
+    ("사용 장면", "여행·업무·학교·시험처럼 영어를 실제로 쓰는 장면이 달라지면 필요한 훈련도 달라집니다. {dong} {service} 페이지에서는 과정 이름보다 다음에 영어를 써야 하는 상황을 기준으로 우선순위를 잡는 방식을 권합니다."),
+    ("시간 배분", "공부 시간이 한정돼 있다면 모든 영역을 같은 비중으로 반복하기보다 어려운 부분에 시간을 더 쓰는 편이 현실적입니다. {dong} {service}를 시작하기 전 주당 가능한 시간과 가장 부족한 영역을 함께 정리해보세요."),
+    ("피드백 방식", "설명을 들었을 때 이해되는 것과 직접 해냈을 때 안정되는 것은 다를 수 있습니다. {dong}에서 {service}를 고를 때는 틀린 뒤 바로 수정하고 다시 해보는 시간이 실제 수업에 포함되는지 확인할 필요가 있습니다."),
+    ("복습 연결", "수업에서 고친 내용을 다음날 다시 꺼내 쓰지 못하면 같은 어려움이 반복될 수 있습니다. {dong} {service}를 비교할 때는 수업 직후의 이해보다 다음 복습에서 무엇을 다시 확인하는지도 살펴보는 것이 좋습니다."),
+    ("현재 자료", "교재를 새로 고르기 전에 최근 시험지·과제·녹음·오답처럼 이미 있는 자료에서 어려운 부분을 찾을 수 있습니다. {dong} {service} 상담에서도 현재 자료를 기준으로 시작하면 불필요한 범위를 줄이기 쉽습니다."),
+    ("목표를 한 문장으로", "‘영어를 잘하고 싶다’보다 ‘언제 어디서 무엇을 해야 한다’처럼 목표를 한 문장으로 바꾸면 학습 방향이 훨씬 구체적입니다. {dong} {service}를 찾는 단계에서도 이 문장을 먼저 정리해두면 비교 기준이 생깁니다."),
+    ("다음 행동", "좋은 수업은 설명이 끝난 뒤 다음에 무엇을 해야 하는지가 남아야 합니다. {dong}에서 {service}를 알아볼 때는 매 수업 후 연습할 행동이 구체적으로 정리되는지 확인해보세요."),
+    ("기초와 실전 분리", "기초가 부족하다고 해서 모든 내용을 처음부터 다시 할 필요는 없습니다. {dong} {service}에서는 현재 실전에서 막히는 부분과 그 원인이 되는 기초를 연결해 필요한 범위부터 보완하는 편이 효율적입니다."),
+    ("반복 기준", "같은 내용을 여러 번 보는 것보다 어느 시점에 다시 확인할지를 정하는 것이 중요합니다. {dong} {service}를 시작한다면 한 번 이해한 내용을 다음 수업이나 복습에서 실제로 다시 사용할 수 있는지 기준을 세워보세요."),
+    ("난이도 조절", "너무 쉬운 연습만 반복해도, 너무 어려운 문제만 붙잡아도 진행이 느려질 수 있습니다. {dong} {service}를 비교할 때는 현재 수준에서 한 단계 어려운 과제를 어떻게 조절하는지 살펴보는 것이 도움이 됩니다."),
+    ("말하기 확인", "회화나 말하기 시험은 머릿속으로 아는 표현보다 실제로 입 밖으로 나오는 표현을 기준으로 보는 편이 정확합니다. {dong} {service}에서는 짧게라도 직접 답해본 뒤 피드백을 받는 과정이 있는지 확인해보세요."),
+    ("시험 전략", "시험 준비는 전체 내용을 다시 배우는 일과 점수를 잃는 구간을 줄이는 일이 다를 수 있습니다. {dong} {service}를 알아볼 때는 남은 기간에 어떤 영역을 먼저 바꿀지 설명할 수 있는 수업인지 확인해보세요."),
+    ("학습 기록", "공부가 늘고 있는지 느끼기 어렵다면 기록 기준을 단순하게 잡는 것이 좋습니다. {dong} {service}에서도 오답 수·답변 완성도·시간 사용처럼 확인 가능한 한두 가지 기준을 정해 변화를 보는 방식이 도움이 됩니다."),
+]
+
+
+def local_decision_note(loc: dict, intent: str) -> str:
+    seed=f'{loc["slug"]}|{intent}|local-decision-v3'
+    ranked=sorted(
+        range(len(LOCAL_DECISION_POOL)),
+        key=lambda i: hashlib.sha256(f'{seed}|{i}'.encode()).hexdigest()
+    )
+    picks=ranked[:3]
+    cards=[]
+    for idx in picks:
+        title, body=LOCAL_DECISION_POOL[idx]
+        cards.append(
+            '<article class="context-block decision-card">'
+            f'<h3>{esc(title)}</h3>'
+            f'<p>{esc(body.format(dong=loc["dong"],service=loc["service"]))}</p>'
+            '</article>'
+        )
+    heading_variants=[
+        "지금 시작점을 정할 때 함께 볼 세 가지",
+        "같은 과정이라도 먼저 확인할 기준은 다를 수 있습니다",
+        "수업을 고르기 전 이 세 가지를 먼저 정리해보세요",
+        "현재 상황에 맞는 첫 순서를 이렇게 좁혀볼 수 있습니다",
+        "과정 이름보다 먼저 확인하면 좋은 기준입니다",
+        "학습 범위를 넓히기 전에 먼저 정할 항목입니다",
+    ]
+    hidx=int(hashlib.sha256((seed+"|heading").encode()).hexdigest()[:8],16)%len(heading_variants)
+    return (
+        '<section class="section local-decision-note"><div class="wrap narrow">'
+        '<p class="kicker">학습 판단 메모</p>'
+        f'<h2>{esc(heading_variants[hidx])}</h2>'
+        '<div class="decision-grid">' + "".join(cards) + '</div>'
+        '</div></section>'
+    )
+
+
 def _select_by_seed(items: list[str], count: int, seed: str) -> list[str]:
     if len(items) <= count:
         return items
@@ -1964,10 +2018,12 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     else:
         audience = ""
     ctx = mass_context(loc,intent,family,audience)
+    decision = local_decision_note(loc,intent)
+    support = decision + ctx
     if related_marker in raw:
-        raw = raw.replace(related_marker, ctx + related_marker, 1)
+        raw = raw.replace(related_marker, support + related_marker, 1)
     else:
-        raw = raw.replace('<section id="consultation-preview"', ctx+'<section id="consultation-preview"',1)
+        raw = raw.replace('<section id="consultation-preview"', support+'<section id="consultation-preview"',1)
 
     crumb=(
         '<div class="breadcrumb wrap" aria-label="현재 위치">'
