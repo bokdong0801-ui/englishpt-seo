@@ -83,6 +83,10 @@ jobs:
           cp stage9-release/pilot.js stage9-v44-preview/
           cp -R stage9-release/assets stage9-v44-preview/
           cp stage9-release/englishpt.html stage9-v44-preview/ 2>/dev/null || true
+          cp stage9-release/courses.html stage9-v44-preview/
+          cp stage9-release/english-conversation.html stage9-v44-preview/
+          cp stage9-release/exam-english.html stage9-v44-preview/
+          cp stage9-release/student-english.html stage9-v44-preview/
           python3 - <<'PY'
           import html, json, shutil
           from pathlib import Path
@@ -209,7 +213,7 @@ jobs:
           (out/'ACADEMY_PREVIEW_PAGES.json').write_text(json.dumps(academy_names,ensure_ascii=False,indent=2),encoding='utf-8')
           PY
 
-      - name: Audit main TOEIC TOEIC Speaking OPIc IELTS TOEFL and English conversation pages
+      - name: Audit main national hubs and five beginner exam pages
         run: |
           python3 - <<'PY'
           import html, json, re
@@ -226,6 +230,7 @@ jobs:
           toeic_speaking=by_suffix('toeic-speaking')
           opic=by_suffix('opic')
           ielts=by_suffix('ielts')
+          duolingo=by_suffix('duolingo')
           toefl=by_suffix('toefl')
           housewife=by_suffix('housewife-conv')
           conv=housewife[:-len('housewife-conv.html')]+'english-conv-academy.html'
@@ -292,21 +297,33 @@ jobs:
             'toeic_speaking':one(toeic_speaking),
             'opic':one(opic),
             'ielts':one(ielts),
+            'duolingo':one(duolingo),
             'toefl':one(toefl),
             'english_conversation':one(conv),
+            'national_hubs':{
+              name:{
+                'exists':(root/name).exists(),
+                'canonical_ok':f'https://englishpt.kr/{name}' in (root/name).read_text(encoding='utf-8'),
+                'songhyeondong':('songhyeondong' in (root/name).read_text(encoding='utf-8').lower() or '송현동' in (root/name).read_text(encoding='utf-8')),
+              }
+              for name in ('courses.html','english-conversation.html','exam-english.html','student-english.html')
+            },
           }
           assert report['home']['title']=='1:1 영어과외·영어회화·시험영어 | 잉글리시PT',report['home']
           assert '1:1 영어과외·영어회화부터' in report['home']['description'],report['home']
           assert report['home']['schema_fixed_songhyeondong'] is False,report['home']
           assert report['home']['footer_fixed_songhyeondong'] is False,report['home']
           assert report['home']['form_default_songhyeondong'] is False,report['home']
+          assert 'songhyeondong' not in home_raw.lower(), 'homepage still has Songhyeondong links'
+          assert all(row['exists'] and row['canonical_ok'] and not row['songhyeondong'] for row in report['national_hubs'].values()),report['national_hubs']
           assert report['toeic']['image_src']=='/assets/images/representative/toeic-editorial.svg',report['toeic']
           assert report['toeic_speaking']['image_src']=='/assets/images/representative/toeic-speaking-editorial.svg',report['toeic_speaking']
           assert report['opic']['image_src']=='/assets/images/representative/opic-editorial.svg',report['opic']
           assert report['ielts']['image_src']=='/assets/images/representative/ielts-editorial.svg',report['ielts']
+          assert report['duolingo']['image_src']=='/assets/images/digital-test-1.svg',report['duolingo']
           assert report['toefl']['image_src']=='/assets/images/representative/toefl-editorial.svg',report['toefl']
           assert report['english_conversation']['image_src']=='/assets/images/representative/english-conv-editorial.svg',report['english_conversation']
-          for key in ('toeic','toeic_speaking','opic','ielts','toefl','english_conversation'):
+          for key in ('toeic','toeic_speaking','opic','ielts','duolingo','toefl','english_conversation'):
               row=report[key]
               assert row['form_fields']==['area','consent','message','name','phone','wantedClass'],row
               assert row['has_purpose'] is False and row['has_difficulty'] is False,row
