@@ -10,3 +10,4 @@ Re-run exact 390px mobile QA preview.
 Redeploy national homepage footer and expanded editorial thumbnails.
 Redeploy beginner-first six-exam readability preview.
 Redeploy compact mobile beginner guide preview.
+Redeploy final 390px beginner readability preview.
