@@ -96,10 +96,11 @@
       "height": 720
     },
     "duolingo": {
-      "src": "/assets/images/digital-test-1.svg",
+      "src": "/assets/images/representative/duolingo-editorial.svg",
       "caption": "읽기·듣기·쓰기·말하기와 컴퓨터 시험 방식에 함께 익숙해집니다.",
       "width": 1200,
-      "height": 720
+      "height": 720,
+      "alt": "Duolingo English Test 1:1 맞춤 듀오링고 영어시험 읽기·듣기·쓰기·말하기 대표이미지"
     },
     "duolingo-academy": {
       "src": "/assets/images/digital-test-2.svg",
