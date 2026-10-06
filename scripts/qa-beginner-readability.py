@@ -106,6 +106,13 @@ HOME_REQUIRED = [
     "<small>점검</small>",
 ]
 
+HUBS_REQUIRED = {
+    "courses.html": ["영어 과정 찾기", "전국 과정 안내", "english-conversation.html", "exam-english.html", "student-english.html"],
+    "english-conversation.html": ["1:1 영어회화", "왕초보 영어회화", "직장인 영어회화", "성인 영어회화"],
+    "exam-english.html": ["시험영어", "토익", "토익스피킹", "오픽", "아이엘츠", "토플", "듀오링고 영어시험"],
+    "student-english.html": ["학생영어", "초등 영어", "중등 영어", "고등 영어", "국제학교 영어"],
+}
+
 def visible_body(raw: str) -> str:
     body = raw.split("</head>", 1)[1] if "</head>" in raw else raw
     body = re.sub(r"<script\b.*?</script>|<style\b.*?</style>", " ", body, flags=re.I | re.S)
@@ -152,12 +159,32 @@ def main() -> int:
                 failures.append({"file":"englishpt.html","rule":"home_difficult_term","value":phrase})
         song_links = sorted(set(re.findall(r'href="([^"]*songhyeondong[^"]*)"', raw, flags=re.I)))
         if song_links:
-            warnings.append({
+            failures.append({
                 "file":"englishpt.html",
                 "rule":"national_home_still_links_to_songhyeondong",
                 "count":len(song_links),
                 "links":song_links,
             })
+        for href in ("courses.html","english-conversation.html","exam-english.html","student-english.html"):
+            if href not in raw:
+                failures.append({"file":"englishpt.html","rule":"national_hub_link_missing","value":href})
+
+    for hub_name, required in HUBS_REQUIRED.items():
+        hub = root / hub_name
+        if not hub.exists():
+            failures.append({"file":hub_name,"rule":"national_hub_missing"})
+            continue
+        hub_raw = hub.read_text(encoding="utf-8")
+        hub_text = visible_body(hub_raw)
+        if "songhyeondong" in hub_raw.lower() or "송현동" in hub_text:
+            failures.append({"file":hub_name,"rule":"hub_contains_fixed_songhyeondong"})
+        for phrase in required:
+            if phrase not in hub_raw:
+                failures.append({"file":hub_name,"rule":"hub_required_copy_missing","value":phrase})
+        if '<meta name="robots" content="index,follow">' not in hub_raw:
+            failures.append({"file":hub_name,"rule":"hub_index_follow_missing"})
+        if f'https://englishpt.kr/{hub_name}' not in hub_raw:
+            failures.append({"file":hub_name,"rule":"hub_canonical_missing"})
 
     for p in root.glob("*.html"):
         counts["html_total"] += 1
@@ -207,7 +234,8 @@ def main() -> int:
             "guide_must_precede_intro_or_follow_legacy_hero": True,
             "blocked_visible_terms": FORBIDDEN_VISIBLE,
             "homepage_easy_copy_required": HOME_REQUIRED,
-            "songhyeondong_home_links": "warning_only_until_national_hub_task",
+            "songhyeondong_home_links": "must_be_zero",
+            "national_hubs_required": list(HUBS_REQUIRED),
         },
         "failures": failures[:250],
         "failure_count": len(failures),
