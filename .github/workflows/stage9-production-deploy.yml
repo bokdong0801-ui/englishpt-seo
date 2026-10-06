@@ -33,6 +33,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install search image rasterizer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin fonts-noto-cjk
+
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
