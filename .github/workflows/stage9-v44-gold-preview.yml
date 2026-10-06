@@ -317,8 +317,8 @@ jobs:
               name:{
                 'exists':(root/name).exists(),
                 'canonical':(
-                  __import__('re').search(r'<link\\s+rel=["\\']canonical["\\']\\s+href=["\\']([^"\\']+)',(root/name).read_text(encoding='utf-8'),__import__('re').I).group(1)
-                  if __import__('re').search(r'<link\\s+rel=["\\']canonical["\\']\\s+href=["\\']([^"\\']+)',(root/name).read_text(encoding='utf-8'),__import__('re').I)
+                  re.search(r'<link rel="canonical" href="([^"]+)"',(root/name).read_text(encoding='utf-8'),re.I).group(1)
+                  if re.search(r'<link rel="canonical" href="([^"]+)"',(root/name).read_text(encoding='utf-8'),re.I)
                   else None
                 ),
               }
