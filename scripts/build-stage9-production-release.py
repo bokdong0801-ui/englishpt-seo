@@ -260,6 +260,77 @@ def simplify_preserved_consultation(raw: str) -> tuple[str, bool]:
     return updated, n == 1
 
 
+PRESERVED_EASY_REPLACEMENTS = {
+    "academic performance": "수업과 평가 방식",
+    "adaptive format": "난이도가 달라지는 시험 방식",
+    "productive response": "직접 말하기·쓰기 응답",
+    "open response": "직접 답하는 문제",
+    "발화 명료성": "말이 또렷하게 들리는지",
+    "문항 요구": "문제가 무엇을 묻는지",
+    "입력정보": "읽거나 들은 정보",
+    "스크립트": "외운 답변",
+    "병목": "가장 어려운 부분",
+    "태깅": "원인별로 구분",
+    "재검증": "다시 확인",
+    "재평가": "다시 확인",
+    "재작성": "다시 쓰기",
+    "재답변": "다시 답하기",
+}
+
+PRESERVED_EXAM_SUFFIXES = [
+    ("toeic-speaking", "toeic-speaking"),
+    ("duolingo", "duolingo"),
+    ("ielts", "ielts"),
+    ("toefl", "toefl"),
+    ("opic", "opic"),
+    ("toeic", "toeic"),
+]
+
+
+def preserved_exam_base(name: str) -> str | None:
+    stem = name[:-5] if name.endswith(".html") else name
+    for token, base in PRESERVED_EXAM_SUFFIXES:
+        if (
+            stem.endswith("-" + token)
+            or stem.endswith("-academy-" + token)
+            or stem.endswith("-1to1-" + token)
+        ):
+            return base
+    return None
+
+
+def humanize_preserved_page(raw: str, name: str) -> str:
+    for old, new in PRESERVED_EASY_REPLACEMENTS.items():
+        raw = raw.replace(old, new)
+
+    base = preserved_exam_base(name)
+    if not base or 'data-beginner-guide="true"' in raw:
+        return raw
+
+    h1 = _plain_h1(raw) or "영어 시험 준비"
+    parts = h1.split(maxsplit=1)
+    dong = parts[0] if parts else "해당 지역"
+    service = parts[1] if len(parts) > 1 else {
+        "toeic":"토익과외",
+        "toeic-speaking":"토익스피킹과외",
+        "opic":"오픽과외",
+        "ielts":"아이엘츠과외",
+        "duolingo":"듀오링고영어테스트",
+        "toefl":"토플과외",
+    }[base]
+    loc = {"slug": Path(name).stem, "dong": dong, "service": service}
+    guide = CLEAN_RENDERER.beginner_exam_guide(base, loc)
+
+    detail_marker = '<section id="detail"'
+    if detail_marker in raw:
+        return raw.replace(detail_marker, guide + detail_marker, 1)
+
+    hero = re.search(r'<section class="hero[^"]*">.*?</section>', raw, flags=re.S | re.I)
+    if hero:
+        return raw[:hero.end()] + guide + raw[hero.end():]
+    return guide + raw
+
+
 def _replace_kicker_h2(raw: str, kicker: str, heading: str) -> str:
     pattern = re.compile(
         r'(<p class="kicker">' + re.escape(kicker) + r'</p><h2>).*?(</h2>)',
@@ -440,6 +511,7 @@ def main() -> None:
         for preserved_page in sorted(out.glob("*.html")):
             preserved_raw = preserved_page.read_text(encoding="utf-8")
             preserved_raw, changed = simplify_preserved_consultation(preserved_raw)
+            preserved_raw = humanize_preserved_page(preserved_raw, preserved_page.name)
             if preserved_page.name == "englishpt.html":
                 preserved_raw = preserved_raw.replace(
                     "잉글리시PT / 1:1 맞춤 영어관리 | ENGLISH PT",
@@ -449,8 +521,7 @@ def main() -> None:
                     "영어를 PT처럼 진단하고 훈련하고 기록하고 다시 조정하는 ENGLISH PT. 회화·시험·학교 영어를 현재 상태와 목표에 맞춰 1:1로 관리합니다.",
                     "영어회화부터 토익·토익스피킹·오픽·아이엘츠·토플까지, 현재 수준과 목표에 맞춰 필요한 영역을 1:1로 진단하고 훈련하는 잉글리시PT입니다.",
                 )
-            if changed or preserved_page.name == "englishpt.html":
-                preserved_page.write_text(preserved_raw, encoding="utf-8")
+            preserved_page.write_text(preserved_raw, encoding="utf-8")
 
     current_home = ROOT / "englishpt.html"
     if not current_home.exists():
