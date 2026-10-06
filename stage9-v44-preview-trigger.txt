@@ -19,3 +19,4 @@ Rerun compact national hub mobile hero Preview.
 Redeploy final course finder copy and homepage SEO Preview.
 2026-10-06 final-911-station-preview
 Rerun final 911-station Preview after canonical audit fix.
+Preview visual change reports on home exam and conversation hubs.
