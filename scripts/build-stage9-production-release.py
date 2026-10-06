@@ -27,14 +27,21 @@ CLEAN_RENDERER = _load_module(
     "stage9_clean_mass_renderer", ROOT / "scripts" / "stage9-clean-mass-renderer.py"
 )
 
+STATION_RENDERER = _load_module(
+    "stage9_station_renderer", ROOT / "scripts" / "stage9-station-renderer.py"
+)
+
 EXPECTED_SOURCE_NEW = 66937
 EXPECTED_ACADEMY_NEW = 30894
 EXPECTED_CONVERSATION_NEW = 20596
 EXPECTED_NEW = EXPECTED_SOURCE_NEW + EXPECTED_ACADEMY_NEW + EXPECTED_CONVERSATION_NEW
 EXPECTED_PRESERVED = 95
 EXPECTED_HUBS = 4
-EXPECTED_TOTAL = EXPECTED_NEW + EXPECTED_PRESERVED + EXPECTED_HUBS
-EXPECTED_SITEMAPS = 238
+EXPECTED_STATIONS = 911
+EXPECTED_STATION_INTENTS = 23
+EXPECTED_STATION_HTML = EXPECTED_STATIONS * (1 + EXPECTED_STATION_INTENTS) + 1
+EXPECTED_TOTAL = EXPECTED_NEW + EXPECTED_PRESERVED + EXPECTED_HUBS + EXPECTED_STATION_HTML
+EXPECTED_SITEMAPS = 281
 SITEMAP_CHUNK = 500
 EXPECTED_REDIRECTS = 74
 BASE_URL = "https://englishpt.kr"
@@ -595,6 +602,12 @@ def main() -> None:
                 )
                 transformed_conversation += 1
             write_checked(derived_name, derived_raw, derived_problems)
+
+    station_report = STATION_RENDERER.render_all(out)
+    if station_report.get("status") != "PASS_STATION_RENDER":
+        failures.append({"station_render": station_report})
+    if station_report.get("total_station_html") != EXPECTED_STATION_HTML:
+        failures.append({"station_html": [station_report.get("total_station_html"), EXPECTED_STATION_HTML]})
 
     first_pages_dir = next(iter((work / "stage5-full-generation").glob("shard-*/pages")), None)
     if first_pages_dir:
