@@ -1210,6 +1210,7 @@ def beginner_exam_guide(intent: str, loc: dict) -> str:
         '<p class="kicker">이 시험이 처음이라면</p>'
         f'<h2>{esc(d["intro"])}</h2>'
         f'<p class="beginner-guide-lead">{esc(BEGINNER_GUIDE_LEADS[variant])}</p>'
+        f'<p class="beginner-guide-context">{esc(loc["dong"])}에서 {esc(loc["service"])}을 처음 알아보는 분도 이해할 수 있도록 쉬운 뜻부터 정리했습니다.</p>'
         f'<div class="beginner-terms">{terms_html}</div>'
         '</div></div></section>'
     )
