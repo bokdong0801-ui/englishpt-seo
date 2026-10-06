@@ -1,3 +1,4 @@
 2026-10-06 capture-final-change-reports
 2026-10-06 recapture-mobile-change-reports-instant-scroll
 2026-10-06 final-korean-font-change-report-qa
+2026-10-06 final-visual-korean-shape-cards
