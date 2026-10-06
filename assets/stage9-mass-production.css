@@ -286,6 +286,15 @@ button,a{-webkit-tap-highlight-color:transparent}
 .learning-visual{margin:0;overflow:hidden;border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow)}
 .learning-visual img{display:block;width:100%;height:auto;aspect-ratio:5/3;object-fit:cover;background:var(--soft)}
 .learning-visual figcaption{padding:15px 18px;color:var(--muted);font-size:13.5px;line-height:1.65}
+.beginner-exam-guide{padding:8px 0 18px;background:var(--paper)}
+.beginner-guide-box{border:1px solid var(--line);border-radius:22px;background:#fff;padding:24px;box-shadow:0 12px 28px rgba(18,26,23,.06)}
+.beginner-guide-box .kicker{margin:0 0 8px;color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.05em}
+.beginner-guide-box h2{margin:0;font-size:clamp(23px,3vw,32px);line-height:1.35}
+.beginner-guide-lead{margin:10px 0 18px;color:var(--muted)}
+.beginner-terms{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.beginner-term{border-radius:16px;background:var(--soft);padding:14px 15px}
+.beginner-term b{display:block;margin-bottom:5px;font-size:14px}
+.beginner-term span{display:block;color:var(--muted);font-size:13px;line-height:1.55}
 
 /* Consultation */
 .consult{background:var(--soft)}
@@ -380,6 +389,14 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
   .visual-break{padding:14px 0 10px}
   .learning-visual{border-radius:18px}
   .learning-visual figcaption{padding:10px 12px;font-size:12.5px;line-height:1.45}
+  .beginner-exam-guide{padding:4px 0 10px}
+  .beginner-guide-box{padding:18px;border-radius:18px}
+  .beginner-guide-box h2{font-size:22px}
+  .beginner-guide-lead{margin:8px 0 13px;font-size:13px}
+  .beginner-terms{grid-template-columns:1fr;gap:7px}
+  .beginner-term{padding:11px 12px}
+  .beginner-term b{font-size:13px}
+  .beginner-term span{font-size:12.5px}
   .section{padding:48px 0}
   .intro-detail{padding-top:40px}
   .section h2{font-size:clamp(24px,7.5vw,30px)}
@@ -423,4 +440,6 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
   .hero-actions .btn{padding:10px 8px;font-size:12px}
   .visual-break{padding:12px 0 8px}
   .learning-visual figcaption{padding:9px 11px;font-size:12px;line-height:1.4}
+  .beginner-guide-box{padding:15px}
+  .beginner-guide-box h2{font-size:20px}
 }
