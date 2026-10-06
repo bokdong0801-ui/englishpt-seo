@@ -8,3 +8,4 @@ Redeploy Korean learning flow and inquiry copy preview.
 Redeploy Hero-first representative image mobile QA preview.
 Re-run exact 390px mobile QA preview.
 Redeploy national homepage footer and expanded editorial thumbnails.
+Redeploy beginner-first six-exam readability preview.
