@@ -11,3 +11,4 @@ Redeploy national homepage footer and expanded editorial thumbnails.
 Redeploy beginner-first six-exam readability preview.
 Redeploy compact mobile beginner guide preview.
 Redeploy final 390px beginner readability preview.
+Rerun final beginner readability preview with Chrome readiness wait.
