@@ -463,6 +463,85 @@ jobs:
           print(json.dumps(report,ensure_ascii=False,indent=2))
           PY
 
+      - name: QA four national hubs on desktop and mobile
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          mkdir -p hub-qa
+          python3 -m http.server 8766 --directory stage9-v44-preview >/tmp/stage9-hub-http.log 2>&1 &
+          SERVER_PID=$!
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --remote-debugging-port=9223 --remote-allow-origins='*' --user-data-dir=/tmp/stage9-hub-chrome about:blank >/tmp/stage9-hub-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:9223/json/version >/dev/null 2>&1; then break; fi
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:9223/json/version >/dev/null
+          python3 - <<'PY'
+          import base64, json, time
+          from pathlib import Path
+          import pychrome
+
+          hubs={
+            'courses.html':{'cards':6,'ctas':0,'bridge':True},
+            'english-conversation.html':{'cards':6,'ctas':6,'bridge':False},
+            'exam-english.html':{'cards':6,'ctas':6,'bridge':False},
+            'student-english.html':{'cards':4,'ctas':4,'bridge':False},
+          }
+          browser=pychrome.Browser(url='http://127.0.0.1:9223')
+          tab=browser.new_tab(); tab.start(); tab.Page.enable(); tab.Runtime.enable()
+          expression=r'''(()=>{
+            const box=(s)=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {top:Math.round(r.top),bottom:Math.round(r.bottom),left:Math.round(r.left),right:Math.round(r.right),height:Math.round(r.height),width:Math.round(r.width)}};
+            const cards=[...document.querySelectorAll('.route-card')].slice(0,2).map(e=>{const r=e.getBoundingClientRect();return {top:Math.round(r.top),bottom:Math.round(r.bottom),left:Math.round(r.left),right:Math.round(r.right),width:Math.round(r.width),height:Math.round(r.height)}});
+            const sticky=document.querySelector('.mobile-sticky');
+            return {
+              viewport:{width:window.innerWidth,height:window.innerHeight},
+              scrollWidth:document.documentElement.scrollWidth,
+              hero:box('.hero'),
+              routes:box('.route-cards'),
+              region:box('#region'),
+              final:box('.final'),
+              bridge:box('.hub-conversion-box'),
+              cardCount:document.querySelectorAll('.route-card').length,
+              ctaCount:document.querySelectorAll('.route-cta').length,
+              cards,
+              stickyDisplay:sticky?getComputedStyle(sticky).display:null,
+              songhyeondong:document.body.innerText.includes('송현동') || document.documentElement.innerHTML.toLowerCase().includes('songhyeondong'),
+            };
+          })()'''
+          rows=[]
+          for mode,width,height,mobile in [('desktop',1440,900,False),('mobile',390,844,True)]:
+            tab.call_method('Emulation.setDeviceMetricsOverride',width=width,height=height,deviceScaleFactor=1,mobile=mobile,screenWidth=width,screenHeight=height,dontSetVisibleSize=False)
+            for idx,(name,expect) in enumerate(hubs.items(),1):
+              tab.Page.navigate(url='http://127.0.0.1:8766/'+name); time.sleep(1.0)
+              metrics=tab.Runtime.evaluate(expression=expression,returnByValue=True)['result']['value']
+              assert metrics['viewport']['width']==width,(mode,name,metrics)
+              assert metrics['scrollWidth'] <= width+1,(mode,name,metrics)
+              assert metrics['hero'] and metrics['routes'] and metrics['region'] and metrics['final'],(mode,name,metrics)
+              assert metrics['cardCount']==expect['cards'],(mode,name,metrics)
+              assert metrics['ctaCount']==expect['ctas'],(mode,name,metrics)
+              assert bool(metrics['bridge'])==expect['bridge'],(mode,name,metrics)
+              assert metrics['songhyeondong'] is False,(mode,name,metrics)
+              assert len(metrics['cards'])==2,(mode,name,metrics)
+              if mode=='desktop':
+                assert metrics['cards'][0]['top']==metrics['cards'][1]['top'],(mode,name,metrics)
+                assert metrics['cards'][1]['left']>metrics['cards'][0]['left'],(mode,name,metrics)
+                assert metrics['stickyDisplay']=='none',(mode,name,metrics)
+              else:
+                assert abs(metrics['cards'][0]['left']-metrics['cards'][1]['left'])<=1,(mode,name,metrics)
+                assert metrics['cards'][1]['top']>=metrics['cards'][0]['bottom']-1,(mode,name,metrics)
+                assert metrics['stickyDisplay']=='block',(mode,name,metrics)
+              shot=tab.Page.captureScreenshot(format='png',fromSurface=True,captureBeyondViewport=False)
+              path=Path('hub-qa')/f'{mode}-{idx:02d}-{name}.png'
+              path.write_bytes(base64.b64decode(shot['data']))
+              rows.append({'mode':mode,'page':name,**metrics,'screenshot':str(path)})
+          tab.stop(); browser.close_tab(tab)
+          report={'status':'PASS_NATIONAL_HUB_RESPONSIVE_QA','desktop':'1440x900','mobile':'390x844','pages':rows}
+          Path('STAGE9_NATIONAL_HUB_RESPONSIVE_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+
       - name: Install Netlify CLI
         run: npm install -g netlify-cli@latest
 
@@ -486,6 +565,7 @@ jobs:
           names=[row['canonical'].rsplit('/',1)[-1] for row in q['representative_13']['pages']]
           names += json.loads(Path('stage9-v44-preview/ACADEMY_PREVIEW_PAGES.json').read_text(encoding='utf-8'))
           assert len(names)==23, len(names)
+          names += ['courses.html','english-conversation.html','exam-english.html','student-english.html']
           for name in names:
               subprocess.run(['curl','-fsSIL','--max-time','30',f'{base}/{name}'],check=True,stdout=subprocess.DEVNULL)
           print('PASS_STAGE9_23_PAGE_READER_EXPANSION_PREVIEW')
@@ -516,5 +596,7 @@ jobs:
             STAGE9_KEY_PAGE_QA_REPORT.json
             STAGE9_BEGINNER_READABILITY_QA.json
             STAGE9_MOBILE_FIRST_SCREEN_QA.json
+            STAGE9_NATIONAL_HUB_RESPONSIVE_QA.json
             mobile-qa/*.png
+            hub-qa/*.png
           retention-days: 30
