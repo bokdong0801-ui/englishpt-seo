@@ -1,3 +1,4 @@
 2026-10-06 diagnose-production-403
 2026-10-06 diagnose-production-403-domain-resolve
 2026-10-06 diagnose-production-403-v3
+2026-10-06 diagnose-role-and-deploy-flags
