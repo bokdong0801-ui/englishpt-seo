@@ -187,6 +187,59 @@ jobs:
           python3 scripts/qa-beginner-readability.py stage9-release \
             --report STAGE9_BEGINNER_READABILITY_QA.json
 
+      - name: Run final SEO indexability QA across all public HTML
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          root=Path('stage9-release')
+          pages=sorted(root.glob('*.html'))
+          assert len(pages)==118526,len(pages)
+
+          canonicals=[]
+          blocked=[]
+          bad_domain=[]
+          for p in pages:
+              raw=p.read_text(encoding='utf-8',errors='ignore')
+              low=raw.lower()
+              if 'noindex' in low or 'nofollow' in low:
+                  blocked.append(p.name)
+              m=re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']',raw,re.I)
+              assert m,(p.name,'canonical_missing')
+              url=m.group(1)
+              if not url.startswith('https://englishpt.kr/'):
+                  bad_domain.append((p.name,url))
+              canonicals.append(url)
+
+          assert not blocked,blocked[:20]
+          assert not bad_domain,bad_domain[:20]
+          assert len(set(canonicals))==118526,(len(canonicals),len(set(canonicals)))
+
+          robots=(root/'robots.txt').read_text(encoding='utf-8')
+          assert 'Disallow: /' not in robots
+          assert 'Sitemap: https://englishpt.kr/sitemap-index.xml' in robots
+          assert 'User-agent: Googlebot' in robots
+          assert 'User-agent: Yeti' in robots
+
+          index=(root/'sitemap-index.xml').read_text(encoding='utf-8')
+          assert index.count('<sitemap><loc>')==238
+          assert 'https://englishpt.kr/sitemaps/sitemap-001.xml' in index
+          assert 'https://englishpt.kr/sitemaps/sitemap-238.xml' in index
+          assert not (root/'sitemap.xml').exists()
+
+          home=(root/'englishpt.html').read_text(encoding='utf-8')
+          assert '<meta name="robots" content="index,follow">' in home
+          assert '<link rel="canonical" href="https://englishpt.kr/englishpt.html">' in home
+          for hub in ('courses.html','english-conversation.html','exam-english.html','student-english.html'):
+              raw=(root/hub).read_text(encoding='utf-8')
+              assert '<meta name="robots" content="index,follow">' in raw,hub
+              assert f'<link rel="canonical" href="https://englishpt.kr/{hub}">' in raw,hub
+
+          print('PASS_STAGE9_FINAL_SEO_INDEXABILITY_QA')
+          PY
+
+
       - name: Package representative 23 final production pages
         run: |
           mkdir -p stage9-final-ux-samples
