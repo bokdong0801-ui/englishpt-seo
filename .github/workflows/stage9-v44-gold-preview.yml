@@ -69,7 +69,7 @@ jobs:
           from pathlib import Path
           q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
           assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
-          assert q['counts']['html_total']==118522, q
+          assert q['counts']['html_total']==118526, q
           assert q['indexing']['production_ui_failures']==0, q
           assert q['source']['mass_renderer']=='stage9-clean-gold-v1', q
           print('PASS_EXACT_PRODUCTION_ASSEMBLY')
