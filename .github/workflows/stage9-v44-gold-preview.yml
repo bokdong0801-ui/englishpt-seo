@@ -320,7 +320,7 @@ jobs:
           assert report['toeic_speaking']['image_src']=='/assets/images/representative/toeic-speaking-editorial.svg',report['toeic_speaking']
           assert report['opic']['image_src']=='/assets/images/representative/opic-editorial.svg',report['opic']
           assert report['ielts']['image_src']=='/assets/images/representative/ielts-editorial.svg',report['ielts']
-          assert report['duolingo']['image_src']=='/assets/images/digital-test-1.svg',report['duolingo']
+          assert report['duolingo']['image_src']=='/assets/images/representative/duolingo-editorial.svg',report['duolingo']
           assert report['toefl']['image_src']=='/assets/images/representative/toefl-editorial.svg',report['toefl']
           assert report['english_conversation']['image_src']=='/assets/images/representative/english-conv-editorial.svg',report['english_conversation']
           for key in ('toeic','toeic_speaking','opic','ielts','duolingo','toefl','english_conversation'):
