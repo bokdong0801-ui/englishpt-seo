@@ -9,6 +9,7 @@ import importlib.util
 import json
 import re
 import shutil
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,6 +46,15 @@ EXPECTED_SITEMAPS = 281
 SITEMAP_CHUNK = 500
 EXPECTED_REDIRECTS = 74
 BASE_URL = "https://englishpt.kr"
+
+OG_PAGE_IMAGES = {
+    "englishpt.html": "/assets/images/og/englishpt-home-og.png",
+    "courses.html": "/assets/images/og/englishpt-courses-og.png",
+    "english-conversation.html": "/assets/images/og/englishpt-conversation-og.png",
+    "exam-english.html": "/assets/images/og/englishpt-exam-og.png",
+    "student-english.html": "/assets/images/og/englishpt-student-og.png",
+    "stations.html": "/assets/images/og/englishpt-courses-og.png",
+}
 
 VISUAL_FAMILIES = ["school","school-talk","campus","interview","business","conversation","toeic","speaking","four-skills","digital-test"]
 
@@ -141,6 +151,202 @@ REPRESENTATIVE_IMAGE_FAMILIES = {
         "accent2": "#9CC9E2",
     },
 }
+
+
+def write_search_image_assets(out: Path, failures: list) -> None:
+    """Copy the five approved OG sources and rasterize all search-image candidates to PNG."""
+    src_dir = ROOT / "assets" / "images" / "og"
+    dst_dir = out / "assets" / "images" / "og"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    expected = (
+        "englishpt-home-og.svg",
+        "englishpt-courses-og.svg",
+        "englishpt-conversation-og.svg",
+        "englishpt-exam-og.svg",
+        "englishpt-student-og.svg",
+    )
+    for name in expected:
+        src = src_dir / name
+        if not src.exists():
+            failures.append(f"og_source_missing:{name}")
+        else:
+            shutil.copy2(src, dst_dir / name)
+
+    converter = shutil.which("rsvg-convert")
+    if not converter:
+        failures.append("rsvg_convert_missing")
+        return
+
+    images_root = out / "assets" / "images"
+    for svg in sorted(images_root.rglob("*.svg")):
+        png = svg.with_suffix(".png")
+        proc = subprocess.run(
+            [converter, str(svg), "-o", str(png)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+        if proc.returncode != 0 or not png.exists() or png.stat().st_size < 5000:
+            failures.append({
+                "rasterize_failed": str(svg.relative_to(out)),
+                "stderr": proc.stderr[-500:],
+            })
+
+
+def _absolute_asset_url(src: str) -> str:
+    if src.startswith("https://") or src.startswith("http://"):
+        return src
+    if not src.startswith("/"):
+        src = "/" + src
+    return BASE_URL + src
+
+
+def _pick_search_image(page_name: str, raw: str) -> str:
+    if page_name in OG_PAGE_IMAGES:
+        return OG_PAGE_IMAGES[page_name]
+    if page_name.startswith("station-") and page_name.count("-") == 1:
+        return "/assets/images/og/englishpt-courses-og.png"
+
+    m = re.search(
+        r'<figure class="learning-visual">.*?<img[^>]+src=["\']([^"\']+)["\']',
+        raw, re.I | re.S,
+    )
+    if not m:
+        m = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', raw, re.I)
+    if m:
+        src = m.group(1)
+        if src.startswith("/assets/images/") or src.startswith("assets/images/"):
+            path = "/" + src.lstrip("/")
+            if path.lower().endswith(".svg"):
+                path = path[:-4] + ".png"
+            return path
+
+    lower = page_name.lower()
+    fallback_by_intent = (
+        ("toeic-speaking", "/assets/images/representative/toeic-speaking-editorial.png"),
+        ("toeic", "/assets/images/representative/toeic-editorial.png"),
+        ("opic", "/assets/images/representative/opic-editorial.png"),
+        ("ielts", "/assets/images/representative/ielts-editorial.png"),
+        ("toefl", "/assets/images/representative/toefl-editorial.png"),
+        ("duolingo", "/assets/images/representative/duolingo-editorial.png"),
+        ("english-conv", "/assets/images/representative/english-conv-editorial.png"),
+    )
+    for token, path in fallback_by_intent:
+        if token in lower:
+            return path
+    if page_name.startswith("station-"):
+        return "/assets/images/og/englishpt-courses-og.png"
+    return "/assets/images/og/englishpt-home-og.png"
+
+
+def _add_schema_image(raw: str, image_url: str) -> tuple[str, bool]:
+    m = re.search(r'<script type="application/ld\+json">(.*?)</script>', raw, re.S | re.I)
+    if not m:
+        return raw, False
+    try:
+        data = json.loads(m.group(1))
+        changed = False
+
+        def walk(node):
+            nonlocal changed
+            if isinstance(node, dict):
+                typ = node.get("@type")
+                types = typ if isinstance(typ, list) else [typ]
+                if any(x in ("WebPage", "CollectionPage", "Service", "EducationalOrganization") for x in types):
+                    node["image"] = image_url
+                    changed = True
+                for value in node.values():
+                    walk(value)
+            elif isinstance(node, list):
+                for value in node:
+                    walk(value)
+
+        walk(data)
+        if not changed and isinstance(data, dict):
+            data["image"] = image_url
+            changed = True
+        rep = '<script type="application/ld+json">' + json.dumps(
+            data, ensure_ascii=False, separators=(",", ":")
+        ) + '</script>'
+        return raw[:m.start()] + rep + raw[m.end():], changed
+    except Exception:
+        return raw, False
+
+
+def apply_search_image_metadata(out: Path, failures: list) -> dict:
+    pages = sorted(out.glob("*.html"))
+    image_counts: dict[str, int] = {}
+    schema_failures = []
+    missing_assets = []
+
+    for page in pages:
+        raw = page.read_text(encoding="utf-8", errors="ignore")
+        rel_image = _pick_search_image(page.name, raw)
+        image_url = _absolute_asset_url(rel_image)
+        asset = out / rel_image.lstrip("/")
+        if not asset.exists():
+            missing_assets.append({"file": page.name, "asset": rel_image})
+
+        raw = re.sub(
+            r'<meta name="robots" content="[^"]*">',
+            '<meta name="robots" content="index,follow,max-image-preview:large">',
+            raw, count=1, flags=re.I,
+        )
+        if 'name="robots"' not in raw.lower():
+            raw = raw.replace(
+                "<head>",
+                '<head><meta name="robots" content="index,follow,max-image-preview:large">',
+                1,
+            )
+
+        # Remove any stale image hints before inserting one canonical set.
+        raw = re.sub(r'<meta property="og:image(?::[^"]+)?" content="[^"]*">', '', raw, flags=re.I)
+        raw = re.sub(r'<meta name="twitter:(?:card|image)" content="[^"]*">', '', raw, flags=re.I)
+        raw = re.sub(r'<link rel="image_src" href="[^"]*">', '', raw, flags=re.I)
+
+        title_m = re.search(r'<title>(.*?)</title>', raw, re.S | re.I)
+        image_alt = html.unescape(re.sub(r'<[^>]+>', '', title_m.group(1))).strip() if title_m else "ENGLISH PT"
+        if "/assets/images/og/" in rel_image:
+            width, height = 1200, 630
+        else:
+            width, height = 1200, 720
+
+        meta = (
+            f'<meta property="og:image" content="{html.escape(image_url, quote=True)}">'
+            f'<meta property="og:image:width" content="{width}">'
+            f'<meta property="og:image:height" content="{height}">'
+            '<meta property="og:image:type" content="image/png">'
+            f'<meta property="og:image:alt" content="{html.escape(image_alt, quote=True)}">'
+            '<meta name="twitter:card" content="summary_large_image">'
+            f'<meta name="twitter:image" content="{html.escape(image_url, quote=True)}">'
+            f'<link rel="image_src" href="{html.escape(image_url, quote=True)}">'
+        )
+        marker = re.search(r'<meta property="og:url" content="[^"]*">', raw, re.I)
+        if marker:
+            raw = raw[:marker.end()] + meta + raw[marker.end():]
+        else:
+            desc = re.search(r'<meta name="description" content="[^"]*">', raw, re.I)
+            if desc:
+                raw = raw[:desc.end()] + meta + raw[desc.end():]
+            else:
+                raw = raw.replace("<head>", "<head>" + meta, 1)
+
+        raw, schema_ok = _add_schema_image(raw, image_url)
+        if not schema_ok:
+            schema_failures.append(page.name)
+        page.write_text(raw, encoding="utf-8")
+        image_counts[rel_image] = image_counts.get(rel_image, 0) + 1
+
+    if missing_assets:
+        failures.append({"search_image_assets_missing": missing_assets[:50], "count": len(missing_assets)})
+    if schema_failures:
+        failures.append({"search_image_schema_failed": schema_failures[:50], "count": len(schema_failures)})
+
+    return {
+        "html_pages": len(pages),
+        "unique_search_images": len(image_counts),
+        "image_usage": dict(sorted(image_counts.items(), key=lambda x: (-x[1], x[0]))),
+        "missing_assets": len(missing_assets),
+        "schema_failures": len(schema_failures),
+    }
 
 
 def write_representative_candidate_assets(out: Path) -> None:
@@ -617,6 +823,7 @@ def main() -> None:
                 shutil.copy2(src, out / asset)
     write_visual_assets(out)
     write_representative_candidate_assets(out)
+    write_search_image_assets(out, failures)
 
     # Keep user-approved editorial thumbnails as fixed branch assets.
     custom_rep_src = ROOT / "assets" / "images" / "representative"
@@ -688,6 +895,8 @@ def main() -> None:
             failures.append(f"discovery_file_missing:{name}")
         else:
             shutil.copy2(src, out / name)
+
+    search_image_report = apply_search_image_metadata(out, failures)
 
     # Rebuild sitemaps from the exact final HTML set because Stage 9 adds
     # five exam-academy intents plus four conversation-search intents per locality.
@@ -797,6 +1006,7 @@ def main() -> None:
             "station_course_pages": station_report.get("station_course_pages"),
             "station_index_pages": station_report.get("station_index"),
             "station_html_total": station_report.get("total_station_html"),
+            "search_image_metadata": search_image_report,
             "html_total": len(html_files),
             "sitemap_shards": len(sitemap_files),
             "sitemap_urls": sitemap_urls,
