@@ -25,3 +25,4 @@ Run image-enabled Stage 9 preflight after OPIc and TOEFL academy similarity fix.
 2026-10-06 final-140391-og-image-metadata-preflight
 2026-10-06 rerun-140391-og-after-raster-order-fix
 2026-10-06 final-search-image-meta-and-140391-preflight
+2026-10-06 rerun-140391-preflight-after-local-diversity-fix
