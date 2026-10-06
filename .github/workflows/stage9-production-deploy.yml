@@ -120,9 +120,9 @@ jobs:
           assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY',q
           assert q['final_domain']=='https://englishpt.kr'
           assert q['counts']['new_pages']==118427
-          assert q['counts']['html_total']==118522
+          assert q['counts']['html_total']==118526
           assert q['counts']['sitemap_shards']==238
-          assert q['counts']['sitemap_urls']==118522
+          assert q['counts']['sitemap_urls']==118526
           assert q['indexing']['noindex_pages']==0
           assert q['indexing']['robots_txt_allows_crawl'] is True
           print('PASS Stage 9 release package')
@@ -145,7 +145,7 @@ jobs:
             --dir=stage9-release \
             --site="$NETLIFY_SITE_ID" \
             --auth="$NETLIFY_AUTH_TOKEN" \
-            --message="ENGLISH PT Stage 9 production release - 118,522 HTML" \
+            --message="ENGLISH PT Stage 9 production release - 118,526 HTML" \
             --json | tee stage9-netlify-deploy.json
           python3 - <<'PY'
           import json
