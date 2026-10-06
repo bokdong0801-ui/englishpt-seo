@@ -107,10 +107,10 @@ HOME_REQUIRED = [
 ]
 
 HUBS_REQUIRED = {
-    "courses.html": ["영어 과정 찾기", "전국 과정 안내", "english-conversation.html", "exam-english.html", "student-english.html"],
-    "english-conversation.html": ["1:1 영어회화", "왕초보 영어회화", "직장인 영어회화", "성인 영어회화"],
-    "exam-english.html": ["시험영어", "토익", "토익스피킹", "오픽", "아이엘츠", "토플", "듀오링고 영어시험"],
-    "student-english.html": ["학생영어", "초등 영어", "중등 영어", "고등 영어", "국제학교 영어"],
+    "courses.html": ["영어 과정 찾기", "전국 과정 안내", "english-conversation.html", "exam-english.html", "student-english.html", "과정을 잘 몰라도 괜찮습니다", "아직 고르기 어렵다면", "희망 지역과 수업 방식은"],
+    "english-conversation.html": ["1:1 영어회화", "왕초보 영어회화", "직장인 영어회화", "성인 영어회화", "상담에서 확인하기", "희망 지역과 수업 방식은"],
+    "exam-english.html": ["시험영어", "토익", "토익스피킹", "오픽", "아이엘츠", "토플", "듀오링고 영어시험", "상담하기 →", "희망 지역과 수업 방식은"],
+    "student-english.html": ["학생영어", "초등 영어", "중등 영어", "고등 영어", "국제학교 영어", "상담하기 →", "희망 지역과 수업 방식은"],
 }
 
 def visible_body(raw: str) -> str:
@@ -185,6 +185,12 @@ def main() -> int:
             failures.append({"file":hub_name,"rule":"hub_index_follow_missing"})
         if f'https://englishpt.kr/{hub_name}' not in hub_raw:
             failures.append({"file":hub_name,"rule":"hub_canonical_missing"})
+        expected_ctas={"courses.html":0,"english-conversation.html":6,"exam-english.html":6,"student-english.html":4}[hub_name]
+        if hub_raw.count('class="route-cta"') != expected_ctas:
+            failures.append({"file":hub_name,"rule":"hub_route_cta_count","expected":expected_ctas,"actual":hub_raw.count('class="route-cta"')})
+        if hub_name == "courses.html":
+            if 'class="hub-conversion-box"' not in hub_raw or 'data-course="과정 선택 상담"' not in hub_raw:
+                failures.append({"file":hub_name,"rule":"course_finder_conversion_bridge_missing"})
 
     for p in root.glob("*.html"):
         counts["html_total"] += 1
