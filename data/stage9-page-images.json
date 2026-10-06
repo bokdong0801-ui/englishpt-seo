@@ -45,7 +45,7 @@
     },
     "toeic": {
       "src": "/assets/images/representative/toeic-editorial.svg",
-      "caption": "LC·RC 오답과 시간 사용을 확인해 필요한 파트부터 관리합니다.",
+      "caption": "듣기(LC)·읽기(RC)에서 자주 틀리는 부분과 시간 사용을 확인합니다.",
       "width": 1200,
       "height": 720,
       "alt": "TOEIC 1:1 맞춤 토익 LC·RC·시간관리 대표이미지"
@@ -71,7 +71,7 @@
     },
     "opic": {
       "src": "/assets/images/representative/opic-editorial.svg",
-      "caption": "돌발·롤플레이 답변을 내 경험으로 말하는 연습을 합니다.",
+      "caption": "예상 밖 질문과 상황 말하기까지 내 경험으로 답하는 연습을 합니다.",
       "width": 1200,
       "height": 720,
       "alt": "OPIc 1:1 맞춤 오픽 돌발·롤플레이·답변 구성 대표이미지"
@@ -84,7 +84,7 @@
     },
     "ielts": {
       "src": "/assets/images/representative/ielts-editorial.svg",
-      "caption": "4영역을 나눠 목표 Band에 필요한 영역부터 준비합니다.",
+      "caption": "듣기·읽기·쓰기·말하기 네 영역을 나눠 목표 점수에 필요한 부분부터 준비합니다.",
       "width": 1200,
       "height": 720,
       "alt": "IELTS 1:1 맞춤 아이엘츠 4영역·Band 관리 대표이미지"
@@ -97,7 +97,7 @@
     },
     "duolingo": {
       "src": "/assets/images/digital-test-1.svg",
-      "caption": "시험 흐름에 익숙해지며 말하기·쓰기 응답을 연습합니다.",
+      "caption": "읽기·듣기·쓰기·말하기와 컴퓨터 시험 방식에 함께 익숙해집니다.",
       "width": 1200,
       "height": 720
     },
@@ -109,7 +109,7 @@
     },
     "toefl": {
       "src": "/assets/images/representative/toefl-editorial.svg",
-      "caption": "4영역과 통합형 문제를 실제 시험 흐름에 맞춰 준비합니다.",
+      "caption": "읽기·듣기·말하기·쓰기와 통합형 문제를 실제 시험 흐름에 맞춰 준비합니다.",
       "width": 1200,
       "height": 720,
       "alt": "TOEFL 1:1 맞춤 토플 4영역·통합형 관리 대표이미지"
