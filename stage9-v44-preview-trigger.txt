@@ -16,3 +16,4 @@ Redeploy national hubs and final beginner-review Preview.
 Redeploy final hubs and Duolingo editorial Preview.
 Rerun hub responsive QA after mobile media query fix.
 Rerun compact national hub mobile hero Preview.
+Redeploy final course finder copy and homepage SEO Preview.
