@@ -5,3 +5,4 @@
 2026-10-06 diagnose-account-plan-credits
 2026-10-06 inspect-netlify-deploy-history
 2026-10-06 inspect-failed-production-error
+2026-10-06 inspect-operational-credit-block-final
