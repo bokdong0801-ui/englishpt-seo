@@ -1,0 +1,50 @@
+name: Netlify Production Permission Diagnostic
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'netlify-production-diagnostic-trigger.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID || secrets.ENGLISHPT_NETLIFY_SITE_ID || vars.NETLIFY_SITE_ID || vars.ENGLISHPT_NETLIFY_SITE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read Netlify production permission state
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN"
+          test -n "$NETLIFY_SITE_ID"
+          curl -fsS             -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID"             -o /tmp/site.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/site.json',encoding='utf-8'))
+          published=d.get('published_deploy') or {}
+          build=d.get('build_settings') or {}
+          safe={
+            'site_name':d.get('name'),
+            'url':d.get('url'),
+            'ssl_url':d.get('ssl_url'),
+            'account_name':d.get('account_name'),
+            'account_slug':d.get('account_slug'),
+            'prevent_non_git_prod_deploys':d.get('prevent_non_git_prod_deploys'),
+            'published_deploy_locked':published.get('locked'),
+            'published_deploy_id':published.get('id'),
+            'published_deploy_state':published.get('state'),
+            'published_deploy_context':published.get('context'),
+            'repo_branch':build.get('repo_branch'),
+            'repo_path':build.get('repo_path'),
+            'repo_url':build.get('repo_url'),
+            'stop_builds':build.get('stop_builds'),
+            'allowed_branches':build.get('allowed_branches'),
+          }
+          print(json.dumps(safe,ensure_ascii=False,indent=2))
+          PY
