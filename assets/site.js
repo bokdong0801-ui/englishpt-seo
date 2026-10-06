@@ -3,7 +3,8 @@
   const modal=document.getElementById('applyModal');
   const menu=document.querySelector('[data-menu]'); const mobileNav=document.getElementById('mobileNav');
   if(menu&&mobileNav){menu.addEventListener('click',()=>{const o=menu.getAttribute('aria-expanded')==='true';menu.setAttribute('aria-expanded',String(!o));mobileNav.hidden=o;});}
-  function openForm(){if(!modal)return;modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';setTimeout(()=>document.getElementById('leadName')?.focus(),50);}
+  const leadClass=document.getElementById('leadClass'); const defaultClass=leadClass?.defaultValue||leadClass?.value||'잉글리시PT';
+  function openForm(e){if(!modal)return;const requested=e?.currentTarget?.dataset?.course||'';if(leadClass)leadClass.value=requested||defaultClass;modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';setTimeout(()=>document.getElementById('leadName')?.focus(),50);}
   function closeForm(){if(!modal)return;modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.style.overflow='';}
   document.querySelectorAll('[data-open-form]').forEach(x=>x.addEventListener('click',openForm));
   document.querySelectorAll('[data-close-form]').forEach(x=>x.addEventListener('click',closeForm));
