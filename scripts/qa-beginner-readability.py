@@ -183,8 +183,16 @@ def main() -> int:
                 continue
             guide_i = raw.find('data-beginner-guide="true"')
             intro_i = raw.find('class="section intro-detail"')
-            if intro_i < 0 or guide_i > intro_i:
-                failures.append({"file":p.name,"rule":"beginner_guide_not_before_intro","exam":base})
+            hero_i = raw.find('class="hero')
+            # Current mass pages use intro-detail. Preserved legacy pages do not,
+            # so for those we require the beginner guide to appear immediately
+            # after the Hero and before the next substantive section.
+            if intro_i >= 0:
+                if guide_i > intro_i:
+                    failures.append({"file":p.name,"rule":"beginner_guide_not_before_intro","exam":base})
+            else:
+                if hero_i < 0 or guide_i < hero_i:
+                    failures.append({"file":p.name,"rule":"legacy_beginner_guide_not_after_hero","exam":base})
             for phrase in GUIDE_ANCHORS[base]:
                 if phrase not in raw:
                     failures.append({"file":p.name,"rule":"beginner_definition_missing","exam":base,"value":phrase})
@@ -196,7 +204,7 @@ def main() -> int:
         "counts": counts,
         "rules": {
             "exam_beginner_guide_required": True,
-            "guide_must_precede_intro": True,
+            "guide_must_precede_intro_or_follow_legacy_hero": True,
             "blocked_visible_terms": FORBIDDEN_VISIBLE,
             "homepage_easy_copy_required": HOME_REQUIRED,
             "songhyeondong_home_links": "warning_only_until_national_hub_task",
