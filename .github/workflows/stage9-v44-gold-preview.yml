@@ -529,6 +529,8 @@ jobs:
                 assert metrics['cards'][1]['left']>metrics['cards'][0]['left'],(mode,name,metrics)
                 assert metrics['stickyDisplay']=='none',(mode,name,metrics)
               else:
+                assert metrics['hero']['height'] <= 620,(mode,name,metrics)
+                assert metrics['routes']['top'] <= 1050,(mode,name,metrics)
                 assert abs(metrics['cards'][0]['left']-metrics['cards'][1]['left'])<=1,(mode,name,metrics)
                 assert metrics['cards'][1]['top']>=metrics['cards'][0]['bottom']-1,(mode,name,metrics)
                 assert metrics['stickyDisplay']=='block',(mode,name,metrics)
