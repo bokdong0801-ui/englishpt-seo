@@ -1210,7 +1210,7 @@ def beginner_exam_guide(intent: str, loc: dict) -> str:
         '<p class="kicker">이 시험이 처음이라면</p>'
         f'<h2>{esc(d["intro"])}</h2>'
         f'<p class="beginner-guide-lead">{esc(BEGINNER_GUIDE_LEADS[variant])}</p>'
-        f'<p class="beginner-guide-context">{esc(loc["dong"])}에서 {esc(loc["service"])}을 처음 알아보는 분도 이해할 수 있도록 쉬운 뜻부터 정리했습니다.</p>'
+        f'<p class="beginner-guide-context">{esc(loc["dong"])}에서 {esc(loc["service"])} 정보를 처음 알아보는 분도 이해할 수 있도록 쉬운 뜻부터 정리했습니다.</p>'
         f'<div class="beginner-terms">{terms_html}</div>'
         '</div></div></section>'
     )
@@ -1579,6 +1579,18 @@ def humanize_visible_copy(raw: str, family: str) -> str:
         "질문 변형": "질문이 달라졌을 때",
         "입력정보": "읽거나 들은 정보",
         "스크립트": "외운 답변",
+        "Adaptive format": "난이도가 달라지는 시험 방식",
+        "practice": "연습",
+        "admissions": "입학·지원",
+        "Reading·Writing·Listening·Speaking": "읽기·쓰기·듣기·말하기",
+        "Reading·Listening": "읽기·듣기",
+        "Speaking·Writing": "말하기·쓰기",
+        "Reading과 Listening": "읽기(Reading)와 듣기(Listening)",
+        "Speaking이나 Writing": "말하기(Speaking)나 쓰기(Writing)",
+        "Part 7": "파트 7",
+        "외운 답변는": "외운 답변은",
+        "응답가": "응답이",
+        "첨삭": "글 피드백",
     }
     if family == "exam":
         replacements.update({
