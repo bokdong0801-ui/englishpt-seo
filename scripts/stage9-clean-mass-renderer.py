@@ -1651,6 +1651,7 @@ def v44_header() -> str:
         '<a href="/englishpt.html" class="brand"><span class="brand-mark">PT</span><span class="brand-name">ENGLISH PT</span></a>'
         '<nav class="nav" aria-label="주요 메뉴">'
         '<a class="phone-cta" href="tel:+821050068027">전화 010-5006-8027</a>'
+        '<a class="nav-link" href="/stations.html">역으로 찾기</a>'
         '<a class="nav-link" href="#detail">수업 보기</a>'
         '<a class="nav-cta" href="#consultation-preview">무료 PT 진단</a>'
         '</nav></div></header>'
