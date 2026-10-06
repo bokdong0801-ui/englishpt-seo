@@ -1181,22 +1181,36 @@ BEGINNER_EXAM_GUIDE = {
 }
 
 
-def beginner_exam_guide(intent: str) -> str:
+BEGINNER_GUIDE_LEADS = [
+    "처음 보는 용어부터 짧게 정리한 뒤 아래 설명을 읽어보세요.",
+    "시험 이름은 익숙해도 용어가 낯설다면 이 세 가지만 먼저 확인하면 됩니다.",
+    "세부 공부법보다 먼저, 자주 나오는 용어의 뜻부터 간단히 확인해보세요.",
+    "시험을 처음 알아보는 단계라면 아래 표현을 먼저 이해하고 넘어가면 편합니다.",
+    "어려운 용어를 외울 필요는 없습니다. 아래 뜻만 알고 다음 내용을 읽어도 충분합니다.",
+]
+
+
+def beginner_exam_guide(intent: str, loc: dict) -> str:
     base = base_exam_intent(intent)
     d = BEGINNER_EXAM_GUIDE.get(base)
     if not d:
         return ""
-    terms = ''.join(
+    digest = hashlib.sha256(f'{loc["slug"]}|{base}|beginner-guide-v2'.encode()).hexdigest()
+    variant = int(digest[:8], 16) % len(BEGINNER_GUIDE_LEADS)
+    terms = list(d["terms"])
+    shift = variant % len(terms)
+    terms = terms[shift:] + terms[:shift]
+    terms_html = ''.join(
         f'<div class="beginner-term"><b>{esc(term)}</b><span>{esc(desc)}</span></div>'
-        for term, desc in d["terms"]
+        for term, desc in terms
     )
     return (
         '<section class="beginner-exam-guide" data-beginner-guide="true"><div class="wrap">'
         '<div class="beginner-guide-box">'
         '<p class="kicker">이 시험이 처음이라면</p>'
         f'<h2>{esc(d["intro"])}</h2>'
-        '<p class="beginner-guide-lead">아래 용어만 먼저 알아두면 이후 설명을 훨씬 쉽게 읽을 수 있습니다.</p>'
-        f'<div class="beginner-terms">{terms}</div>'
+        f'<p class="beginner-guide-lead">{esc(BEGINNER_GUIDE_LEADS[variant])}</p>'
+        f'<div class="beginner-terms">{terms_html}</div>'
         '</div></div></section>'
     )
 
@@ -1889,7 +1903,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         '<a class="btn ghost" href="#consultation-preview">무료 PT 진단</a>'
         '</div></div></section>'
         + visual_section(loc,intent,h1)
-        + (beginner_exam_guide(intent) if family == "exam" else "")
+        + (beginner_exam_guide(intent, loc) if family == "exam" else "")
     )
     raw = re.sub(r'<section class="hero">.*?</section>', hero_html, raw, count=1, flags=re.S)
 
