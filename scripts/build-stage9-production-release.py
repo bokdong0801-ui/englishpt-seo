@@ -32,7 +32,8 @@ EXPECTED_ACADEMY_NEW = 30894
 EXPECTED_CONVERSATION_NEW = 20596
 EXPECTED_NEW = EXPECTED_SOURCE_NEW + EXPECTED_ACADEMY_NEW + EXPECTED_CONVERSATION_NEW
 EXPECTED_PRESERVED = 95
-EXPECTED_TOTAL = EXPECTED_NEW + EXPECTED_PRESERVED
+EXPECTED_HUBS = 4
+EXPECTED_TOTAL = EXPECTED_NEW + EXPECTED_PRESERVED + EXPECTED_HUBS
 EXPECTED_SITEMAPS = 238
 SITEMAP_CHUNK = 500
 EXPECTED_REDIRECTS = 74
@@ -529,6 +530,19 @@ def main() -> None:
     else:
         shutil.copy2(current_home, out / "englishpt.html")
 
+    national_hubs = (
+        "courses.html",
+        "english-conversation.html",
+        "exam-english.html",
+        "student-english.html",
+    )
+    for hub_name in national_hubs:
+        hub_src = ROOT / hub_name
+        if not hub_src.exists():
+            failures.append(f"national_hub_missing:{hub_name}")
+        else:
+            shutil.copy2(hub_src, out / hub_name)
+
     new_pages = sorted((work / "stage5-full-generation").glob("shard-*/pages/*.html"))
     if len(new_pages) != EXPECTED_SOURCE_NEW:
         failures.append({"source_new_pages": [len(new_pages), EXPECTED_SOURCE_NEW]})
@@ -639,10 +653,15 @@ def main() -> None:
     preserved_assets = out / "assets"
     preserved_assets.mkdir(parents=True, exist_ok=True)
     current_site_js = ROOT / "assets" / "site.js"
+    current_site_css = ROOT / "assets" / "styles.css"
     if not current_site_js.exists():
         failures.append("preserved_site_js_missing")
     else:
         shutil.copy2(current_site_js, preserved_assets / "site.js")
+    if not current_site_css.exists():
+        failures.append("preserved_styles_css_missing")
+    else:
+        shutil.copy2(current_site_css, preserved_assets / "styles.css")
 
     # Stage 9 AI/search discovery files are controlled by the current branch,
     # not by the older Stage 8 approval packet.
