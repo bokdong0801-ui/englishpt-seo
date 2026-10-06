@@ -16,29 +16,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Download and inspect nationwide station dataset
+      - name: Inspect current nationwide station index
         run: |
-          curl -fsSL "https://gist.githubusercontent.com/lacti/f0d1a0915a32697fe3cf8f7997e18c52/raw/4a71b4b16ee2a25737acd1fdc595b7b8824a0dd1/korean-subway-station-list.json5" -o /tmp/stations.json5
+          python3 -m pip install --quiet beautifulsoup4
+          curl -fsSL "https://e-english.kr/sub" -o /tmp/station-index.html
           python3 - <<'PY'
-          import ast, re, json
-          raw=open('/tmp/stations.json5',encoding='utf-8').read()
-          raw=re.sub(r'//.*','',raw)
-          rows=ast.literal_eval(raw)
+          from bs4 import BeautifulSoup
+          import re,json
+          html=open('/tmp/station-index.html',encoding='utf-8').read()
+          soup=BeautifulSoup(html,'html.parser')
+          anchors=[]
+          for a in soup.find_all('a',href=True):
+              href=a['href']
+              text=' '.join(a.stripped_strings)
+              if re.fullmatch(r'/sub-[a-z0-9-]+',href) and text.endswith('역'):
+                  anchors.append((href,text))
           uniq={}
-          for row in rows:
-              name=row.get('name','').strip()
-              if not name: continue
-              item=uniq.setdefault(name,{'name':name,'cities':set(),'areas':set(),'lines':set(),'lat':row.get('lat'),'lng':row.get('lng')})
-              if row.get('city'): item['cities'].add(row['city'])
-              item['areas'].update(row.get('areas') or [])
-              item['lines'].update(row.get('lines') or [])
+          for href,name in anchors:
+              uniq.setdefault(name,href)
+          heads=[]
+          for tag in soup.find_all(['h2','h3','h4']):
+              text=' '.join(tag.stripped_strings)
+              if re.search(r'\(\d+\)$',text):
+                  heads.append(text)
           print(json.dumps({
-            'raw_rows':len(rows),
-            'unique_station_names':len(uniq),
-            'cities':sorted({c for x in uniq.values() for c in x['cities']}),
-            'sample_dobongsan': {k:(sorted(v) if isinstance(v,set) else v) for k,v in uniq.get('도봉산역',{}).items()},
-            'sample_songhyeon': {k:(sorted(v) if isinstance(v,set) else v) for k,v in uniq.get('송현역',{}).items()},
+            'anchor_rows':len(anchors),
+            'unique_names':len(uniq),
+            'unique_hrefs':len(set(h for h,n in anchors)),
+            'headings':heads,
+            'heading_count':len(heads),
+            'has_dobongsan':'도봉산역' in uniq,
+            'dobongsan_href':uniq.get('도봉산역'),
             'has_ara':'아라역' in uniq,
-            'has_daegyeong_line':any('대경' in line for x in uniq.values() for line in x['lines']),
+            'ara_href':uniq.get('아라역'),
+            'sample':list(uniq.items())[:20],
           },ensure_ascii=False,indent=2))
           PY
