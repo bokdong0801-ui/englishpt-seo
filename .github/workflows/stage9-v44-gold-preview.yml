@@ -331,6 +331,11 @@ jobs:
           assert report['home']['footer_fixed_songhyeondong'] is False,report['home']
           assert report['home']['form_default_songhyeondong'] is False,report['home']
           assert 'songhyeondong' not in home_raw.lower(), 'homepage still has Songhyeondong links'
+          assert '전체지역·과정 바로가기' in home_raw
+          assert 'href="stations.html"' in home_raw
+          assert '911개 역으로 찾기' in home_raw
+          for station_link in ('station-gangnam.html','station-seoul.html','station-dobongsan.html','station-busan.html','station-daegu.html','station-suwon.html','station-hongdaeipgu.html','station-jamsil.html'):
+              assert station_link in home_raw,station_link
           assert all(row['exists'] and row['canonical_ok'] and not row['songhyeondong'] for row in report['national_hubs'].values()),report['national_hubs']
           assert all(row['exists'] and row['canonical'] and row['canonical'].startswith('https://englishpt.kr/') for row in report['station_samples'].values()),report['station_samples']
           station_index=(root/'stations.html').read_text(encoding='utf-8')
@@ -574,6 +579,81 @@ jobs:
           print(json.dumps(report,ensure_ascii=False,indent=2))
           PY
 
+      - name: QA homepage and station pages on desktop and mobile
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          mkdir -p station-responsive-qa
+          python3 -m http.server 8767 --directory stage9-v44-preview >/tmp/stage9-station-http.log 2>&1 &
+          SERVER_PID=$!
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --remote-debugging-port=9224 --remote-allow-origins='*' --user-data-dir=/tmp/stage9-station-chrome about:blank >/tmp/stage9-station-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:9224/json/version >/dev/null 2>&1; then break; fi
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:9224/json/version >/dev/null
+          python3 -m pip install --quiet pychrome
+          python3 - <<'PY'
+          import base64,json,time
+          from pathlib import Path
+          import pychrome
+
+          targets={
+            'englishpt.html':'home',
+            'stations.html':'station-index',
+            'station-dobongsan.html':'station-hub',
+            'station-dobongsan-toeic.html':'station-course',
+          }
+          browser=pychrome.Browser(url='http://127.0.0.1:9224')
+          tab=browser.new_tab(); tab.start(); tab.Page.enable(); tab.Runtime.enable()
+          expression=r'''(()=>{
+            const box=(s)=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {top:Math.round(r.top),bottom:Math.round(r.bottom),height:Math.round(r.height),width:Math.round(r.width)}};
+            const sticky=document.querySelector('.mobile-sticky');
+            return {
+              viewport:{width:window.innerWidth,height:window.innerHeight},
+              scrollWidth:document.documentElement.scrollWidth,
+              hero:box('.hero'),
+              quick:box('.quick-directory'),
+              courses:box('.station-course-section'),
+              stationLines:box('#stationLines'),
+              final:box('.final'),
+              stickyDisplay:sticky?getComputedStyle(sticky).display:null,
+              stationCourseLinks:document.querySelectorAll('.station-course-links a').length,
+              stationIndexLinks:document.querySelectorAll('.station-index-link').length,
+            };
+          })()'''
+          rows=[]
+          for mode,width,height,mobile in [('desktop',1440,900,False),('mobile',390,844,True)]:
+            tab.call_method('Emulation.setDeviceMetricsOverride',width=width,height=height,deviceScaleFactor=1,mobile=mobile,screenWidth=width,screenHeight=height,dontSetVisibleSize=False)
+            for idx,(name,kind) in enumerate(targets.items(),1):
+              tab.Page.navigate(url='http://127.0.0.1:8767/'+name);time.sleep(1)
+              metrics=tab.Runtime.evaluate(expression=expression,returnByValue=True)['result']['value']
+              assert metrics['viewport']['width']==width,(mode,name,metrics)
+              assert metrics['scrollWidth']<=width+1,(mode,name,metrics)
+              assert metrics['hero'],(mode,name,metrics)
+              if kind=='home':
+                assert metrics['quick'],(mode,name,metrics)
+              elif kind=='station-index':
+                assert metrics['stationLines'],(mode,name,metrics)
+                assert metrics['stationIndexLinks']>=911,(mode,name,metrics)
+              elif kind=='station-hub':
+                assert metrics['courses'] and metrics['final'],(mode,name,metrics)
+                assert metrics['stationCourseLinks']==23,(mode,name,metrics)
+                if mode=='mobile':
+                  assert metrics['hero']['height']<=620,(mode,name,metrics)
+                  assert metrics['stickyDisplay']=='block',(mode,name,metrics)
+              shot=tab.Page.captureScreenshot(format='png',fromSurface=True,captureBeyondViewport=False)
+              p=Path('station-responsive-qa')/f'{mode}-{idx:02d}-{name}.png'
+              p.write_bytes(base64.b64decode(shot['data']))
+              rows.append({'mode':mode,'page':name,'kind':kind,**metrics,'screenshot':str(p)})
+          tab.stop();browser.close_tab(tab)
+          report={'status':'PASS_HOME_STATION_RESPONSIVE_QA','desktop':'1440x900','mobile':'390x844','pages':rows}
+          Path('STAGE9_HOME_STATION_RESPONSIVE_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+
       - name: Install Netlify CLI
         run: npm install -g netlify-cli@latest
 
@@ -632,6 +712,8 @@ jobs:
             STAGE9_BEGINNER_READABILITY_QA.json
             STAGE9_MOBILE_FIRST_SCREEN_QA.json
             STAGE9_NATIONAL_HUB_RESPONSIVE_QA.json
+            STAGE9_HOME_STATION_RESPONSIVE_QA.json
             mobile-qa/*.png
             hub-qa/*.png
+            station-responsive-qa/*.png
           retention-days: 30
