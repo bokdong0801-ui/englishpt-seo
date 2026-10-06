@@ -18,26 +18,21 @@ jobs:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect recent Netlify deploy history
+      - name: Inspect latest failed production deploy
         run: |
           test -n "$NETLIFY_AUTH_TOKEN"
-          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/englishpt.kr/deploys?per_page=20"             -o /tmp/deploys.json
-          python3 - <<'PY'
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/englishpt.kr/deploys?production=true&per_page=10"             -o /tmp/deploys.json
+          DEPLOY_ID="$(python3 - <<'PY'
           import json
           rows=json.load(open('/tmp/deploys.json',encoding='utf-8'))
-          out=[]
-          for d in rows:
-              out.append({
-                'id':d.get('id'),
-                'state':d.get('state'),
-                'context':d.get('context'),
-                'draft':d.get('draft'),
-                'branch':d.get('branch'),
-                'title':d.get('title'),
-                'created_at':d.get('created_at'),
-                'published_at':d.get('published_at'),
-                'locked':d.get('locked'),
-                'deploy_url':d.get('deploy_url'),
-              })
-          print(json.dumps(out,ensure_ascii=False,indent=2))
+          row=next((x for x in rows if x.get('state')=='error'), rows[0])
+          print(row['id'])
+          PY
+          )"
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/englishpt.kr/deploys/$DEPLOY_ID"             -o /tmp/deploy.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/deploy.json',encoding='utf-8'))
+          safe={k:d.get(k) for k in ('id','state','context','branch','title','error_message','created_at','updated_at','published_at','skipped','locked','review_id','draft','framework')}
+          print(json.dumps(safe,ensure_ascii=False,indent=2))
           PY
