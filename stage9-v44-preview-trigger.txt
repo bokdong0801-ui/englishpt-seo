@@ -23,3 +23,4 @@ Preview visual change reports on home exam and conversation hubs.
 Preview Korean visual before-after change cards.
 Preview final 140391 station pages and OG hub images after final preflight.
 Rerun final station and OG preview with resilient Chromium.
+Final 140391 preview with OG metadata, stations, and locality diversity.
