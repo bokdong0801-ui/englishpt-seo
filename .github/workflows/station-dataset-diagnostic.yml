@@ -16,19 +16,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect station index DOM
+      - name: Inspect EnglishUp main and Dobongsan station page
         run: |
           python3 -m pip install --quiet beautifulsoup4
-          curl -fsSL "https://e-english.kr/sub" -o /tmp/station-index.html
+          curl -A "Mozilla/5.0" -fsSL "https://englishup.kr/" -o /tmp/main.html
+          curl -A "Mozilla/5.0" -fsSL "https://englishup.kr/sub-dobongsan" -o /tmp/dobongsan.html
           python3 - <<'PY'
           from bs4 import BeautifulSoup
-          import re
-          soup=BeautifulSoup(open('/tmp/station-index.html',encoding='utf-8').read(),'html.parser')
-          for s in soup.find_all(string=re.compile(r'^1호선 \(102\)$')):
-              print("TEXT",repr(s))
-              print("PARENT",s.parent.name,s.parent.attrs)
-              print("PARENT_HTML",str(s.parent)[:1200])
-              print("GRAND",s.parent.parent.name,s.parent.parent.attrs)
-              print("GRAND_HTML",str(s.parent.parent)[:3500])
-              break
+          import json,re
+          def inspect(path):
+              soup=BeautifulSoup(open(path,encoding='utf-8').read(),'html.parser')
+              title=soup.title.get_text(" ",strip=True) if soup.title else ""
+              desc=""
+              m=soup.find("meta",attrs={"name":"description"})
+              if m: desc=m.get("content","")
+              headings=[{"tag":h.name,"text":" ".join(h.stripped_strings)} for h in soup.find_all(["h1","h2","h3"])][:100]
+              links=[]
+              for a in soup.find_all("a",href=True):
+                  text=" ".join(a.stripped_strings)
+                  href=a["href"]
+                  if text or href:
+                      links.append({"text":text,"href":href})
+              paras=[" ".join(p.stripped_strings) for p in soup.find_all("p") if " ".join(p.stripped_strings)]
+              return {"title":title,"description":desc,"headings":headings,"links":links[:220],"paras":paras[:120]}
+          print("MAIN")
+          print(json.dumps(inspect('/tmp/main.html'),ensure_ascii=False,indent=2))
+          print("DOBONGSAN")
+          print(json.dumps(inspect('/tmp/dobongsan.html'),ensure_ascii=False,indent=2))
           PY
