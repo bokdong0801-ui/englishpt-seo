@@ -120,9 +120,13 @@ jobs:
           assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY',q
           assert q['final_domain']=='https://englishpt.kr'
           assert q['counts']['new_pages']==118427
-          assert q['counts']['html_total']==118526
-          assert q['counts']['sitemap_shards']==238
-          assert q['counts']['sitemap_urls']==118526
+          assert q['counts']['html_total']==140391
+          assert q['counts']['sitemap_shards']==281
+          assert q['counts']['sitemap_urls']==140391
+          assert q['counts']['station_hubs']==911
+          assert q['counts']['station_course_pages']==20953
+          assert q['counts']['station_index_pages']==1
+          assert q['counts']['station_html_total']==21865
           assert q['indexing']['noindex_pages']==0
           assert q['indexing']['robots_txt_allows_crawl'] is True
           print('PASS Stage 9 release package')
@@ -145,7 +149,7 @@ jobs:
             --dir=stage9-release \
             --site="$NETLIFY_SITE_ID" \
             --auth="$NETLIFY_AUTH_TOKEN" \
-            --message="ENGLISH PT Stage 9 production release - 118,526 HTML" \
+            --message="ENGLISH PT Stage 9 production release - 140,391 HTML" \
             --json | tee stage9-netlify-deploy.json
           python3 - <<'PY'
           import json
@@ -193,7 +197,7 @@ jobs:
                               assert 'Sitemap: https://englishpt.kr/sitemap-index.xml' in body
                               assert 'Disallow: /' not in body
                           elif url.endswith('/sitemap-index.xml'):
-                              assert body.count('<sitemap><loc>') == 238
+                              assert body.count('<sitemap><loc>') == 281
                           else:
                               low=body.lower()
                               assert 'noindex' not in low and 'nofollow' not in low, url
