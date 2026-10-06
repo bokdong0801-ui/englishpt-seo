@@ -614,6 +614,7 @@ def main() -> None:
         "toeic-speaking-editorial.svg",
         "opic-editorial.svg",
         "ielts-editorial.svg",
+        "duolingo-editorial.svg",
         "toefl-editorial.svg",
         "english-conv-editorial.svg",
     ):
