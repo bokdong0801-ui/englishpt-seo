@@ -51,8 +51,8 @@ jobs:
               tab.Page.navigate(url=base+path); time.sleep(1.5)
               exists=tab.Runtime.evaluate(expression="!!document.querySelector('.change-section')",returnByValue=True)['result']['value']
               assert exists,(mode,name,'change-section missing')
-              tab.Runtime.evaluate(expression="document.querySelector('.change-section').scrollIntoView({block:'start'})")
-              time.sleep(.5)
+              tab.Runtime.evaluate(expression="document.documentElement.style.scrollBehavior='auto';document.body.style.scrollBehavior='auto';window.scrollTo(0,document.querySelector('.change-section').offsetTop-16)")
+              time.sleep(.8)
               metrics=tab.Runtime.evaluate(expression=r'''(()=>{
                 const s=document.querySelector('.change-section');
                 const cards=[...s.querySelectorAll('.change-card')];
