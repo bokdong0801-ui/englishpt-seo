@@ -823,7 +823,6 @@ def main() -> None:
                 shutil.copy2(src, out / asset)
     write_visual_assets(out)
     write_representative_candidate_assets(out)
-    write_search_image_assets(out, failures)
 
     # Keep user-approved editorial thumbnails as fixed branch assets.
     custom_rep_src = ROOT / "assets" / "images" / "representative"
@@ -843,6 +842,9 @@ def main() -> None:
             failures.append(f"custom_representative_missing:{name}")
         else:
             shutil.copy2(src, custom_rep_dst / name)
+
+    # Rasterize only after every generated and editorial SVG candidate is present.
+    write_search_image_assets(out, failures)
 
     production_assets = {
         "pilot.css": ROOT / "assets" / "stage9-mass-production.css",
