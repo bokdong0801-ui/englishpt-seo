@@ -1,4 +1,4 @@
-name: Station Dataset Diagnostic
+name: EnglishUp Review Pattern Diagnostic
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect EnglishUp main and Dobongsan station page
+      - name: Inspect EnglishUp review and outcome patterns
         run: |
           python3 -m pip install --quiet beautifulsoup4
           curl -A "Mozilla/5.0" -fsSL "https://englishup.kr/" -o /tmp/main.html
@@ -24,23 +24,24 @@ jobs:
           python3 - <<'PY'
           from bs4 import BeautifulSoup
           import json,re
-          def inspect(path):
+
+          def extract(path):
               soup=BeautifulSoup(open(path,encoding='utf-8').read(),'html.parser')
-              title=soup.title.get_text(" ",strip=True) if soup.title else ""
-              desc=""
-              m=soup.find("meta",attrs={"name":"description"})
-              if m: desc=m.get("content","")
-              headings=[{"tag":h.name,"text":" ".join(h.stripped_strings)} for h in soup.find_all(["h1","h2","h3"])][:100]
-              links=[]
-              for a in soup.find_all("a",href=True):
-                  text=" ".join(a.stripped_strings)
-                  href=a["href"]
-                  if text or href:
-                      links.append({"text":text,"href":href})
-              paras=[" ".join(p.stripped_strings) for p in soup.find_all("p") if " ".join(p.stripped_strings)]
-              return {"title":title,"description":desc,"headings":headings,"links":links[:220],"paras":paras[:120]}
-          print("MAIN")
-          print(json.dumps(inspect('/tmp/main.html'),ensure_ascii=False,indent=2))
-          print("DOBONGSAN")
-          print(json.dumps(inspect('/tmp/dobongsan.html'),ensure_ascii=False,indent=2))
+              items=[]
+              for tag in soup.find_all(['h2','h3','h4','p','li','strong','span']):
+                  t=' '.join(tag.stripped_strings)
+                  if not t or len(t)<8: continue
+                  if any(k in t for k in ['후기','수강','변화','달성','목표','성장','개월','주차','점수','등급','자신감','직장인','학생','대학생','성인','왕초보','오픽','토익','IELTS','TOEFL']):
+                      items.append(t)
+              # unique preserve order
+              out=[]; seen=set()
+              for t in items:
+                  if t not in seen:
+                      seen.add(t); out.append(t)
+              return out[:220]
+
+          print("MAIN_PATTERNS")
+          print(json.dumps(extract('/tmp/main.html'),ensure_ascii=False,indent=2))
+          print("DOBONGSAN_PATTERNS")
+          print(json.dumps(extract('/tmp/dobongsan.html'),ensure_ascii=False,indent=2))
           PY
