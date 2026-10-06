@@ -87,6 +87,11 @@ jobs:
           cp stage9-release/english-conversation.html stage9-v44-preview/
           cp stage9-release/exam-english.html stage9-v44-preview/
           cp stage9-release/student-english.html stage9-v44-preview/
+          cp stage9-release/stations.html stage9-v44-preview/
+          cp stage9-release/station-dobongsan.html stage9-v44-preview/
+          cp stage9-release/station-dobongsan-toeic.html stage9-v44-preview/
+          cp stage9-release/station-dobongsan-english-conv-academy.html stage9-v44-preview/
+          cp stage9-release/station-gangnam.html stage9-v44-preview/
           python3 - <<'PY'
           import html, json, shutil
           from pathlib import Path
@@ -308,6 +313,17 @@ jobs:
               }
               for name in ('courses.html','english-conversation.html','exam-english.html','student-english.html')
             },
+            'station_samples':{
+              name:{
+                'exists':(root/name).exists(),
+                'canonical':(
+                  __import__('re').search(r'<link\\s+rel=["\\']canonical["\\']\\s+href=["\\']([^"\\']+)',(root/name).read_text(encoding='utf-8'),__import__('re').I).group(1)
+                  if __import__('re').search(r'<link\\s+rel=["\\']canonical["\\']\\s+href=["\\']([^"\\']+)',(root/name).read_text(encoding='utf-8'),__import__('re').I)
+                  else None
+                ),
+              }
+              for name in ('stations.html','station-dobongsan.html','station-dobongsan-toeic.html','station-dobongsan-english-conv-academy.html','station-gangnam.html')
+            },
           }
           assert report['home']['title']=='1:1 영어과외·영어회화·시험영어 | 잉글리시PT',report['home']
           assert '1:1 영어과외·영어회화부터' in report['home']['description'],report['home']
@@ -316,6 +332,20 @@ jobs:
           assert report['home']['form_default_songhyeondong'] is False,report['home']
           assert 'songhyeondong' not in home_raw.lower(), 'homepage still has Songhyeondong links'
           assert all(row['exists'] and row['canonical_ok'] and not row['songhyeondong'] for row in report['national_hubs'].values()),report['national_hubs']
+          assert all(row['exists'] and row['canonical'] and row['canonical'].startswith('https://englishpt.kr/') for row in report['station_samples'].values()),report['station_samples']
+          station_index=(root/'stations.html').read_text(encoding='utf-8')
+          station_hub=(root/'station-dobongsan.html').read_text(encoding='utf-8')
+          station_toeic=(root/'station-dobongsan-toeic.html').read_text(encoding='utf-8')
+          assert '전국 37개 노선 · 911개 역' in station_index
+          assert '역 이름 검색' in station_index
+          assert station_index.count('class="station-index-link"')>=911
+          assert '<h1>도봉산역<br>영어회화·영어과외</h1>' in station_hub
+          assert station_hub.count('href="/station-dobongsan-')==23
+          assert '1호선 · 7호선' in station_hub
+          assert '영어가 거의 처음이어도' in station_hub
+          assert '목표가 시험이라면' in station_hub
+          assert '무엇부터 시작할지 모르겠다면' in station_hub
+          assert '도봉산역 전체 과정 보기' in station_toeic
           assert report['toeic']['image_src']=='/assets/images/representative/toeic-editorial.svg',report['toeic']
           assert report['toeic_speaking']['image_src']=='/assets/images/representative/toeic-speaking-editorial.svg',report['toeic_speaking']
           assert report['opic']['image_src']=='/assets/images/representative/opic-editorial.svg',report['opic']
@@ -568,6 +598,7 @@ jobs:
           names += json.loads(Path('stage9-v44-preview/ACADEMY_PREVIEW_PAGES.json').read_text(encoding='utf-8'))
           assert len(names)==23, len(names)
           names += ['courses.html','english-conversation.html','exam-english.html','student-english.html']
+          names += ['stations.html','station-dobongsan.html','station-dobongsan-toeic.html','station-dobongsan-english-conv-academy.html','station-gangnam.html']
           for name in names:
               subprocess.run(['curl','-fsSIL','--max-time','30',f'{base}/{name}'],check=True,stdout=subprocess.DEVNULL)
           print('PASS_STAGE9_23_PAGE_READER_EXPANSION_PREVIEW')
@@ -581,9 +612,11 @@ jobs:
           report={
             "status":"PASS_STAGE9_23_PAGE_READER_EXPANSION_PREVIEW",
             "preview_url":"https://stage9-v44-gold-preview--englishpt-seo.netlify.app",
-            "source":"exact current Stage 9 production renderer with exam-academy and conversation expansion intents",
+            "source":"exact current Stage 9 production renderer with national hubs and 911-station expansion",
             "production_affected":False,
             "representative_pages":23,
+            "station_sample_pages":5,
+            "final_html_total":140391,
             "preview_indexing":"blocked by X-Robots-Tag only"
           }
           Path('STAGE9_V44_GOLD_PREVIEW_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
