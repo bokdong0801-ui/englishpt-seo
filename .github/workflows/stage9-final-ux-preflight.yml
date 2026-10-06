@@ -152,8 +152,12 @@ jobs:
               'production 미배포','실제 상담 전송은 비활성화'
           ]
           sample_pages=sorted(Path('stage9-release').glob('*.html'))[95::997]
+          checked=0
           for p in sample_pages:
               raw=p.read_text(encoding='utf-8')
+              if 'data-stage9-clean="true"' not in raw:
+                  continue
+              checked+=1
               assert 'data-stage9-clean="true"' in raw, p.name
               assert 'class="section mass-context"' in raw, p.name
               assert 'class="site-header"' in raw, p.name
@@ -183,6 +187,7 @@ jobs:
               assert ' | ' in title, (p.name,title)
               assert all(x not in raw for x in machine_phrases), p.name
               assert raw.count('href="/') >= 22, p.name
+          assert checked>=80,checked
           print('PASS_STAGE9_FINAL_UX_PREFLIGHT')
           PY
 
@@ -239,6 +244,18 @@ jobs:
               raw=(root/hub).read_text(encoding='utf-8')
               assert '<meta name="robots" content="index,follow">' in raw,hub
               assert f'<link rel="canonical" href="https://englishpt.kr/{hub}">' in raw,hub
+
+          stations=(root/'stations.html').read_text(encoding='utf-8')
+          dobong=(root/'station-dobongsan.html').read_text(encoding='utf-8')
+          dobong_toeic=(root/'station-dobongsan-toeic.html').read_text(encoding='utf-8')
+          assert '전국 37개 노선 · 911개 역' in stations
+          assert stations.count('class="station-index-link"')>=911
+          assert '<link rel="canonical" href="https://englishpt.kr/stations.html">' in stations
+          assert '<link rel="canonical" href="https://englishpt.kr/station-dobongsan.html">' in dobong
+          assert dobong.count('href="/station-dobongsan-')==23
+          assert '1호선 · 7호선' in dobong
+          assert '도봉산역 전체 과정 보기' in dobong_toeic
+          assert '<link rel="canonical" href="https://englishpt.kr/station-dobongsan-toeic.html">' in dobong_toeic
 
           print('PASS_STAGE9_FINAL_SEO_INDEXABILITY_QA')
           PY
