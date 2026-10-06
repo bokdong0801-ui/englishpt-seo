@@ -18,6 +18,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Capture change report sections on desktop and mobile
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          fc-cache -f >/dev/null 2>&1
           python3 -m pip install --quiet pychrome
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
           test -n "$CHROME"
