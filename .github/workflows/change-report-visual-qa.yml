@@ -1,0 +1,97 @@
+name: Change Report Visual QA
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'change-report-visual-qa-trigger.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Capture change report sections on desktop and mobile
+        run: |
+          python3 -m pip install --quiet pychrome
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          mkdir -p change-report-qa
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --remote-debugging-port=9224 --remote-allow-origins='*' --user-data-dir=/tmp/change-report-chrome about:blank >/tmp/change-report-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$CHROME_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:9224/json/version >/dev/null 2>&1; then break; fi
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:9224/json/version >/dev/null
+          python3 - <<'PY'
+          import base64,json,time
+          from pathlib import Path
+          import pychrome
+
+          base='https://stage9-v44-gold-preview--englishpt-seo.netlify.app'
+          pages=[
+            ('home','/'),
+            ('exam','/exam-english.html'),
+            ('conversation','/english-conversation.html'),
+          ]
+          browser=pychrome.Browser(url='http://127.0.0.1:9224')
+          tab=browser.new_tab(); tab.start()
+          tab.Page.enable(); tab.Runtime.enable()
+          rows=[]
+          for mode,width,height,mobile in [('desktop',1440,900,False),('mobile',390,844,True)]:
+            tab.call_method('Emulation.setDeviceMetricsOverride',width=width,height=height,deviceScaleFactor=1,mobile=mobile,screenWidth=width,screenHeight=height,dontSetVisibleSize=False)
+            for name,path in pages:
+              tab.Page.navigate(url=base+path); time.sleep(1.5)
+              exists=tab.Runtime.evaluate(expression="!!document.querySelector('.change-section')",returnByValue=True)['result']['value']
+              assert exists,(mode,name,'change-section missing')
+              tab.Runtime.evaluate(expression="document.querySelector('.change-section').scrollIntoView({block:'start'})")
+              time.sleep(.5)
+              metrics=tab.Runtime.evaluate(expression=r'''(()=>{
+                const s=document.querySelector('.change-section');
+                const cards=[...s.querySelectorAll('.change-card')];
+                const r=s.getBoundingClientRect();
+                const first=cards[0].getBoundingClientRect();
+                const second=cards[1].getBoundingClientRect();
+                const cta=s.querySelector('.change-cta')?.getBoundingClientRect();
+                return {
+                  scrollWidth:document.documentElement.scrollWidth,
+                  section:{top:Math.round(r.top),bottom:Math.round(r.bottom),height:Math.round(r.height),width:Math.round(r.width)},
+                  cards:cards.length,
+                  first:{top:Math.round(first.top),left:Math.round(first.left),right:Math.round(first.right),bottom:Math.round(first.bottom),width:Math.round(first.width),height:Math.round(first.height)},
+                  second:{top:Math.round(second.top),left:Math.round(second.left),right:Math.round(second.right),bottom:Math.round(second.bottom),width:Math.round(second.width),height:Math.round(second.height)},
+                  cta:cta?{top:Math.round(cta.top),bottom:Math.round(cta.bottom),height:Math.round(cta.height)}:null,
+                  note:s.querySelector('.change-note')?.innerText||'',
+                  title:s.querySelector('h2')?.innerText||''
+                };
+              })()''',returnByValue=True)['result']['value']
+              assert metrics['scrollWidth'] <= width+1,(mode,name,metrics)
+              assert metrics['cards']==3,(mode,name,metrics)
+              if mode=='desktop':
+                assert metrics['first']['top']==metrics['second']['top'],(mode,name,metrics)
+                assert metrics['second']['left']>metrics['first']['left'],(mode,name,metrics)
+              else:
+                assert abs(metrics['first']['left']-metrics['second']['left'])<=1,(mode,name,metrics)
+                assert metrics['second']['top']>=metrics['first']['bottom']-1,(mode,name,metrics)
+              shot=tab.Page.captureScreenshot(format='png',fromSurface=True,captureBeyondViewport=False)
+              out=Path('change-report-qa')/f'{mode}-{name}.png'
+              out.write_bytes(base64.b64decode(shot['data']))
+              rows.append({'mode':mode,'page':name,**metrics,'screenshot':str(out)})
+          tab.stop(); browser.close_tab(tab)
+          report={'status':'PASS_CHANGE_REPORT_VISUAL_QA','preview':base,'rows':rows}
+          Path('CHANGE_REPORT_VISUAL_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: change-report-visual-qa
+          path: |
+            CHANGE_REPORT_VISUAL_QA.json
+            change-report-qa/*.png
+          retention-days: 30
