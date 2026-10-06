@@ -12,3 +12,4 @@ Run image-enabled Stage 9 preflight after OPIc and TOEFL academy similarity fix.
 2026-10-06 beginner-first-six-exams-readability-qa
 2026-10-06 beginner-guide-similarity-variation
 2026-10-06 toefl-readability-similarity-fix
+2026-10-06 preserved-pages-beginner-readability-fix
