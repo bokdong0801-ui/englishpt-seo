@@ -207,7 +207,9 @@ jobs:
                           else:
                               low=body.lower()
                               assert 'noindex' not in low and 'nofollow' not in low, url
-                              assert '<meta name="robots" content="index,follow">' in low, url
+                              assert '<meta name="robots" content="index,follow,max-image-preview:large">' in low, url
+                              assert '<meta property="og:image" content="https://englishpt.kr/assets/images/' in low, url
+                              assert '<meta name="twitter:image" content="https://englishpt.kr/assets/images/' in low, url
                               assert 'https://englishpt.kr/' in body, url
                               if url.endswith('-academy.html'):
                                   assert 'class="section academy-choice"' in body, url
