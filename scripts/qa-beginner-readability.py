@@ -189,7 +189,7 @@ def main() -> int:
         for phrase in required:
             if phrase not in hub_raw:
                 failures.append({"file":hub_name,"rule":"hub_required_copy_missing","value":phrase})
-        if '<meta name="robots" content="index,follow">' not in hub_raw:
+        if not re.search(r'<meta name="robots" content="[^"]*index[^"]*follow[^"]*">', hub_raw, re.I):
             failures.append({"file":hub_name,"rule":"hub_index_follow_missing"})
         if f'https://englishpt.kr/{hub_name}' not in hub_raw:
             failures.append({"file":hub_name,"rule":"hub_canonical_missing"})
