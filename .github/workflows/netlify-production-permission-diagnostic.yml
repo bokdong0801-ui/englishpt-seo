@@ -16,14 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
-      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID || secrets.ENGLISHPT_NETLIFY_SITE_ID || vars.NETLIFY_SITE_ID || vars.ENGLISHPT_NETLIFY_SITE_ID }}
     steps:
       - uses: actions/checkout@v4
       - name: Read Netlify production permission state
         run: |
           test -n "$NETLIFY_AUTH_TOKEN"
-          test -n "$NETLIFY_SITE_ID"
-          curl -fsS             -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/$NETLIFY_SITE_ID"             -o /tmp/site.json
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/englishpt.kr"             -o /tmp/site.json
           python3 - <<'PY'
           import json
           d=json.load(open('/tmp/site.json',encoding='utf-8'))
@@ -37,7 +35,6 @@ jobs:
             'account_slug':d.get('account_slug'),
             'prevent_non_git_prod_deploys':d.get('prevent_non_git_prod_deploys'),
             'published_deploy_locked':published.get('locked'),
-            'published_deploy_id':published.get('id'),
             'published_deploy_state':published.get('state'),
             'published_deploy_context':published.get('context'),
             'repo_branch':build.get('repo_branch'),
