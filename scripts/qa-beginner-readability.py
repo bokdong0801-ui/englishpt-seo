@@ -104,6 +104,9 @@ HOME_REQUIRED = [
     "<small>계획</small>",
     "<small>연습</small>",
     "<small>점검</small>",
+    "전체지역·과정 바로가기",
+    "911개 역으로 찾기",
+    "stations.html",
 ]
 
 HUBS_REQUIRED = {
@@ -165,7 +168,7 @@ def main() -> int:
                 "count":len(song_links),
                 "links":song_links,
             })
-        for href in ("courses.html","english-conversation.html","exam-english.html","student-english.html"):
+        for href in ("courses.html","english-conversation.html","exam-english.html","student-english.html","stations.html"):
             if href not in raw:
                 failures.append({"file":"englishpt.html","rule":"national_hub_link_missing","value":href})
 
