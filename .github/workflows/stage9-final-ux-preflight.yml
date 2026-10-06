@@ -83,9 +83,13 @@ jobs:
           q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
           assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
           assert q['counts']['new_pages']==118427
-          assert q['counts']['html_total']==118526
-          assert q['counts']['sitemap_shards']==238
-          assert q['counts']['sitemap_urls']==118526
+          assert q['counts']['html_total']==140391
+          assert q['counts']['sitemap_shards']==281
+          assert q['counts']['sitemap_urls']==140391
+          assert q['counts']['station_hubs']==911
+          assert q['counts']['station_course_pages']==20953
+          assert q['counts']['station_index_pages']==1
+          assert q['counts']['station_html_total']==21865
           assert q['indexing']['noindex_pages']==0
           assert q['indexing']['production_ui_failures']==0
           assert q['indexing']['robots_txt_allows_crawl'] is True
@@ -195,7 +199,7 @@ jobs:
 
           root=Path('stage9-release')
           pages=sorted(root.glob('*.html'))
-          assert len(pages)==118526,len(pages)
+          assert len(pages)==140391,len(pages)
 
           canonicals=[]
           blocked=[]
@@ -214,7 +218,7 @@ jobs:
 
           assert not blocked,blocked[:20]
           assert not bad_domain,bad_domain[:20]
-          assert len(set(canonicals))==118526,(len(canonicals),len(set(canonicals)))
+          assert len(set(canonicals))==140391,(len(canonicals),len(set(canonicals)))
 
           robots=(root/'robots.txt').read_text(encoding='utf-8')
           assert 'Disallow: /' not in robots
@@ -223,9 +227,9 @@ jobs:
           assert 'User-agent: Yeti' in robots
 
           index=(root/'sitemap-index.xml').read_text(encoding='utf-8')
-          assert index.count('<sitemap><loc>')==238
+          assert index.count('<sitemap><loc>')==281
           assert 'https://englishpt.kr/sitemaps/sitemap-001.xml' in index
-          assert 'https://englishpt.kr/sitemaps/sitemap-238.xml' in index
+          assert 'https://englishpt.kr/sitemaps/sitemap-281.xml' in index
           assert not (root/'sitemap.xml').exists()
 
           home=(root/'englishpt.html').read_text(encoding='utf-8')
