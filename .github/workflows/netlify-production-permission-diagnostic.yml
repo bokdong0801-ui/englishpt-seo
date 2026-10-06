@@ -21,26 +21,40 @@ jobs:
       - name: Read Netlify production permission state
         run: |
           test -n "$NETLIFY_AUTH_TOKEN"
-          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/englishpt.kr"             -o /tmp/site.json
-          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/user"             -o /tmp/user.json
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/sites/englishpt.kr" -o /tmp/site.json
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/user" -o /tmp/user.json
           USER_ID="$(python3 - <<'PY'
           import json
           print(json.load(open('/tmp/user.json',encoding='utf-8'))['id'])
           PY
           )"
-          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/bokdong0801/members/$USER_ID"             -o /tmp/member.json
+          ACCOUNT_ID="$(python3 - <<'PY'
+          import json
+          print(json.load(open('/tmp/site.json',encoding='utf-8'))['account_id'])
+          PY
+          )"
+          ACCOUNT_SLUG="$(python3 - <<'PY'
+          import json
+          print(json.load(open('/tmp/site.json',encoding='utf-8'))['account_slug'])
+          PY
+          )"
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/$ACCOUNT_SLUG/members/$USER_ID" -o /tmp/member.json
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/accounts/$ACCOUNT_ID" -o /tmp/account.json
           python3 - <<'PY'
           import json
           d=json.load(open('/tmp/site.json',encoding='utf-8'))
           member=json.load(open('/tmp/member.json',encoding='utf-8'))
+          a=json.load(open('/tmp/account.json',encoding='utf-8'))
           published=d.get('published_deploy') or {}
           build=d.get('build_settings') or {}
-          relevant={k:v for k,v in d.items() if any(x in k.lower() for x in ('deploy','prod','lock','protect','capab','permission')) and k not in ('published_deploy',)}
           safe={
             'site_name':d.get('name'),
             'url':d.get('url'),
             'account_slug':d.get('account_slug'),
             'member_role':member.get('role'),
+            'account_type':a.get('type'),
+            'account_type_name':a.get('type_name'),
+            'account_capabilities':a.get('capabilities'),
             'prevent_non_git_prod_deploys':d.get('prevent_non_git_prod_deploys'),
             'published_deploy_locked':published.get('locked'),
             'published_deploy_state':published.get('state'),
@@ -49,7 +63,6 @@ jobs:
             'repo_path':build.get('repo_path'),
             'stop_builds':build.get('stop_builds'),
             'allowed_branches':build.get('allowed_branches'),
-            'relevant_site_flags':relevant,
           }
           print(json.dumps(safe,ensure_ascii=False,indent=2))
           PY
