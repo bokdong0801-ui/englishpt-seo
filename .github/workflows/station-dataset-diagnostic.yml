@@ -16,39 +16,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect current nationwide station index
+      - name: Inspect station index DOM
         run: |
           python3 -m pip install --quiet beautifulsoup4
           curl -fsSL "https://e-english.kr/sub" -o /tmp/station-index.html
           python3 - <<'PY'
           from bs4 import BeautifulSoup
-          import re,json
-          html=open('/tmp/station-index.html',encoding='utf-8').read()
-          soup=BeautifulSoup(html,'html.parser')
-          anchors=[]
-          for a in soup.find_all('a',href=True):
-              href=a['href']
-              text=' '.join(a.stripped_strings)
-              if re.fullmatch(r'/sub-[a-z0-9-]+',href) and text.endswith('역'):
-                  anchors.append((href,text))
-          uniq={}
-          for href,name in anchors:
-              uniq.setdefault(name,href)
-          heads=[]
-          for tag in soup.find_all(['h2','h3','h4']):
-              text=' '.join(tag.stripped_strings)
-              if re.search(r'\(\d+\)$',text):
-                  heads.append(text)
-          print(json.dumps({
-            'anchor_rows':len(anchors),
-            'unique_names':len(uniq),
-            'unique_hrefs':len(set(h for h,n in anchors)),
-            'headings':heads,
-            'heading_count':len(heads),
-            'has_dobongsan':'도봉산역' in uniq,
-            'dobongsan_href':uniq.get('도봉산역'),
-            'has_ara':'아라역' in uniq,
-            'ara_href':uniq.get('아라역'),
-            'sample':list(uniq.items())[:20],
-          },ensure_ascii=False,indent=2))
+          import re
+          soup=BeautifulSoup(open('/tmp/station-index.html',encoding='utf-8').read(),'html.parser')
+          for s in soup.find_all(string=re.compile(r'^1호선 \(102\)$')):
+              print("TEXT",repr(s))
+              print("PARENT",s.parent.name,s.parent.attrs)
+              print("PARENT_HTML",str(s.parent)[:1200])
+              print("GRAND",s.parent.parent.name,s.parent.parent.attrs)
+              print("GRAND_HTML",str(s.parent.parent)[:3500])
+              break
           PY
