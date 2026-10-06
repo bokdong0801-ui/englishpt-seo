@@ -160,6 +160,11 @@ def main() -> int:
         for phrase in FORBIDDEN_VISIBLE:
             if phrase in text:
                 failures.append({"file":"englishpt.html","rule":"home_difficult_term","value":phrase})
+        if raw.count('class="change-card"') != 3 or '변화 리포트' not in raw or '학습 상황 예시' not in raw:
+            failures.append({"file":"englishpt.html","rule":"home_change_report_missing_or_wrong_count","count":raw.count('class="change-card"')})
+        if 'data-course="학습 변화 상담"' not in raw:
+            failures.append({"file":"englishpt.html","rule":"home_change_report_cta_missing"})
+
         song_links = sorted(set(re.findall(r'href="([^"]*songhyeondong[^"]*)"', raw, flags=re.I)))
         if song_links:
             failures.append({
@@ -188,6 +193,12 @@ def main() -> int:
             failures.append({"file":hub_name,"rule":"hub_index_follow_missing"})
         if f'https://englishpt.kr/{hub_name}' not in hub_raw:
             failures.append({"file":hub_name,"rule":"hub_canonical_missing"})
+        if hub_name in ("exam-english.html","english-conversation.html"):
+            if hub_raw.count('class="change-card"') != 3:
+                failures.append({"file":hub_name,"rule":"change_report_card_count","expected":3,"actual":hub_raw.count('class="change-card"')})
+            if '학습 상황 예시' not in hub_raw:
+                failures.append({"file":hub_name,"rule":"change_report_example_disclosure_missing"})
+
         expected_ctas={"courses.html":0,"english-conversation.html":6,"exam-english.html":6,"student-english.html":4}[hub_name]
         if hub_raw.count('class="route-cta"') != expected_ctas:
             failures.append({"file":hub_name,"rule":"hub_route_cta_count","expected":expected_ctas,"actual":hub_raw.count('class="route-cta"')})
