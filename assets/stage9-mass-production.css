@@ -291,6 +291,7 @@ button,a{-webkit-tap-highlight-color:transparent}
 .beginner-guide-box .kicker{margin:0 0 8px;color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.05em}
 .beginner-guide-box h2{margin:0;font-size:clamp(23px,3vw,32px);line-height:1.35}
 .beginner-guide-lead{margin:10px 0 18px;color:var(--muted)}
+.beginner-guide-context{margin:-8px 0 16px;color:var(--muted);font-size:13px;line-height:1.55}
 .beginner-terms{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .beginner-term{border-radius:16px;background:var(--soft);padding:14px 15px}
 .beginner-term b{display:block;margin-bottom:5px;font-size:14px}
@@ -393,6 +394,7 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
   .beginner-guide-box{padding:18px;border-radius:18px}
   .beginner-guide-box h2{font-size:22px}
   .beginner-guide-lead{margin:8px 0 13px;font-size:13px}
+  .beginner-guide-context{margin:-5px 0 11px;font-size:12px;line-height:1.45}
   .beginner-terms{grid-template-columns:1fr;gap:7px}
   .beginner-term{padding:11px 12px}
   .beginner-term b{font-size:13px}
