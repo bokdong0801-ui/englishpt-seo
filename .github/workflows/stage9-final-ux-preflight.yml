@@ -181,6 +181,11 @@ jobs:
           print('PASS_STAGE9_FINAL_UX_PREFLIGHT')
           PY
 
+      - name: Run beginner readability QA across full Stage 9 output
+        run: |
+          python3 scripts/qa-beginner-readability.py stage9-release \
+            --report STAGE9_BEGINNER_READABILITY_QA.json
+
       - name: Package representative 23 final production pages
         run: |
           mkdir -p stage9-final-ux-samples
@@ -243,5 +248,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: stage9-final-ux-samples
-          path: stage9-final-ux-samples
+          path: |
+            stage9-final-ux-samples
+            STAGE9_BEGINNER_READABILITY_QA.json
           retention-days: 30
