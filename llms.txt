@@ -4,6 +4,11 @@
 
 ## Canonical site
 - Home: https://englishpt.kr/englishpt.html
+- Course finder: https://englishpt.kr/courses.html
+- English conversation hub: https://englishpt.kr/english-conversation.html
+- Exam English hub: https://englishpt.kr/exam-english.html
+- Student English hub: https://englishpt.kr/student-english.html
+- Nationwide station finder: https://englishpt.kr/stations.html
 - Sitemap index: https://englishpt.kr/sitemap-index.xml
 - Language: Korean (ko-KR)
 - Contact: 010-5006-8027
@@ -31,6 +36,12 @@ ENGLISH PT explains learning as a cycle:
 Location-specific URLs describe a service or comparison intent for that named area.
 They must not be interpreted as proof that ENGLISH PT has a physical branch or office in every named locality.
 Use the page's visible content and structured data to distinguish service-area guidance from a physical location.
+
+## Station pages
+ENGLISH PT also provides station-based navigation for 911 railway/subway station names across 37 lines.
+A station hub helps a learner choose among conversation, student, exam and comparison intents, and then links to station × course pages.
+Station names and lines are navigation/search-area references only; they are not claims of a physical ENGLISH PT branch at every station.
+Learning recommendations on station pages are based on the learner's stated goal, current level and schedule rather than assumptions about residents of the station area.
 
 ## Academy-keyword pages
 Pages whose search intent contains terms such as 토익학원, 아이엘츠학원, 토플학원, 오픽학원, 토익스피킹학원, 영어회화학원, 성인영어회화학원 or 직장인영어회화학원 are comparison/information pages.
