@@ -39,6 +39,11 @@ def main():
     if len(redirects)!=74: failures.append(f"redirect_count={len(redirects)} expected=74")
 
     repo_html={p.name for p in ROOT.glob("*.html")}
+    station_generated={"/stations.html"}
+    station_data=ROOT/"data"/"stations.json"
+    if station_data.exists():
+        station_rows=json.loads(station_data.read_text(encoding="utf-8")).get("stations",[])
+        station_generated.update(f'/station-{row["slug"]}.html' for row in station_rows)
     for url in preserved:
         path=ROOT/url.lstrip("/")
         row={"url":url,"exists":path.exists()}
@@ -64,6 +69,7 @@ def main():
             target="/"+href.lstrip("/")
             if (ROOT/target.lstrip("/")).exists(): continue
             if target in redirect_map: continue
+            if target in station_generated: continue
             broken.append(target)
         row["broken_internal_html_links"]=sorted(set(broken))
         if broken: failures.append(f"broken internal links {url}: {sorted(set(broken))}")
