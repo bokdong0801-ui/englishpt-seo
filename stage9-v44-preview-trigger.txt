@@ -13,3 +13,4 @@ Redeploy compact mobile beginner guide preview.
 Redeploy final 390px beginner readability preview.
 Rerun final beginner readability preview with Chrome readiness wait.
 Redeploy national hubs and final beginner-review Preview.
+Redeploy final hubs and Duolingo editorial Preview.
