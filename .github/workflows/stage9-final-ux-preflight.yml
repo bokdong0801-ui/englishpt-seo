@@ -205,7 +205,7 @@ jobs:
       - name: Run final SEO indexability QA across all public HTML
         run: |
           python3 - <<'PY'
-          import re
+          import re, json, struct
           from pathlib import Path
 
           root=Path('stage9-release')
@@ -227,6 +227,22 @@ jobs:
                   bad_domain.append((p.name,url))
               canonicals.append(url)
 
+              robots_meta=re.search(r'<meta name="robots" content="([^"]+)">',raw,re.I)
+              assert robots_meta,(p.name,'robots_meta_missing')
+              robots_value=robots_meta.group(1).lower()
+              assert 'index' in robots_value and 'follow' in robots_value and 'max-image-preview:large' in robots_value,(p.name,robots_value)
+
+              og=re.search(r'<meta property="og:image" content="([^"]+)">',raw,re.I)
+              tw=re.search(r'<meta name="twitter:image" content="([^"]+)">',raw,re.I)
+              image_src=re.search(r'<link rel="image_src" href="([^"]+)">',raw,re.I)
+              assert og and tw and image_src,(p.name,'image_meta_missing')
+              assert og.group(1)==tw.group(1)==image_src.group(1),(p.name,'image_meta_mismatch')
+              assert og.group(1).startswith('https://englishpt.kr/assets/images/'),(p.name,og.group(1))
+              assert og.group(1).endswith('.png'),(p.name,'og_image_not_png',og.group(1))
+              asset=root/og.group(1).split('https://englishpt.kr/',1)[1]
+              assert asset.exists() and asset.stat().st_size>5000,(p.name,'og_asset_missing',str(asset))
+              assert '"image":"'+og.group(1)+'"' in raw or '"image": "'+og.group(1)+'"' in raw,(p.name,'schema_image_missing')
+
           assert not blocked,blocked[:20]
           assert not bad_domain,bad_domain[:20]
           assert len(set(canonicals))==140391,(len(canonicals),len(set(canonicals)))
@@ -244,11 +260,11 @@ jobs:
           assert not (root/'sitemap.xml').exists()
 
           home=(root/'englishpt.html').read_text(encoding='utf-8')
-          assert '<meta name="robots" content="index,follow">' in home
+          assert '<meta name="robots" content="index,follow,max-image-preview:large">' in home
           assert '<link rel="canonical" href="https://englishpt.kr/englishpt.html">' in home
           for hub in ('courses.html','english-conversation.html','exam-english.html','student-english.html'):
               raw=(root/hub).read_text(encoding='utf-8')
-              assert '<meta name="robots" content="index,follow">' in raw,hub
+              assert '<meta name="robots" content="index,follow,max-image-preview:large">' in raw,hub
               assert f'<link rel="canonical" href="https://englishpt.kr/{hub}">' in raw,hub
 
           stations=(root/'stations.html').read_text(encoding='utf-8')
@@ -263,7 +279,26 @@ jobs:
           assert '도봉산역 전체 과정 보기' in dobong_toeic
           assert '<link rel="canonical" href="https://englishpt.kr/station-dobongsan-toeic.html">' in dobong_toeic
 
-          print('PASS_STAGE9_FINAL_SEO_INDEXABILITY_QA')
+          expected_og={
+            'englishpt.html':'https://englishpt.kr/assets/images/og/englishpt-home-og.png',
+            'courses.html':'https://englishpt.kr/assets/images/og/englishpt-courses-og.png',
+            'english-conversation.html':'https://englishpt.kr/assets/images/og/englishpt-conversation-og.png',
+            'exam-english.html':'https://englishpt.kr/assets/images/og/englishpt-exam-og.png',
+            'student-english.html':'https://englishpt.kr/assets/images/og/englishpt-student-og.png',
+          }
+          for name,url in expected_og.items():
+              raw=(root/name).read_text(encoding='utf-8')
+              assert f'<meta property="og:image" content="{url}">' in raw,(name,url)
+              assert f'<meta name="twitter:image" content="{url}">' in raw,(name,url)
+
+          for name in expected_og.values():
+              asset=root/name.split('https://englishpt.kr/',1)[1]
+              data=asset.read_bytes()
+              assert data[:8]==b'\x89PNG\r\n\x1a\n',str(asset)
+              w,h=struct.unpack('>II',data[16:24])
+              assert (w,h)==(1200,630),(str(asset),w,h)
+
+          print('PASS_STAGE9_FINAL_SEO_INDEXABILITY_AND_IMAGE_META_QA')
           PY
 
 
