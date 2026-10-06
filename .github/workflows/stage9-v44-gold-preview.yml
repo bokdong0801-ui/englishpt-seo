@@ -320,6 +320,11 @@ jobs:
           print(json.dumps(report,ensure_ascii=False,indent=2))
           PY
 
+      - name: Run beginner readability QA on reader preview
+        run: |
+          python3 scripts/qa-beginner-readability.py stage9-v44-preview \
+            --report STAGE9_BEGINNER_READABILITY_QA.json
+
       - name: QA mobile first screen with Chromium
         run: |
           CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
@@ -342,6 +347,7 @@ jobs:
               by_suffix('toeic-speaking'),
               by_suffix('opic'),
               by_suffix('ielts'),
+              by_suffix('duolingo'),
               by_suffix('toefl'),
               conv,
           ]
@@ -391,6 +397,7 @@ jobs:
               visual:box('.visual-break'),
               figure:box('.learning-visual'),
               caption:box('.learning-visual figcaption'),
+              beginner:box('.beginner-exam-guide'),
               intro:box('.section.intro-detail')
             };
           })()'''
@@ -411,14 +418,22 @@ jobs:
               assert metrics['actions']['height'] <= 62,(name,metrics)
               assert metrics['hero']['height'] <= 315,(name,metrics)
               assert metrics['visual']['height'] <= 330,(name,metrics)
-              assert metrics['intro']['top'] <= 820,(name,metrics)
+              is_exam=any(token in name for token in ['-toeic.html','-toeic-speaking.html','-opic.html','-ielts.html','-duolingo.html','-toefl.html'])
+              if is_exam:
+                  assert metrics['beginner'],(name,metrics)
+                  assert abs(metrics['beginner']['top']-metrics['visual']['bottom']) <= 3,(name,metrics)
+                  assert metrics['beginner']['top'] <= 620,(name,metrics)
+                  assert metrics['beginner']['height'] <= 310,(name,metrics)
+                  assert metrics['intro']['top'] <= 940,(name,metrics)
+              else:
+                  assert metrics['intro']['top'] <= 820,(name,metrics)
               rows.append({'page':name,**metrics,'screenshot':str(shot_path)})
           tab.stop()
           browser.close_tab(tab)
           report={
               'status':'PASS_MOBILE_FIRST_SCREEN_QA',
               'viewport':'390x844 CSS px',
-              'rule':'Hero -> representative image -> intro; CTA remains one row; intro begins within first 820px',
+              'rule':'Conversation: Hero -> image -> intro within 820px. Exams: Hero -> image -> beginner guide -> intro within 940px; beginner guide begins within first screen.',
               'pages':rows,
           }
           Path('STAGE9_MOBILE_FIRST_SCREEN_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
@@ -476,6 +491,7 @@ jobs:
           path: |
             STAGE9_V44_GOLD_PREVIEW_REPORT.json
             STAGE9_KEY_PAGE_QA_REPORT.json
+            STAGE9_BEGINNER_READABILITY_QA.json
             STAGE9_MOBILE_FIRST_SCREEN_QA.json
             mobile-qa/*.png
           retention-days: 30
