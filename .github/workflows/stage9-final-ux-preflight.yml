@@ -119,6 +119,7 @@ jobs:
               'toeic-speaking':'toeic-speaking-editorial.svg',
               'opic':'opic-editorial.svg',
               'ielts':'ielts-editorial.svg',
+              'duolingo':'duolingo-editorial.svg',
               'toefl':'toefl-editorial.svg',
               'english-conv-academy':'english-conv-editorial.svg',
           }
