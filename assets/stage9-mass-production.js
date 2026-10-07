@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded",()=>{
   const forms=document.querySelectorAll("#pilotForm,#leadForm");
-  if(window.emailjs){try{emailjs.init({publicKey:"eJdMKTqwA8M35JTQJsGTd"});}catch(e){}}
+  if(window.emailjs){try{emailjs.init({publicKey:"eJdMKTqwA8M35JTQJsGTd",blockHeadless:true,limitRate:{id:"englishpt-lead",throttle:10000}});}catch(e){}}
   forms.forEach(form=>{
     form.addEventListener("submit",async e=>{
       e.preventDefault();
@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       try{
         if(!window.emailjs) throw new Error("EmailJS unavailable");
         await emailjs.send("service_r1950hf","template_mqovosk",{
-          name,phone,area,wantedClass,message,pageTitle:document.title,pageUrl:location.href
+          name,phone,area,wantedClass,message,pageTitle:document.title,pageUrl:location.href,consent:"agreed",submittedAt:new Date().toISOString()
         });
         if(status) status.textContent="신청이 접수됐습니다. 남겨주신 연락처로 순차적으로 연락드리겠습니다.";
         form.reset();
