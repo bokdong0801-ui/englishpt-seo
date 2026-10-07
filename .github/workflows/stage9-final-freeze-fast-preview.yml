@@ -85,6 +85,79 @@ jobs:
 
           (cd final-freeze-preview && zip -qr ../final-freeze-preview.zip .)
 
+      - name: Chromium responsive QA
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          python3 -m pip install --quiet pychrome
+          python3 -m http.server 8777 --directory final-freeze-preview >/tmp/final-freeze-http.log 2>&1 &
+          SERVER_PID=$!
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars             --remote-debugging-port=9237 --remote-allow-origins='*'             --user-data-dir=/tmp/final-freeze-chrome about:blank >/tmp/final-freeze-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:9237/json/version >/dev/null 2>&1 && break
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:9237/json/version >/dev/null
+
+          python3 - <<'PY'
+          import json,time
+          from pathlib import Path
+          import pychrome
+
+          root=Path('final-freeze-preview')
+          pages=[
+            'englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html',
+            'stations.html','station-dobongsan.html','station-dobongsan-toeic.html','station-dobongsan-english-conv-academy.html',
+            'station-gangnam.html'
+          ] + sorted(p.name for p in root.glob('seoul-jongno-sajikdong-*.html'))
+          assert len(pages)==33,len(pages)
+
+          browser=pychrome.Browser(url='http://127.0.0.1:9237')
+          tab=browser.new_tab(); tab.start(); tab.Page.enable(); tab.Runtime.enable()
+          expr=r'''(()=>{
+            const box=(s)=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {top:Math.round(r.top),bottom:Math.round(r.bottom),height:Math.round(r.height),width:Math.round(r.width)}};
+            return {
+              width:window.innerWidth,
+              height:window.innerHeight,
+              scrollWidth:document.documentElement.scrollWidth,
+              hero:box('.hero'),
+              simpleHero:box('.hero.simple-hero'),
+              actions:box('.hero-actions'),
+              visual:box('.visual-break'),
+              beginner:box('.beginner-exam-guide'),
+              intro:box('.section.intro-detail'),
+              modal:!!document.querySelector('#applyModal'),
+              form:!!document.querySelector('#leadForm')
+            };
+          })()'''
+          rows=[]
+          for mode,w,h,mobile in [('desktop',1440,900,False),('mobile',390,844,True)]:
+            tab.call_method('Emulation.setDeviceMetricsOverride',width=w,height=h,deviceScaleFactor=1,mobile=mobile,screenWidth=w,screenHeight=h,dontSetVisibleSize=False)
+            for name in pages:
+              tab.Page.navigate(url='http://127.0.0.1:8777/'+name)
+              time.sleep(0.25)
+              m=tab.Runtime.evaluate(expression=expr,returnByValue=True)['result']['value']
+              assert m['width']==w and m['height']==h,(mode,name,m)
+              assert m['scrollWidth']<=w,(mode,name,'horizontal_overflow',m)
+              assert m['hero'],(mode,name,'hero_missing')
+              if name=='stations.html':
+                assert m['modal'] and m['form'],(mode,name,'consultation_missing')
+              if mode=='mobile' and m['simpleHero']:
+                assert m['simpleHero']['height']<=315,(mode,name,m)
+                if m['visual']:
+                  assert m['visual']['height']<=330,(mode,name,m)
+                if m['beginner']:
+                  assert m['beginner']['top']<=700,(mode,name,m)
+                  assert m['intro'] and m['intro']['top']<=940,(mode,name,m)
+              rows.append({'mode':mode,'page':name,'metrics':m})
+          tab.stop(); browser.close_tab(tab)
+          Path('FINAL_FREEZE_CHROMIUM_QA.json').write_text(json.dumps({'status':'PASS_FINAL_FREEZE_CHROMIUM_QA','checks':len(rows),'pages':len(pages),'rows':rows},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('PASS_FINAL_FREEZE_CHROMIUM_QA',len(rows),'checks')
+          PY
+
       - name: Ensure isolated review site
         run: |
           set -euo pipefail
@@ -163,5 +236,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: stage9-final-freeze-fast-preview-report
-          path: STAGE9_FINAL_FREEZE_FAST_PREVIEW_REPORT.json
+          path: |
+            STAGE9_FINAL_FREEZE_FAST_PREVIEW_REPORT.json
+            FINAL_FREEZE_CHROMIUM_QA.json
           retention-days: 30
