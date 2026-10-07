@@ -273,7 +273,7 @@ def station_hub(station: dict, station_map: dict[str,dict]) -> str:
     test = HUB_TEST_VARIANTS[digest % len(HUB_TEST_VARIANTS)]
     jurisdiction = " ".join(x for x in [station.get("city"), (station.get("areas") or [None])[0]] if x).strip()
     lines = " · ".join(station.get("lines") or ["역 기준"])
-    title=f'{station["name"]} 영어회화·영어과외 | 1:1 맞춤 영어 | 잉글리시PT'
+    title=f'{station["name"]} 영어회화·영어과외 | 잉글리시PT'
     desc=f'{station["name"]} 영어회화·영어과외를 왕초보·성인·직장인·학생·토익·오픽·아이엘츠·토플 등 과정별로 비교하고 1:1 맞춤 상담으로 연결합니다.'
     canonical=f'{BASE_URL}/station-{station["slug"]}.html'
     nearby=[station_map[s] for s in station.get("nearby",[]) if s in station_map][:10]
