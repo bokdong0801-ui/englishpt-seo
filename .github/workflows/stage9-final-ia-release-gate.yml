@@ -1,0 +1,401 @@
+name: Stage 9 FINAL IA Release Gate
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-final-ia-gate-trigger.txt'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  final-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      REVIEW_SITE_NAME: englishpt-final-freeze-review
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin fonts-noto-cjk
+          python -m py_compile scripts/build-stage9-production-release.py
+          python -m py_compile scripts/stage9-clean-mass-renderer.py
+          python -m py_compile scripts/stage9-station-renderer.py
+          python -m py_compile scripts/build-locality-index.py
+          node --check assets/site.js
+
+      - name: Download approved Stage 7 source
+        uses: actions/download-artifact@v4
+        with:
+          name: stage7-deploy-preview-rollback
+          path: stage7-source
+          run-id: 36694432423
+          github-token: ${{ github.token }}
+
+      - name: Download approved Stage 8 packet
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8-production-approval-packet
+          path: stage8-source
+          run-id: 36694845460
+          github-token: ${{ github.token }}
+
+      - name: Extract proven source pages
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || sudo apt-get install -y -qq zstd
+          rm -rf stage9-work stage9-release final-review
+          mkdir -p stage9-work
+          mapfile -t PKGS < <(find stage7-source -name 'stage5-shard-*-of-026.tar.zst' | sort)
+          test "${#PKGS[@]}" -eq 26
+          for f in "${PKGS[@]}"; do tar --zstd -xf "$f" -C stage9-work; done
+          test "$(find stage9-work/stage5-full-generation -name '*.html' | wc -l)" -eq 66937
+
+      - name: Assemble current 140391-page release
+        run: |
+          python3 scripts/build-stage9-production-release.py             --stage7-root stage7-source/stage7-preview             --stage8-root stage8-source             --work-root stage9-work             --output stage9-release
+
+      - name: Similarity QA
+        run: |
+          python3 scripts/stage9-clean-similarity-qa.py             --root stage9-release             --samples-per-intent 60             --output stage9-release/STAGE9_CLEAN_SIMILARITY_QA_V1.json
+
+      - name: Beginner readability QA
+        run: |
+          python3 scripts/qa-beginner-readability.py stage9-release             --report STAGE9_BEGINNER_READABILITY_QA.json
+
+      - name: Full information architecture and SEO gate
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+
+          root=Path('stage9-release')
+          report=json.loads((root/'STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
+          assert report['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY',report
+          assert report['counts']['html_total']==140391
+          assert report['counts']['station_hubs']==911
+          assert report['counts']['station_course_pages']==20953
+          assert report['counts']['sitemap_urls']==21964
+          assert report['indexing']['indexable_pages']==21964
+          assert report['indexing']['noindex_pages']==118427
+          assert report['indexing']['production_ui_failures']==0
+
+          files={p.name for p in root.glob('*.html') if p.name!='404.html'}
+          assert len(files)==140391,len(files)
+          assert (root/'404.html').exists()
+          assert (root/'privacy/index.html').exists()
+          assert (root/'assets/favicon.svg').exists()
+          assert (root/'assets/locality-index.json').exists()
+          localities=json.loads((root/'assets/locality-index.json').read_text(encoding='utf-8'))
+          assert len(localities)==5149,len(localities)
+
+          core=['englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html']
+          for name in core:
+              raw=(root/name).read_text(encoding='utf-8')
+              assert 'data-region-finder' in raw,name
+              assert 'data-region-sido' in raw and 'data-region-jurisdiction' in raw and 'data-region-dong' in raw,name
+              assert '영어권 교포 선생님' in raw,name
+          home=(root/'englishpt.html').read_text(encoding='utf-8')
+          assert '전체지역·과정 바로가기' in home
+          assert '누구를 위한' in home
+          assert home.index('과정 찾기') < home.index('전체지역·과정 바로가기')
+
+          # 911 station hubs -> all 23 existing course pages.
+          station_data=json.loads(Path('data/stations.json').read_text(encoding='utf-8'))
+          station_course_checks=0
+          for row in station_data['stations']:
+              hub=root/f'station-{row["slug"]}.html'
+              assert hub.exists(),hub.name
+              raw=hub.read_text(encoding='utf-8')
+              assert 'station-hub-page' in raw,hub.name
+              assert 'teacher-trust' in raw and '한국어' in raw,hub.name
+              prefix=f'station-{row["slug"]}-'
+              hrefs=set(re.findall(r'href="/(station-[^"]+\.html)"',raw))
+              courses={x for x in hrefs if x.startswith(prefix)}
+              assert len(courses)==23,(hub.name,len(courses))
+              missing=[x for x in courses if x not in files]
+              assert not missing,(hub.name,missing[:5])
+              station_course_checks+=len(courses)
+          assert station_course_checks==911*23,station_course_checks
+
+          # All current generated locality pages -> 22 sibling courses + valid nearby localities.
+          clean_pages=0
+          sibling_checks=0
+          nearby_page_count=0
+          canonical_set=set()
+          indexable_urls=set()
+          noindex_count=0
+          for p in root.glob('*.html'):
+              if p.name=='404.html':
+                  continue
+              raw=p.read_text(encoding='utf-8',errors='ignore')
+              cm=re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']',raw,re.I)
+              assert cm,(p.name,'canonical')
+              canonical=cm.group(1)
+              assert canonical not in canonical_set,(p.name,'duplicate canonical')
+              canonical_set.add(canonical)
+              rm=re.search(r'<meta name="robots" content="([^"]+)">',raw,re.I)
+              assert rm,(p.name,'robots')
+              tokens={x.strip().lower() for x in rm.group(1).split(',')}
+              if 'noindex' in tokens: noindex_count+=1
+              else: indexable_urls.add(canonical)
+
+              if 'data-stage9-clean="true"' not in raw or p.name.startswith('station-'):
+                  continue
+              clean_pages+=1
+              assert 'local-navigation' in raw,p.name
+              marker='<section class="section related local-navigation">'
+              nav=raw.split(marker,1)[1].split('</section>',1)[0]
+              assert '같은 지역 · 다른 과정' in nav,p.name
+              assert '전체 과정 찾기' in nav and '911개 역으로 찾기' in nav,p.name
+              course_block=nav.split('related-course-links',1)[1].split('</div>',1)[0]
+              course_links=set(re.findall(r'href="/([^"]+\.html)"',course_block))
+              assert len(course_links)==22,(p.name,len(course_links))
+              for x in course_links:
+                  assert x in files,(p.name,x)
+              sibling_checks+=len(course_links)
+              if 'nearby-localities' in nav:
+                  nearby_page_count+=1
+                  near_block=nav.split('nearby-localities',1)[1].split('</div></div>',1)[0]
+                  for x in set(re.findall(r'href="/([^"]+\.html)"',near_block)):
+                      assert x in files,(p.name,x)
+
+          assert len(canonical_set)==140391,len(canonical_set)
+          assert len(indexable_urls)==21964,len(indexable_urls)
+          assert noindex_count==118427,noindex_count
+          assert clean_pages==118427,clean_pages
+          assert sibling_checks==118427*22,sibling_checks
+
+          groups={}
+          for row in localities: groups[row['jurisdiction']]=groups.get(row['jurisdiction'],0)+1
+          expected_nearby=sum(23 for row in localities if groups[row['jurisdiction']]>1)
+          assert nearby_page_count==expected_nearby,(nearby_page_count,expected_nearby)
+
+          # Legacy Songhyeondong pages are now connected to the current 23-course graph.
+          preserved=root/'dalseo-songhyeondong-adult-conv.html'
+          assert preserved.exists()
+          pr=preserved.read_text(encoding='utf-8')
+          assert 'preserved-region-navigation' in pr
+          assert '같은 지역 · 다른 과정' in pr
+          song_links=set(re.findall(r'href="/(dalseo-songhyeondong-[^"]+\.html)"',pr))
+          assert len(song_links)>=23,len(song_links)
+          assert all(x in files for x in song_links),[x for x in song_links if x not in files][:5]
+
+          # Representative current Songhyeondong/Sajikdong pages expose continuation navigation.
+          reps=[
+              'daegu-dalseo-songhyeondong-toeic.html',
+              'seoul-jongno-sajikdong-toeic.html',
+              'seoul-jongno-sajikdong-worker-english-conv-academy.html'
+          ]
+          for name in reps:
+              p=root/name; assert p.exists(),name
+              raw=p.read_text(encoding='utf-8')
+              assert 'local-navigation' in raw,name
+              assert '같은 지역 · 다른 과정' in raw,name
+              assert '다른 동네' in raw,name
+              assert '영어권 시민권 교포 선생님 · 현지 발음' in raw,name
+
+          sitemap_urls=set()
+          for shard in (root/'sitemaps').glob('sitemap-*.xml'):
+              sitemap_urls.update(re.findall(r'<loc>(.*?)</loc>',shard.read_text(encoding='utf-8')))
+          assert sitemap_urls==indexable_urls,(len(sitemap_urls),len(indexable_urls))
+
+          print('PASS_FINAL_IA_RELEASE_GATE',json.dumps({
+              'html':len(files),
+              'station_hubs':911,
+              'station_course_links':station_course_checks,
+              'clean_locality_pages':clean_pages,
+              'sibling_course_links':sibling_checks,
+              'pages_with_nearby_links':nearby_page_count,
+              'localities':len(localities),
+              'indexable':len(indexable_urls),
+              'noindex':noindex_count,
+              'songhyeondong_links':len(song_links)
+          },ensure_ascii=False))
+          PY
+
+      - name: Build complete review package
+        run: |
+          set -euo pipefail
+          mkdir -p final-review
+          cp englishpt.html courses.html english-conversation.html exam-english.html student-english.html favicon-options.html final-review/
+          cp -R assets final-review/assets
+          cp stage9-release/assets/locality-index.json final-review/assets/locality-index.json
+          cp -R privacy final-review/privacy
+          cp 404.html final-review/404.html
+          cp stage9-release/stations.html final-review/
+          cp stage9-release/station-dobongsan*.html final-review/
+          cp stage9-release/station-gangnam.html final-review/
+          cp stage9-release/seoul-jongno-sajikdong-*.html final-review/
+          cp stage9-release/daegu-dalseo-songhyeondong-*.html final-review/
+          cp stage9-release/dalseo-songhyeondong-adult-conv.html final-review/
+          cp stage9-release/dalseo-songhyeondong-1to1-toeic.html final-review/
+          cp stage9-release/pilot.css final-review/pilot.css
+          cp stage9-release/pilot.js final-review/pilot.js
+          cat > final-review/_headers <<'EOF'
+          /*
+            X-Robots-Tag: noindex, nofollow
+            X-Content-Type-Options: nosniff
+            Referrer-Policy: strict-origin-when-cross-origin
+          EOF
+          python3 - <<'PY'
+          import re,json
+          from pathlib import Path
+          root=Path('final-review')
+          assert len(list(root.glob('station-dobongsan*.html')))==24
+          assert len(list(root.glob('seoul-jongno-sajikdong-*.html')))==23
+          assert len(list(root.glob('daegu-dalseo-songhyeondong-*.html')))==23
+          hub=(root/'station-dobongsan.html').read_text(encoding='utf-8')
+          links=set(re.findall(r'href="/(station-dobongsan-[^"]+\.html)"',hub))
+          assert len(links)==23
+          assert all((root/x).exists() for x in links)
+          legacy=(root/'dalseo-songhyeondong-adult-conv.html').read_text(encoding='utf-8')
+          legacy_links=set(re.findall(r'href="/(dalseo-songhyeondong-[^"]+\.html)"',legacy))
+          # Legacy links point to legacy or current pages in production; preview includes all current graph plus selected legacy.
+          assert len(legacy_links)>=23
+          print('PASS_REVIEW_PACKAGE',len(list(root.glob('*.html'))),'DOBONGSAN',len(links),'LEGACY_LINKS',len(legacy_links))
+          PY
+
+      - name: Chromium desktop and mobile QA
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet pychrome
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          python3 -m http.server 8777 --directory final-review >/tmp/final-review-http.log 2>&1 &
+          SERVER_PID=$!
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars             --remote-debugging-port=9237 --remote-allow-origins='*'             --user-data-dir=/tmp/final-ia-chrome about:blank >/tmp/final-ia-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:9237/json/version >/dev/null 2>&1 && break; sleep .5; done
+
+          python3 - <<'PY'
+          import time,json
+          from pathlib import Path
+          import pychrome
+          root=Path('final-review')
+          pages=['englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html',
+                 'stations.html','station-dobongsan.html','station-gangnam.html',
+                 'dalseo-songhyeondong-adult-conv.html','dalseo-songhyeondong-1to1-toeic.html',
+                 'seoul-jongno-sajikdong-toeic.html','daegu-dalseo-songhyeondong-toeic.html']
+          pages += sorted(p.name for p in root.glob('station-dobongsan-*.html'))
+          pages=list(dict.fromkeys(pages))
+          browser=pychrome.Browser(url='http://127.0.0.1:9237')
+          tab=browser.new_tab(); tab.start(); tab.Page.enable(); tab.Runtime.enable()
+          expr=r'''(()=>({w:innerWidth,h:innerHeight,sw:document.documentElement.scrollWidth,
+            hero:!!document.querySelector('.hero'),finder:!!document.querySelector('[data-region-finder]'),
+            localnav:!!document.querySelector('.local-navigation,.preserved-region-navigation'),
+            form:!!document.querySelector('#leadForm')}))()'''
+          checks=0
+          for mode,w,h,mobile in [('desktop',1440,900,False),('mobile',390,844,True)]:
+              tab.call_method('Emulation.setDeviceMetricsOverride',width=w,height=h,deviceScaleFactor=1,mobile=mobile,screenWidth=w,screenHeight=h,dontSetVisibleSize=False)
+              for name in pages:
+                  tab.Page.navigate(url='http://127.0.0.1:8777/'+name); time.sleep(.25)
+                  m=tab.Runtime.evaluate(expression=expr,returnByValue=True)['result']['value']
+                  assert m['sw']<=w,(mode,name,m)
+                  assert m['hero'] or name.startswith('dalseo-songhyeondong-'),(mode,name,'hero')
+                  if name in ('englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html'):
+                      assert m['finder'],(mode,name,'finder')
+                  if 'sajikdong-' in name or 'daegu-dalseo-songhyeondong-' in name or name.startswith('dalseo-songhyeondong-'):
+                      assert m['localnav'],(mode,name,'localnav')
+                  checks+=1
+          tab.stop(); browser.close_tab(tab)
+          print('PASS_FINAL_IA_CHROMIUM',checks)
+          PY
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Netlify CLI
+        run: npm install --global netlify-cli@latest
+
+      - name: Resolve review site and enable forms
+        run: |
+          set -euo pipefail
+          test -n "$NETLIFY_AUTH_TOKEN"
+          SITE_DOMAIN="$REVIEW_SITE_NAME.netlify.app"
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/$SITE_DOMAIN" -o /tmp/site.json
+          python3 - <<'PY'
+          import json,os
+          d=json.load(open('/tmp/site.json')); assert d.get('id'),d
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('REVIEW_SITE_ID='+d['id']+'\n')
+              f.write('REVIEW_SITE_URL='+(d.get('ssl_url') or d.get('url')).replace('http://','https://')+'\n')
+          PY
+          curl -fsS -X PUT             -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             -H "Content-Type: application/json"             --data '{"processing_settings":{"html":{"pretty_urls":false},"ignore_html_forms":false}}'             "https://api.netlify.com/api/v1/sites/$REVIEW_SITE_ID" >/tmp/site-updated.json
+
+      - name: Deploy final review
+        run: |
+          netlify deploy             --dir=final-review             --site="$REVIEW_SITE_ID"             --auth="$NETLIFY_AUTH_TOKEN"             --message="ENGLISH PT FINAL IA review"             --json | tee /tmp/deploy.json
+          python3 - <<'PY'
+          import json,os
+          d=json.load(open('/tmp/deploy.json'))
+          url=(d.get('deploy_url') or d.get('url') or os.environ['REVIEW_SITE_URL']).replace('http://','https://')
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('REVIEW_DEPLOY_URL='+url+'\n')
+          print('REVIEW_DEPLOY_URL',url)
+          PY
+
+      - name: Verify review links over HTTP
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,re,urllib.request
+          from pathlib import Path
+          base=os.environ['REVIEW_DEPLOY_URL'].rstrip('/')
+          root=Path('final-review')
+          targets={p.name for p in root.glob('*.html')}
+          # Check every packaged page itself.
+          for name in sorted(targets):
+              with urllib.request.urlopen(base+'/'+name,timeout=30) as r:
+                  assert r.status==200,(name,r.status)
+          # Check every Dobongsan child link and all current Songhyeondong/Sajikdong links present in package.
+          for source in ['station-dobongsan.html','dalseo-songhyeondong-adult-conv.html','seoul-jongno-sajikdong-toeic.html','daegu-dalseo-songhyeondong-toeic.html']:
+              raw=(root/source).read_text(encoding='utf-8')
+              hrefs=set(re.findall(r'href="/([^"#?]+\.html)"',raw))
+              for href in hrefs:
+                  if href in targets:
+                      with urllib.request.urlopen(base+'/'+href,timeout=30) as r:
+                          assert r.status==200,(source,href,r.status)
+          print('PASS_FINAL_REVIEW_HTTP',len(targets))
+          PY
+
+      - name: Write final gate report
+        run: |
+          python3 - <<'PY'
+          import json,os
+          report={
+            'status':'PASS_STAGE9_FINAL_IA_RELEASE_GATE',
+            'preview_url':os.environ['REVIEW_DEPLOY_URL'],
+            'production_affected':False,
+            'html_total':140391,
+            'indexable':21964,
+            'noindex':118427,
+            'stations':911,
+            'station_courses':20953,
+            'localities':5149,
+            'navigation':'course-first + region-first + station-first + local continuation',
+          }
+          open('STAGE9_FINAL_IA_RELEASE_GATE.json','w',encoding='utf-8').write(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          print(json.dumps(report,ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage9-final-ia-release-gate
+          path: |
+            STAGE9_FINAL_IA_RELEASE_GATE.json
+            STAGE9_BEGINNER_READABILITY_QA.json
+            stage9-release/STAGE9_CLEAN_SIMILARITY_QA_V1.json
+          retention-days: 30
