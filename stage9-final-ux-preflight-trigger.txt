@@ -35,3 +35,4 @@ Run image-enabled Stage 9 preflight after OPIc and TOEFL academy similarity fix.
 2026-10-07 tracked final preflight with pending status
 2026-10-07 final verification rerun for hero-consult-faq copy
 2026-10-07 rerun after academy locality diversity reinforcement
+2026-10-07 rerun after readability proper-noun false-positive fix
