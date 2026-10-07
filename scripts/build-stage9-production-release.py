@@ -287,12 +287,20 @@ def apply_search_image_metadata(out: Path, failures: list) -> dict:
         if not asset.exists():
             missing_assets.append({"file": page.name, "asset": rel_image})
 
-        raw = re.sub(
-            r'<meta name="robots" content="[^"]*">',
-            '<meta name="robots" content="index,follow,max-image-preview:large">',
-            raw, count=1, flags=re.I,
-        )
-        if 'name="robots"' not in raw.lower():
+        robots_m = re.search(r'<meta name="robots" content="([^"]+)">', raw, re.I)
+        if robots_m:
+            robots_tokens = {
+                x.strip().lower()
+                for x in robots_m.group(1).split(",")
+                if x.strip()
+            }
+            robots_value = (
+                "noindex,follow,max-image-preview:large"
+                if "noindex" in robots_tokens
+                else "index,follow,max-image-preview:large"
+            )
+            raw = raw[:robots_m.start()] + f'<meta name="robots" content="{robots_value}">' + raw[robots_m.end():]
+        else:
             raw = raw.replace(
                 "<head>",
                 '<head><meta name="robots" content="index,follow,max-image-preview:large">',
