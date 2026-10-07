@@ -329,6 +329,41 @@ jobs:
           assert '1호선 · 7호선' in dobong
           assert '도봉산역 전체 과정 보기' in dobong_toeic
           assert '<link rel="canonical" href="https://englishpt.kr/station-dobongsan-toeic.html">' in dobong_toeic
+          assert '영어권 교포 선생님' in dobong
+          dobong_links=re.findall(r'href="(/station-dobongsan-[^"]+\.html)"',dobong)
+          assert len(dobong_links)==23,len(dobong_links)
+          for href in dobong_links:
+              assert (root/href.lstrip('/')).exists(),href
+
+          locality_index=root/'assets'/'locality-index.json'
+          assert locality_index.exists(),'locality-index.json missing'
+          locality_rows=json.loads(locality_index.read_text(encoding='utf-8'))
+          assert len(locality_rows)==5149,len(locality_rows)
+
+          for hub in ('englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html'):
+              raw=(root/hub).read_text(encoding='utf-8')
+              assert 'data-region-finder' in raw,hub
+              assert '지역별 과정 페이지 보기' in raw,hub
+              assert '영어권 교포 선생님' in raw,hub
+
+          local_samples=[
+              'daegu-dalseo-songhyeondong-toeic.html',
+              'seoul-jongno-sajikdong-toeic.html',
+              'busan-dongnae-sajikdong-english-conv-academy.html',
+          ]
+          for name in local_samples:
+              p=root/name
+              assert p.exists(),name
+              raw=p.read_text(encoding='utf-8')
+              assert '같은 지역 · 다른 과정' in raw,name
+              assert '다른 동네' in raw,name
+              assert '전체 과정 찾기' in raw,name
+              assert '911개 역으로 찾기' in raw,name
+              local_links=re.findall(r'href="(/[^"]+\.html)"',raw)
+              assert len(local_links)>=22,(name,len(local_links))
+              for href in local_links:
+                  if any(token in href for token in ('songhyeondong','sajikdong')):
+                      assert (root/href.lstrip('/')).exists(),(name,href)
 
           expected_og={
             'englishpt.html':'https://englishpt.kr/assets/images/og/englishpt-home-og.png',
