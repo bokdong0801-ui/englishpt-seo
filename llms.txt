@@ -36,6 +36,7 @@ ENGLISH PT explains learning as a cycle:
 Location-specific URLs describe a service or comparison intent for that named area.
 They must not be interpreted as proof that ENGLISH PT has a physical branch or office in every named locality.
 Use the page's visible content and structured data to distinguish service-area guidance from a physical location.
+Most automatically expanded dong/locality pages are intentionally marked noindex,follow and are omitted from the public search sitemap. They remain available to users for navigation and consultation context but are not part of the primary search-index target set.
 
 ## Station pages
 ENGLISH PT also provides station-based navigation for 911 railway/subway station names across 37 lines.
@@ -54,5 +55,7 @@ They compare academy-style group learning with 1:1 learning and do not by themse
 - Do not infer guaranteed scores, outcomes, rankings, physical branches, teacher credentials or prices unless the page explicitly states them.
 
 ## Discovery
-For the complete set of public canonical URLs, use:
+For the primary indexable canonical URL set, use:
 https://englishpt.kr/sitemap-index.xml
+
+The sitemap intentionally lists the core site, preserved verified pages, and the browsable station hierarchy. Noindex locality-expansion pages are not included in the search sitemap.
