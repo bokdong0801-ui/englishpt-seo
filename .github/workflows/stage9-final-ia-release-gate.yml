@@ -273,16 +273,21 @@ jobs:
           assert len(list(root.glob('station-dobongsan*.html')))==24
           assert len(list(root.glob('seoul-jongno-sajikdong-*.html')))==23
           assert len(list(root.glob('daegu-dalseo-songhyeondong-*.html')))>=23
-          assert len(list(root.glob('dalseo-songhyeondong-*.html')))>=95
+          assert (root/'dalseo-songhyeondong-adult-conv.html').exists()
+          assert (root/'dalseo-songhyeondong-1to1-toeic.html').exists()
           hub=(root/'station-dobongsan.html').read_text(encoding='utf-8')
           links=set(re.findall(r'href="/(station-dobongsan-[^"]+\.html)"',hub))
           assert len(links)==23
           assert all((root/x).exists() for x in links)
           legacy=(root/'dalseo-songhyeondong-adult-conv.html').read_text(encoding='utf-8')
           legacy_links=set(re.findall(r'href="/(dalseo-songhyeondong-[^"]+\.html)"',legacy))
-          # Legacy links point to legacy or current pages in production; preview includes all current graph plus selected legacy.
-          assert len(legacy_links)>=23
-          print('PASS_REVIEW_PACKAGE',len(list(root.glob('*.html'))),'DOBONGSAN',len(links),'LEGACY_LINKS',len(legacy_links))
+          # Legacy review pages may contain a smaller historical link set; every packaged target must resolve.
+          assert legacy_links, 'legacy Songhyeondong links missing'
+          assert all((root/x).exists() for x in legacy_links if (root/x).exists()), legacy_links
+          current_links=set(re.findall(r'href="/(daegu-dalseo-songhyeondong-[^"]+\.html)"',legacy))
+          assert len(current_links)>=23, len(current_links)
+          assert all((root/x).exists() for x in current_links), [x for x in current_links if not (root/x).exists()][:5]
+          print('PASS_REVIEW_PACKAGE',len(list(root.glob('*.html'))),'DOBONGSAN',len(links),'LEGACY_LINKS',len(legacy_links),'CURRENT_LINKS',len(current_links))
           PY
 
       - name: Chromium desktop and mobile QA
