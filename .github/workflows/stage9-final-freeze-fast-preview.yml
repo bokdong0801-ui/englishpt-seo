@@ -233,7 +233,6 @@ jobs:
           else:
               body=json.dumps({
                   'site_id':os.environ['REVIEW_SITE_ID'],
-                  'form_name':'englishpt-consultation',
                   'type':'email',
                   'event':'submission_created',
                   'data':{'email':email},
