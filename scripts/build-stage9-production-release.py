@@ -581,9 +581,18 @@ def preserved_region_finder() -> str:
         ("worker-english-conv-academy","직장인영어회화학원"),("beginner-english-conv","왕초보영어회화"),
     ]
     option_html = "".join(f'<option value="{v}">{t}</option>' for v,t in options)
+    same_area_links = "".join(
+        f'<a href="/dalseo-songhyeondong-{intent}.html">송현동 {label}</a>'
+        for intent,label in options
+    )
     return (
         '<section class="section soft region-navigation preserved-region-navigation">'
-        '<div class="wrap"><div class="section-head"><div><div class="eyebrow ink">다른 지역도 확인하기</div>'
+        '<div class="wrap"><div class="section-head"><div><div class="eyebrow ink">송현동에서 이어보기</div>'
+        '<h2>지금 페이지에서 끝나지 않고<br>송현동의 다른 영어 과정으로 이동할 수 있습니다.</h2></div>'
+        '<p class="lead">회화·학생영어·시험영어·학원형 비교 페이지까지 현재 23개 핵심 과정을 같은 지역에서 이어서 볼 수 있습니다.</p></div>'
+        '<div class="local-nav-block"><p class="kicker">같은 지역 · 다른 과정</p>'
+        '<div class="links related-course-links">' + same_area_links + '</div></div>'
+        '<div class="section-head" style="margin-top:28px"><div><div class="eyebrow ink">다른 지역도 확인하기</div>'
         '<h2>송현동 외 다른 지역의<br>같은 영어 과정도 이어서 볼 수 있습니다.</h2></div>'
         '<p class="lead">시·도 → 시·군·구 → 읍·면·동 → 과정 순서로 선택하면 전국 지역 상세페이지로 이동합니다.</p></div>'
         '<div class="region-finder-shell" data-region-finder><div class="region-finder-grid">'
