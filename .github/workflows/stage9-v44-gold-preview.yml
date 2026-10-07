@@ -85,19 +85,8 @@ jobs:
         run: |
           rm -rf stage9-v44-preview
           mkdir -p stage9-v44-preview
-          cp stage9-release/pilot.css stage9-v44-preview/
-          cp stage9-release/pilot.js stage9-v44-preview/
-          cp -R stage9-release/assets stage9-v44-preview/
-          cp stage9-release/englishpt.html stage9-v44-preview/ 2>/dev/null || true
-          cp stage9-release/courses.html stage9-v44-preview/
-          cp stage9-release/english-conversation.html stage9-v44-preview/
-          cp stage9-release/exam-english.html stage9-v44-preview/
-          cp stage9-release/student-english.html stage9-v44-preview/
-          cp stage9-release/stations.html stage9-v44-preview/
-          cp stage9-release/station-dobongsan.html stage9-v44-preview/
-          cp stage9-release/station-dobongsan-toeic.html stage9-v44-preview/
-          cp stage9-release/station-dobongsan-english-conv-academy.html stage9-v44-preview/
-          cp stage9-release/station-gangnam.html stage9-v44-preview/
+          cp -a stage9-release/. stage9-v44-preview/
+          test "$(find stage9-v44-preview -maxdepth 1 -name '*.html' | wc -l)" -ge 140391
           python3 - <<'PY'
           import html, json, shutil
           from pathlib import Path
@@ -181,7 +170,7 @@ jobs:
           <div class="note"><b>확인 포인트</b><p>시험별 색상 변화, 첫 화면의 가독성, 학원 검색 페이지의 비교 설명, 관리 과정, PC/모바일 반응형을 확인해주세요. 이 Preview는 검색엔진 색인을 막아두었습니다.</p></div>
           <p><a href="/image-review.html" style="display:inline-block;padding:12px 16px;border-radius:999px;background:#14201A;color:#fff;text-decoration:none;font-weight:900">대표이미지 후보 27개 비교하기 →</a></p>
           <div class="grid">{cards}</div></main></body></html>'''
-          (out/'index.html').write_text(index,encoding='utf-8')
+          (out/'review-index.html').write_text(index,encoding='utf-8')
 
           image_specs=[
               ('toeic','토익'),
@@ -222,6 +211,54 @@ jobs:
           (out/'image-review.html').write_text(image_review,encoding='utf-8')
           (out/'_headers').write_text('/*\n  X-Robots-Tag: noindex, nofollow\n',encoding='utf-8')
           (out/'ACADEMY_PREVIEW_PAGES.json').write_text(json.dumps(academy_names,ensure_ascii=False,indent=2),encoding='utf-8')
+          PY
+
+      - name: Audit full preview navigation graph
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          root=Path('stage9-v44-preview')
+          assert (root/'assets'/'locality-index.json').exists()
+          localities=json.loads((root/'assets'/'locality-index.json').read_text(encoding='utf-8'))
+          assert len(localities)==5149,len(localities)
+
+          # Every one of the 23 Dobongsan station links must resolve in the preview.
+          dobong=(root/'station-dobongsan.html').read_text(encoding='utf-8')
+          station_links=re.findall(r'href="(/station-dobongsan-[^"]+\.html)"',dobong)
+          assert len(station_links)==23,len(station_links)
+          for href in station_links:
+              assert (root/href.lstrip('/')).exists(),href
+
+          # Representative localities must be reachable and must expose onward navigation.
+          samples=[
+              'seoul-jongno-sajikdong-toeic.html',
+              'daegu-dalseo-songhyeondong-toeic.html',
+              'busan-dongnae-sajikdong-english-conv-academy.html',
+          ]
+          for name in samples:
+              p=root/name
+              assert p.exists(),name
+              raw=p.read_text(encoding='utf-8')
+              assert '같은 지역 · 다른 과정' in raw,name
+              assert '다른 동네' in raw,name
+              assert '전체 과정 찾기' in raw,name
+              assert '911개 역으로 찾기' in raw,name
+              hrefs=re.findall(r'href="(/[^"]+\.html)"',raw)
+              for href in hrefs:
+                  if href.startswith('/station-') or any(x in href for x in ('sajikdong','songhyeondong')):
+                      assert (root/href.lstrip('/')).exists(),(name,href)
+
+          # National hubs must have the region selector and teacher trust.
+          for name in ('courses.html','english-conversation.html','exam-english.html','student-english.html'):
+              raw=(root/name).read_text(encoding='utf-8')
+              assert 'data-region-finder' in raw,name
+              assert '영어권 교포 선생님' in raw,name
+          home=(root/'englishpt.html').read_text(encoding='utf-8')
+          assert 'data-region-finder' in home
+          assert '전체지역·과정 바로가기' in home
+          assert '영어권 교포 선생님' in home
+          print('PASS_FULL_PREVIEW_LINK_GRAPH')
           PY
 
       - name: Audit main national hubs and five beginner exam pages
