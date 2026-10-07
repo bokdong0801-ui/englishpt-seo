@@ -419,7 +419,6 @@ SERVICE_THEME_SUFFIXES = {
 }
 EXAM_SUFFIXES = ("toeic", "toeic-speaking", "opic", "ielts", "duolingo", "toefl")
 
-EMAILJS_TAG = ''
 LIVE_FORM = '''<form id="pilotForm" class="lead-form" name="englishpt-consultation" method="POST" data-netlify="true" data-netlify-honeypot="bot-field"><input type="hidden" name="form-name" value="englishpt-consultation"><input type="hidden" name="subject" data-remove-prefix value="ENGLISH PT 새 상담 신청"><p hidden><label>비워두세요 <input name="bot-field"></label></p>
 <label>이름 <span>*</span><input name="name" autocomplete="name" required></label>
 <label>연락처 <span>*</span><input name="phone" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required></label>
