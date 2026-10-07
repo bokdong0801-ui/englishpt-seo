@@ -1,3 +1,4 @@
 2026-10-07 final IA release gate run
 2026-10-08 retry after workflow registration
 2026-10-08 final navigation graph verification after regional and station fixes
+2026-10-08 rerun after grouped course navigation QA alignment
