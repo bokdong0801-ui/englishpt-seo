@@ -45,7 +45,7 @@ jobs:
           cp final-artifact/stage9-final-ux-samples/pilot.css final-freeze-preview/
           cp final-artifact/stage9-final-ux-samples/pilot.js final-freeze-preview/
           cp -R assets final-freeze-preview/assets
-          cp englishpt.html courses.html english-conversation.html exam-english.html student-english.html final-freeze-preview/
+          cp englishpt.html courses.html english-conversation.html exam-english.html student-english.html favicon-options.html final-freeze-preview/
           cp -R privacy final-freeze-preview/privacy
           cp 404.html final-freeze-preview/404.html
 
@@ -213,6 +213,67 @@ jobs:
           HEADER=$(curl -fsSI "$REVIEW_SITE_URL/englishpt.html")
           echo "$HEADER" | grep -qi 'x-robots-tag: noindex'
           echo "PASS_FINAL_FREEZE_FAST_PREVIEW"
+
+      - name: Configure review consultation email notification
+        run: |
+          set -euo pipefail
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/hooks?site_id=$REVIEW_SITE_ID"             -o /tmp/review-hooks.json
+          python3 - <<'PY'
+          import json,os,urllib.request
+          hooks=json.load(open('/tmp/review-hooks.json',encoding='utf-8'))
+          email='cicada3865@naver.com'
+          exists=any(
+              h.get('type')=='email' and h.get('event')=='submission_created'
+              and (h.get('data') or {}).get('email')==email
+              for h in hooks
+          )
+          if exists:
+              print('PASS review email hook already exists')
+          else:
+              body=json.dumps({
+                  'site_id':os.environ['REVIEW_SITE_ID'],
+                  'form_name':'englishpt-consultation',
+                  'type':'email',
+                  'event':'submission_created',
+                  'data':{'email':email},
+              }).encode()
+              req=urllib.request.Request(
+                  'https://api.netlify.com/api/v1/hooks',
+                  data=body,
+                  headers={'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN'],'Content-Type':'application/json'},
+                  method='POST',
+              )
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  out=json.loads(r.read().decode())
+              assert out.get('id'),out
+              print('PASS created review consultation email hook',out['id'])
+          PY
+
+      - name: Submit review consultation and verify storage
+        run: |
+          set -euo pipefail
+          TEST_NAME="ENGLISH PT 알림 테스트"
+          curl -fsS -X POST "$REVIEW_SITE_URL/"             -H "Content-Type: application/x-www-form-urlencoded"             --data-urlencode "form-name=englishpt-consultation"             --data-urlencode "subject=ENGLISH PT 알림 테스트"             --data-urlencode "name=$TEST_NAME"             --data-urlencode "phone=010-0000-0000"             --data-urlencode "area=FINAL FREEZE PREVIEW TEST"             --data-urlencode "wantedClass=상담 이메일 알림 테스트"             --data-urlencode "message=[테스트] 실제 상담이 아닙니다. Netlify Forms 이메일 알림 연결 확인용입니다."             --data-urlencode "consent=agreed"             --data-urlencode "pageTitle=ENGLISH PT FINAL FREEZE PREVIEW"             --data-urlencode "pageUrl=$REVIEW_SITE_URL/englishpt.html"             --data-urlencode "submittedAt=$(date -u +%Y-%m-%dT%H:%M:%SZ)"             >/tmp/review-form-response.html
+          python3 - <<'PY'
+          import json,os,time,urllib.request
+          token=os.environ['NETLIFY_AUTH_TOKEN']; site=os.environ['REVIEW_SITE_ID']
+          found=False
+          for _ in range(18):
+              req=urllib.request.Request(
+                  f'https://api.netlify.com/api/v1/sites/{site}/submissions?per_page=20',
+                  headers={'Authorization':'Bearer '+token},
+              )
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  rows=json.loads(r.read().decode())
+              for row in rows:
+                  if (row.get('data') or {}).get('name')=='ENGLISH PT 알림 테스트':
+                      print('PASS_REVIEW_NETLIFY_FORM_SUBMISSION',row.get('id'))
+                      found=True
+                      break
+              if found: break
+              time.sleep(5)
+          assert found,'review consultation submission not found'
+          PY
 
       - name: Write report
         run: |
