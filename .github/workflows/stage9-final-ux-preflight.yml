@@ -623,6 +623,22 @@ jobs:
               shutil.copy2(src,out/name)
               pages.append(name)
           assert len(pages)==23, len(pages)
+          current_intents=[
+              'elem-tutor','mid-conv','high-conv','univ-conv','jobseeker-conv','biz-business-conv','housewife-conv',
+              'toeic','toeic-speaking','opic','ielts','duolingo','toefl',
+              'toeic-academy','toeic-speaking-academy','opic-academy','ielts-academy','duolingo-academy','toefl-academy',
+              'english-conv-academy','adult-english-conv-academy','worker-english-conv-academy','beginner-english-conv'
+          ]
+          songhyeondong_current=[]
+          for intent in current_intents:
+              name=f'daegu-dalseo-songhyeondong-{intent}.html'
+              src=Path('stage9-release')/name
+              assert src.exists(),name
+              raw=src.read_text(encoding='utf-8')
+              assert 'local-navigation' in raw,name
+              shutil.copy2(src,out/name)
+              songhyeondong_current.append(name)
+          assert len(songhyeondong_current)==23
           for preserved_name in ('dalseo-songhyeondong-adult-conv.html','dalseo-songhyeondong-1to1-toeic.html'):
               preserved_src=Path('stage9-release')/preserved_name
               assert preserved_src.exists(),preserved_name
