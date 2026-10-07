@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       try{
         if(!window.emailjs) throw new Error("EmailJS unavailable");
         await emailjs.send("service_r1950hf","template_mqovosk",{
-          name,phone,area,wantedClass,message,pageTitle:document.title,pageUrl:location.href,consent:"agreed",submittedAt:new Date().toISOString()
+          name,phone,area,wantedClass,message,pageTitle:document.title,pageUrl:location.href,consent:"agreed",submittedAt:new Date().toISOString(),to_email:"cicada3865@naver.com",reply_to:"cicada3865@naver.com"
         });
         if(status) status.textContent="신청이 접수됐습니다. 남겨주신 연락처로 순차적으로 연락드리겠습니다.";
         form.reset();
