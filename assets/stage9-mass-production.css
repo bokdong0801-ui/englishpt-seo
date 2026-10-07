@@ -506,3 +506,20 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
 .local-nav-actions a{display:inline-flex;align-items:center;min-height:44px;padding:0 15px;border-radius:999px;background:var(--hero);color:var(--heroText);text-decoration:none;font-size:13px;font-weight:800}
 @media(max-width:900px){.local-nav-block .links{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.local-nav-block{padding:18px}.local-nav-block .links{grid-template-columns:1fr}.local-nav-actions{display:grid}.local-nav-actions a{justify-content:center}}
+
+
+/* Grouped continuation navigation */
+.related-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:22px}
+.related-group{padding:20px;border:1px solid var(--line);border-radius:18px;background:#fff}
+.related-group h3{margin:0 0 12px;font-size:17px}
+.related-course-links{display:grid;gap:8px}
+.related-course-links a{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--paper) 78%,var(--soft));color:var(--ink);text-decoration:none;font-size:13px;font-weight:700}
+.related-course-links a:hover{border-color:var(--accent);color:var(--accent)}
+.nearby-localities{background:color-mix(in srgb,var(--soft) 68%,var(--paper))}
+.nearby-locality-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:18px}
+.nearby-locality-grid a{display:grid;gap:3px;padding:13px;border:1px solid var(--line);border-radius:13px;background:#fff;color:var(--ink);text-decoration:none}
+.nearby-locality-grid a strong{font-size:14px}.nearby-locality-grid a span{font-size:11px;color:var(--muted)}
+.related-hub-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+.related-hub-actions a{display:inline-flex;align-items:center;min-height:42px;padding:0 14px;border-radius:999px;background:var(--hero);color:var(--heroText);font-size:12.5px;font-weight:800;text-decoration:none}
+@media(max-width:800px){.related-groups{grid-template-columns:1fr}.nearby-locality-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.nearby-locality-grid{grid-template-columns:1fr}.related-hub-actions{display:grid}.related-hub-actions a{justify-content:center}}
