@@ -3,3 +3,4 @@
 2026-10-07 rerun after Netlify Forms + favicon finalization
 2026-10-07 rerun Netlify Forms email notification preview after QA contract update
 2026-10-07 rerun review notification with site-wide hook
+2026-10-07 rerun form POST current-page fix
