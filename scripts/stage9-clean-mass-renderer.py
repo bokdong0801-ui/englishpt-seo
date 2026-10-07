@@ -325,7 +325,6 @@ TITLE_VARIANTS = {
     "beginner-english-conv": ["기초문장·첫 말하기", "왕초보 기초회화·말하기", "인사·자기소개부터 시작"],
 }
 
-EMAILJS_TAG = ''
 def consultation_form(loc: dict, h1: str) -> str:
     return f'''<form id="leadForm" class="lead-form" name="englishpt-consultation" method="POST" data-netlify="true" data-netlify-honeypot="bot-field"><input type="hidden" name="form-name" value="englishpt-consultation"><input type="hidden" name="subject" data-remove-prefix value="ENGLISH PT 새 상담 신청"><p hidden><label>비워두세요 <input name="bot-field"></label></p>
 <label>이름 <span>*</span><input id="leadName" name="name" autocomplete="name" required></label>
