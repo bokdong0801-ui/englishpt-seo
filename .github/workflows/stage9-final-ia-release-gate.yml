@@ -283,7 +283,7 @@ jobs:
           legacy_links=set(re.findall(r'href="/(dalseo-songhyeondong-[^"]+\.html)"',legacy))
           # Legacy review pages may contain a smaller historical link set; every packaged target must resolve.
           assert legacy_links, 'legacy Songhyeondong links missing'
-          assert all((root/x).exists() for x in legacy_links if (root/x).exists()), legacy_links
+          assert all((root/x).exists() for x in legacy_links), [x for x in legacy_links if not (root/x).exists()][:5]
           current_links=set(re.findall(r'href="/(daegu-dalseo-songhyeondong-[^"]+\.html)"',legacy))
           assert len(current_links)>=23, len(current_links)
           assert all((root/x).exists() for x in current_links), [x for x in current_links if not (root/x).exists()][:5]
