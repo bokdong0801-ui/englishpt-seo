@@ -39,3 +39,4 @@ Run image-enabled Stage 9 preflight after OPIc and TOEFL academy similarity fix.
 2026-10-07 final freeze preflight: selective indexing, Naver meta, privacy, stations form, security, favicon
 2026-10-07 FINAL FREEZE preflight: privacy, stations form, selective indexing, 404, headers, favicon, preserved copy
 2026-10-07 FINAL FREEZE rerun after favicon + Netlify Forms notification migration
+2026-10-07 FINAL FREEZE #72 clean Netlify Forms + favicon final
