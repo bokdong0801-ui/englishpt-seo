@@ -11,8 +11,8 @@
   },
   "visible_chars": {
     "min": 6840,
-    "max": 7543,
-    "avg": 7082.8
+    "max": 7699,
+    "avg": 7151.4
   },
   "variation_adapter": {
     "variation_pack_id": "Ve4a779a721",
@@ -90,7 +90,7 @@
       "file": "seoul-jongno-sajikdong-toeic.html",
       "family": "exam",
       "intent": "toeic",
-      "visible_chars": 7195,
+      "visible_chars": 7339,
       "status": "PASS",
       "failures": []
     },
@@ -98,7 +98,7 @@
       "file": "seoul-jongno-sajikdong-toeic-speaking.html",
       "family": "exam",
       "intent": "toeic-speaking",
-      "visible_chars": 7119,
+      "visible_chars": 7272,
       "status": "PASS",
       "failures": []
     },
@@ -106,7 +106,7 @@
       "file": "seoul-jongno-sajikdong-opic.html",
       "family": "exam",
       "intent": "opic",
-      "visible_chars": 6850,
+      "visible_chars": 6992,
       "status": "PASS",
       "failures": []
     },
@@ -114,7 +114,7 @@
       "file": "seoul-jongno-sajikdong-ielts.html",
       "family": "exam",
       "intent": "ielts",
-      "visible_chars": 7439,
+      "visible_chars": 7588,
       "status": "PASS",
       "failures": []
     },
@@ -122,7 +122,7 @@
       "file": "seoul-jongno-sajikdong-duolingo.html",
       "family": "exam",
       "intent": "duolingo",
-      "visible_chars": 7543,
+      "visible_chars": 7699,
       "status": "PASS",
       "failures": []
     },
@@ -130,7 +130,7 @@
       "file": "seoul-jongno-sajikdong-toefl.html",
       "family": "exam",
       "intent": "toefl",
-      "visible_chars": 7380,
+      "visible_chars": 7528,
       "status": "PASS",
       "failures": []
     }

@@ -415,7 +415,7 @@
         "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-toeic.html",
         "bodyFlag": "false",
         "decisionGuide": true,
-        "bodyHeight": 10947
+        "bodyHeight": 11005
       },
       "expectedH1": "사직동 토익과외"
     },
@@ -442,7 +442,7 @@
         "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-toeic.html",
         "bodyFlag": "false",
         "decisionGuide": true,
-        "bodyHeight": 15308
+        "bodyHeight": 15393
       },
       "expectedH1": "사직동 토익과외"
     },
@@ -469,7 +469,7 @@
         "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-toeic-speaking.html",
         "bodyFlag": "false",
         "decisionGuide": true,
-        "bodyHeight": 11058
+        "bodyHeight": 11117
       },
       "expectedH1": "사직동 토익스피킹과외"
     },
@@ -496,7 +496,7 @@
         "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-toeic-speaking.html",
         "bodyFlag": "false",
         "decisionGuide": true,
-        "bodyHeight": 15468
+        "bodyHeight": 15554
       },
       "expectedH1": "사직동 토익스피킹과외"
     },
@@ -523,7 +523,7 @@
         "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-opic.html",
         "bodyFlag": "false",
         "decisionGuide": true,
-        "bodyHeight": 10950
+        "bodyHeight": 11008
       },
       "expectedH1": "사직동 오픽과외"
     },
@@ -550,7 +550,7 @@
         "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-opic.html",
         "bodyFlag": "false",
         "decisionGuide": true,
-        "bodyHeight": 15228
+        "bodyHeight": 15314
       },
       "expectedH1": "사직동 오픽과외"
     },
@@ -577,7 +577,7 @@
         "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-ielts.html",
         "bodyFlag": "false",
         "decisionGuide": true,
-        "bodyHeight": 11418
+        "bodyHeight": 11476
       },
       "expectedH1": "사직동 아이엘츠과외"
     },
@@ -604,7 +604,7 @@
         "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-ielts.html",
         "bodyFlag": "false",
         "decisionGuide": true,
-        "bodyHeight": 15735
+        "bodyHeight": 15820
       },
       "expectedH1": "사직동 아이엘츠과외"
     },
@@ -631,7 +631,7 @@
         "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-duolingo.html",
         "bodyFlag": "false",
         "decisionGuide": true,
-        "bodyHeight": 11391
+        "bodyHeight": 11449
       },
       "expectedH1": "사직동 듀오링고영어테스트"
     },
@@ -658,7 +658,7 @@
         "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-duolingo.html",
         "bodyFlag": "false",
         "decisionGuide": true,
-        "bodyHeight": 15851
+        "bodyHeight": 15963
       },
       "expectedH1": "사직동 듀오링고영어테스트"
     },
@@ -685,7 +685,7 @@
         "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-toefl.html",
         "bodyFlag": "false",
         "decisionGuide": true,
-        "bodyHeight": 11310
+        "bodyHeight": 11368
       },
       "expectedH1": "사직동 토플과외"
     },
@@ -712,7 +712,7 @@
         "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-toefl.html",
         "bodyFlag": "false",
         "decisionGuide": true,
-        "bodyHeight": 15700
+        "bodyHeight": 15785
       },
       "expectedH1": "사직동 토플과외"
     }
