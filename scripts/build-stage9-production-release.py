@@ -419,8 +419,8 @@ SERVICE_THEME_SUFFIXES = {
 }
 EXAM_SUFFIXES = ("toeic", "toeic-speaking", "opic", "ielts", "duolingo", "toefl")
 
-EMAILJS_TAG = '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>'
-LIVE_FORM = '''<form id="pilotForm" class="lead-form">
+EMAILJS_TAG = ''
+LIVE_FORM = '''<form id="pilotForm" class="lead-form" name="englishpt-consultation" method="POST" data-netlify="true" data-netlify-honeypot="bot-field"><input type="hidden" name="form-name" value="englishpt-consultation"><input type="hidden" name="subject" data-remove-prefix value="ENGLISH PT 새 상담 신청"><p hidden><label>비워두세요 <input name="bot-field"></label></p>
 <label>이름 <span>*</span><input name="name" autocomplete="name" required></label>
 <label>연락처 <span>*</span><input name="phone" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required></label>
 <label class="full">가장 가까운 일정<input name="deadline" placeholder="시험·발표·면접·사용 일정"></label>
@@ -584,13 +584,6 @@ def normalize_production_page(raw: str, name: str) -> tuple[str, list[str]]:
     raw = raw.replace("Stage 3 dry-run · production 미배포", "ENGLISH PT · 지역별 맞춤 영어 안내")
     raw = raw.replace('href="../englishpt.html"', 'href="/englishpt.html"')
 
-    if '<script defer src="pilot.js"></script>' in raw and EMAILJS_TAG not in raw:
-        raw = raw.replace(
-            '<script defer src="pilot.js"></script>',
-            EMAILJS_TAG + '<script defer src="pilot.js"></script>',
-            1,
-        )
-
     raw, form_n = re.subn(
         r'<form id="pilotForm">.*?</form>',
         LIVE_FORM,
@@ -676,7 +669,8 @@ def normalize_production_page(raw: str, name: str) -> tuple[str, list[str]]:
         'name="name"',
         'name="phone"',
         'name="consent"',
-        EMAILJS_TAG,
+        'name="englishpt-consultation"',
+        'data-netlify="true"',
         'class="breadcrumb wrap"',
         'class="mobile-sticky"',
     ]
