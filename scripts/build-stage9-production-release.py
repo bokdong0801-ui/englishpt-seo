@@ -569,12 +569,16 @@ def _replace_kicker_h2(raw: str, kicker: str, heading: str) -> str:
 
 def preserved_region_finder() -> str:
     options = [
-        ("elem-tutor","초등 영어"),("mid-conv","중등 영어"),("high-conv","고등 영어"),
-        ("beginner-english-conv","왕초보 영어회화"),("adult-english-conv-academy","성인 영어회화"),
-        ("worker-english-conv-academy","직장인 영어회화"),("univ-conv","대학생 영어"),
-        ("jobseeker-conv","취준생 영어"),("biz-business-conv","비즈니스 영어"),
-        ("housewife-conv","생활 영어"),("toeic","토익"),("toeic-speaking","토익스피킹"),
-        ("opic","오픽"),("ielts","아이엘츠"),("toefl","토플"),("duolingo","듀오링고 영어시험"),
+        ("elem-tutor","초등학생 영어과외"),("mid-conv","중학생 영어회화"),("high-conv","고등학생 영어회화"),
+        ("univ-conv","대학생 영어회화"),("jobseeker-conv","취준생 영어회화"),
+        ("biz-business-conv","직장인 비즈니스영어"),("housewife-conv","생활·주부 영어회화"),
+        ("toeic","토익과외"),("toeic-speaking","토익스피킹과외"),("opic","오픽과외"),
+        ("ielts","아이엘츠과외"),("duolingo","듀오링고 영어시험"),("toefl","토플과외"),
+        ("toeic-academy","토익학원"),("toeic-speaking-academy","토익스피킹학원"),
+        ("opic-academy","오픽학원"),("ielts-academy","아이엘츠학원"),
+        ("duolingo-academy","듀오링고학원"),("toefl-academy","토플학원"),
+        ("english-conv-academy","영어회화학원"),("adult-english-conv-academy","성인영어회화학원"),
+        ("worker-english-conv-academy","직장인영어회화학원"),("beginner-english-conv","왕초보영어회화"),
     ]
     option_html = "".join(f'<option value="{v}">{t}</option>' for v,t in options)
     return (
