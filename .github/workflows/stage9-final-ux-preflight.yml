@@ -367,9 +367,15 @@ jobs:
           assert (root/'assets'/'favicon.svg').exists()
           js=(root/'assets'/'site.js').read_text(encoding='utf-8')
           mass_js=(root/'pilot.js').read_text(encoding='utf-8')
-          for token in ('blockHeadless','limitRate','submittedAt','consent'):
+          for token in ('form-name','englishpt-consultation','submittedAt','consent','application/x-www-form-urlencoded'):
               assert token in js,token
               assert token in mass_js,token
+          for page_name in ('englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html','stations.html'):
+              raw=(root/page_name).read_text(encoding='utf-8')
+              assert 'name="englishpt-consultation"' in raw,page_name
+              assert 'data-netlify="true"' in raw,page_name
+              assert 'data-netlify-honeypot="bot-field"' in raw,page_name
+              assert '<link rel="icon" href="/assets/favicon.svg"' in raw or '<link rel="icon" href="https://englishpt.kr/assets/favicon.svg"' in raw,page_name
 
           print('PASS_STAGE9_FINAL_SEO_INDEXABILITY_AND_IMAGE_META_QA')
           PY
