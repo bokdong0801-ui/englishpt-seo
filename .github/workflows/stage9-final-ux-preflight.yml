@@ -105,13 +105,15 @@ jobs:
           assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
           assert q['counts']['new_pages']==118427
           assert q['counts']['html_total']==140391
-          assert q['counts']['sitemap_shards']==281
-          assert q['counts']['sitemap_urls']==140391
+          assert q['counts']['sitemap_shards']==44
+          assert q['counts']['sitemap_urls']==21964
           assert q['counts']['station_hubs']==911
           assert q['counts']['station_course_pages']==20953
           assert q['counts']['station_index_pages']==1
           assert q['counts']['station_html_total']==21865
-          assert q['indexing']['noindex_pages']==0
+          assert q['indexing']['noindex_pages']==118427
+          assert q['indexing']['indexable_pages']==21964
+          assert q['indexing']['robots_contract_failures']==0
           assert q['indexing']['production_ui_failures']==0
           assert q['indexing']['robots_txt_allows_crawl'] is True
           assert q['source']['mass_renderer']=='stage9-clean-gold-v1'
@@ -224,17 +226,15 @@ jobs:
           from pathlib import Path
 
           root=Path('stage9-release')
-          pages=sorted(root.glob('*.html'))
+          pages=sorted(p for p in root.glob('*.html') if p.name!='404.html')
           assert len(pages)==140391,len(pages)
 
           canonicals=[]
-          blocked=[]
+          indexable=[]
+          noindex=[]
           bad_domain=[]
           for p in pages:
               raw=p.read_text(encoding='utf-8',errors='ignore')
-              low=raw.lower()
-              if 'noindex' in low or 'nofollow' in low:
-                  blocked.append(p.name)
               m=re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']',raw,re.I)
               assert m,(p.name,'canonical_missing')
               url=m.group(1)
@@ -244,8 +244,15 @@ jobs:
 
               robots_meta=re.search(r'<meta name="robots" content="([^"]+)">',raw,re.I)
               assert robots_meta,(p.name,'robots_meta_missing')
-              robots_value=robots_meta.group(1).lower()
-              assert 'index' in robots_value and 'follow' in robots_value and 'max-image-preview:large' in robots_value,(p.name,robots_value)
+              robots_tokens={x.strip().lower() for x in robots_meta.group(1).split(',') if x.strip()}
+              assert 'follow' in robots_tokens and 'nofollow' not in robots_tokens,(p.name,robots_tokens)
+              assert 'max-image-preview:large' in robots_tokens,(p.name,robots_tokens)
+              if 'noindex' in robots_tokens:
+                  noindex.append(p.name)
+                  assert 'index' not in robots_tokens,(p.name,robots_tokens)
+              else:
+                  assert 'index' in robots_tokens,(p.name,robots_tokens)
+                  indexable.append(p.name)
 
               og=re.search(r'<meta property="og:image" content="([^"]+)">',raw,re.I)
               tw=re.search(r'<meta name="twitter:image" content="([^"]+)">',raw,re.I)
@@ -258,7 +265,8 @@ jobs:
               assert asset.exists() and asset.stat().st_size>5000,(p.name,'og_asset_missing',str(asset))
               assert '"image":"'+og.group(1)+'"' in raw or '"image": "'+og.group(1)+'"' in raw,(p.name,'schema_image_missing')
 
-          assert not blocked,blocked[:20]
+          assert len(indexable)==21964,len(indexable)
+          assert len(noindex)==118427,len(noindex)
           assert not bad_domain,bad_domain[:20]
           assert len(set(canonicals))==140391,(len(canonicals),len(set(canonicals)))
 
@@ -269,9 +277,9 @@ jobs:
           assert 'User-agent: Yeti' in robots
 
           index=(root/'sitemap-index.xml').read_text(encoding='utf-8')
-          assert index.count('<sitemap><loc>')==281
+          assert index.count('<sitemap><loc>')==44
           assert 'https://englishpt.kr/sitemaps/sitemap-001.xml' in index
-          assert 'https://englishpt.kr/sitemaps/sitemap-281.xml' in index
+          assert 'https://englishpt.kr/sitemaps/sitemap-044.xml' in index
           assert not (root/'sitemap.xml').exists()
 
           home=(root/'englishpt.html').read_text(encoding='utf-8')
@@ -288,6 +296,9 @@ jobs:
           assert '전국 37개 노선 · 911개 역' in stations
           assert stations.count('class="station-index-link"')>=911
           assert '<link rel="canonical" href="https://englishpt.kr/stations.html">' in stations
+          assert 'id="applyModal"' in stations
+          assert 'id="leadForm"' in stations
+          assert '@emailjs/browser@4.4.1' in stations
           assert '<link rel="canonical" href="https://englishpt.kr/station-dobongsan.html">' in dobong
           assert dobong.count('href="/station-dobongsan-')==23
           assert '1호선 · 7호선' in dobong
@@ -312,6 +323,28 @@ jobs:
               assert data[:8]==b'\x89PNG\r\n\x1a\n',str(asset)
               w,h=struct.unpack('>II',data[16:24])
               assert (w,h)==(1200,630),(str(asset),w,h)
+
+
+          mass_sample=next(p for p in pages if p.name.startswith('seoul-jongno-sajikdong-') and 'station-' not in p.name)
+          mass_raw=mass_sample.read_text(encoding='utf-8')
+          assert '<meta name="robots" content="noindex,follow,max-image-preview:large">' in mass_raw,mass_sample.name
+          assert '<meta name="robots" content="index,follow,max-image-preview:large">' in stations
+          assert (root/'privacy'/'index.html').exists()
+          privacy=(root/'privacy'/'index.html').read_text(encoding='utf-8')
+          assert 'EmailJS' in privacy and '미국' in privacy and '상담 종료 후 3개월' in privacy
+          assert (root/'404.html').exists()
+          page404=(root/'404.html').read_text(encoding='utf-8')
+          assert '송현동' not in page404 and 'noindex,follow' in page404
+          assert (root/'_headers').exists()
+          headers=(root/'_headers').read_text(encoding='utf-8')
+          for token in ('X-Content-Type-Options: nosniff','Referrer-Policy: strict-origin-when-cross-origin','X-Frame-Options: SAMEORIGIN','Permissions-Policy:'):
+              assert token in headers,token
+          assert (root/'assets'/'favicon.svg').exists()
+          js=(root/'assets'/'site.js').read_text(encoding='utf-8')
+          mass_js=(root/'pilot.js').read_text(encoding='utf-8')
+          for token in ('blockHeadless','limitRate','submittedAt','consent'):
+              assert token in js,token
+              assert token in mass_js,token
 
           print('PASS_STAGE9_FINAL_SEO_INDEXABILITY_AND_IMAGE_META_QA')
           PY
