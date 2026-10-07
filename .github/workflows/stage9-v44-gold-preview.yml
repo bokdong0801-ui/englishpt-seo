@@ -226,9 +226,10 @@ jobs:
           # Every one of the 23 Dobongsan station links must resolve in the preview.
           dobong=(root/'station-dobongsan.html').read_text(encoding='utf-8')
           station_links=re.findall(r'href="(/station-dobongsan-[^"]+\.html)"',dobong)
-          assert len(station_links)==23,len(station_links)
+          assert len(station_links)==23,('dobongsan_station_links',len(station_links),station_links)
           for href in station_links:
-              assert (root/href.lstrip('/')).exists(),href
+              assert (root/href.lstrip('/')).exists(),('missing_dobongsan_target',href)
+          print('PASS_NAV_AUDIT_DOBONGSAN_23')
 
           # Representative localities must be reachable and must expose onward navigation.
           samples=[
@@ -249,6 +250,8 @@ jobs:
                   if href.startswith('/station-') or any(x in href for x in ('sajikdong','songhyeondong')):
                       assert (root/href.lstrip('/')).exists(),(name,href)
 
+          print('PASS_NAV_AUDIT_LOCALITY_SAMPLES')
+
           # National hubs must have the region selector, complete relevant intent sets, and teacher trust.
           expected_options={
               'englishpt.html':23,'courses.html':23,'english-conversation.html':8,
@@ -264,10 +267,13 @@ jobs:
               assert len(values)==expected,(name,len(values),expected)
               assert len(set(values))==len(values),(name,'duplicate_intents')
 
+          print('PASS_NAV_AUDIT_NATIONAL_HUBS')
           home=(root/'englishpt.html').read_text(encoding='utf-8')
           assert '전체지역·과정 바로가기' in home
           assert '과정 중심 탐색과 겹치지 않도록' in home
           assert home.index('과정 찾기') < home.index('전체지역·과정 바로가기')
+
+          print('PASS_NAV_AUDIT_HOME_SEPARATION')
 
           # Preserved Songhyeondong pages must connect into the nationwide navigation graph too.
           preserved=root/'dalseo-songhyeondong-adult-conv.html'
@@ -283,10 +289,12 @@ jobs:
           assert '/englishpt.html#region' in preserved_raw
           assert '/stations.html' in preserved_raw
 
+          print('PASS_NAV_AUDIT_PRESERVED_SONGHYEONDONG')
           styles=(root/'assets'/'styles.css').read_text(encoding='utf-8')
           assert '.station-hub-page .station-hero' in styles
           assert '.region-finder-shell' in styles
           assert '.teacher-trust-grid' in styles
+          print('PASS_NAV_AUDIT_STYLES')
           print('PASS_FULL_PREVIEW_LINK_GRAPH')
           PY
 
