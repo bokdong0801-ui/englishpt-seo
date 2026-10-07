@@ -167,7 +167,7 @@ jobs:
           assert preserved.exists()
           pr=preserved.read_text(encoding='utf-8')
           assert 'preserved-region-navigation' in pr
-          song_links=set(re.findall(r'href="/(dalseo-songhyeondong-[^"]+\.html)"',pr))
+          song_links=set(re.findall(r'href="/(daegu-dalseo-songhyeondong-[^"]+\.html)"',pr))
           assert len(song_links)>=23,len(song_links)
           assert all(x in files for x in song_links),[x for x in song_links if x not in files][:5]
 
