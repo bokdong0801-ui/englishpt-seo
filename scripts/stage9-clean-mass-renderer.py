@@ -325,9 +325,9 @@ TITLE_VARIANTS = {
     "beginner-english-conv": ["기초문장·첫 말하기", "왕초보 기초회화·말하기", "인사·자기소개부터 시작"],
 }
 
-EMAILJS_TAG = '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>'
+EMAILJS_TAG = ''
 def consultation_form(loc: dict, h1: str) -> str:
-    return f'''<form id="leadForm" class="lead-form">
+    return f'''<form id="leadForm" class="lead-form" name="englishpt-consultation" method="POST" data-netlify="true" data-netlify-honeypot="bot-field"><input type="hidden" name="form-name" value="englishpt-consultation"><input type="hidden" name="subject" data-remove-prefix value="ENGLISH PT 새 상담 신청"><p hidden><label>비워두세요 <input name="bot-field"></label></p>
 <label>이름 <span>*</span><input id="leadName" name="name" autocomplete="name" required></label>
 <label>연락처 <span>*</span><input id="leadPhone" name="phone" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required></label>
 <label>지역 <span>*</span><input id="leadArea" name="area" value="{esc(loc["dong"])}" required></label>
@@ -2201,9 +2201,6 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     else:
         problems.append("v44_intro")
 
-    if EMAILJS_TAG not in raw:
-        raw = raw.replace('<script defer src="pilot.js"></script>', EMAILJS_TAG+'<script defer src="pilot.js"></script>',1)
-
     raw, n = re.subn(r'<form id="(?:pilotForm|leadForm)"[^>]*>.*?</form>', consultation_form(loc, h1), raw, count=1, flags=re.S)
     if n!=1:
         problems.append("live_form")
@@ -2280,7 +2277,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         f'<body class="{theme}" data-production-deploy="true" data-stage9-clean="true">',
         'name="name"','name="phone"','name="area"','name="message"','name="wantedClass"','name="consent"',
         'class="breadcrumb wrap"','class="mobile-sticky"',
-        EMAILJS_TAG,'class="section mass-context"',
+        'name="englishpt-consultation"','data-netlify="true"','class="section mass-context"',
         'class="site-header"','class="hero simple-hero"','class="snapshot"','class="trust"','class="section management"',
         '"@type":"Service"','"@type":"WebSite"','"mainEntity":{"@id":',
     ]
