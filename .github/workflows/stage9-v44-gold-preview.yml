@@ -249,15 +249,44 @@ jobs:
                   if href.startswith('/station-') or any(x in href for x in ('sajikdong','songhyeondong')):
                       assert (root/href.lstrip('/')).exists(),(name,href)
 
-          # National hubs must have the region selector and teacher trust.
-          for name in ('courses.html','english-conversation.html','exam-english.html','student-english.html'):
+          # National hubs must have the region selector, complete relevant intent sets, and teacher trust.
+          expected_options={
+              'englishpt.html':23,'courses.html':23,'english-conversation.html':8,
+              'exam-english.html':12,'student-english.html':3,
+          }
+          for name,expected in expected_options.items():
               raw=(root/name).read_text(encoding='utf-8')
               assert 'data-region-finder' in raw,name
               assert '영어권 교포 선생님' in raw,name
+              m=re.search(r'<select data-region-intent>(.*?)</select>',raw,re.S)
+              assert m,name
+              values=[x for x in re.findall(r'<option value="([^"]*)"',m.group(1)) if x]
+              assert len(values)==expected,(name,len(values),expected)
+              assert len(set(values))==len(values),(name,'duplicate_intents')
+
           home=(root/'englishpt.html').read_text(encoding='utf-8')
-          assert 'data-region-finder' in home
           assert '전체지역·과정 바로가기' in home
-          assert '영어권 교포 선생님' in home
+          assert '과정 중심 탐색과 겹치지 않도록' in home
+          assert home.index('과정 찾기') < home.index('전체지역·과정 바로가기')
+
+          # Preserved Songhyeondong pages must connect into the nationwide navigation graph too.
+          preserved=root/'dalseo-songhyeondong-adult-conv.html'
+          assert preserved.exists()
+          preserved_raw=preserved.read_text(encoding='utf-8')
+          assert 'preserved-region-navigation' in preserved_raw
+          assert 'data-region-finder' in preserved_raw
+          pm=re.search(r'<select data-region-intent>(.*?)</select>',preserved_raw,re.S)
+          assert pm
+          pvalues=[x for x in re.findall(r'<option value="([^"]*)"',pm.group(1)) if x]
+          assert len(pvalues)==23,len(pvalues)
+          assert 'dalseo-songhyeondong-adult-tutor.html' in preserved_raw
+          assert '/englishpt.html#region' in preserved_raw
+          assert '/stations.html' in preserved_raw
+
+          styles=(root/'assets'/'styles.css').read_text(encoding='utf-8')
+          assert '.station-hub-page .station-hero' in styles
+          assert '.region-finder-shell' in styles
+          assert '.teacher-trust-grid' in styles
           print('PASS_FULL_PREVIEW_LINK_GRAPH')
           PY
 
