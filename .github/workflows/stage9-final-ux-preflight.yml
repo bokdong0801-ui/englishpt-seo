@@ -141,17 +141,18 @@ jobs:
               clean_pages+=1
               assert 'local-navigation' in raw,p.name
               nav=raw.split('<section class="section related local-navigation">',1)[1].split('</section>',1)[0]
-              links=set(re.findall(r'href="/([^"#?]+\.html)"',nav))
-              same=[x for x in links if x.rsplit('-',1)[0] == p.name[:-5].rsplit('-',1)[0]]
-              # Intent slugs contain dashes, so use the displayed course cluster count instead.
-              course_block=nav.split('related-course-links',1)[1].split('</div>',1)[0]
-              course_links=set(re.findall(r'href="/([^"]+\.html)"',course_block))
+              course_links=set(re.findall(r'href="/([^"]+\.html)"',nav))
               assert len(course_links)==22,(p.name,len(course_links))
-              missing=[x for x in links if x not in files and x not in {'courses.html','stations.html','englishpt.html'}]
+              missing=[x for x in course_links if x not in files]
               assert not missing,(p.name,missing[:5])
               link_checks+=len(course_links)
-              if 'nearby-localities' in nav:
+              # Nearby-locality navigation is a separate section immediately after local-navigation.
+              if 'class="section nearby-localities"' in raw:
                   nearby_checks+=1
+                  nearby_block=raw.split('<section class="section nearby-localities">',1)[1].split('</section>',1)[0]
+                  nearby_links=set(re.findall(r'href="/([^"]+\.html)"',nearby_block))
+                  missing_near=[x for x in nearby_links if x not in files and x not in {'courses.html','stations.html','englishpt.html'}]
+                  assert not missing_near,(p.name,missing_near[:5])
           assert clean_pages==118427,(clean_pages,118427)
           assert link_checks==118427*22,(link_checks,118427*22)
           groups={}
