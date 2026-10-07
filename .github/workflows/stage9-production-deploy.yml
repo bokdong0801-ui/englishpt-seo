@@ -167,6 +167,73 @@ jobs:
           print('Netlify production url:', d.get('url') or d.get('deploy_url'))
           PY
 
+      - name: Configure consultation email notification
+        run: |
+          set -euo pipefail
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/hooks?site_id=$NETLIFY_SITE_ID"             -o /tmp/netlify-hooks.json
+          python3 - <<'PY'
+          import json, os, urllib.request
+          hooks=json.load(open('/tmp/netlify-hooks.json',encoding='utf-8'))
+          email='cicada3865@naver.com'
+          exists=any(
+              h.get('type')=='email'
+              and h.get('event')=='submission_created'
+              and (h.get('data') or {}).get('email')==email
+              for h in hooks
+          )
+          if exists:
+              print('PASS consultation email notification hook already exists')
+          else:
+              token=os.environ['NETLIFY_AUTH_TOKEN']
+              site=os.environ['NETLIFY_SITE_ID']
+              body=json.dumps({
+                  'site_id':site,
+                  'form_name':'englishpt-consultation',
+                  'type':'email',
+                  'event':'submission_created',
+                  'data':{'email':email},
+              }).encode()
+              req=urllib.request.Request(
+                  'https://api.netlify.com/api/v1/hooks',
+                  data=body,
+                  headers={'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+                  method='POST',
+              )
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  data=json.loads(r.read().decode())
+              assert data.get('id'),data
+              print('PASS created consultation email notification hook',data['id'])
+          PY
+
+      - name: Submit and verify live consultation form
+        run: |
+          set -euo pipefail
+          TEST_NAME="ENGLISH PT 배포 테스트"
+          curl -fsS -X POST "https://englishpt.kr/"             -H "Content-Type: application/x-www-form-urlencoded"             --data-urlencode "form-name=englishpt-consultation"             --data-urlencode "subject=ENGLISH PT 새 상담 신청"             --data-urlencode "name=$TEST_NAME"             --data-urlencode "phone=010-0000-0000"             --data-urlencode "area=FINAL FREEZE LIVE TEST"             --data-urlencode "wantedClass=상담 이메일 알림 배포 테스트"             --data-urlencode "message=[테스트] Production 배포 후 Netlify Forms와 이메일 알림 연결 확인용입니다."             --data-urlencode "consent=agreed"             --data-urlencode "pageTitle=ENGLISH PT FINAL FREEZE LIVE TEST"             --data-urlencode "pageUrl=https://englishpt.kr/englishpt.html"             --data-urlencode "submittedAt=$(date -u +%Y-%m-%dT%H:%M:%SZ)"             >/tmp/form-submit-response.html
+          python3 - <<'PY'
+          import json, os, time, urllib.request
+          token=os.environ['NETLIFY_AUTH_TOKEN']
+          site=os.environ['NETLIFY_SITE_ID']
+          found=False
+          for _ in range(18):
+              req=urllib.request.Request(
+                  f'https://api.netlify.com/api/v1/sites/{site}/submissions?per_page=20',
+                  headers={'Authorization':'Bearer '+token},
+              )
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  rows=json.loads(r.read().decode())
+              for row in rows:
+                  data=row.get('data') or {}
+                  if data.get('name')=='ENGLISH PT 배포 테스트':
+                      found=True
+                      print('PASS live consultation submission stored',row.get('id'))
+                      break
+              if found:
+                  break
+              time.sleep(5)
+          assert found,'live Netlify Forms test submission not found'
+          PY
+
       - name: Verify englishpt.kr live release
         id: live
         run: |
