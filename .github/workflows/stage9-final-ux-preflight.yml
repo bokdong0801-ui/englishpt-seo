@@ -232,6 +232,8 @@ jobs:
           canonicals=[]
           indexable=[]
           noindex=[]
+          indexable_titles=[]
+          indexable_descriptions=[]
           bad_domain=[]
           for p in pages:
               raw=p.read_text(encoding='utf-8',errors='ignore')
@@ -253,6 +255,17 @@ jobs:
               else:
                   assert 'index' in robots_tokens,(p.name,robots_tokens)
                   indexable.append(p.name)
+                  title_m=re.search(r'<title>(.*?)</title>',raw,re.S|re.I)
+                  desc_m=re.search(r'<meta name="description" content="([^"]*)">',raw,re.I)
+                  assert title_m and desc_m,(p.name,'title_or_description_missing')
+                  title_text=__import__('html').unescape(re.sub(r'<[^>]+>','',title_m.group(1))).strip()
+                  desc_text=__import__('html').unescape(desc_m.group(1)).strip()
+                  assert len(title_text)<=40,(p.name,'title_too_long',len(title_text),title_text)
+                  assert len(desc_text)<=80,(p.name,'description_too_long',len(desc_text),desc_text)
+                  indexable_titles.append((p.name,title_text))
+                  indexable_descriptions.append((p.name,desc_text))
+                  for stale in ('판단라는 기준','답변 시작로','이유 확장로','재검증','병목'):
+                      assert stale not in raw,(p.name,'stale_copy',stale)
 
               og=re.search(r'<meta property="og:image" content="([^"]+)">',raw,re.I)
               tw=re.search(r'<meta name="twitter:image" content="([^"]+)">',raw,re.I)
@@ -267,6 +280,8 @@ jobs:
 
           assert len(indexable)==21964,len(indexable)
           assert len(noindex)==118427,len(noindex)
+          assert len({x[1] for x in indexable_titles})==21964,'duplicate_indexable_titles'
+          assert len({x[1] for x in indexable_descriptions})==21964,'duplicate_indexable_descriptions'
           assert not bad_domain,bad_domain[:20]
           assert len(set(canonicals))==140391,(len(canonicals),len(set(canonicals)))
 
@@ -280,6 +295,15 @@ jobs:
           assert index.count('<sitemap><loc>')==44
           assert 'https://englishpt.kr/sitemaps/sitemap-001.xml' in index
           assert 'https://englishpt.kr/sitemaps/sitemap-044.xml' in index
+          sitemap_urls=set()
+          for shard in sorted((root/'sitemaps').glob('sitemap-*.xml')):
+              sitemap_urls.update(re.findall(r'<loc>(.*?)</loc>',shard.read_text(encoding='utf-8')))
+          assert len(sitemap_urls)==21964,len(sitemap_urls)
+          indexable_urls={
+              re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']', (root/name).read_text(encoding='utf-8'), re.I).group(1)
+              for name in indexable
+          }
+          assert sitemap_urls==indexable_urls,(len(sitemap_urls),len(indexable_urls))
           assert not (root/'sitemap.xml').exists()
 
           home=(root/'englishpt.html').read_text(encoding='utf-8')
