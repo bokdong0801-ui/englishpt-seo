@@ -110,10 +110,24 @@ HOME_REQUIRED = [
 ]
 
 HUBS_REQUIRED = {
-    "courses.html": ["영어 과정 찾기", "전국 과정 안내", "english-conversation.html", "exam-english.html", "student-english.html", "과정을 잘 몰라도 괜찮습니다", "어디서부터 시작할지 고민이라면", "무엇부터 해야 할지 모르겠다면", "희망 지역과 수업 방식은"],
-    "english-conversation.html": ["1:1 영어회화", "왕초보 영어회화", "직장인 영어회화", "성인 영어회화", "상담에서 확인하기", "희망 지역과 수업 방식은"],
-    "exam-english.html": ["시험영어", "토익", "토익스피킹", "오픽", "아이엘츠", "토플", "듀오링고 영어시험", "상담하기 →", "희망 지역과 수업 방식은"],
-    "student-english.html": ["학생영어", "초등 영어", "중등 영어", "고등 영어", "국제학교 영어", "상담하기 →", "희망 지역과 수업 방식은"],
+    "courses.html": [
+        "영어 과정 찾기", "전국 과정 안내", "english-conversation.html", "exam-english.html",
+        "student-english.html", "과정을 잘 몰라도 괜찮습니다", "data-region-finder",
+        "지역별 과정 페이지 보기", "영어권 교포 선생님",
+    ],
+    "english-conversation.html": [
+        "1:1 영어회화", "왕초보 영어회화", "직장인 영어회화", "성인 영어회화",
+        "지역별 직장인 영어회화 보기", "data-region-finder", "지역별 과정 페이지 보기",
+        "영어권 교포 선생님",
+    ],
+    "exam-english.html": [
+        "시험영어", "토익", "토익스피킹", "오픽", "아이엘츠", "토플", "듀오링고 영어시험",
+        "지역별 토익 보기", "data-region-finder", "지역별 과정 페이지 보기", "영어권 교포 선생님",
+    ],
+    "student-english.html": [
+        "학생영어", "초등 영어", "중등 영어", "고등 영어", "국제학교 영어",
+        "지역별 초등 영어 보기", "data-region-finder", "지역별 과정 페이지 보기", "영어권 교포 선생님",
+    ],
 }
 
 def visible_body(raw: str) -> str:
