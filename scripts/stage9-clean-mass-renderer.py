@@ -1245,6 +1245,8 @@ def all_related(loc: dict, current_intent: str) -> str:
 
 
 def title_for(loc: dict, intent: str) -> str:
+    if loc.get("station"):
+        return f'{loc["dong"]} {loc["service"]} | 잉글리시PT'
     variants = TITLE_VARIANTS[intent]
     digest = hashlib.sha256(f'{loc["slug"]}|{intent}|title-v2'.encode()).hexdigest()
     suffix = variants[int(digest[:8], 16) % len(variants)]
