@@ -35,3 +35,4 @@ Final 140391 preview with OG metadata, stations, and locality diversity.
 2026-10-07 final rerun with navigation audit checkpoints
 2026-10-07 final navigation graph rerun after preserved-page fix
 2026-10-07 rerun after stable 390x844 navigation QA
+2026-10-07 rerun after font-safe exam intro threshold
