@@ -145,6 +145,7 @@ jobs:
           assert '.local-navigation' in mass_css
           assert '.nearby-localities' in mass_css
 
+          home=Path('stage9-release/englishpt.html').read_text(encoding='utf-8')
           core_pages=['englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html']
           for core_name in core_pages:
               core=(Path('stage9-release')/core_name).read_text(encoding='utf-8')
