@@ -180,6 +180,18 @@ jobs:
           print('REVIEW_SITE_URL',url)
           PY
 
+      - name: Enable Netlify Forms detection on review site
+        run: |
+          set -euo pipefail
+          curl -fsS -X PUT             -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             -H "Content-Type: application/json"             --data '{"processing_settings":{"html":{"pretty_urls":false},"ignore_html_forms":false}}'             "https://api.netlify.com/api/v1/sites/$REVIEW_SITE_ID"             -o /tmp/review-site-updated.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/review-site-updated.json',encoding='utf-8'))
+          p=d.get('processing_settings') or {}
+          print('REVIEW_PROCESSING_SETTINGS',json.dumps(p,ensure_ascii=False))
+          assert p.get('ignore_html_forms') is False,p
+          PY
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
