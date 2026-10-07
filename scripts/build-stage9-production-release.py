@@ -929,8 +929,11 @@ def main() -> None:
 
     def apply_sitewide_operational_markup(raw: str) -> str:
         raw = raw.replace(
-            "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js",
-            "https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js",
+            '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>',
+            '',
+        ).replace(
+            '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>',
+            '',
         )
         if 'rel="icon"' not in raw and "</head>" in raw:
             raw = raw.replace(
