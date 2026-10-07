@@ -54,3 +54,4 @@ Run image-enabled Stage 9 preflight after OPIc and TOEFL academy similarity fix.
 2026-10-07 final navigation graph rerun after preserved-page fix
 2026-10-07 final IA/link-graph verification rerun
 2026-10-07 navigation graph final QA: region selectors, 23 station links, Songhyeondong continuation, teacher trust
+2026-10-07 final teacher-trust wording after navigation graph update
