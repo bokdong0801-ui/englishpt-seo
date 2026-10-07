@@ -45,6 +45,7 @@ jobs:
           cp final-artifact/stage9-final-ux-samples/pilot.css final-freeze-preview/
           cp final-artifact/stage9-final-ux-samples/pilot.js final-freeze-preview/
           cp -R assets final-freeze-preview/assets
+          python3 scripts/build-locality-index.py --output final-freeze-preview/assets/locality-index.json
           cp englishpt.html courses.html english-conversation.html exam-english.html student-english.html favicon-options.html final-freeze-preview/
           cp -R privacy final-freeze-preview/privacy
           cp 404.html final-freeze-preview/404.html
@@ -86,7 +87,15 @@ jobs:
           assert 'name="englishpt-consultation"' in stations
           assert 'data-netlify="true"' in stations
           assert '개인정보처리방침' in stations
-          print('PASS_FINAL_FREEZE_FAST_PACKAGE',len(reps))
+          locality=json.loads((root/'assets/locality-index.json').read_text(encoding='utf-8'))
+          assert len(locality)==5149,len(locality)
+          dobongsan=root/'station-dobongsan.html'
+          hub=dobongsan.read_text(encoding='utf-8')
+          hrefs=re.findall(r'href="/(station-dobongsan-[^"]+\.html)"',hub)
+          assert len(set(hrefs))==23,len(set(hrefs))
+          for href in set(hrefs):
+              assert (root/href).exists(),href
+          print('PASS_FINAL_FREEZE_FAST_PACKAGE',len(reps),'DOBONGSAN_LINKS',len(set(hrefs)),'LOCALITIES',len(locality))
           PY
 
           (cd final-freeze-preview && zip -qr ../final-freeze-preview.zip .)
