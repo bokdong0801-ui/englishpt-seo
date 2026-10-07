@@ -80,6 +80,32 @@ HERO_STATEMENTS = {
     "beginner-english-conv": "정말 왕초보여도 괜찮습니다. 인사와 자기소개처럼 가장 쉬운 한 문장부터 시작합니다.",
 }
 
+FINAL_PROMPTS = {
+    "elem-tutor":"아이의 현재 읽기·이해 수준부터 확인해보세요.",
+    "mid-conv":"가장 가까운 학교 일정과 어려운 부분부터 확인해보세요.",
+    "high-conv":"내신·수능·수행 중 지금 가장 급한 목표부터 정리해보세요.",
+    "univ-conv":"대학생활에서 가장 먼저 영어가 필요한 상황부터 알려주세요.",
+    "jobseeker-conv":"면접일과 가장 어려운 질문 유형부터 알려주세요.",
+    "biz-business-conv":"가장 가까운 회의·발표·업무 일정부터 알려주세요.",
+    "housewife-conv":"부담 없이 다시 시작할 목표와 가능한 시간부터 확인해보세요.",
+    "toeic":"목표 점수·시험일·가장 약한 파트부터 확인해보세요.",
+    "toeic-speaking":"목표 Level과 답변에서 가장 어려운 부분부터 확인해보세요.",
+    "opic":"목표 등급과 돌발 질문에서 어려운 부분부터 확인해보세요.",
+    "ielts":"목표 Band와 네 영역 중 가장 부담되는 부분부터 확인해보세요.",
+    "duolingo":"지원 일정과 현재 가장 어려운 영역부터 확인해보세요.",
+    "toefl":"목표 점수와 통합형에서 가장 어려운 부분부터 확인해보세요.",
+    "toeic-academy":"학원 진도보다 내 시험일과 약점 관리 방식부터 비교해보세요.",
+    "toeic-speaking-academy":"실제 답변 시간과 개인 피드백 방식을 먼저 비교해보세요.",
+    "opic-academy":"직접 말하는 시간과 돌발 피드백 방식을 먼저 비교해보세요.",
+    "ielts-academy":"네 영역의 수업 비중과 첨삭·말하기 피드백을 먼저 비교해보세요.",
+    "duolingo-academy":"시험 형식 적응과 말하기·쓰기 관리 방식을 먼저 비교해보세요.",
+    "toefl-academy":"통합형 수업과 개인 피드백 방식을 먼저 비교해보세요.",
+    "english-conv-academy":"직접 말하는 시간과 피드백 방식을 먼저 확인해보세요.",
+    "adult-english-conv-academy":"생활에 맞게 꾸준히 이어갈 수 있는 수업인지 확인해보세요.",
+    "worker-english-conv-academy":"실제 업무에 바로 연결되는 수업인지 확인해보세요.",
+    "beginner-english-conv":"영어가 자신 없어도 지금 가능한 한 문장부터 확인해보세요.",
+}
+
 ACADEMY_FAQ = {
     "toeic-academy": [
         ["영어 기초가 부족하고 토익에도 자신감이 없는데 학원 수업부터 시작해도 될까요?", "가능합니다. 처음 상담에서 최근 점수나 기초 수준을 확인하고, 정해진 진도를 따라갈 수 있는지와 약한 파트를 따로 보완할 수 있는지를 먼저 비교하는 것이 좋습니다."],
@@ -1815,10 +1841,12 @@ def humanize_visible_copy(raw: str, family: str) -> str:
         body = body.replace(old, new)
 
     # Keep ordinary Korean natural instead of replacing every occurrence mechanically.
-    body = body.replace("장면형에서는", "최근 어려웠던 상황을 기준으로 볼 때는")
     body = body.replace("사용 장면형에서는", "실제로 영어를 쓰는 상황을 기준으로 볼 때는")
+    body = body.replace("장면형에서는", "최근 어려웠던 상황을 기준으로 볼 때는")
+    body = body.replace("장면형", "상황을 기준으로 보는 방식")
     body = body.replace("다음 장면", "다음 상황")
     body = body.replace("같은 장면", "비슷한 상황")
+    body = body.replace("장면", "상황")
 
     heading_replacements = {
         '<p class="kicker">실제 상황</p>': '<p class="kicker">자주 어려운 상황</p>',
@@ -2194,7 +2222,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     )
     raw = re.sub(
         r'(<section class="final"><div class="wrap"><h2>).*?(</h2>)',
-        lambda m:m.group(1)+esc(f"{h1}, 등록보다 먼저 현재 상태와 목표부터 확인하세요.")+m.group(2),
+        lambda m:m.group(1)+esc(f"{h1}, {FINAL_PROMPTS[intent]}")+m.group(2),
         raw,count=1,flags=re.S,
     )
 
