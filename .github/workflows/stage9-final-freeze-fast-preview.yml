@@ -180,30 +180,33 @@ jobs:
           print('REVIEW_SITE_URL',url)
           PY
 
-      - name: Deploy isolated review ZIP
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Netlify CLI
+        run: npm install --global netlify-cli@latest
+
+      - name: Deploy isolated review with Netlify CLI
         run: |
           set -euo pipefail
-          curl -fsS -X POST             -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             -H "Content-Type: application/zip"             --data-binary "@final-freeze-preview.zip"             "https://api.netlify.com/api/v1/sites/$REVIEW_SITE_ID/deploys"             -o /tmp/review-deploy.json
+          netlify deploy \
+            --dir=final-freeze-preview \
+            --site="$REVIEW_SITE_ID" \
+            --auth="$NETLIFY_AUTH_TOKEN" \
+            --message="ENGLISH PT FINAL FREEZE review" \
+            --json | tee /tmp/review-deploy.json
           python3 - <<'PY'
           import json,os
-          d=json.load(open('/tmp/review-deploy.json'))
-          assert d.get('id'),d
+          d=json.load(open('/tmp/review-deploy.json',encoding='utf-8'))
+          deploy_id=d.get('deploy_id') or d.get('id')
+          assert deploy_id,d
+          url=(d.get('deploy_url') or d.get('url') or os.environ['REVIEW_SITE_URL']).replace('http://','https://')
           with open(os.environ['GITHUB_ENV'],'a') as f:
-              f.write('REVIEW_DEPLOY_ID='+d['id']+'\n')
-          print('REVIEW_DEPLOY_ID',d['id'],'STATE',d.get('state'))
+              f.write('REVIEW_DEPLOY_ID='+deploy_id+'\n')
+              f.write('REVIEW_DEPLOY_URL='+url+'\n')
+          print('PASS_REVIEW_NETLIFY_CLI_DEPLOY',deploy_id,url)
           PY
-
-      - name: Wait for review deploy
-        run: |
-          for i in $(seq 1 30); do
-            curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"               "https://api.netlify.com/api/v1/deploys/$REVIEW_DEPLOY_ID" -o /tmp/deploy-state.json
-            STATE=$(python3 -c "import json; print(json.load(open('/tmp/deploy-state.json')).get('state',''))")
-            echo "state=$STATE"
-            [ "$STATE" = "ready" ] && exit 0
-            [ "$STATE" = "error" ] && cat /tmp/deploy-state.json && exit 1
-            sleep 3
-          done
-          exit 1
 
       - name: Verify review URLs
         run: |
@@ -254,7 +257,7 @@ jobs:
         run: |
           set -euo pipefail
           TEST_NAME="ENGLISH PT 알림 테스트"
-          curl -fsS -X POST "$REVIEW_SITE_URL/englishpt.html"             -H "Content-Type: application/x-www-form-urlencoded"             --data-urlencode "form-name=englishpt-consultation"             --data-urlencode "subject=ENGLISH PT 알림 테스트"             --data-urlencode "name=$TEST_NAME"             --data-urlencode "phone=010-0000-0000"             --data-urlencode "area=FINAL FREEZE PREVIEW TEST"             --data-urlencode "wantedClass=상담 이메일 알림 테스트"             --data-urlencode "message=[테스트] 실제 상담이 아닙니다. Netlify Forms 이메일 알림 연결 확인용입니다."             --data-urlencode "consent=agreed"             --data-urlencode "pageTitle=ENGLISH PT FINAL FREEZE PREVIEW"             --data-urlencode "pageUrl=$REVIEW_SITE_URL/englishpt.html"             --data-urlencode "submittedAt=$(date -u +%Y-%m-%dT%H:%M:%SZ)"             >/tmp/review-form-response.html
+          curl -fsS -X POST "$REVIEW_DEPLOY_URL/englishpt.html"             -H "Content-Type: application/x-www-form-urlencoded"             --data-urlencode "form-name=englishpt-consultation"             --data-urlencode "subject=ENGLISH PT 알림 테스트"             --data-urlencode "name=$TEST_NAME"             --data-urlencode "phone=010-0000-0000"             --data-urlencode "area=FINAL FREEZE PREVIEW TEST"             --data-urlencode "wantedClass=상담 이메일 알림 테스트"             --data-urlencode "message=[테스트] 실제 상담이 아닙니다. Netlify Forms 이메일 알림 연결 확인용입니다."             --data-urlencode "consent=agreed"             --data-urlencode "pageTitle=ENGLISH PT FINAL FREEZE PREVIEW"             --data-urlencode "pageUrl=$REVIEW_DEPLOY_URL/englishpt.html"             --data-urlencode "submittedAt=$(date -u +%Y-%m-%dT%H:%M:%SZ)"             >/tmp/review-form-response.html
           python3 - <<'PY'
           import json,os,time,urllib.request
           token=os.environ['NETLIFY_AUTH_TOKEN']; site=os.environ['REVIEW_SITE_ID']
