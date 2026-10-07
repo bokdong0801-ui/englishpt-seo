@@ -566,6 +566,34 @@ def _replace_kicker_h2(raw: str, kicker: str, heading: str) -> str:
     return pattern.sub(lambda m: m.group(1) + html.escape(heading) + m.group(2), raw, count=1)
 
 
+
+def preserved_region_finder() -> str:
+    options = [
+        ("elem-tutor","초등 영어"),("mid-conv","중등 영어"),("high-conv","고등 영어"),
+        ("beginner-english-conv","왕초보 영어회화"),("adult-english-conv-academy","성인 영어회화"),
+        ("worker-english-conv-academy","직장인 영어회화"),("univ-conv","대학생 영어"),
+        ("jobseeker-conv","취준생 영어"),("biz-business-conv","비즈니스 영어"),
+        ("housewife-conv","생활 영어"),("toeic","토익"),("toeic-speaking","토익스피킹"),
+        ("opic","오픽"),("ielts","아이엘츠"),("toefl","토플"),("duolingo","듀오링고 영어시험"),
+    ]
+    option_html = "".join(f'<option value="{v}">{t}</option>' for v,t in options)
+    return (
+        '<section class="section soft region-navigation preserved-region-navigation">'
+        '<div class="wrap"><div class="section-head"><div><div class="eyebrow ink">다른 지역도 확인하기</div>'
+        '<h2>송현동 외 다른 지역의<br>같은 영어 과정도 이어서 볼 수 있습니다.</h2></div>'
+        '<p class="lead">시·도 → 시·군·구 → 읍·면·동 → 과정 순서로 선택하면 전국 지역 상세페이지로 이동합니다.</p></div>'
+        '<div class="region-finder-shell" data-region-finder><div class="region-finder-grid">'
+        '<label>시·도<select data-region-sido><option value="">시·도 선택</option></select></label>'
+        '<label>시·군·구<select data-region-jurisdiction disabled><option value="">시·군·구 선택</option></select></label>'
+        '<label>읍·면·동<select data-region-dong disabled><option value="">읍·면·동 선택</option></select></label>'
+        f'<label>과정<select data-region-intent><option value="">과정 선택</option>{option_html}</select></label>'
+        '</div><div class="region-finder-actions"><button class="btn dark" type="button" data-region-go>'
+        '지역별 과정 페이지 보기 →</button><p class="region-finder-status" data-region-status aria-live="polite"></p></div>'
+        '<div class="region-path-links"><a href="/englishpt.html#region">전체지역·과정 바로가기 →</a>'
+        '<a href="/stations.html">911개 역으로 찾기 →</a><a href="/courses.html">전체 과정 찾기 →</a></div>'
+        '</div></div></section>'
+    )
+
 def normalize_production_page(raw: str, name: str) -> tuple[str, list[str]]:
     problems: list[str] = []
     body_class = theme_class_for(name)
@@ -617,6 +645,9 @@ def normalize_production_page(raw: str, name: str) -> tuple[str, list[str]]:
     }
     for kicker, heading in heading_map.items():
         raw = _replace_kicker_h2(raw, kicker, heading)
+
+    if 'data-region-finder' not in raw and '<section class="final">' in raw:
+        raw = raw.replace('<section class="final">', preserved_region_finder() + '<section class="final">', 1)
 
     raw = re.sub(
         r'(<section class="final"><div class="wrap"><h2>).*?(</h2>)',
