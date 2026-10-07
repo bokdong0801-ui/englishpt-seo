@@ -53,9 +53,9 @@ jobs:
           python3 scripts/stage9-station-renderer.py --output station-preview
           cp station-preview/stations.html final-freeze-preview/
           cp station-preview/station-dobongsan.html final-freeze-preview/
-          cp station-preview/station-dobongsan-toeic.html final-freeze-preview/
-          cp station-preview/station-dobongsan-english-conv-academy.html final-freeze-preview/
+          cp station-preview/station-dobongsan-*.html final-freeze-preview/
           cp station-preview/station-gangnam.html final-freeze-preview/
+          python3 scripts/build-locality-index.py --output final-freeze-preview/assets/locality-index.json
 
           cat > final-freeze-preview/_headers <<'EOF'
           /*
@@ -69,6 +69,10 @@ jobs:
           root=Path('final-freeze-preview')
           reps=list(root.glob('seoul-jongno-sajikdong-*.html'))
           assert len(reps)==23,len(reps)
+          station_courses=list(root.glob('station-dobongsan-*.html'))
+          assert len(station_courses)==23,len(station_courses)
+          locality_rows=json.loads((root/'assets/locality-index.json').read_text(encoding='utf-8'))
+          assert len(locality_rows)==5149,len(locality_rows)
           for name in [
               'englishpt.html','courses.html','english-conversation.html','exam-english.html',
               'student-english.html','stations.html','station-dobongsan.html',
@@ -112,10 +116,9 @@ jobs:
           root=Path('final-freeze-preview')
           pages=[
             'englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html',
-            'stations.html','station-dobongsan.html','station-dobongsan-toeic.html','station-dobongsan-english-conv-academy.html',
-            'station-gangnam.html'
-          ] + sorted(p.name for p in root.glob('seoul-jongno-sajikdong-*.html'))
-          assert len(pages)==33,len(pages)
+            'stations.html','station-dobongsan.html','station-gangnam.html'
+          ] + sorted(p.name for p in root.glob('station-dobongsan-*.html')) + sorted(p.name for p in root.glob('seoul-jongno-sajikdong-*.html'))
+          assert len(pages)==54,len(pages)
 
           browser=pychrome.Browser(url='http://127.0.0.1:9237')
           tab=browser.new_tab(); tab.start(); tab.Page.enable(); tab.Runtime.enable()
@@ -132,7 +135,9 @@ jobs:
               beginner:box('.beginner-exam-guide'),
               intro:box('.section.intro-detail'),
               modal:!!document.querySelector('#applyModal'),
-              form:!!document.querySelector('#leadForm')
+              form:!!document.querySelector('#leadForm'),
+              regionFinder:!!document.querySelector('[data-region-finder]'),
+              sidoOptions:document.querySelector('[data-region-sido]')?.options?.length||0
             };
           })()'''
           rows=[]
@@ -147,6 +152,9 @@ jobs:
               assert m['hero'],(mode,name,'hero_missing')
               if name=='stations.html':
                 assert m['modal'] and m['form'],(mode,name,'consultation_missing')
+              if name in {'englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html'}:
+                assert m['regionFinder'],(mode,name,'region_finder_missing')
+                assert m['sidoOptions'] > 2,(mode,name,'region_data_not_loaded',m)
               if mode=='mobile' and m['simpleHero']:
                 assert m['simpleHero']['height']<=315,(mode,name,m)
                 if m['visual']:
@@ -223,8 +231,11 @@ jobs:
       - name: Verify review URLs
         run: |
           set -euo pipefail
-          for path in             englishpt.html courses.html english-conversation.html exam-english.html student-english.html             stations.html station-dobongsan.html station-dobongsan-toeic.html             seoul-jongno-sajikdong-toeic.html seoul-jongno-sajikdong-opic.html             seoul-jongno-sajikdong-beginner-english-conv.html privacy/ 404.html
+          for path in englishpt.html courses.html english-conversation.html exam-english.html student-english.html stations.html station-dobongsan.html station-gangnam.html seoul-jongno-sajikdong-toeic.html seoul-jongno-sajikdong-opic.html seoul-jongno-sajikdong-beginner-english-conv.html privacy/ 404.html
           do
+            curl -fsSIL --max-time 30 "$REVIEW_SITE_URL/$path" >/dev/null
+          done
+          for path in $(cd final-freeze-preview && printf '%s\n' station-dobongsan-*.html); do
             curl -fsSIL --max-time 30 "$REVIEW_SITE_URL/$path" >/dev/null
           done
           HEADER=$(curl -fsSI "$REVIEW_SITE_URL/englishpt.html")
