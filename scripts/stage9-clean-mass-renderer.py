@@ -1236,14 +1236,15 @@ def locality_nav_index() -> dict:
     return {"by_jurisdiction": by_jurisdiction, "by_slug": by_slug}
 
 
-def nearby_localities(loc: dict, limit: int = 8) -> list[dict]:
+@lru_cache(maxsize=8192)
+def _nearby_localities_cached(jurisdiction: str, slug: str, limit: int = 8) -> tuple:
     data = locality_nav_index()
-    items = list(data["by_jurisdiction"].get(loc.get("jurisdiction", ""), []))
+    items = tuple(data["by_jurisdiction"].get(jurisdiction, []))
     if not items:
-        return []
-    pos = next((i for i, row in enumerate(items) if row["slug"] == loc["slug"]), None)
+        return tuple()
+    pos = next((i for i, row in enumerate(items) if row["slug"] == slug), None)
     if pos is None:
-        return [row for row in items if row["slug"] != loc["slug"]][:limit]
+        return tuple(row for row in items if row["slug"] != slug)[:limit]
     picked = []
     distance = 1
     while len(picked) < limit and (pos - distance >= 0 or pos + distance < len(items)):
@@ -1254,7 +1255,11 @@ def nearby_localities(loc: dict, limit: int = 8) -> list[dict]:
         if pos + distance < len(items):
             picked.append(items[pos + distance])
         distance += 1
-    return picked[:limit]
+    return tuple(picked[:limit])
+
+
+def nearby_localities(loc: dict, limit: int = 8) -> list[dict]:
+    return list(_nearby_localities_cached(loc.get("jurisdiction", ""), loc["slug"], limit))
 
 
 def all_related(loc: dict, current_intent: str) -> str:
