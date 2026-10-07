@@ -537,7 +537,7 @@ jobs:
               width=390,
               height=844,
               deviceScaleFactor=1,
-              mobile=True,
+              mobile=False,
               screenWidth=390,
               screenHeight=844,
               dontSetVisibleSize=False,
