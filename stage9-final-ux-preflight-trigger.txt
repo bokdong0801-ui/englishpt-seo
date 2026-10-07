@@ -58,3 +58,4 @@ Run image-enabled Stage 9 preflight after OPIc and TOEFL academy similarity fix.
 2026-10-07 final package includes Songhyeondong 23 current pages for full navigation preview
 2026-10-08 final navigation graph verification after regional and station fixes
 2026-10-08 rerun after grouped course navigation QA alignment
+2026-10-08 rerun after legacy Songhyeondong navigation points to current 23 pages
