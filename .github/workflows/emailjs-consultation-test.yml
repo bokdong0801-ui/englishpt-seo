@@ -1,0 +1,47 @@
+name: EmailJS Consultation Notification Test
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'emailjs-test-trigger.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-email:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send test consultation notification
+        run: |
+          set -euo pipefail
+          NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          cat > /tmp/emailjs.json <<'JSON'
+          {
+            "service_id":"service_r1950hf",
+            "template_id":"template_mqovosk",
+            "user_id":"eJdMKTqwA8M35JTQJsGTd",
+            "template_params":{
+              "name":"ENGLISH PT 테스트",
+              "phone":"010-0000-0000",
+              "area":"FINAL FREEZE TEST",
+              "wantedClass":"상담 이메일 알림 테스트",
+              "message":"[테스트] ENGLISH PT 상담폼 이메일 알림 연결 확인용입니다.",
+              "pageTitle":"ENGLISH PT FINAL FREEZE",
+              "pageUrl":"https://englishpt-final-freeze-review.netlify.app/englishpt.html",
+              "consent":"agreed",
+              "submittedAt":"TEST_TIMESTAMP",
+              "to_email":"cicada3865@naver.com",
+              "reply_to":"cicada3865@naver.com"
+            }
+          }
+          JSON
+          sed -i "s/TEST_TIMESTAMP/$NOW/" /tmp/emailjs.json
+          CODE="$(curl -sS -o /tmp/emailjs-response.txt -w '%{http_code}'             -X POST             -H 'Content-Type: application/json'             --data-binary @/tmp/emailjs.json             https://api.emailjs.com/api/v1.0/email/send)"
+          echo "HTTP_STATUS=$CODE"
+          cat /tmp/emailjs-response.txt
+          test "$CODE" = "200"
+          echo "PASS_EMAILJS_CONSULTATION_NOTIFICATION_TEST"
