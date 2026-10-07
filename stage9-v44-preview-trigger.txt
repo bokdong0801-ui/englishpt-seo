@@ -33,3 +33,4 @@ Final 140391 preview with OG metadata, stations, and locality diversity.
 2026-10-07 latest-head final click-navigation full preview
 2026-10-07 rerun full navigation preview after final IA fixes
 2026-10-07 final rerun with navigation audit checkpoints
+2026-10-07 final navigation graph rerun after preserved-page fix
