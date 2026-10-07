@@ -71,6 +71,11 @@ jobs:
           root=Path('final-freeze-preview')
           reps=list(root.glob('seoul-jongno-sajikdong-*.html'))
           assert len(reps)==23,len(reps)
+          dobongsan=list(root.glob('station-dobongsan*.html'))
+          assert len(dobongsan)==24,len(dobongsan)
+          assert (root/'assets/locality-index.json').exists()
+          import json
+          assert len(json.loads((root/'assets/locality-index.json').read_text(encoding='utf-8')))==5149
           station_courses=list(root.glob('station-dobongsan-*.html'))
           assert len(station_courses)==23,len(station_courses)
           locality_rows=json.loads((root/'assets/locality-index.json').read_text(encoding='utf-8'))
@@ -79,7 +84,9 @@ jobs:
               'englishpt.html','courses.html','english-conversation.html','exam-english.html',
               'student-english.html','stations.html','station-dobongsan.html',
               'station-dobongsan-toeic.html','station-dobongsan-english-conv-academy.html',
-              'station-gangnam.html','privacy/index.html','404.html','favicon-options.html'
+              'station-gangnam.html','station-dobongsan-toeic-speaking.html','station-dobongsan-opic.html',
+              'station-dobongsan-ielts.html','station-dobongsan-toefl.html','station-dobongsan-duolingo.html',
+              'station-dobongsan-worker-english-conv-academy.html','privacy/index.html','404.html','favicon-options.html'
           ]:
               assert (root/name).exists(),name
           stations=(root/'stations.html').read_text(encoding='utf-8')
