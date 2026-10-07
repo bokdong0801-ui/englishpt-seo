@@ -47,3 +47,4 @@ Run image-enabled Stage 9 preflight after OPIc and TOEFL academy similarity fix.
 2026-10-07 navigation graph + region finder + station link final preflight
 2026-10-07 rerun after final navigation graph fixes
 2026-10-07 FINAL navigation freeze: 23-course region selectors, preserved Songhyeondong, station children
+2026-10-07 latest-head final click-navigation preflight
