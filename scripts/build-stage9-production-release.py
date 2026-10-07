@@ -768,6 +768,17 @@ def main() -> None:
             preserved_raw = preserved_page.read_text(encoding="utf-8")
             preserved_raw, changed = simplify_preserved_consultation(preserved_raw)
             preserved_raw = humanize_preserved_page(preserved_raw, preserved_page.name)
+            # Preserved Stage 7 pages must not be dead ends: add the same nationwide
+            # locality/course selector used by the current national hubs.
+            if preserved_page.name != "englishpt.html" and 'data-region-finder' not in preserved_raw:
+                if '<section class="final">' in preserved_raw:
+                    preserved_raw = preserved_raw.replace(
+                        '<section class="final">',
+                        preserved_region_finder() + '<section class="final">',
+                        1,
+                    )
+                elif '</main>' in preserved_raw:
+                    preserved_raw = preserved_raw.replace('</main>', preserved_region_finder() + '</main>', 1)
             if preserved_page.name == "englishpt.html":
                 preserved_raw = preserved_raw.replace(
                     "잉글리시PT / 1:1 맞춤 영어관리 | ENGLISH PT",
