@@ -1113,10 +1113,35 @@ def academy_compare_section(loc: dict, intent: str) -> str:
             ("다음 수업 연결","그날 끝난 진도보다 다음에 다시 확인할 내용이 남는 수업인지 확인합니다."),
         ],
     ]
-    cards = card_sets[v]
+    cards = list(card_sets[v])
+
+    # Two additional comparison points vary by locality. These are genuine
+    # academy-selection checks, not filler, and help users compare schedule,
+    # feedback and test-management details before deciding.
+    extra_pool = [
+        ("수업 시간표", f'{loc["dong"]}에서 학원형 수업을 알아볼 때는 고정 시간표가 실제 생활 일정과 맞는지 먼저 확인해보세요. 꾸준히 출석할 수 있는 시간이 아니라면 좋은 커리큘럼도 유지하기 어렵습니다.'),
+        ("결석·보강 기준", "학교·업무 일정으로 빠졌을 때 보강 방식이 있는지, 놓친 진도를 혼자 따라가야 하는지 미리 확인하면 중간에 학습 흐름이 끊기는 일을 줄일 수 있습니다."),
+        ("반 배정 기준", f'{loc["dong"]} {ACADEMY_SERVICE[intent]}을 비교한다면 단순 학년이나 목표 점수보다 최근 결과와 현재 약점을 보고 반을 배정하는지 확인하는 편이 좋습니다.'),
+        ("질문 가능 시간", "수업 중 질문만 가능한지, 과제나 오답을 하다가 생긴 질문도 다음 수업 전에 확인할 수 있는지 살펴보세요. 질문 경로가 분명할수록 복습이 막힐 때 다시 이어가기 쉽습니다."),
+        ("개인 답안 확인", f'{exam_label}은 같은 문제를 풀어도 틀리는 이유가 다를 수 있습니다. 공통 해설 뒤에 내 오답·녹음·쓰기 답안을 개별적으로 확인해주는 범위가 있는지 비교해보세요.'),
+        ("숙제량 조정", "숙제가 많다는 사실보다 시험일까지 실제로 해낼 수 있는 양인지가 중요합니다. 일정이 바쁜 주에는 분량을 조정하고 핵심 과제를 남길 수 있는지 확인해보세요."),
+        ("모의시험 활용", f'{exam_label} 모의 결과를 단순 점수로 끝내지 않고 다음 수업의 약점 보완과 시간 배분에 반영하는지 살펴보는 것이 좋습니다.'),
+        ("시험 직전 운영", f'{loc["dong"]}에서 수업을 선택할 때 시험 직전에도 평소 진도를 그대로 나가는지, 실전 시간·반복 오답·답변 완성도를 중심으로 운영을 바꾸는지 물어보세요.'),
+        ("교재 선택 이유", "유명 교재를 쓰는지보다 현재 수준과 시험일까지 남은 기간에 왜 그 자료를 선택했는지 설명할 수 있는 수업인지 확인해보세요."),
+        ("상담 때 볼 자료", "최근 점수표가 없더라도 문제 한 세트, 말하기 녹음, 쓰기 답안처럼 현재 상태를 보여주는 자료 하나로 시작점을 확인할 수 있는지 물어보는 것이 좋습니다."),
+        ("목표 변경 대응", f'{exam_label} 목표 점수나 시험일이 바뀌면 과제와 수업 비중도 달라질 수 있습니다. 계획을 고정하기보다 결과에 따라 조정하는 방식인지 확인해보세요.'),
+        ("수업 후 기록", f'{loc["dong"]}에서 여러 수업을 비교한다면 그날 배운 내용만 알려주는지, 다음에 다시 확인할 오답·답변·연습 항목까지 남겨주는지도 함께 살펴보세요.'),
+    ]
+    extra_seed = f'{loc["slug"]}|{intent}|academy-extra-v1'
+    extra_indices = sorted(
+        range(len(extra_pool)),
+        key=lambda i: hashlib.sha256(f'{extra_seed}|{i}'.encode()).hexdigest()
+    )[:2]
+    cards.extend(extra_pool[i] for i in extra_indices)
+
     # Rotate card order once more by locality so neighboring pages don't keep
     # identical paragraph sequences while preserving the same comparison logic.
-    shift = int(hashlib.sha256(f'{loc["slug"]}|{intent}|academy-order'.encode()).hexdigest()[:4],16) % len(cards)
+    shift = int(hashlib.sha256(f'{loc["slug"]}|{intent}|academy-order-v3'.encode()).hexdigest()[:4],16) % len(cards)
     cards = cards[shift:] + cards[:shift]
     card_html = ''.join(
         f'<article><span>{i:02d}</span><h3>{esc(title)}</h3><p>{esc(body)}</p></article>'
