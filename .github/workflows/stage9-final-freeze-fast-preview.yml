@@ -1,0 +1,167 @@
+name: Stage 9 Final Freeze Fast Preview
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-final-freeze-preview-trigger.txt'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      REVIEW_SITE_NAME: englishpt-final-freeze-review
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify Netlify auth
+        run: test -n "$NETLIFY_AUTH_TOKEN"
+
+      - name: Download FINAL FREEZE representative 23 pages
+        uses: actions/download-artifact@v4
+        with:
+          name: stage9-final-ux-samples
+          path: final-artifact
+          run-id: 37577998837
+          github-token: ${{ github.token }}
+
+      - name: Build lightweight review package
+        run: |
+          set -euo pipefail
+          rm -rf final-freeze-preview station-preview
+          mkdir -p final-freeze-preview
+          cp final-artifact/stage9-final-ux-samples/*.html final-freeze-preview/
+          cp final-artifact/stage9-final-ux-samples/pilot.css final-freeze-preview/
+          cp final-artifact/stage9-final-ux-samples/pilot.js final-freeze-preview/
+          cp -R assets final-freeze-preview/assets
+          cp englishpt.html courses.html english-conversation.html exam-english.html student-english.html final-freeze-preview/
+          cp -R privacy final-freeze-preview/privacy
+          cp 404.html final-freeze-preview/404.html
+
+          python3 scripts/stage9-station-renderer.py --output station-preview
+          cp station-preview/stations.html final-freeze-preview/
+          cp station-preview/station-dobongsan.html final-freeze-preview/
+          cp station-preview/station-dobongsan-toeic.html final-freeze-preview/
+          cp station-preview/station-dobongsan-english-conv-academy.html final-freeze-preview/
+          cp station-preview/station-gangnam.html final-freeze-preview/
+
+          cat > final-freeze-preview/_headers <<'EOF'
+          /*
+            X-Robots-Tag: noindex, nofollow
+            X-Content-Type-Options: nosniff
+            Referrer-Policy: strict-origin-when-cross-origin
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('final-freeze-preview')
+          reps=list(root.glob('seoul-jongno-sajikdong-*.html'))
+          assert len(reps)==23,len(reps)
+          for name in [
+              'englishpt.html','courses.html','english-conversation.html','exam-english.html',
+              'student-english.html','stations.html','station-dobongsan.html',
+              'station-dobongsan-toeic.html','station-dobongsan-english-conv-academy.html',
+              'station-gangnam.html','privacy/index.html','404.html'
+          ]:
+              assert (root/name).exists(),name
+          stations=(root/'stations.html').read_text(encoding='utf-8')
+          assert 'id="applyModal"' in stations
+          assert 'id="leadForm"' in stations
+          assert '@emailjs/browser@4.4.1' in stations
+          assert '개인정보처리방침' in stations
+          print('PASS_FINAL_FREEZE_FAST_PACKAGE',len(reps))
+          PY
+
+          (cd final-freeze-preview && zip -qr ../final-freeze-preview.zip .)
+
+      - name: Ensure isolated review site
+        run: |
+          set -euo pipefail
+          SITE_DOMAIN="$REVIEW_SITE_NAME.netlify.app"
+          if curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/$SITE_DOMAIN" -o /tmp/review-site.json; then
+            echo "Using existing review site"
+          else
+            curl -fsS -X POST               -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"               -H "Content-Type: application/json"               --data "{\"name\":\"$REVIEW_SITE_NAME\",\"processing_settings\":{\"html\":{\"pretty_urls\":false}}}"               "https://api.netlify.com/api/v1/sites" -o /tmp/review-site.json
+          fi
+          python3 - <<'PY'
+          import json,os
+          d=json.load(open('/tmp/review-site.json'))
+          assert d.get('id'),d
+          url=(d.get('ssl_url') or d.get('url')).replace('http://','https://')
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('REVIEW_SITE_ID='+d['id']+'\n')
+              f.write('REVIEW_SITE_URL='+url+'\n')
+          print('REVIEW_SITE_URL',url)
+          PY
+
+      - name: Deploy isolated review ZIP
+        run: |
+          set -euo pipefail
+          curl -fsS -X POST             -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             -H "Content-Type: application/zip"             --data-binary "@final-freeze-preview.zip"             "https://api.netlify.com/api/v1/sites/$REVIEW_SITE_ID/deploys"             -o /tmp/review-deploy.json
+          python3 - <<'PY'
+          import json,os
+          d=json.load(open('/tmp/review-deploy.json'))
+          assert d.get('id'),d
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('REVIEW_DEPLOY_ID='+d['id']+'\n')
+          print('REVIEW_DEPLOY_ID',d['id'],'STATE',d.get('state'))
+          PY
+
+      - name: Wait for review deploy
+        run: |
+          for i in $(seq 1 30); do
+            curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"               "https://api.netlify.com/api/v1/deploys/$REVIEW_DEPLOY_ID" -o /tmp/deploy-state.json
+            STATE=$(python3 -c "import json; print(json.load(open('/tmp/deploy-state.json')).get('state',''))")
+            echo "state=$STATE"
+            [ "$STATE" = "ready" ] && exit 0
+            [ "$STATE" = "error" ] && cat /tmp/deploy-state.json && exit 1
+            sleep 3
+          done
+          exit 1
+
+      - name: Verify review URLs
+        run: |
+          set -euo pipefail
+          for path in             englishpt.html courses.html english-conversation.html exam-english.html student-english.html             stations.html station-dobongsan.html station-dobongsan-toeic.html             seoul-jongno-sajikdong-toeic.html seoul-jongno-sajikdong-opic.html             seoul-jongno-sajikdong-beginner-english-conv.html privacy/ 404.html
+          do
+            curl -fsSIL --max-time 30 "$REVIEW_SITE_URL/$path" >/dev/null
+          done
+          HEADER=$(curl -fsSI "$REVIEW_SITE_URL/englishpt.html")
+          echo "$HEADER" | grep -qi 'x-robots-tag: noindex'
+          echo "PASS_FINAL_FREEZE_FAST_PREVIEW"
+
+      - name: Write report
+        run: |
+          python3 - <<'PY'
+          import json,os
+          report={
+            "status":"PASS_STAGE9_FINAL_FREEZE_FAST_PREVIEW",
+            "preview_url":os.environ["REVIEW_SITE_URL"],
+            "source_preflight_run":37577998837,
+            "representative_course_pages":23,
+            "includes":["home","4 national hubs","stations","station hub","station course","privacy","404"],
+            "production_affected":False,
+            "indexing":"blocked with X-Robots-Tag: noindex, nofollow"
+          }
+          open('STAGE9_FINAL_FREEZE_FAST_PREVIEW_REPORT.json','w',encoding='utf-8').write(
+              json.dumps(report,ensure_ascii=False,indent=2)+'\n'
+          )
+          print(json.dumps(report,ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage9-final-freeze-fast-preview-report
+          path: STAGE9_FINAL_FREEZE_FAST_PREVIEW_REPORT.json
+          retention-days: 30
