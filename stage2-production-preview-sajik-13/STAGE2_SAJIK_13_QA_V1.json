@@ -12,7 +12,7 @@
   "visible_chars": {
     "min": 6840,
     "max": 7543,
-    "avg": 7081.8
+    "avg": 7082.8
   },
   "variation_adapter": {
     "variation_pack_id": "Ve4a779a721",
@@ -42,7 +42,7 @@
       "file": "seoul-jongno-sajikdong-mid-conv.html",
       "family": "service",
       "intent": "mid-conv",
-      "visible_chars": 6890,
+      "visible_chars": 6903,
       "status": "PASS",
       "failures": []
     },
