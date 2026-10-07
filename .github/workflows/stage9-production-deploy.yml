@@ -188,7 +188,6 @@ jobs:
               site=os.environ['NETLIFY_SITE_ID']
               body=json.dumps({
                   'site_id':site,
-                  'form_name':'englishpt-consultation',
                   'type':'email',
                   'event':'submission_created',
                   'data':{'email':email},
