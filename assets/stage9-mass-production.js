@@ -1,25 +1,22 @@
 document.addEventListener("DOMContentLoaded",()=>{
   const forms=document.querySelectorAll("#pilotForm,#leadForm");
-  if(window.emailjs){try{emailjs.init({publicKey:"eJdMKTqwA8M35JTQJsGTd",blockHeadless:true,limitRate:{id:"englishpt-lead",throttle:10000}});}catch(e){}}
   forms.forEach(form=>{
     form.addEventListener("submit",async e=>{
       e.preventDefault();
       if(!form.reportValidity()) return;
       const status=form.querySelector(".pilot-status,.lead-status");
       const btn=form.querySelector('button[type="submit"]');
-      const name=form.querySelector('[name="name"]')?.value.trim()||"";
-      const phone=form.querySelector('[name="phone"]')?.value.trim()||"";
-      const area=form.querySelector('[name="area"]')?.value.trim()||"";
-      const extra=form.querySelector('[name="message"]')?.value.trim()||"";
-      const wantedClass=form.querySelector('[name="wantedClass"]')?.value.trim()||document.querySelector("h1")?.textContent.trim()||document.title;
-      const message="[문의내용] "+(extra||"(미입력)");
       if(btn){btn.disabled=true;btn.textContent="전송 중...";}
       if(status) status.textContent="";
       try{
-        if(!window.emailjs) throw new Error("EmailJS unavailable");
-        await emailjs.send("service_r1950hf","template_mqovosk",{
-          name,phone,area,wantedClass,message,pageTitle:document.title,pageUrl:location.href,consent:"agreed",submittedAt:new Date().toISOString(),to_email:"cicada3865@naver.com",reply_to:"cicada3865@naver.com"
-        });
+        const data=new FormData(form);
+        data.set("form-name","englishpt-consultation");
+        data.set("pageTitle",document.title);
+        data.set("pageUrl",location.href);
+        data.set("submittedAt",new Date().toISOString());
+        data.set("consent","agreed");
+        const res=await fetch("/",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(data).toString()});
+        if(!res.ok) throw new Error("Netlify Forms submission failed: "+res.status);
         if(status) status.textContent="신청이 접수됐습니다. 남겨주신 연락처로 순차적으로 연락드리겠습니다.";
         form.reset();
       }catch(err){
