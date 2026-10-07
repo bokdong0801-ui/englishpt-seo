@@ -35,6 +35,14 @@
     jobseeker:'jobseeker-conv',toeic:'toeic','toeic-speaking':'toeic-speaking',
     opic:'opic',ielts:'ielts',toefl:'toefl',duolingo:'duolingo'
   };
+  document.querySelectorAll('[data-region-preset]').forEach(link=>{
+    link.addEventListener('click',()=>{
+      const finder=document.querySelector('[data-region-finder]');
+      const select=finder?.querySelector('[data-region-intent]');
+      if(select&&link.dataset.regionPreset) select.value=link.dataset.regionPreset;
+    });
+  });
+
   document.querySelectorAll('[data-region-finder]').forEach(async finder=>{
     const sido=finder.querySelector('[data-region-sido]');
     const juris=finder.querySelector('[data-region-jurisdiction]');
