@@ -116,11 +116,9 @@ jobs:
           assert 'teacher-trust' in home
 
           # Every station hub must expose exactly 23 existing course pages.
-          station_hubs=sorted(
-              p for p in root.glob('station-*.html')
-              if p.name.count('-')==1
-          )
-          assert len(station_hubs)==911,len(station_hubs)
+          station_data=json.loads(Path('data/stations.json').read_text(encoding='utf-8'))
+          station_hubs=[root/f'station-{row["slug"]}.html' for row in station_data['stations']]
+          assert len(station_hubs)==911 and all(p.exists() for p in station_hubs),len(station_hubs)
           for hub in station_hubs:
               raw=hub.read_text(encoding='utf-8')
               prefix=hub.stem+'-'
@@ -156,7 +154,12 @@ jobs:
                   nearby_checks+=1
           assert clean_pages==118427,(clean_pages,118427)
           assert link_checks==118427*22,(link_checks,118427*22)
-          assert nearby_checks>100000,nearby_checks
+          groups={}
+          for row in rows:
+              groups.setdefault(row['jurisdiction'],0)
+              groups[row['jurisdiction']]+=1
+          expected_nearby_pages=sum(23 for row in rows if groups[row['jurisdiction']]>1)
+          assert nearby_checks==expected_nearby_pages,(nearby_checks,expected_nearby_pages)
 
           # Preserved Songhyeondong pages must not be dead ends either.
           preserved=root/'dalseo-songhyeondong-adult-conv.html'
