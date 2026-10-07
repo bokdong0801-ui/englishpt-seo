@@ -1262,57 +1262,120 @@ def nearby_localities(loc: dict, limit: int = 8) -> list[dict]:
     return list(_nearby_localities_cached(loc.get("jurisdiction", ""), loc["slug"], limit))
 
 
-def all_related(loc: dict, current_intent: str) -> str:
-    svc, ex = gold_modules()
-    links = []
-    for intent in SERVICE_ORDER:
-        if intent == current_intent:
-            continue
-        label = f'{loc["dong"]} {svc.PROFILES[intent]["service_h1"]}'
-        links.append(f'<a href="/{loc["slug"]}-{intent}.html">{esc(label)}</a>')
-    for intent in EXAM_ORDER:
-        if intent == current_intent:
-            continue
-        exam = next(v for v in ex.EXAMS.values() if v["intent"] == intent)
-        label = f'{loc["dong"]} {exam["service"]}'
-        links.append(f'<a href="/{loc["slug"]}-{intent}.html">{esc(label)}</a>')
-    for intent in ACADEMY_ORDER:
-        if intent == current_intent:
-            continue
-        label = f'{loc["dong"]} {ACADEMY_SERVICE[intent]}'
-        links.append(f'<a href="/{loc["slug"]}-{intent}.html">{esc(label)}</a>')
-    for intent in CONV_DERIVED_ORDER:
-        if intent == current_intent:
-            continue
-        label = f'{loc["dong"]} {CONV_DERIVED_SERVICE[intent]}'
-        links.append(f'<a href="/{loc["slug"]}-{intent}.html">{esc(label)}</a>')
+@lru_cache(maxsize=1)
+def locality_directory() -> tuple[dict[str, list[dict]], dict[str, dict]]:
+    """Return same-jurisdiction locality groups for real internal navigation."""
+    rows = []
+    for path in sorted((ROOT / "stage5-input").glob("production_locality_rows_5149_v1.part*.jsonl")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            rows.append({
+                "sido": row["sido"],
+                "jurisdiction": row["jurisdiction_full"],
+                "dong": row["dong_name"],
+                "slug": row["region_slug"],
+            })
+    if len(rows) != 5149:
+        raise RuntimeError(f"locality directory mismatch: {len(rows)}")
+    groups: dict[str, list[dict]] = {}
+    by_slug: dict[str, dict] = {}
+    for row in rows:
+        groups.setdefault(row["jurisdiction"], []).append(row)
+        by_slug[row["slug"]] = row
+    for values in groups.values():
+        values.sort(key=lambda x: (x["dong"], x["slug"]))
+    return groups, by_slug
 
-    nearby = nearby_localities(loc)
-    nearby_links = "".join(
-        f'<a href="/{row["slug"]}-{current_intent}.html">{esc(row["dong"])} {esc(loc["service"])}</a>'
-        for row in nearby
+
+def intent_label(intent: str) -> str:
+    svc, ex = gold_modules()
+    if intent in SERVICE_ORDER:
+        return svc.PROFILES[intent]["service_h1"]
+    if intent in EXAM_ORDER:
+        return next(v["service"] for v in ex.EXAMS.values() if v["intent"] == intent)
+    if intent in ACADEMY_ORDER:
+        return ACADEMY_SERVICE[intent]
+    if intent in CONV_DERIVED_ORDER:
+        return CONV_DERIVED_SERVICE[intent]
+    return intent
+
+
+def related_course_groups(loc: dict, current_intent: str) -> str:
+    groups = [
+        ("학생 영어", ["elem-tutor","mid-conv","high-conv"]),
+        ("회화·목적별 영어", [
+            "english-conv-academy","adult-english-conv-academy",
+            "worker-english-conv-academy","beginner-english-conv",
+            "univ-conv","jobseeker-conv","biz-business-conv","housewife-conv",
+        ]),
+        ("시험 영어", ["toeic","toeic-speaking","opic","ielts","toefl","duolingo"]),
+        ("학원형 비교", [
+            "toeic-academy","toeic-speaking-academy","opic-academy",
+            "ielts-academy","toefl-academy","duolingo-academy",
+        ]),
+    ]
+    blocks = []
+    for title, intents in groups:
+        links = []
+        for intent in intents:
+            if intent == current_intent:
+                continue
+            label = intent_label(intent)
+            links.append(
+                f'<a href="/{esc(loc["slug"])}-{intent}.html">'
+                f'<span>{esc(label)}</span><b>→</b></a>'
+            )
+        if links:
+            blocks.append(
+                '<article class="related-group">'
+                f'<h3>{esc(title)}</h3><div class="related-course-links">{"".join(links)}</div>'
+                '</article>'
+            )
+    return "".join(blocks)
+
+
+def nearby_locality_links(loc: dict, current_intent: str) -> str:
+    if loc.get("station"):
+        return ""
+    groups, _ = locality_directory()
+    candidates = [x for x in groups.get(loc.get("jurisdiction",""), []) if x["slug"] != loc["slug"]]
+    if not candidates:
+        return ""
+    digest = int(hashlib.sha256(f'{loc["slug"]}|{current_intent}|nearby-v1'.encode()).hexdigest()[:8], 16)
+    if candidates:
+        offset = digest % len(candidates)
+        candidates = candidates[offset:] + candidates[:offset]
+    candidates = candidates[:8]
+    links = "".join(
+        f'<a href="/{esc(x["slug"])}-{current_intent}.html">'
+        f'<strong>{esc(x["dong"])}</strong><span>{esc(intent_label(current_intent))}</span></a>'
+        for x in candidates
     )
     return (
-        '<section class="section related local-navigation"><div class="wrap">'
-        '<div class="local-nav-block">'
-        '<p class="kicker">같은 지역 · 다른 과정</p>'
-        f'<h2>{esc(loc["dong"])}에서 다른 영어 목표도 이어서 비교하세요</h2>'
-        '<div class="links related-course-links">' + "".join(links) + '</div></div>'
-        + (
-            '<div class="local-nav-block nearby-localities">'
-            f'<p class="kicker">{esc(loc.get("jurisdiction",""))} · 다른 동네</p>'
-            '<h3>같은 시·군·구의 다른 지역 페이지도 확인할 수 있습니다.</h3>'
-            '<div class="links">' + nearby_links + '</div></div>'
-            if nearby_links else ''
-        )
-        + '<div class="local-nav-block navigation-home">'
-          '<p class="kicker">다시 찾기</p>'
-          '<div class="local-nav-actions">'
-          '<a href="/courses.html">전체 과정 찾기 →</a>'
-          '<a href="/stations.html">911개 역으로 찾기 →</a>'
-          '<a href="/englishpt.html#region">전체지역·과정 선택 →</a>'
-          '</div></div>'
+        '<section class="section nearby-localities"><div class="wrap">'
+        '<p class="kicker">같은 시·군·구의 다른 지역</p>'
+        f'<h2>{esc(loc.get("jurisdiction",""))}에서 다른 동네도 이어서 확인하세요</h2>'
+        '<p class="related-lead">현재 과정은 유지한 채 가까운 다른 지역의 상세페이지로 이동할 수 있습니다.</p>'
+        f'<div class="nearby-locality-grid">{links}</div>'
+        '<div class="related-hub-actions">'
+        '<a href="/englishpt.html#region">전체 지역·과정 찾기 →</a>'
+        '<a href="/stations.html">911개 역으로 찾기 →</a>'
+        '<a href="/courses.html">전체 과정 보기 →</a>'
+        '</div></div></section>'
+    )
+
+
+def all_related(loc: dict, current_intent: str) -> str:
+    return (
+        '<section class="section related related-courses"><div class="wrap">'
+        '<p class="kicker">같은 지역의 다른 과정</p>'
+        f'<h2>{esc(loc["dong"])}에서 다른 영어 목표도 이어서 확인하세요</h2>'
+        '<p class="related-lead">상담으로 바로 끝내지 않고, 같은 지역에서 학생영어·회화·시험·학원형 과정을 직접 비교할 수 있습니다.</p>'
+        '<div class="related-groups">' + related_course_groups(loc,current_intent) + '</div>'
         '</div></section>'
+        + nearby_locality_links(loc,current_intent)
     )
 
 
