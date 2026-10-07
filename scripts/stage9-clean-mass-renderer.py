@@ -1296,9 +1296,10 @@ def related_course_groups(loc: dict, current_intent: str) -> str:
             if intent == current_intent:
                 continue
             label = intent_label(intent)
+            local_label = f'{loc["dong"]} {label}'
             links.append(
                 f'<a href="/{esc(loc["slug"])}-{intent}.html">'
-                f'<span>{esc(label)}</span><b>→</b></a>'
+                f'<span>{esc(local_label)}</span><b>→</b></a>'
             )
         if links:
             blocks.append(
