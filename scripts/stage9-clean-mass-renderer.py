@@ -2060,9 +2060,9 @@ def v44_snapshot(loc: dict, family: str) -> str:
 
 def v44_trust(family: str) -> str:
     items = (
-        ["✓ 목표 점수·시험일 확인", "✓ 약한 영역부터 집중", "✓ 실제 시험 시간에 맞춰 연습"]
+        ["✓ 영어권 교포 선생님", "✓ 한국어 설명·피드백 가능", "✓ 시험별 목표·약점 맞춤 연습"]
         if family == "exam"
-        else ["✓ 현재 수준부터 확인", "✓ 필요한 영어부터 연습", "✓ 수업 후 피드백·복습 연결"]
+        else ["✓ 영어권 교포 선생님", "✓ 한국어 설명·피드백 가능", "✓ 현재 수준·목적 맞춤 연습"]
     )
     return '<div class="trust"><div class="wrap trust-in">' + ''.join(f'<div>{x}</div>' for x in items) + '</div></div>'
 
