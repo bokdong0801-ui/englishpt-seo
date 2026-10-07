@@ -126,7 +126,7 @@ jobs:
               assert token in css, token
           assert '.visual-break{padding:14px 0 10px}' in css
           assert '.hero-actions{grid-template-columns:1fr 1fr}' in css
-          assert 'emailjs.send' in js
+          assert 'data.set("form-name","englishpt-consultation")' in js
           assert len(list(Path('stage9-release/assets/images').glob('*.svg'))) == 30
           assert '실제 상담 전송은 비활성화' not in js
           home=Path('stage9-release/englishpt.html').read_text(encoding='utf-8')
@@ -322,7 +322,8 @@ jobs:
           assert '<link rel="canonical" href="https://englishpt.kr/stations.html">' in stations
           assert 'id="applyModal"' in stations
           assert 'id="leadForm"' in stations
-          assert '@emailjs/browser@4.4.1' in stations
+          assert 'name="englishpt-consultation"' in stations
+          assert 'data-netlify="true"' in stations
           assert '<link rel="canonical" href="https://englishpt.kr/station-dobongsan.html">' in dobong
           assert dobong.count('href="/station-dobongsan-')==23
           assert '1호선 · 7호선' in dobong
@@ -355,7 +356,7 @@ jobs:
           assert '<meta name="robots" content="index,follow,max-image-preview:large">' in stations
           assert (root/'privacy'/'index.html').exists()
           privacy=(root/'privacy'/'index.html').read_text(encoding='utf-8')
-          assert 'EmailJS' in privacy and '미국' in privacy and '상담 종료 후 3개월' in privacy
+          assert 'Netlify' in privacy and '상담 종료 후 3개월' in privacy and '국외' in privacy
           assert (root/'404.html').exists()
           page404=(root/'404.html').read_text(encoding='utf-8')
           assert '송현동' not in page404 and 'noindex,follow' in page404
