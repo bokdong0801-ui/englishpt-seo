@@ -519,6 +519,12 @@ jobs:
               shutil.copy2(src,out/name)
               pages.append(name)
           assert len(pages)==23, len(pages)
+          for preserved_name in ('dalseo-songhyeondong-adult-conv.html','dalseo-songhyeondong-1to1-toeic.html'):
+              preserved_src=Path('stage9-release')/preserved_name
+              assert preserved_src.exists(),preserved_name
+              preserved_raw=preserved_src.read_text(encoding='utf-8')
+              assert 'preserved-region-navigation' in preserved_raw,preserved_name
+              shutil.copy2(preserved_src,out/preserved_name)
           shutil.copy2('stage9-release/pilot.css',out/'pilot.css')
           shutil.copy2('stage9-release/pilot.js',out/'pilot.js')
           links=''.join(f'<li><a href="{x}">{x}</a></li>' for x in pages)
