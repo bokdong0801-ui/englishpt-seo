@@ -48,6 +48,7 @@ jobs:
           python -m py_compile scripts/build-stage9-production-release.py
           python -m py_compile scripts/stage9-clean-mass-renderer.py
           python -m py_compile scripts/stage9-clean-similarity-qa.py
+          python -m py_compile scripts/build-locality-index.py
           python -m py_compile scripts/generate-production-stage3-10x13.py
           python -m py_compile scripts/generate-production-stage5-shard.py
 
@@ -129,6 +130,48 @@ jobs:
           assert 'data.set("form-name","englishpt-consultation")' in js
           assert len(list(Path('stage9-release/assets/images').glob('*.svg'))) == 30
           assert '실제 상담 전송은 비활성화' not in js
+          locality_file=Path('stage9-release/assets/locality-index.json')
+          assert locality_file.exists(), 'locality-index.json'
+          locality_rows=json.loads(locality_file.read_text(encoding='utf-8'))
+          assert len(locality_rows)==5149, len(locality_rows)
+          site_js=Path('stage9-release/assets/site.js').read_text(encoding='utf-8')
+          assert 'REGION_HASH_INTENTS' in site_js
+          assert '/assets/locality-index.json' in site_js
+          site_css=Path('stage9-release/assets/styles.css').read_text(encoding='utf-8')
+          assert '.region-finder-shell' in site_css
+          assert '.teacher-trust-grid' in site_css
+          assert '.station-hub-page .station-hero' in site_css
+          mass_css=Path('stage9-release/pilot.css').read_text(encoding='utf-8')
+          assert '.local-navigation' in mass_css
+          assert '.nearby-localities' in mass_css
+
+          core_pages=['englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html']
+          for core_name in core_pages:
+              core=(Path('stage9-release')/core_name).read_text(encoding='utf-8')
+              assert 'data-region-finder' in core, core_name
+              assert 'data-region-sido' in core and 'data-region-jurisdiction' in core and 'data-region-dong' in core, core_name
+          assert '전체지역·과정 바로가기' in home
+          assert '과정 중심 탐색과 겹치지 않도록' in home
+          assert 'teacher-trust' in home
+          conv=Path('stage9-release/english-conversation.html').read_text(encoding='utf-8')
+          assert 'teacher-trust' in conv
+          assert '영어권 교포 선생님' in conv
+
+          dob_hub=Path('stage9-release/station-dobongsan.html').read_text(encoding='utf-8')
+          dob_links=__import__('re').findall(r'href="/(station-dobongsan-[^"]+\.html)"',dob_hub)
+          assert len(set(dob_links))==23, len(set(dob_links))
+          for target in set(dob_links):
+              assert (Path('stage9-release')/target).exists(), target
+          assert 'station-hub-page' in dob_hub
+
+          sajik=next(iter(Path('stage9-release').glob('seoul-jongno-sajikdong-toeic.html')),None)
+          assert sajik is not None
+          sajik_raw=sajik.read_text(encoding='utf-8')
+          assert 'class="section related local-navigation"' in sajik_raw
+          assert '같은 지역 · 다른 과정' in sajik_raw
+          assert '다른 동네' in sajik_raw
+          assert '/courses.html' in sajik_raw and '/stations.html' in sajik_raw and '/englishpt.html#region' in sajik_raw
+
           home=Path('stage9-release/englishpt.html').read_text(encoding='utf-8')
           assert '<title>1:1 영어과외·영어회화·시험영어 | 잉글리시PT</title>' in home
           assert '대구 달서구 송현동 · 1:1 맞춤 영어관리' not in home
