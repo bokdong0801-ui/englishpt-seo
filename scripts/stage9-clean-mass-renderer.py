@@ -334,7 +334,7 @@ def consultation_form(loc: dict, h1: str) -> str:
 <label class="full">문의내용<textarea id="leadMessage" name="message" rows="4" placeholder="현재 어려운 부분, 목표하는 부분을 자유롭게 작성해주세요."></textarea></label>
 <input type="hidden" id="leadClass" name="wantedClass" value="{esc(h1)}">
 <label class="privacy-check"><input id="leadConsent" name="consent" type="checkbox" required> <span>상담을 위한 개인정보 수집·이용에 동의합니다.</span></label>
-<details class="privacy-detail"><summary>수집·이용 안내</summary><p>수집 항목: 이름, 연락처, 지역, 문의내용. 이용 목적: 영어 학습 상담 및 연락. 상담 목적이 끝난 개인정보는 관계 법령상 보존 의무가 없는 한 지체 없이 파기합니다. 자세한 내용은 <a href="/privacy/">개인정보처리방침</a>에서 확인할 수 있습니다.</p></details>
+<details class="privacy-detail"><summary>수집·이용 안내</summary><p>수집 항목: 이름, 연락처, 지역, 문의내용. 이용 목적: 영어 학습 상담 및 연락. 상담 정보는 상담 접수일로부터 90일 후 파기하며, 관계 법령상 보존 의무가 있는 경우 해당 기간 동안 보관합니다. 자세한 내용은 <a href="/privacy/">개인정보처리방침</a>에서 확인할 수 있습니다.</p></details>
 <button class="submit-lead" type="submit">무료 PT 진단 신청 →</button>
 <p class="form-alt">전송이 어려운 경우 <a href="tel:01050068027">010-5006-8027</a> 또는 <a href="mailto:cicada3865@naver.com">cicada3865@naver.com</a>로 문의할 수 있습니다.</p>
 <div id="leadStatus" class="pilot-status lead-status" role="status" aria-live="polite"></div>
@@ -2107,6 +2107,14 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     problems=[]
     raw = apply_intent_faq(raw, intent)
     raw = trim_gold_page(raw, loc["slug"] + "|" + intent, family)
+    raw = raw.replace("장면", "상황")
+    raw = raw.replace("판단라는 기준", "판단이라는 기준")
+    if 'rel="icon" href="/assets/favicon.svg"' not in raw:
+        raw = raw.replace(
+            '<meta name="viewport" content="width=device-width,initial-scale=1">',
+            '<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">',
+            1,
+        )
     h1 = plain_h1(raw)
     canonical = f'{BASE_URL}/{loc["slug"]}-{intent}.html'
     page_title = title_for(loc, intent)
@@ -2229,7 +2237,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     # Production footer and final wording.
     raw = re.sub(
         r'<footer><div class="wrap"><strong>ENGLISH PT</strong><p>.*?</p></div></footer>',
-        f'<footer><div class="wrap"><strong>ENGLISH PT</strong><p>{esc(loc["full_name"])} · 지역별 맞춤 영어 안내</p></div></footer>',
+        f'<footer><div class="wrap"><strong>ENGLISH PT</strong><p>{esc(loc["full_name"])} · 지역별 맞춤 영어 안내</p><p><a href="/privacy/">개인정보처리방침</a></p></div></footer>',
         raw, count=1, flags=re.S,
     )
     raw = re.sub(
