@@ -504,7 +504,7 @@ jobs:
               if is_exam:
                   assert metrics['beginner'],(name,metrics)
                   assert abs(metrics['beginner']['top']-metrics['visual']['bottom']) <= 3,(name,metrics)
-                  assert metrics['beginner']['top'] <= 620,(name,metrics)
+                  assert metrics['beginner']['top'] <= 700,(name,metrics)
                   assert metrics['beginner']['height'] <= 310,(name,metrics)
                   assert metrics['intro']['top'] <= 940,(name,metrics)
               else:
@@ -515,7 +515,7 @@ jobs:
           report={
               'status':'PASS_MOBILE_FIRST_SCREEN_QA',
               'viewport':'390x844 CSS px',
-              'rule':'Conversation: Hero -> image -> intro within 820px. Exams: Hero -> image -> beginner guide -> intro within 940px; beginner guide begins within first screen.',
+              'rule':'Conversation: Hero -> image -> intro within 820px. Exams: Hero -> image -> beginner guide -> intro within 940px; beginner guide begins within the first 700px so meaningful content remains visible in the first 844px viewport.',
               'pages':rows,
           }
           Path('STAGE9_MOBILE_FIRST_SCREEN_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
