@@ -404,7 +404,9 @@ jobs:
           assert report['english_conversation']['image_src']=='/assets/images/representative/english-conv-editorial.svg',report['english_conversation']
           for key in ('toeic','toeic_speaking','opic','ielts','duolingo','toefl','english_conversation'):
               row=report[key]
-              assert row['form_fields']==['area','consent','message','name','phone','wantedClass'],row
+              required_fields={'area','consent','message','name','phone','wantedClass'}
+              assert required_fields.issubset(set(row['form_fields'])),row
+              assert {'form-name','subject','bot-field'}.issubset(set(row['form_fields'])),row
               assert row['has_purpose'] is False and row['has_difficulty'] is False,row
               assert all(row['markers'].values()),row
               assert row['hero_index'] < row['visual_index'] < row['intro_index'],row
