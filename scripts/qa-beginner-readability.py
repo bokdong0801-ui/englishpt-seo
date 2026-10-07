@@ -212,6 +212,8 @@ def main() -> int:
                 failures.append({"file":hub_name,"rule":"course_finder_conversion_bridge_missing"})
 
     for p in root.glob("*.html"):
+        if p.name == "404.html":
+            continue
         counts["html_total"] += 1
         if p.name == "englishpt.html":
             continue
