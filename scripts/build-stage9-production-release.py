@@ -582,7 +582,7 @@ def preserved_region_finder() -> str:
     ]
     option_html = "".join(f'<option value="{v}">{t}</option>' for v,t in options)
     same_area_links = "".join(
-        f'<a href="/dalseo-songhyeondong-{intent}.html">송현동 {label}</a>'
+        f'<a href="/daegu-dalseo-songhyeondong-{intent}.html">송현동 {label}</a>'
         for intent,label in options
     )
     return (
