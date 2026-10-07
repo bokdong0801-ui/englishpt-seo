@@ -148,10 +148,19 @@ jobs:
 
           home=Path('stage9-release/englishpt.html').read_text(encoding='utf-8')
           core_pages=['englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html']
+          expected_region_options={
+              'englishpt.html':23,'courses.html':23,'english-conversation.html':8,
+              'exam-english.html':12,'student-english.html':3,
+          }
           for core_name in core_pages:
               core=(Path('stage9-release')/core_name).read_text(encoding='utf-8')
               assert 'data-region-finder' in core, core_name
               assert 'data-region-sido' in core and 'data-region-jurisdiction' in core and 'data-region-dong' in core, core_name
+              select=__import__('re').search(r'<select data-region-intent>(.*?)</select>',core,__import__('re').S)
+              assert select,core_name
+              values=[x for x in __import__('re').findall(r'<option value="([^"]*)"',select.group(1)) if x]
+              assert len(values)==expected_region_options[core_name],(core_name,len(values),expected_region_options[core_name])
+              assert len(set(values))==len(values),(core_name,'duplicate_region_intents')
           assert '전체지역·과정 바로가기' in home
           assert '과정 중심 탐색과 겹치지 않도록' in home
           assert 'teacher-trust' in home
@@ -171,6 +180,11 @@ jobs:
           preserved_raw=preserved_song.read_text(encoding='utf-8')
           assert 'preserved-region-navigation' in preserved_raw
           assert 'data-region-finder' in preserved_raw
+          preserved_select=__import__('re').search(r'<select data-region-intent>(.*?)</select>',preserved_raw,__import__('re').S)
+          assert preserved_select
+          preserved_values=[x for x in __import__('re').findall(r'<option value="([^"]*)"',preserved_select.group(1)) if x]
+          assert len(preserved_values)==23,len(preserved_values)
+          assert len(set(preserved_values))==23
           assert 'dalseo-songhyeondong-adult-tutor.html' in preserved_raw
           assert '/englishpt.html#region' in preserved_raw
           assert '/stations.html' in preserved_raw
