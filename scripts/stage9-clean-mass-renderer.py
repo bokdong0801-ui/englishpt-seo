@@ -1159,10 +1159,14 @@ def academy_compare_section(loc: dict, intent: str) -> str:
         ("수업 후 기록", f'{loc["dong"]}에서 여러 수업을 비교한다면 그날 배운 내용만 알려주는지, 다음에 다시 확인할 오답·답변·연습 항목까지 남겨주는지도 함께 살펴보세요.'),
     ]
     extra_seed = f'{loc["slug"]}|{intent}|academy-extra-v1'
+    # Keep academy-selection pages materially distinct across localities.
+    # Duolingo academy pages were the closest pair in the full Stage 9 shingle QA,
+    # so they receive one additional locality-selected comparison point.
+    extra_count = 5 if intent == "duolingo-academy" else 4
     extra_indices = sorted(
         range(len(extra_pool)),
         key=lambda i: hashlib.sha256(f'{extra_seed}|{i}'.encode()).hexdigest()
-    )[:2]
+    )[:extra_count]
     cards.extend(extra_pool[i] for i in extra_indices)
 
     # Rotate card order once more by locality so neighboring pages don't keep
