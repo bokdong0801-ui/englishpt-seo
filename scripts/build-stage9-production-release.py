@@ -42,7 +42,9 @@ EXPECTED_STATIONS = 911
 EXPECTED_STATION_INTENTS = 23
 EXPECTED_STATION_HTML = EXPECTED_STATIONS * (1 + EXPECTED_STATION_INTENTS) + 1
 EXPECTED_TOTAL = EXPECTED_NEW + EXPECTED_PRESERVED + EXPECTED_HUBS + EXPECTED_STATION_HTML
-EXPECTED_SITEMAPS = 281
+EXPECTED_INDEXABLE = EXPECTED_PRESERVED + EXPECTED_HUBS + EXPECTED_STATION_HTML
+EXPECTED_NOINDEX = EXPECTED_NEW
+EXPECTED_SITEMAPS = 44
 SITEMAP_CHUNK = 500
 EXPECTED_REDIRECTS = 74
 BASE_URL = "https://englishpt.kr"
@@ -409,13 +411,13 @@ SERVICE_THEME_SUFFIXES = {
 }
 EXAM_SUFFIXES = ("toeic", "toeic-speaking", "opic", "ielts", "duolingo", "toefl")
 
-EMAILJS_TAG = '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>'
+EMAILJS_TAG = '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>'
 LIVE_FORM = '''<form id="pilotForm" class="lead-form">
 <label>이름 <span>*</span><input name="name" autocomplete="name" required></label>
 <label>연락처 <span>*</span><input name="phone" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required></label>
 <label class="full">가장 가까운 일정<input name="deadline" placeholder="시험·발표·면접·사용 일정"></label>
 <label class="full">가장 막히는 장면<textarea name="difficulty" rows="3" placeholder="최근 어려웠던 문제·응답·상황"></textarea></label>
-<label class="privacy-check"><input name="consent" type="checkbox" required><span>상담을 위한 개인정보 수집·이용에 동의합니다.</span></label>
+<label class="privacy-check"><input name="consent" type="checkbox" required><span>상담을 위한 개인정보 수집·이용에 동의합니다. <a href="/privacy/">개인정보처리방침</a></span></label>
 <div class="submit-row"><button class="btn primary" type="submit">무료 PT 진단 신청 →</button><a class="btn phone" href="tel:+821050068027">전화 010-5006-8027</a></div>
 <p class="pilot-status" aria-live="polite"></p>
 </form>'''
@@ -770,12 +772,13 @@ def main() -> None:
     def write_checked(name: str, raw: str, ui_problems: list[str]) -> None:
         if ui_problems:
             bad_ui_pages.append({"file": name, "problems": ui_problems})
-        low = raw.lower()
-        if (
-            '<meta name="robots" content="index,follow">' not in low
-            or "noindex" in low
-            or "nofollow" in low
-        ):
+        robots_m = re.search(r'<meta name="robots" content="([^"]+)">', raw, re.I)
+        robots_tokens = {
+            x.strip().lower()
+            for x in (robots_m.group(1).split(",") if robots_m else [])
+            if x.strip()
+        }
+        if not robots_m or "follow" not in robots_tokens or not ({"index","noindex"} & robots_tokens):
             bad_robot_pages.append(name)
         canonical = re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']', raw, re.I)
         if not canonical or not canonical.group(1).startswith(BASE_URL + "/"):
@@ -898,6 +901,56 @@ def main() -> None:
         else:
             shutil.copy2(src, out / name)
 
+    # Current-branch operational assets must override the older Stage 8 packet.
+    for name in ("_headers",):
+        src = ROOT / name
+        if not src.exists():
+            failures.append(f"operational_file_missing:{name}")
+        else:
+            shutil.copy2(src, out / name)
+
+    favicon_src = ROOT / "assets" / "favicon.svg"
+    if not favicon_src.exists():
+        failures.append("favicon_missing")
+    else:
+        shutil.copy2(favicon_src, preserved_assets / "favicon.svg")
+
+    privacy_src = ROOT / "privacy"
+    if not privacy_src.exists():
+        failures.append("privacy_page_missing")
+    else:
+        shutil.copytree(privacy_src, out / "privacy", dirs_exist_ok=True)
+
+    def apply_sitewide_operational_markup(raw: str) -> str:
+        raw = raw.replace(
+            "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js",
+            "https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js",
+        )
+        if 'rel="icon"' not in raw and "</head>" in raw:
+            raw = raw.replace(
+                "</head>",
+                '<link rel="icon" href="https://englishpt.kr/assets/favicon.svg" type="image/svg+xml"></head>',
+                1,
+            )
+        if "<footer" in raw and 'href="/privacy/"' not in raw.split("</footer>",1)[0].split("<footer",1)[-1]:
+            raw = raw.replace(
+                "</footer>",
+                '<p class="foot-note"><a href="/privacy/">개인정보처리방침</a></p></footer>',
+                1,
+            )
+        if 'class="privacy-detail"' in raw and 'href="/privacy/"' not in raw:
+            raw = raw.replace(
+                "관계 법령상 보존 의무가 없는 한 지체 없이 파기합니다.</p>",
+                '관계 법령상 보존 의무가 없는 한 지체 없이 파기합니다. 자세한 내용은 <a href="/privacy/">개인정보처리방침</a>에서 확인할 수 있습니다.</p>',
+            )
+        return raw
+
+    for page in sorted(out.glob("*.html")):
+        page.write_text(
+            apply_sitewide_operational_markup(page.read_text(encoding="utf-8", errors="ignore")),
+            encoding="utf-8",
+        )
+
     search_image_report = apply_search_image_metadata(out, failures)
 
     # Rebuild sitemaps from the exact final HTML set because Stage 9 adds
@@ -914,17 +967,38 @@ def main() -> None:
     if len(html_files) != EXPECTED_TOTAL:
         failures.append({"deploy_html_total": [len(html_files), EXPECTED_TOTAL]})
 
+    all_canonical_urls: list[str] = []
     canonical_urls: list[str] = []
+    noindex_pages: list[str] = []
     for page in html_files:
         raw = page.read_text(encoding="utf-8", errors="ignore")
         m = re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']', raw, re.I)
         if not m:
             failures.append({"canonical_missing": page.name})
             continue
-        canonical_urls.append(m.group(1))
+        url = m.group(1)
+        all_canonical_urls.append(url)
+        robots_m = re.search(r'<meta name="robots" content="([^"]+)">', raw, re.I)
+        robots_tokens = {
+            x.strip().lower()
+            for x in (robots_m.group(1).split(",") if robots_m else [])
+            if x.strip()
+        }
+        if "noindex" in robots_tokens:
+            noindex_pages.append(page.name)
+        elif "index" in robots_tokens:
+            canonical_urls.append(url)
+        else:
+            failures.append({"robots_indexing_state_missing": page.name})
+
+    all_canonical_urls = sorted(set(all_canonical_urls))
     canonical_urls = sorted(set(canonical_urls))
-    if len(canonical_urls) != EXPECTED_TOTAL:
-        failures.append({"unique_canonical_urls": [len(canonical_urls), EXPECTED_TOTAL]})
+    if len(all_canonical_urls) != EXPECTED_TOTAL:
+        failures.append({"unique_canonical_urls": [len(all_canonical_urls), EXPECTED_TOTAL]})
+    if len(canonical_urls) != EXPECTED_INDEXABLE:
+        failures.append({"indexable_canonical_urls": [len(canonical_urls), EXPECTED_INDEXABLE]})
+    if len(noindex_pages) != EXPECTED_NOINDEX:
+        failures.append({"noindex_pages": [len(noindex_pages), EXPECTED_NOINDEX]})
 
     for shard_no, offset in enumerate(range(0, len(canonical_urls), SITEMAP_CHUNK), 1):
         urls = canonical_urls[offset:offset + SITEMAP_CHUNK]
@@ -952,8 +1026,8 @@ def main() -> None:
     )
 
     sitemap_urls = len(canonical_urls)
-    if sitemap_urls != EXPECTED_TOTAL:
-        failures.append({"sitemap_urls": [sitemap_urls, EXPECTED_TOTAL]})
+    if sitemap_urls != EXPECTED_INDEXABLE:
+        failures.append({"sitemap_urls": [sitemap_urls, EXPECTED_INDEXABLE]})
     index = (out / "sitemap-index.xml").read_text(encoding="utf-8")
     if index.count("<sitemap><loc>") != EXPECTED_SITEMAPS:
         failures.append("sitemap_index_count")
@@ -988,6 +1062,12 @@ def main() -> None:
     if any("nosourceinfo" in p.read_text(encoding="utf-8", errors="ignore").lower() for p in html_files):
         failures.append("nosourceinfo_present")
 
+    current_404 = ROOT / "404.html"
+    if not current_404.exists():
+        failures.append("custom_404_missing")
+    else:
+        shutil.copy2(current_404, out / "404.html")
+
     rules = count_redirect_rules(out / "_redirects")
     if len(rules) < EXPECTED_REDIRECTS + 1:
         failures.append({"redirect_rule_count": len(rules)})
@@ -1015,8 +1095,11 @@ def main() -> None:
             "redirect_rules": len(rules),
         },
         "indexing": {
-            "new_page_robots": "index,follow",
-            "noindex_pages": len(set(bad_robot_pages)),
+            "mass_page_robots": "noindex,follow,max-image-preview:large",
+            "station_and_core_robots": "index,follow,max-image-preview:large",
+            "indexable_pages": len(canonical_urls),
+            "noindex_pages": len(noindex_pages),
+            "robots_contract_failures": len(set(bad_robot_pages)),
             "robots_txt_allows_crawl": "Disallow: /" not in robots,
             "production_ui_failures": len(bad_ui_pages),
         },
