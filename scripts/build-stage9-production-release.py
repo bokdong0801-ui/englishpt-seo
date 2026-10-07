@@ -894,6 +894,18 @@ def main() -> None:
     else:
         shutil.copy2(current_site_css, preserved_assets / "styles.css")
 
+    locality_builder = ROOT / "scripts" / "build-locality-index.py"
+    locality_index = preserved_assets / "locality-index.json"
+    if not locality_builder.exists():
+        failures.append("locality_index_builder_missing")
+    else:
+        proc = subprocess.run(
+            ["python3", str(locality_builder), "--output", str(locality_index)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+        if proc.returncode != 0 or not locality_index.exists():
+            failures.append({"locality_index_build_failed": proc.stderr[-1000:]})
+
     # Stage 9 AI/search discovery files are controlled by the current branch,
     # not by the older Stage 8 approval packet.
     discovery_files = {
