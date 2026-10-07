@@ -28,3 +28,4 @@ Final 140391 preview with OG metadata, stations, and locality diversity.
 2026-10-07 rerun FINAL FREEZE full Chromium preview after mobile QA threshold alignment
 2026-10-07 navigation graph rebuild: full regions, station links, teacher trust, full-site preview
 2026-10-07 rerun after locality navigation cache optimization
+2026-10-07 rerun true full preview after stale homepage QA removal
