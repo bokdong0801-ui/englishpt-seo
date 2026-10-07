@@ -50,3 +50,4 @@ Run image-enabled Stage 9 preflight after OPIc and TOEFL academy similarity fix.
 2026-10-07 latest-head final click-navigation preflight
 2026-10-07 final IA rebuild: region finder, local cross-navigation, station 23 links, teacher trust
 2026-10-07 rerun after excluding shared navigation from similarity measurement
+2026-10-07 final rerun after regional link labels and similarity restoration
