@@ -91,6 +91,93 @@ jobs:
             --work-root stage9-work \
             --output stage9-release
 
+      - name: Assert navigation graph and link integrity
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          root=Path('stage9-release')
+          files={p.name for p in root.glob('*.html')}
+          assert len(files)==140391,len(files)
+
+          locality=root/'assets/locality-index.json'
+          assert locality.exists()
+          rows=json.loads(locality.read_text(encoding='utf-8'))
+          assert len(rows)==5149,len(rows)
+
+          # National entry points must expose a true region-first route.
+          for name in ['englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html']:
+              raw=(root/name).read_text(encoding='utf-8')
+              assert 'data-region-finder' in raw,name
+              assert 'data-region-sido' in raw and 'data-region-jurisdiction' in raw and 'data-region-dong' in raw,name
+          home=(root/'englishpt.html').read_text(encoding='utf-8')
+          assert '전체지역·과정 바로가기' in home
+          assert '누구를 위한' in home
+          assert 'teacher-trust' in home
+
+          # Every station hub must expose exactly 23 existing course pages.
+          station_hubs=sorted(
+              p for p in root.glob('station-*.html')
+              if p.name.count('-')==1
+          )
+          assert len(station_hubs)==911,len(station_hubs)
+          for hub in station_hubs:
+              raw=hub.read_text(encoding='utf-8')
+              prefix=hub.stem+'-'
+              links=set(re.findall(r'href="/(station-[^"]+\.html)"',raw))
+              course_links={x for x in links if x.startswith(prefix)}
+              assert len(course_links)==23,(hub.name,len(course_links))
+              missing=[x for x in course_links if x not in files]
+              assert not missing,(hub.name,missing[:5])
+              assert 'station-hub-page' in raw,hub.name
+              assert '영어권 교포' in raw and '한국어' in raw,hub.name
+
+          # Every new locality page must link to existing same-locality courses.
+          clean_pages=0
+          link_checks=0
+          nearby_checks=0
+          for p in root.glob('*.html'):
+              raw=p.read_text(encoding='utf-8')
+              if 'data-stage9-clean="true"' not in raw or p.name.startswith('station-'):
+                  continue
+              clean_pages+=1
+              assert 'local-navigation' in raw,p.name
+              nav=raw.split('<section class="section related local-navigation">',1)[1].split('</section>',1)[0]
+              links=set(re.findall(r'href="/([^"#?]+\.html)"',nav))
+              same=[x for x in links if x.rsplit('-',1)[0] == p.name[:-5].rsplit('-',1)[0]]
+              # Intent slugs contain dashes, so use the displayed course cluster count instead.
+              course_block=nav.split('related-course-links',1)[1].split('</div>',1)[0]
+              course_links=set(re.findall(r'href="/([^"]+\.html)"',course_block))
+              assert len(course_links)==22,(p.name,len(course_links))
+              missing=[x for x in links if x not in files and x not in {'courses.html','stations.html','englishpt.html'}]
+              assert not missing,(p.name,missing[:5])
+              link_checks+=len(course_links)
+              if 'nearby-localities' in nav:
+                  nearby_checks+=1
+          assert clean_pages==118427,(clean_pages,118427)
+          assert link_checks==118427*22,(link_checks,118427*22)
+          assert nearby_checks>100000,nearby_checks
+
+          # Preserved Songhyeondong pages must not be dead ends either.
+          preserved=root/'dalseo-songhyeondong-adult-conv.html'
+          assert preserved.exists()
+          pr=preserved.read_text(encoding='utf-8')
+          assert 'preserved-region-navigation' in pr
+          song_links=set(re.findall(r'href="/(dalseo-songhyeondong-[^"]+\.html)"',pr))
+          assert len(song_links)>=23,len(song_links)
+          assert all(x in files for x in song_links),[x for x in song_links if x not in files][:5]
+
+          print('PASS_NAVIGATION_GRAPH',json.dumps({
+              'station_hubs':len(station_hubs),
+              'station_course_links':911*23,
+              'clean_locality_pages':clean_pages,
+              'same_locality_course_links':link_checks,
+              'pages_with_nearby_localities':nearby_checks,
+              'locality_selector_rows':len(rows),
+              'songhyeondong_links':len(song_links),
+          },ensure_ascii=False))
+          PY
+
       - name: Check clean-render locality similarity
         run: |
           python3 scripts/stage9-clean-similarity-qa.py \
