@@ -26,3 +26,4 @@ Rerun final station and OG preview with resilient Chromium.
 Final 140391 preview with OG metadata, stations, and locality diversity.
 2026-10-07 FINAL FREEZE preview after selective indexing and operational hardening
 2026-10-07 rerun FINAL FREEZE full Chromium preview after mobile QA threshold alignment
+2026-10-07 navigation graph rebuild: full regions, station links, teacher trust, full-site preview
