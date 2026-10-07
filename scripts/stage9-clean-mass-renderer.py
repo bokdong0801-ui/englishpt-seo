@@ -821,6 +821,27 @@ def _select_by_seed(items: list[str], count: int, seed: str) -> list[str]:
     return [item for i,item in enumerate(items) if i in keep]
 
 
+def personalize_confidence_faq(raw: str, loc: dict, intent: str) -> str:
+    """Keep the beginner-confidence question while making its guidance locally useful and non-boilerplate."""
+    variants = [
+        f'상담 신청 시 {loc["dong"]}에서 원하는 수업 방식과 현재 기초 수준을 함께 알려주시면 시작점을 더 구체적으로 확인할 수 있습니다.',
+        f'{loc["dong"]}에서 수업을 알아보고 있다면 가능한 시간대와 지금 가장 부담되는 부분을 함께 남겨주시면 첫 연습 범위를 정하기 쉽습니다.',
+        f'처음 상담에서는 {loc["dong"]}에서 원하는 수업 방식, 영어가 필요한 이유, 현재 가능한 문장부터 차례로 확인합니다.',
+        f'{loc["dong"]} 기준으로 상담할 때는 잘하는 부분까지 다시 시작하기보다 지금 어려운 부분과 가까운 목표부터 좁혀봅니다.',
+        f'상담에서는 {loc["dong"]}에서 가능한 수업 방식과 실제로 공부할 수 있는 시간을 함께 확인해 무리하지 않는 시작점을 정합니다.',
+        f'{loc["dong"]}에서 영어를 다시 시작한다면 현재 남아 있는 표현과 가장 가까운 목표부터 확인해 불필요한 반복을 줄입니다.',
+        f'수업을 결정하기 전 {loc["dong"]}에서 원하는 방식과 현재 수준을 알려주시면 기초 보완과 실전 연습의 순서를 함께 정리할 수 있습니다.',
+        f'{loc["dong"]}에서 상담을 시작할 때는 자신감보다 지금 할 수 있는 한 문장과 다음에 영어가 필요한 상황을 먼저 확인합니다.',
+    ]
+    digest = hashlib.sha256(f'{loc["slug"]}|{intent}|confidence-local-v1'.encode()).hexdigest()
+    note = variants[int(digest[:8], 16) % len(variants)]
+    pattern = re.compile(
+        r'(<details><summary>[^<]*자신감[^<]*</summary><p>)(.*?)(</p></details>)',
+        re.S,
+    )
+    return pattern.sub(lambda m: m.group(1) + m.group(2).rstrip() + ' ' + esc(note) + m.group(3), raw, count=1)
+
+
 def apply_intent_faq(raw: str, intent: str) -> str:
     """Replace academy FAQ with academy-selection questions before locality trimming."""
     pairs = ACADEMY_FAQ.get(intent)
@@ -2171,6 +2192,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
 
     raw = humanize_visible_copy(raw, family)
     raw = rewrite_reader_headings(raw, loc, intent, family)
+    raw = personalize_confidence_faq(raw, loc, intent)
     raw = apply_exam_reader_pilot(raw, base_exam_intent(intent))
     raw = raw.replace('</body>','<div class="mobile-sticky"><a href="#consultation-preview">무료 PT 진단 신청</a></div></body>',1)
 
