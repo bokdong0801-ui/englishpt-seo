@@ -1,3 +1,4 @@
 2026-10-07 run FINAL FREEZE fast preview
 2026-10-07 rerun fast preview with Chromium responsive QA
 2026-10-07 rerun after Netlify Forms + favicon finalization
+2026-10-07 rerun Netlify Forms email notification preview after QA contract update
