@@ -42,3 +42,4 @@ Run image-enabled Stage 9 preflight after OPIc and TOEFL academy similarity fix.
 2026-10-07 FINAL FREEZE #72 clean Netlify Forms + favicon final
 2026-10-07 FINAL FREEZE #73 current-page Netlify Forms POST
 2026-10-07 final favicon + Netlify Forms verification
+2026-10-07 navigation graph rebuild: full regions, station links, teacher trust, full-site preview
