@@ -926,43 +926,6 @@ def main() -> None:
         shutil.copy2(current_site_css, preserved_assets / "styles.css")
 
     # Shared nationwide locality selector data: 5,149 verified localities.
-    locality_index = preserved_assets / "locality-index.json"
-    proc = subprocess.run(
-        ["python3", str(ROOT / "scripts" / "build-locality-index.py"), "--output", str(locality_index)],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-    )
-    if proc.returncode != 0 or not locality_index.exists():
-        failures.append({"locality_index_build_failed": proc.stderr[-800:]})
-    else:
-        try:
-            locality_rows = json.loads(locality_index.read_text(encoding="utf-8"))
-            if len(locality_rows) != 5149:
-                failures.append({"locality_index_rows": [len(locality_rows), 5149]})
-        except Exception as exc:
-            failures.append({"locality_index_invalid": str(exc)})
-
-    # Build the nationwide 5,149-locality selector used by the home and hub navigation.
-    locality_index = preserved_assets / "locality-index.json"
-    proc = subprocess.run(
-        [
-            "python3", str(ROOT / "scripts" / "build-locality-index.py"),
-            "--output", str(locality_index),
-        ],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-    )
-    if proc.returncode != 0 or not locality_index.exists():
-        failures.append({
-            "locality_index_build_failed": proc.returncode,
-            "stderr": proc.stderr[-1000:],
-        })
-    else:
-        try:
-            locality_rows = json.loads(locality_index.read_text(encoding="utf-8"))
-            if len(locality_rows) != 5149:
-                failures.append({"locality_index_rows": [len(locality_rows), 5149]})
-        except Exception as exc:
-            failures.append({"locality_index_parse": str(exc)})
-
     locality_builder = ROOT / "scripts" / "build-locality-index.py"
     locality_index = preserved_assets / "locality-index.json"
     if not locality_builder.exists():
@@ -973,7 +936,17 @@ def main() -> None:
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
         )
         if proc.returncode != 0 or not locality_index.exists():
-            failures.append({"locality_index_build_failed": proc.stderr[-1000:]})
+            failures.append({
+                "locality_index_build_failed": proc.returncode,
+                "stderr": proc.stderr[-1000:],
+            })
+        else:
+            try:
+                locality_rows = json.loads(locality_index.read_text(encoding="utf-8"))
+                if len(locality_rows) != 5149:
+                    failures.append({"locality_index_rows": [len(locality_rows), 5149]})
+            except Exception as exc:
+                failures.append({"locality_index_parse": str(exc)})
 
     # Stage 9 AI/search discovery files are controlled by the current branch,
     # not by the older Stage 8 approval packet.
