@@ -603,7 +603,8 @@ jobs:
               ctaCount:document.querySelectorAll('.route-cta').length,
               cards,
               stickyDisplay:sticky?getComputedStyle(sticky).display:null,
-              songhyeondong:document.body.innerText.includes('송현동') || document.documentElement.innerHTML.toLowerCase().includes('songhyeondong'),
+              regionFinder:!!document.querySelector('[data-region-finder]'),
+              sidoOptions:document.querySelector('[data-region-sido]')?.options.length||0,
             };
           })()'''
           rows=[]
@@ -618,7 +619,8 @@ jobs:
               assert metrics['cardCount']==expect['cards'],(mode,name,metrics)
               assert metrics['ctaCount']==expect['ctas'],(mode,name,metrics)
               assert bool(metrics['bridge'])==expect['bridge'],(mode,name,metrics)
-              assert metrics['songhyeondong'] is False,(mode,name,metrics)
+              assert metrics['regionFinder'] is True,(mode,name,metrics)
+              assert metrics['sidoOptions'] >= 10,(mode,name,metrics)
               assert len(metrics['cards'])==2,(mode,name,metrics)
               if mode=='desktop':
                 assert metrics['cards'][0]['top']==metrics['cards'][1]['top'],(mode,name,metrics)
@@ -742,7 +744,17 @@ jobs:
           names += ['stations.html','station-dobongsan.html','station-dobongsan-toeic.html','station-dobongsan-english-conv-academy.html','station-gangnam.html']
           for name in names:
               subprocess.run(['curl','-fsSIL','--max-time','30',f'{base}/{name}'],check=True,stdout=subprocess.DEVNULL)
-          print('PASS_STAGE9_23_PAGE_READER_EXPANSION_PREVIEW')
+          extra=[
+              'station-dobongsan-opic.html','station-dobongsan-ielts.html',
+              'station-dobongsan-toefl.html','station-dobongsan-duolingo.html',
+              'daegu-dalseo-songhyeondong-toeic.html',
+              'seoul-jongno-sajikdong-toeic.html',
+              'busan-dongnae-sajikdong-english-conv-academy.html',
+              'review-index.html'
+          ]
+          for name in extra:
+              subprocess.run(['curl','-fsSIL','--max-time','30',f'{base}/{name}'],check=True,stdout=subprocess.DEVNULL)
+          print('PASS_STAGE9_FULL_SITE_READER_PREVIEW')
           PY
 
       - name: Write preview report
@@ -751,12 +763,14 @@ jobs:
           import json
           from pathlib import Path
           report={
-            "status":"PASS_STAGE9_23_PAGE_READER_EXPANSION_PREVIEW",
+            "status":"PASS_STAGE9_FULL_SITE_READER_PREVIEW",
             "preview_url":"https://stage9-v44-gold-preview--englishpt-seo.netlify.app",
             "source":"exact current Stage 9 production renderer with national hubs and 911-station expansion",
             "production_affected":False,
             "representative_pages":23,
             "station_sample_pages":5,
+            "full_site_html_deployed":140391,
+            "locality_selector_rows":5149,
             "final_html_total":140391,
             "preview_indexing":"blocked by X-Robots-Tag only"
           }
