@@ -325,7 +325,7 @@ TITLE_VARIANTS = {
     "beginner-english-conv": ["기초문장·첫 말하기", "왕초보 기초회화·말하기", "인사·자기소개부터 시작"],
 }
 
-EMAILJS_TAG = '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>'
+EMAILJS_TAG = '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>'
 def consultation_form(loc: dict, h1: str) -> str:
     return f'''<form id="leadForm" class="lead-form">
 <label>이름 <span>*</span><input id="leadName" name="name" autocomplete="name" required></label>
@@ -334,7 +334,7 @@ def consultation_form(loc: dict, h1: str) -> str:
 <label class="full">문의내용<textarea id="leadMessage" name="message" rows="4" placeholder="현재 어려운 부분, 목표하는 부분을 자유롭게 작성해주세요."></textarea></label>
 <input type="hidden" id="leadClass" name="wantedClass" value="{esc(h1)}">
 <label class="privacy-check"><input id="leadConsent" name="consent" type="checkbox" required> <span>상담을 위한 개인정보 수집·이용에 동의합니다.</span></label>
-<details class="privacy-detail"><summary>수집·이용 안내</summary><p>수집 항목: 이름, 연락처, 지역, 문의내용. 이용 목적: 영어 학습 상담 및 연락. 상담 목적이 끝난 개인정보는 관계 법령상 보존 의무가 없는 한 지체 없이 파기합니다.</p></details>
+<details class="privacy-detail"><summary>수집·이용 안내</summary><p>수집 항목: 이름, 연락처, 지역, 문의내용. 이용 목적: 영어 학습 상담 및 연락. 상담 목적이 끝난 개인정보는 관계 법령상 보존 의무가 없는 한 지체 없이 파기합니다. 자세한 내용은 <a href="/privacy/">개인정보처리방침</a>에서 확인할 수 있습니다.</p></details>
 <button class="submit-lead" type="submit">무료 PT 진단 신청 →</button>
 <p class="form-alt">전송이 어려운 경우 <a href="tel:01050068027">010-5006-8027</a> 또는 <a href="mailto:cicada3865@naver.com">cicada3865@naver.com</a>로 문의할 수 있습니다.</p>
 <div id="leadStatus" class="pilot-status lead-status" role="status" aria-live="polite"></div>
@@ -2111,9 +2111,15 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     page_description = description_for(loc, intent)
     theme = theme_for_intent(intent, family)
 
+    indexable = bool(loc.get("station"))
+    robots_tag = (
+        '<meta name="robots" content="index,follow,max-image-preview:large">'
+        if indexable
+        else '<meta name="robots" content="noindex,follow,max-image-preview:large">'
+    )
     raw = re.sub(
-        r'<meta name="robots" content="noindex,nofollow">',
-        '<meta name="robots" content="index,follow">',
+        r'<meta name="robots" content="[^"]*">',
+        robots_tag,
         raw,
         count=1,
     )
@@ -2260,7 +2266,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         "근거를 찾을 수 되는지","반복되는 문제가 어디서 생기는지 검토합니다",
     ]
     required=[
-        '<meta name="robots" content="index,follow">',
+        robots_tag,
         f'<body class="{theme}" data-production-deploy="true" data-stage9-clean="true">',
         'name="name"','name="phone"','name="area"','name="message"','name="wantedClass"','name="consent"',
         'class="breadcrumb wrap"','class="mobile-sticky"',
