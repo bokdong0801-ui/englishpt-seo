@@ -16,7 +16,21 @@ TAG_RE=re.compile(r"<script.*?</script>|<style.*?</style>|<[^>]+>",re.S|re.I)
 TOK_RE=re.compile(r"[가-힣A-Za-z0-9]+")
 
 def visible(raw:str)->str:
-    return re.sub(r"\s+"," ",html.unescape(TAG_RE.sub(" ",raw))).strip()
+    # Compare substantive page copy, not repeated site chrome or navigation clusters.
+    # Regional cross-navigation intentionally repeats course labels and nearby links
+    # across pages; counting those links would inflate similarity without indicating
+    # duplicate editorial content.
+    cleaned=raw
+    for pattern in (
+        r"<header\b.*?</header>",
+        r"<footer\b.*?</footer>",
+        r'<div class="form-modal".*?</div></body>',
+        r'<div class="mobile-sticky".*?</div>',
+        r'<section class="section related[^"]*".*?</section>',
+        r'<section class="section soft region-navigation[^"]*".*?</section>',
+    ):
+        cleaned=re.sub(pattern," ",cleaned,flags=re.S|re.I)
+    return re.sub(r"\s+"," ",html.unescape(TAG_RE.sub(" ",cleaned))).strip()
 
 def tokens(text:str)->Counter:
     toks=[t.lower() for t in TOK_RE.findall(text) if len(t)>1]
