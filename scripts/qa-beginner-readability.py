@@ -122,6 +122,11 @@ def visible_body(raw: str) -> str:
     body = re.sub(r"<[^>]+>", " ", body)
     return re.sub(r"\s+", " ", html.unescape(body)).strip()
 
+def contains_forbidden(text: str, phrase: str) -> bool:
+    """Match blocked terminology as an actual visible term, not inside place names such as 병목안동."""
+    pattern = r"(?<![가-힣A-Za-z0-9])" + re.escape(phrase) + r"(?![가-힣A-Za-z0-9])"
+    return re.search(pattern, text, flags=re.I) is not None
+
 def exam_base(name: str) -> str | None:
     for suffix, base in EXAM_SUFFIXES:
         if name.endswith("-" + suffix + ".html"):
@@ -158,7 +163,7 @@ def main() -> int:
             if phrase not in raw:
                 failures.append({"file":"englishpt.html","rule":"home_easy_copy_missing","value":phrase})
         for phrase in FORBIDDEN_VISIBLE:
-            if phrase in text:
+            if contains_forbidden(text, phrase):
                 failures.append({"file":"englishpt.html","rule":"home_difficult_term","value":phrase})
         if raw.count('class="change-card"') != 3 or '변화 리포트' not in raw or '사례 유형' not in raw:
             failures.append({"file":"englishpt.html","rule":"home_change_report_missing_or_wrong_count","count":raw.count('class="change-card"')})
@@ -220,7 +225,7 @@ def main() -> int:
         text = visible_body(raw)
 
         for phrase in FORBIDDEN_VISIBLE:
-            if phrase in text:
+            if contains_forbidden(text, phrase):
                 failures.append({"file":p.name,"rule":"difficult_visible_term","value":phrase})
 
         if base:
