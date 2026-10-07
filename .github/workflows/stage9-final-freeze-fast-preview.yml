@@ -78,7 +78,8 @@ jobs:
           stations=(root/'stations.html').read_text(encoding='utf-8')
           assert 'id="applyModal"' in stations
           assert 'id="leadForm"' in stations
-          assert '@emailjs/browser@4.4.1' in stations
+          assert 'name="englishpt-consultation"' in stations
+          assert 'data-netlify="true"' in stations
           assert '개인정보처리방침' in stations
           print('PASS_FINAL_FREEZE_FAST_PACKAGE',len(reps))
           PY
