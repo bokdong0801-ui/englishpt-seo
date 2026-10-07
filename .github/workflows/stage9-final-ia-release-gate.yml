@@ -239,8 +239,25 @@ jobs:
           cp stage9-release/station-gangnam.html final-review/
           cp stage9-release/seoul-jongno-sajikdong-*.html final-review/
           cp stage9-release/daegu-dalseo-songhyeondong-*.html final-review/
-          cp stage9-release/dalseo-songhyeondong-adult-conv.html final-review/
-          cp stage9-release/dalseo-songhyeondong-1to1-toeic.html final-review/
+          cp stage9-release/dalseo-songhyeondong-*.html final-review/
+          python3 - <<'PY'
+          import re,shutil
+          from pathlib import Path
+          release=Path('stage9-release'); review=Path('final-review')
+          sources=[
+              review/'seoul-jongno-sajikdong-toeic.html',
+              review/'daegu-dalseo-songhyeondong-toeic.html',
+              review/'dalseo-songhyeondong-adult-conv.html',
+          ]
+          copied=0
+          for src in sources:
+              raw=src.read_text(encoding='utf-8')
+              for href in set(re.findall(r'href="/([^"#?]+\.html)"',raw)):
+                  target=release/href
+                  if target.exists() and not (review/href).exists():
+                      shutil.copy2(target,review/href); copied+=1
+          print('COPIED_DIRECT_NAV_TARGETS',copied)
+          PY
           cp stage9-release/pilot.css final-review/pilot.css
           cp stage9-release/pilot.js final-review/pilot.js
           cat > final-review/_headers <<'EOF'
@@ -255,7 +272,8 @@ jobs:
           root=Path('final-review')
           assert len(list(root.glob('station-dobongsan*.html')))==24
           assert len(list(root.glob('seoul-jongno-sajikdong-*.html')))==23
-          assert len(list(root.glob('daegu-dalseo-songhyeondong-*.html')))==23
+          assert len(list(root.glob('daegu-dalseo-songhyeondong-*.html')))>=23
+          assert len(list(root.glob('dalseo-songhyeondong-*.html')))>=95
           hub=(root/'station-dobongsan.html').read_text(encoding='utf-8')
           links=set(re.findall(r'href="/(station-dobongsan-[^"]+\.html)"',hub))
           assert len(links)==23
@@ -310,6 +328,31 @@ jobs:
                   if 'sajikdong-' in name or 'daegu-dalseo-songhyeondong-' in name or name.startswith('dalseo-songhyeondong-'):
                       assert m['localnav'],(mode,name,'localnav')
                   checks+=1
+
+              # Prove the region-first UI actually resolves to an existing generated page.
+              tab.Page.navigate(url='http://127.0.0.1:8777/englishpt.html'); time.sleep(.5)
+              result=tab.Runtime.evaluate(expression=r'''(async()=>{
+                const wait=ms=>new Promise(r=>setTimeout(r,ms));
+                const sido=document.querySelector('[data-region-sido]');
+                const juris=document.querySelector('[data-region-jurisdiction]');
+                const dong=document.querySelector('[data-region-dong]');
+                const intent=document.querySelector('[data-region-intent]');
+                const go=document.querySelector('[data-region-go]');
+                for(let i=0;i<20&&sido.options.length<2;i++) await wait(100);
+                sido.value='서울특별시'; sido.dispatchEvent(new Event('change',{bubbles:true}));
+                await wait(100);
+                const j=[...juris.options].find(o=>o.textContent.includes('종로구')); if(!j)return {ok:false,at:'jurisdiction',opts:[...juris.options].map(o=>o.textContent)};
+                juris.value=j.value; juris.dispatchEvent(new Event('change',{bubbles:true}));
+                await wait(100);
+                const d=[...dong.options].find(o=>o.textContent==='사직동'); if(!d)return {ok:false,at:'dong',opts:[...dong.options].map(o=>o.textContent)};
+                dong.value=d.value; intent.value='toeic';
+                const expected='/seoul-jongno-sajikdong-toeic.html';
+                const target='/'+dong.value+'-'+intent.value+'.html';
+                return {ok:target===expected,target,exists:!!go};
+              })()''',awaitPromise=True,returnByValue=True)['result']['value']
+              assert result['ok'] and result['exists'],result
+              assert (root/result['target'].lstrip('/')).exists(),result
+              checks+=1
           tab.stop(); browser.close_tab(tab)
           print('PASS_FINAL_IA_CHROMIUM',checks)
           PY
@@ -360,7 +403,7 @@ jobs:
           for name in sorted(targets):
               with urllib.request.urlopen(base+'/'+name,timeout=30) as r:
                   assert r.status==200,(name,r.status)
-          # Check every Dobongsan child link and all current Songhyeondong/Sajikdong links present in package.
+          # Check every Dobongsan child link and every packaged continuation link from Songhyeondong/Sajikdong.
           for source in ['station-dobongsan.html','dalseo-songhyeondong-adult-conv.html','seoul-jongno-sajikdong-toeic.html','daegu-dalseo-songhyeondong-toeic.html']:
               raw=(root/source).read_text(encoding='utf-8')
               hrefs=set(re.findall(r'href="/([^"#?]+\.html)"',raw))
