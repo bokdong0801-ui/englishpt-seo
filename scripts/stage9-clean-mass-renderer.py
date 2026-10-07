@@ -2319,9 +2319,19 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     raw = re.sub(r'<p>[^<]*(?:검수용|파일럿)[^<]*(?:전송|production|미배포)[^<]*</p>', '', raw, flags=re.I)
     raw = re.sub(r'<p>[^<]*(?:production 미배포|검수용 페이지)[^<]*</p>', '', raw, flags=re.I)
 
-    # Replace family-limited related links with the full 13-intent local cluster.
-    raw = re.sub(r'<section class="section related">.*?</section>', all_related(loc,intent), raw, count=1, flags=re.S)
-    related_marker = '<section class="section related">'
+    # Replace any older related block, then guarantee a complete local navigation graph.
+    raw = re.sub(
+        r'<section class="section related(?: [^"]*)?">.*?</section>',
+        all_related(loc,intent),
+        raw, count=1, flags=re.S,
+    )
+    if 'class="section related local-navigation"' not in raw:
+        raw = raw.replace(
+            '<section id="consultation-preview"',
+            all_related(loc,intent) + '<section id="consultation-preview"',
+            1,
+        )
+
     if family == "service":
         audience = CONV_DERIVED_PROFILE[intent]["audience"] if intent in CONV_DERIVED_PROFILE else gold_modules()[0].PROFILES[intent]["audience"]
     else:
@@ -2329,10 +2339,11 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     ctx = mass_context(loc,intent,family,audience)
     decision = local_decision_note(loc,intent)
     support = decision + ctx
-    if related_marker in raw:
-        raw = raw.replace(related_marker, support + related_marker, 1)
+    local_marker = '<section class="section related local-navigation">'
+    if local_marker in raw:
+        raw = raw.replace(local_marker, support + local_marker, 1)
     else:
-        raw = raw.replace('<section id="consultation-preview"', support+'<section id="consultation-preview"',1)
+        problems.append("local_navigation")
 
     crumb=(
         '<div class="breadcrumb wrap" aria-label="현재 위치">'
