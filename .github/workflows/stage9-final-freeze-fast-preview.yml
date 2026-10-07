@@ -66,6 +66,7 @@ jobs:
           EOF
 
           python3 - <<'PY'
+          import json,re
           from pathlib import Path
           root=Path('final-freeze-preview')
           reps=list(root.glob('seoul-jongno-sajikdong-*.html'))
