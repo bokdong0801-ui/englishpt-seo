@@ -97,7 +97,7 @@ jobs:
           import json,re
           from pathlib import Path
           root=Path('stage9-release')
-          files={p.name for p in root.glob('*.html')}
+          files={p.name for p in root.glob('*.html') if p.name!='404.html'}
           assert len(files)==140391,len(files)
 
           locality=root/'assets/locality-index.json'
