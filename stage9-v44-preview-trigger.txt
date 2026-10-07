@@ -30,3 +30,4 @@ Final 140391 preview with OG metadata, stations, and locality diversity.
 2026-10-07 rerun after locality navigation cache optimization
 2026-10-07 rerun true full preview after stale homepage QA removal
 2026-10-07 rerun full preview after final navigation graph fixes
+2026-10-07 latest-head final click-navigation full preview
