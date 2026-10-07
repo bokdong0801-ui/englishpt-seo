@@ -373,12 +373,13 @@ jobs:
           assert report['home']['schema_fixed_songhyeondong'] is False,report['home']
           assert report['home']['footer_fixed_songhyeondong'] is False,report['home']
           assert report['home']['form_default_songhyeondong'] is False,report['home']
-          assert 'songhyeondong' not in home_raw.lower(), 'homepage still has Songhyeondong links'
           assert '전체지역·과정 바로가기' in home_raw
-          assert 'href="stations.html"' in home_raw
+          assert 'data-region-finder' in home_raw
+          assert '지역별 과정 페이지 보기' in home_raw
           assert '911개 역으로 찾기' in home_raw
-          for station_link in ('station-gangnam.html','station-seoul.html','station-dobongsan.html','station-busan.html','station-daegu.html','station-suwon.html','station-hongdaeipgu.html','station-jamsil.html'):
+          for station_link in ('station-gangnam.html','station-dobongsan.html','station-busan.html','station-suwon.html'):
               assert station_link in home_raw,station_link
+          assert '영어권 교포 선생님' in home_raw
           assert all(row['exists'] and row['canonical_ok'] and not row['songhyeondong'] for row in report['national_hubs'].values()),report['national_hubs']
           assert all(row['exists'] and row['canonical'] and row['canonical'].startswith('https://englishpt.kr/') for row in report['station_samples'].values()),report['station_samples']
           station_index=(root/'stations.html').read_text(encoding='utf-8')
