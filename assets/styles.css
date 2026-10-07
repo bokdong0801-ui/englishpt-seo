@@ -203,3 +203,12 @@ body.theme-intl{
   .region-finder-grid{grid-template-columns:1fr}
   .region-finder-actions{display:block}.region-finder-actions .btn{width:100%}.region-finder-status{margin-top:10px}
 }
+
+
+/* Preserved/local page continuation navigation */
+.local-nav-block{margin-top:18px;padding:22px;border:1px solid var(--line);border-radius:18px;background:var(--paper)}
+.local-nav-block .links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:14px}
+.local-nav-block .links a{display:flex;align-items:center;min-height:48px;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);text-decoration:none;font-size:13px;font-weight:700;line-height:1.45}
+.local-nav-block .links a:hover{border-color:var(--accent);color:var(--accent)}
+@media(max-width:900px){.local-nav-block .links{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.local-nav-block{padding:17px}.local-nav-block .links{grid-template-columns:1fr}}
