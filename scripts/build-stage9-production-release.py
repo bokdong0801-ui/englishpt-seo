@@ -485,6 +485,10 @@ def simplify_preserved_consultation(raw: str) -> tuple[str, bool]:
 
 
 PRESERVED_EASY_REPLACEMENTS = {
+    "장면": "상황",
+    "판단라는 기준": "판단 기준",
+    "답변 시작로": "답변 시작으로",
+    "이유 확장로": "이유 확장으로",
     "academic performance": "수업과 평가 방식",
     "adaptive format": "난이도가 달라지는 시험 방식",
     "productive response": "직접 말하기·쓰기 응답",
