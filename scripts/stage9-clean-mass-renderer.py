@@ -1335,11 +1335,18 @@ def nearby_locality_links(loc: dict, current_intent: str) -> str:
 
 
 def all_related(loc: dict, current_intent: str) -> str:
+    is_station = bool(loc.get("station"))
+    kicker = "같은 역 · 다른 과정" if is_station else "같은 지역 · 다른 과정"
+    lead = (
+        "같은 역 기준에서 학생영어·회화·시험·학원형 과정을 직접 비교할 수 있습니다."
+        if is_station else
+        "상담으로 바로 끝내지 않고, 같은 지역에서 학생영어·회화·시험·학원형 과정을 직접 비교할 수 있습니다."
+    )
     return (
         '<section class="section related local-navigation"><div class="wrap">'
-        '<p class="kicker">같은 지역 · 다른 과정</p>'
+        f'<p class="kicker">{esc(kicker)}</p>'
         f'<h2>{esc(loc["dong"])}에서 다른 영어 목표도 이어서 확인하세요</h2>'
-        '<p class="related-lead">상담으로 바로 끝내지 않고, 같은 지역에서 학생영어·회화·시험·학원형 과정을 직접 비교할 수 있습니다.</p>'
+        f'<p class="related-lead">{esc(lead)}</p>'
         '<div class="related-groups">' + related_course_groups(loc,current_intent) + '</div>'
         '</div></section>'
         + nearby_locality_links(loc,current_intent)
