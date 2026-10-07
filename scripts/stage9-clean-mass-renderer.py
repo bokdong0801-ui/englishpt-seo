@@ -1211,6 +1211,52 @@ def academy_compare_section(loc: dict, intent: str) -> str:
     )
 
 
+@lru_cache(maxsize=1)
+def locality_nav_index() -> dict:
+    rows = []
+    part_dir = ROOT / "stage5-input"
+    for path in sorted(part_dir.glob("production_locality_rows_5149_v1.part*.jsonl")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            rows.append({
+                "sido": row["sido"],
+                "jurisdiction": row["jurisdiction_full"],
+                "dong": row["dong_name"],
+                "slug": row["region_slug"],
+            })
+    by_jurisdiction = {}
+    by_slug = {}
+    for row in rows:
+        by_jurisdiction.setdefault(row["jurisdiction"], []).append(row)
+        by_slug[row["slug"]] = row
+    for items in by_jurisdiction.values():
+        items.sort(key=lambda r: (r["dong"], r["slug"]))
+    return {"by_jurisdiction": by_jurisdiction, "by_slug": by_slug}
+
+
+def nearby_localities(loc: dict, limit: int = 8) -> list[dict]:
+    data = locality_nav_index()
+    items = list(data["by_jurisdiction"].get(loc.get("jurisdiction", ""), []))
+    if not items:
+        return []
+    pos = next((i for i, row in enumerate(items) if row["slug"] == loc["slug"]), None)
+    if pos is None:
+        return [row for row in items if row["slug"] != loc["slug"]][:limit]
+    picked = []
+    distance = 1
+    while len(picked) < limit and (pos - distance >= 0 or pos + distance < len(items)):
+        if pos - distance >= 0:
+            picked.append(items[pos - distance])
+            if len(picked) >= limit:
+                break
+        if pos + distance < len(items):
+            picked.append(items[pos + distance])
+        distance += 1
+    return picked[:limit]
+
+
 def all_related(loc: dict, current_intent: str) -> str:
     svc, ex = gold_modules()
     links = []
@@ -1235,11 +1281,33 @@ def all_related(loc: dict, current_intent: str) -> str:
             continue
         label = f'{loc["dong"]} {CONV_DERIVED_SERVICE[intent]}'
         links.append(f'<a href="/{loc["slug"]}-{intent}.html">{esc(label)}</a>')
+
+    nearby = nearby_localities(loc)
+    nearby_links = "".join(
+        f'<a href="/{row["slug"]}-{current_intent}.html">{esc(row["dong"])} {esc(loc["service"])}</a>'
+        for row in nearby
+    )
     return (
-        '<section class="section related"><div class="wrap">'
-        '<p class="kicker">관련 과정</p>'
-        f'<h2>{esc(loc["dong"])}에서 다른 영어 목표도 비교해보세요</h2>'
-        '<div class="links">' + "".join(links) + '</div></div></section>'
+        '<section class="section related local-navigation"><div class="wrap">'
+        '<div class="local-nav-block">'
+        '<p class="kicker">같은 지역 · 다른 과정</p>'
+        f'<h2>{esc(loc["dong"])}에서 다른 영어 목표도 이어서 비교하세요</h2>'
+        '<div class="links related-course-links">' + "".join(links) + '</div></div>'
+        + (
+            '<div class="local-nav-block nearby-localities">'
+            f'<p class="kicker">{esc(loc.get("jurisdiction",""))} · 다른 동네</p>'
+            '<h3>같은 시·군·구의 다른 지역 페이지도 확인할 수 있습니다.</h3>'
+            '<div class="links">' + nearby_links + '</div></div>'
+            if nearby_links else ''
+        )
+        + '<div class="local-nav-block navigation-home">'
+          '<p class="kicker">다시 찾기</p>'
+          '<div class="local-nav-actions">'
+          '<a href="/courses.html">전체 과정 찾기 →</a>'
+          '<a href="/stations.html">911개 역으로 찾기 →</a>'
+          '<a href="/englishpt.html#region">전체지역·과정 선택 →</a>'
+          '</div></div>'
+        '</div></section>'
     )
 
 
