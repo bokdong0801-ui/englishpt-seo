@@ -943,14 +943,55 @@ def main() -> None:
         if "<footer" in raw and 'href="/privacy/"' not in raw.split("</footer>",1)[0].split("<footer",1)[-1]:
             raw = raw.replace(
                 "</footer>",
-                '<p class="foot-note"><a href="/privacy/">개인정보처리방침</a></p></footer>',
+                '<div class="wrap"><p class="foot-note"><a href="/privacy/">개인정보처리방침</a></p></div></footer>',
                 1,
             )
-        if 'class="privacy-detail"' in raw and 'href="/privacy/"' not in raw:
+        if 'class="privacy-detail"' in raw:
             raw = raw.replace(
                 "관계 법령상 보존 의무가 없는 한 지체 없이 파기합니다.</p>",
                 '관계 법령상 보존 의무가 없는 한 지체 없이 파기합니다. 자세한 내용은 <a href="/privacy/">개인정보처리방침</a>에서 확인할 수 있습니다.</p>',
             )
+        robots_m = re.search(r'<meta name="robots" content="([^"]+)">', raw, re.I)
+        robots_tokens = {
+            x.strip().lower()
+            for x in (robots_m.group(1).split(",") if robots_m else [])
+            if x.strip()
+        }
+        if "noindex" not in robots_tokens:
+            desc_m = re.search(r'<meta name="description" content="([^"]*)">', raw, re.I)
+            if desc_m:
+                current_desc = html.unescape(desc_m.group(1)).strip()
+                if len(current_desc) > 80:
+                    h1_m = re.search(r'<h1[^>]*>(.*?)</h1>', raw, re.S | re.I)
+                    subject = (
+                        html.unescape(re.sub(r'<[^>]+>', ' ', h1_m.group(1))).strip()
+                        if h1_m else ""
+                    )
+                    subject = re.sub(r'\s+', ' ', subject)
+                    new_desc = f"{subject} 안내. 현재 수준과 목표에 맞춰 필요한 학습 방향과 상담 기준을 확인하세요."
+                    if len(new_desc) > 80:
+                        new_desc = f"{subject} 안내. 현재 수준과 목표에 맞는 학습 방향을 확인하세요."
+                    raw = raw[:desc_m.start()] + f'<meta name="description" content="{html.escape(new_desc, quote=True)}">' + raw[desc_m.end():]
+                    raw = re.sub(
+                        r'<meta property="og:description" content="[^"]*">',
+                        f'<meta property="og:description" content="{html.escape(new_desc, quote=True)}">',
+                        raw,
+                        count=1,
+                        flags=re.I,
+                    )
+                    schema_m = re.search(r'<script type="application/ld\+json">(.*?)</script>', raw, re.S)
+                    if schema_m:
+                        try:
+                            data = json.loads(schema_m.group(1))
+                            graph = data.get("@graph") if isinstance(data, dict) else None
+                            if isinstance(graph, list):
+                                for node in graph:
+                                    if isinstance(node, dict) and node.get("@type") in ("WebPage","CollectionPage"):
+                                        node["description"] = new_desc
+                                rep = '<script type="application/ld+json">' + json.dumps(data,ensure_ascii=False,separators=(",",":")) + '</script>'
+                                raw = raw[:schema_m.start()] + rep + raw[schema_m.end():]
+                        except Exception:
+                            pass
         return raw
 
     for page in sorted(out.glob("*.html")):
