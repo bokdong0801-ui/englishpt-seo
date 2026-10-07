@@ -749,6 +749,91 @@ jobs:
           print(json.dumps(report,ensure_ascii=False,indent=2))
           PY
 
+      - name: QA real navigation clicks with Chromium
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          python3 -m http.server 8768 --directory stage9-v44-preview >/tmp/stage9-nav-http.log 2>&1 &
+          SERVER_PID=$!
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --remote-debugging-port=9225 --remote-allow-origins='*' --user-data-dir=/tmp/stage9-nav-chrome about:blank >/tmp/stage9-nav-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            curl -fsS http://127.0.0.1:9225/json/version >/dev/null 2>&1 && break
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:9225/json/version >/dev/null
+          python3 -m pip install --quiet pychrome
+          python3 - <<'PY'
+          import json,time
+          from pathlib import Path
+          import pychrome
+
+          browser=pychrome.Browser(url='http://127.0.0.1:9225')
+          tab=browser.new_tab(); tab.start(); tab.Page.enable(); tab.Runtime.enable()
+
+          def nav(path,wait=1.0):
+              tab.Page.navigate(url='http://127.0.0.1:8768/'+path)
+              time.sleep(wait)
+
+          def val(expr):
+              return tab.Runtime.evaluate(expression=expr,returnByValue=True)['result'].get('value')
+
+          # Home: Seoul -> Jongno -> Sajikdong -> TOEIC must open the generated locality page.
+          nav('englishpt.html',1.2)
+          count=val("document.querySelector('[data-region-sido]').options.length")
+          assert count and count>10,count
+          val("""(()=>{const e=document.querySelector('[data-region-sido]');e.value='서울특별시';e.dispatchEvent(new Event('change',{bubbles:true}));return true})()""")
+          val("""(()=>{const e=document.querySelector('[data-region-jurisdiction]');e.value='서울특별시 종로구';e.dispatchEvent(new Event('change',{bubbles:true}));return [...e.options].map(x=>x.value)})()""")
+          dong_values=val("[...document.querySelector('[data-region-dong]').options].map(x=>x.value)")
+          assert 'seoul-jongno-sajikdong' in dong_values,dong_values[:20]
+          val("""(()=>{document.querySelector('[data-region-dong]').value='seoul-jongno-sajikdong';document.querySelector('[data-region-intent]').value='toeic';document.querySelector('[data-region-go]').click();return true})()""")
+          time.sleep(0.8)
+          path=val("location.pathname"); h1=val("document.querySelector('h1')?.innerText||''")
+          assert path.endswith('/seoul-jongno-sajikdong-toeic.html'),(path,h1)
+          assert '사직동' in h1 and '토익' in h1,(path,h1)
+
+          # Hub route card must preset the regional course instead of opening only consultation.
+          nav('english-conversation.html',1.2)
+          val("""document.querySelector('[data-region-preset="worker-english-conv-academy"]').click()""")
+          time.sleep(0.3)
+          assert val("document.querySelector('[data-region-intent]').value")=='worker-english-conv-academy'
+          assert val("location.hash")=='#region'
+
+          # Dobongsan hub -> TOEIC child page must resolve.
+          nav('station-dobongsan.html')
+          val("""document.querySelector('a[href="/station-dobongsan-toeic.html"]').click()""")
+          time.sleep(0.7)
+          path=val("location.pathname"); h1=val("document.querySelector('h1')?.innerText||''")
+          assert path.endswith('/station-dobongsan-toeic.html'),(path,h1)
+          assert '도봉산역' in h1 and '토익' in h1,(path,h1)
+
+          # Preserved Songhyeondong page must connect into the nationwide generated graph.
+          nav('dalseo-songhyeondong-adult-conv.html',1.2)
+          assert val("!!document.querySelector('.preserved-region-navigation')")
+          val("""(()=>{const e=document.querySelector('[data-region-sido]');e.value='대구광역시';e.dispatchEvent(new Event('change',{bubbles:true}));return true})()""")
+          val("""(()=>{const e=document.querySelector('[data-region-jurisdiction]');e.value='대구광역시 달서구';e.dispatchEvent(new Event('change',{bubbles:true}));return true})()""")
+          dongs=val("[...document.querySelector('[data-region-dong]').options].map(x=>x.value)")
+          song=next((x for x in dongs if 'songhyeondong' in x),None)
+          assert song,(dongs[:40])
+          val(f"""(()=>{{document.querySelector('[data-region-dong]').value='{song}';document.querySelector('[data-region-intent]').value='toeic';document.querySelector('[data-region-go]').click();return true}})()""")
+          time.sleep(0.8)
+          path=val("location.pathname"); h1=val("document.querySelector('h1')?.innerText||''")
+          assert path.endswith('-songhyeondong-toeic.html'),(path,h1)
+          assert '송현동' in h1 and '토익' in h1,(path,h1)
+
+          report={
+            'status':'PASS_REAL_NAVIGATION_CLICK_QA',
+            'home_to_sajik_toeic':True,
+            'worker_course_to_region_finder':True,
+            'dobongsan_to_toeic':True,
+            'preserved_songhyeondong_to_generated_region':True,
+          }
+          Path('STAGE9_REAL_NAVIGATION_CLICK_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          tab.stop();browser.close_tab(tab)
+          PY
+
       - name: Install Netlify CLI
         run: npm install -g netlify-cli@latest
 
