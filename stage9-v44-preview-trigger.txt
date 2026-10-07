@@ -24,3 +24,4 @@ Preview Korean visual before-after change cards.
 Preview final 140391 station pages and OG hub images after final preflight.
 Rerun final station and OG preview with resilient Chromium.
 Final 140391 preview with OG metadata, stations, and locality diversity.
+2026-10-07 FINAL FREEZE preview after selective indexing and operational hardening
