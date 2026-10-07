@@ -32,3 +32,4 @@ Run image-enabled Stage 9 preflight after OPIc and TOEFL academy similarity fix.
 2026-10-07 final-copy-preflight-after-academy-selection-diversity
 2026-10-07 final copy + confidence FAQ + 23 hero + academy FAQ preflight
 2026-10-07 final copy preflight with commit status
+2026-10-07 tracked final preflight with pending status
