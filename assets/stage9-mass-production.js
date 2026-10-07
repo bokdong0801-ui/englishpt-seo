@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded",()=>{
         data.set("pageUrl",location.href);
         data.set("submittedAt",new Date().toISOString());
         data.set("consent","agreed");
-        const res=await fetch("/",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(data).toString()});
+        const res=await fetch(location.pathname,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(data).toString()});
         if(!res.ok) throw new Error("Netlify Forms submission failed: "+res.status);
         if(status) status.textContent="신청이 접수됐습니다. 남겨주신 연락처로 순차적으로 연락드리겠습니다.";
         form.reset();
