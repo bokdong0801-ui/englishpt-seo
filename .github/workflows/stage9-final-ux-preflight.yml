@@ -49,6 +49,7 @@ jobs:
           python -m py_compile scripts/stage9-clean-mass-renderer.py
           python -m py_compile scripts/stage9-clean-similarity-qa.py
           python -m py_compile scripts/build-locality-index.py
+          node --check assets/site.js
           python -m py_compile scripts/generate-production-stage3-10x13.py
           python -m py_compile scripts/generate-production-stage5-shard.py
 
@@ -164,6 +165,15 @@ jobs:
           for target in set(dob_links):
               assert (Path('stage9-release')/target).exists(), target
           assert 'station-hub-page' in dob_hub
+
+          preserved_song=Path('stage9-release/dalseo-songhyeondong-adult-conv.html')
+          assert preserved_song.exists()
+          preserved_raw=preserved_song.read_text(encoding='utf-8')
+          assert 'preserved-region-navigation' in preserved_raw
+          assert 'data-region-finder' in preserved_raw
+          assert 'dalseo-songhyeondong-adult-tutor.html' in preserved_raw
+          assert '/englishpt.html#region' in preserved_raw
+          assert '/stations.html' in preserved_raw
 
           sajik=next(iter(Path('stage9-release').glob('seoul-jongno-sajikdong-toeic.html')),None)
           assert sajik is not None
