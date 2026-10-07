@@ -1,1 +1,2 @@
 2026-10-07 run FINAL FREEZE fast preview
+2026-10-07 rerun fast preview with Chromium responsive QA
