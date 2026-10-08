@@ -26,26 +26,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Resolve valid Netlify auth
-        shell: bash
-        run: |
-          set -euo pipefail
-          SELECTED_TOKEN=""
-          for VAR_NAME in NETLIFY_AUTH_TOKEN_PRIMARY NETLIFY_AUTH_TOKEN_FALLBACK; do
-            TOKEN="${!VAR_NAME:-}"
-            test -n "$TOKEN" || continue
-            CODE="$(curl -sS -o /tmp/netlify-auth-check.json -w '%{http_code}' \
-              -H "Authorization: Bearer $TOKEN" \
-              "https://api.netlify.com/api/v1/user" || true)"
-            if [ "$CODE" = "200" ]; then
-              SELECTED_TOKEN="$TOKEN"
-              echo "::add-mask::$TOKEN"
-              break
-            fi
-          done
-          test -n "$SELECTED_TOKEN" || { echo "No valid Netlify auth token is configured"; exit 1; }
-          printf 'NETLIFY_AUTH_TOKEN=%s\n' "$SELECTED_TOKEN" >> "$GITHUB_ENV"
-
       - name: Download FINAL FREEZE representative 23 pages
         uses: actions/download-artifact@v4
         with:
@@ -216,6 +196,26 @@ jobs:
             final-freeze-preview.zip
             FINAL_FREEZE_CHROMIUM_QA.json
           retention-days: 7
+
+      - name: Resolve valid Netlify auth
+        shell: bash
+        run: |
+          set -euo pipefail
+          SELECTED_TOKEN=""
+          for VAR_NAME in NETLIFY_AUTH_TOKEN_PRIMARY NETLIFY_AUTH_TOKEN_FALLBACK; do
+            TOKEN="${!VAR_NAME:-}"
+            test -n "$TOKEN" || continue
+            CODE="$(curl -sS -o /tmp/netlify-auth-check.json -w '%{http_code}' \
+              -H "Authorization: Bearer $TOKEN" \
+              "https://api.netlify.com/api/v1/user" || true)"
+            if [ "$CODE" = "200" ]; then
+              SELECTED_TOKEN="$TOKEN"
+              echo "::add-mask::$TOKEN"
+              break
+            fi
+          done
+          test -n "$SELECTED_TOKEN" || { echo "No valid Netlify auth token is configured"; exit 1; }
+          printf 'NETLIFY_AUTH_TOKEN=%s\n' "$SELECTED_TOKEN" >> "$GITHUB_ENV"
 
       - name: Ensure isolated review site
         run: |
