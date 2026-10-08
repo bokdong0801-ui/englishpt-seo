@@ -16,7 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_AUTH_TOKEN_PRIMARY: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_AUTH_TOKEN_FALLBACK: ${{ secrets.NETLIFY_TOKEN }}
       REVIEW_SITE_NAME: englishpt-final-freeze-review
     steps:
       - uses: actions/checkout@v4
@@ -25,15 +26,32 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Verify Netlify auth
-        run: test -n "$NETLIFY_AUTH_TOKEN"
+      - name: Resolve valid Netlify auth
+        shell: bash
+        run: |
+          set -euo pipefail
+          SELECTED_TOKEN=""
+          for VAR_NAME in NETLIFY_AUTH_TOKEN_PRIMARY NETLIFY_AUTH_TOKEN_FALLBACK; do
+            TOKEN="${!VAR_NAME:-}"
+            test -n "$TOKEN" || continue
+            CODE="$(curl -sS -o /tmp/netlify-auth-check.json -w '%{http_code}' \
+              -H "Authorization: Bearer $TOKEN" \
+              "https://api.netlify.com/api/v1/user" || true)"
+            if [ "$CODE" = "200" ]; then
+              SELECTED_TOKEN="$TOKEN"
+              echo "::add-mask::$TOKEN"
+              break
+            fi
+          done
+          test -n "$SELECTED_TOKEN" || { echo "No valid Netlify auth token is configured"; exit 1; }
+          printf 'NETLIFY_AUTH_TOKEN=%s\n' "$SELECTED_TOKEN" >> "$GITHUB_ENV"
 
       - name: Download FINAL FREEZE representative 23 pages
         uses: actions/download-artifact@v4
         with:
           name: stage9-final-ux-samples
           path: final-artifact
-          run-id: 37577998837
+          run-id: 37749558450
           github-token: ${{ github.token }}
 
       - name: Build lightweight review package
@@ -189,6 +207,15 @@ jobs:
           Path('FINAL_FREEZE_CHROMIUM_QA.json').write_text(json.dumps({'status':'PASS_FINAL_FREEZE_CHROMIUM_QA','checks':len(rows),'pages':len(pages),'rows':rows},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           print('PASS_FINAL_FREEZE_CHROMIUM_QA',len(rows),'checks')
           PY
+
+      - name: Upload validated preview package
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-final-freeze-preview-package
+          path: |
+            final-freeze-preview.zip
+            FINAL_FREEZE_CHROMIUM_QA.json
+          retention-days: 7
 
       - name: Ensure isolated review site
         run: |
