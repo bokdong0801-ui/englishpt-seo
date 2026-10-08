@@ -162,14 +162,19 @@ jobs:
             tab.call_method('Emulation.setDeviceMetricsOverride',width=w,height=h,deviceScaleFactor=1,mobile=mobile,screenWidth=w,screenHeight=h,dontSetVisibleSize=False)
             for name in pages:
               tab.Page.navigate(url='http://127.0.0.1:8777/'+name)
-              time.sleep(0.25)
-              m=tab.Runtime.evaluate(expression=expr,returnByValue=True)['result']['value']
+              core_region_page=name in {'englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html'}
+              deadline=time.time()+4.0
+              while True:
+                time.sleep(0.1)
+                m=tab.Runtime.evaluate(expression=expr,returnByValue=True)['result']['value']
+                if not core_region_page or m['sidoOptions'] > 2 or time.time() >= deadline:
+                  break
               assert m['width']==w and m['height']==h,(mode,name,m)
               assert m['scrollWidth']<=w,(mode,name,'horizontal_overflow',m)
               assert m['hero'],(mode,name,'hero_missing')
               if name=='stations.html':
                 assert m['modal'] and m['form'],(mode,name,'consultation_missing')
-              if name in {'englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html'}:
+              if core_region_page:
                 assert m['regionFinder'],(mode,name,'region_finder_missing')
                 assert m['sidoOptions'] > 2,(mode,name,'region_data_not_loaded',m)
               if mode=='mobile' and m['simpleHero']:
