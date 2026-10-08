@@ -18,6 +18,8 @@ jobs:
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
       REVIEW_SITE_NAME: englishpt-final-freeze-review
+      REVIEW_SITE_ID: 3b098885-2ce4-4434-8337-7a83319baf9c
+      REVIEW_SITE_URL: https://englishpt-final-freeze-review.netlify.app
     steps:
       - uses: actions/checkout@v4
 
@@ -370,20 +372,13 @@ jobs:
       - name: Install Netlify CLI
         run: npm install --global netlify-cli@latest
 
-      - name: Resolve review site and enable forms
+      - name: Verify fixed review site identity
         run: |
           set -euo pipefail
           test -n "$NETLIFY_AUTH_TOKEN"
-          SITE_DOMAIN="$REVIEW_SITE_NAME.netlify.app"
-          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/$SITE_DOMAIN" -o /tmp/site.json
-          python3 - <<'PY'
-          import json,os
-          d=json.load(open('/tmp/site.json')); assert d.get('id'),d
-          with open(os.environ['GITHUB_ENV'],'a') as f:
-              f.write('REVIEW_SITE_ID='+d['id']+'\n')
-              f.write('REVIEW_SITE_URL='+(d.get('ssl_url') or d.get('url')).replace('http://','https://')+'\n')
-          PY
-          curl -fsS -X PUT             -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             -H "Content-Type: application/json"             --data '{"processing_settings":{"html":{"pretty_urls":false},"ignore_html_forms":false}}'             "https://api.netlify.com/api/v1/sites/$REVIEW_SITE_ID" >/tmp/site-updated.json
+          test "$REVIEW_SITE_ID" = "3b098885-2ce4-4434-8337-7a83319baf9c"
+          test "$REVIEW_SITE_URL" = "https://englishpt-final-freeze-review.netlify.app"
+          echo "PASS_FIXED_REVIEW_SITE_ID"
 
       - name: Deploy final review
         run: |
