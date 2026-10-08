@@ -17,9 +17,7 @@ jobs:
     timeout-minutes: 40
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
-      REVIEW_SITE_NAME: englishpt-final-freeze-review
-      REVIEW_SITE_ID: 3b098885-2ce4-4434-8337-7a83319baf9c
-      REVIEW_SITE_URL: https://englishpt-final-freeze-review.netlify.app
+      REVIEW_SITE_NAME: englishpt-final-ia-review-bokdong
     steps:
       - uses: actions/checkout@v4
 
@@ -372,13 +370,34 @@ jobs:
       - name: Install Netlify CLI
         run: npm install --global netlify-cli@latest
 
-      - name: Verify fixed review site identity
+      - name: Resolve owned review site
         run: |
           set -euo pipefail
           test -n "$NETLIFY_AUTH_TOKEN"
-          test "$REVIEW_SITE_ID" = "3b098885-2ce4-4434-8337-7a83319baf9c"
-          test "$REVIEW_SITE_URL" = "https://englishpt-final-freeze-review.netlify.app"
-          echo "PASS_FIXED_REVIEW_SITE_ID"
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites?per_page=100" -o /tmp/review-sites.json
+          python3 - <<'PY'
+          import json,os,urllib.request
+          token=os.environ['NETLIFY_AUTH_TOKEN']
+          name=os.environ['REVIEW_SITE_NAME']
+          sites=json.load(open('/tmp/review-sites.json',encoding='utf-8'))
+          hit=next((s for s in sites if s.get('name')==name),None)
+          if hit is None:
+              body=json.dumps({'name':name,'processing_settings':{'html':{'pretty_urls':False},'ignore_html_forms':False}}).encode()
+              req=urllib.request.Request(
+                  'https://api.netlify.com/api/v1/sites',
+                  data=body,
+                  headers={'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+                  method='POST',
+              )
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  hit=json.loads(r.read().decode())
+          assert hit.get('id'),hit
+          url=(hit.get('ssl_url') or hit.get('url')).replace('http://','https://')
+          with open(os.environ['GITHUB_ENV'],'a') as env:
+              env.write('REVIEW_SITE_ID='+hit['id']+'\n')
+              env.write('REVIEW_SITE_URL='+url+'\n')
+          print('PASS_REVIEW_SITE_RESOLVED',hit['id'],url)
+          PY
 
       - name: Deploy final review
         run: |
