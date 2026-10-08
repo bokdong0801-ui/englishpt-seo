@@ -1,9 +1,1 @@
-2026-10-07 run FINAL FREEZE fast preview
-2026-10-07 rerun fast preview with Chromium responsive QA
-2026-10-07 rerun after Netlify Forms + favicon finalization
-2026-10-07 rerun Netlify Forms email notification preview after QA contract update
-2026-10-07 rerun review notification with site-wide hook
-2026-10-07 rerun form POST current-page fix
-2026-10-07 final favicon + Netlify Forms verification
-2026-10-07 rerun review with Netlify CLI forms processing
-2026-10-07 rerun with Netlify form detection enabled
+2026-10-08 latest HEAD: Preview + 140,391 Full Preflight verification after final IA/navigation fixes
