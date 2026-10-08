@@ -1,1 +1,1 @@
-2026-10-08 rerun Preview with validated auth fallback and latest Full Preflight samples
+2026-10-08 build latest validated Preview artifact before Netlify auth gate
