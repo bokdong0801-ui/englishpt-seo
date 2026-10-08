@@ -8,3 +8,4 @@
 2026-10-06 inspect-operational-credit-block-final
 2026-10-06 final-credit-block-diagnostic-before-production
 2026-10-07 FINAL FREEZE production permission recheck
+2026-10-08 test legacy NETLIFY_TOKEN directly
