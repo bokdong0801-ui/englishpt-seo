@@ -1,0 +1,61 @@
+name: Netlify Final IA Review Site Diagnostic
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'netlify-final-ia-review-trigger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      REVIEW_SITE_NAME: englishpt-final-ia-review-bokdong
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify token
+        run: test -n "$NETLIFY_AUTH_TOKEN"
+      - name: Find or create owned review site
+        run: |
+          set -euo pipefail
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/sites?per_page=100" -o /tmp/sites.json
+          python3 - <<'PY'
+          import json,os,urllib.request
+          name=os.environ['REVIEW_SITE_NAME']; token=os.environ['NETLIFY_AUTH_TOKEN']
+          sites=json.load(open('/tmp/sites.json',encoding='utf-8'))
+          hit=next((x for x in sites if x.get('name')==name),None)
+          if hit is None:
+              body=json.dumps({'name':name,'processing_settings':{'html':{'pretty_urls':False},'ignore_html_forms':False}}).encode()
+              req=urllib.request.Request('https://api.netlify.com/api/v1/sites',data=body,headers={'Authorization':'Bearer '+token,'Content-Type':'application/json'},method='POST')
+              with urllib.request.urlopen(req,timeout=30) as r: hit=json.loads(r.read().decode())
+          assert hit.get('id'),hit
+          url=(hit.get('ssl_url') or hit.get('url')).replace('http://','https://')
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('REVIEW_SITE_ID='+hit['id']+'\n')
+              f.write('REVIEW_SITE_URL='+url+'\n')
+          print('PASS_REVIEW_SITE_ACCESS',hit['id'],url)
+          PY
+      - name: Install Netlify CLI
+        run: npm install --global netlify-cli@latest
+      - name: Tiny deploy
+        run: |
+          mkdir -p tiny && printf '<!doctype html><title>ENGLISH PT FINAL IA REVIEW</title><p>ok</p>' > tiny/index.html
+          netlify deploy --dir=tiny --site="$REVIEW_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" --message="auth diagnostic" --json | tee /tmp/deploy.json
+          python3 - <<'PY'
+          import json,os,urllib.request
+          d=json.load(open('/tmp/deploy.json',encoding='utf-8'))
+          url=(d.get('deploy_url') or d.get('url')).replace('http://','https://')
+          with urllib.request.urlopen(url+'/',timeout=30) as r:
+              assert r.status==200,r.status
+          print('PASS_REVIEW_TINY_DEPLOY',d.get('deploy_id') or d.get('id'),url)
+          PY
