@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+<title id="title">TOEIC 1:1 맞춤 토익 대표이미지</title>
+<desc id="desc">LC, RC, 실전문제, 시간관리 핵심을 한눈에 보여주는 ENGLISH PT 토익 대표이미지</desc>
+<rect width="1200" height="720" rx="36" fill="#EEF5FC"/>
+<circle cx="1080" cy="88" r="250" fill="#D8E8F8"/>
+<circle cx="1160" cy="620" r="260" fill="#C7DDF3" opacity=".72"/>
+<rect x="0" y="0" width="1200" height="18" rx="9" fill="#123E70"/>
+<text x="78" y="88" font-family="Arial,'Noto Sans KR',sans-serif" font-size="24" font-weight="800" fill="#123E70" letter-spacing="1.8">ENGLISH PT · 1:1 EXAM</text>
+<text x="74" y="272" font-family="Arial,'Noto Sans KR',sans-serif" font-size="132" font-weight="900" fill="#0A2F59">TOEIC</text>
+<text x="80" y="334" font-family="'Noto Sans KR',Arial,sans-serif" font-size="34" font-weight="800" fill="#294F78">1:1 맞춤 토익</text>
+<g font-family="'Noto Sans KR',Arial,sans-serif" font-size="25" font-weight="800" fill="#123E70">
+<rect x="80" y="398" width="118" height="64" rx="32" fill="#FFFFFF"/><text x="119" y="439">LC</text>
+<rect x="214" y="398" width="118" height="64" rx="32" fill="#FFFFFF"/><text x="253" y="439">RC</text>
+<rect x="348" y="398" width="170" height="64" rx="32" fill="#FFFFFF"/><text x="382" y="439">실전문제</text>
+<rect x="534" y="398" width="170" height="64" rx="32" fill="#FFFFFF"/><text x="568" y="439">시간관리</text>
+</g>
+<text x="82" y="550" font-family="'Noto Sans KR',Arial,sans-serif" font-size="27" font-weight="700" fill="#567391">오답 원인 → 파트별 우선순위 → 실전 시간 배분</text>
+<g opacity=".22" stroke="#123E70" stroke-width="7" stroke-linecap="round">
+<path d="M868 238h192"/><path d="M868 292h146"/><path d="M868 346h210"/><path d="M868 400h126"/>
+</g>
+<circle cx="1084" cy="238" r="14" fill="#123E70" opacity=".7"/>
+<circle cx="1038" cy="292" r="14" fill="#123E70" opacity=".46"/>
+<circle cx="1102" cy="346" r="14" fill="#123E70" opacity=".58"/>
+<circle cx="1018" cy="400" r="14" fill="#123E70" opacity=".38"/>
+</svg>

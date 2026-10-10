@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<rect width="1200" height="630" rx="32" fill="#F8F5EE"/>
+<circle cx="1035" cy="105" r="210" fill="#E6F0F2"/>
+<circle cx="1130" cy="570" r="180" fill="#E6F0F2" opacity=".62"/>
+<rect x="56" y="48" width="1088" height="534" rx="30" fill="#FFFDF8" stroke="#355F69" stroke-opacity=".15"/>
+<text x="94" y="112" font-family="'Noto Sans KR','Noto Sans CJK KR',Arial,sans-serif" font-size="22" font-weight="800" fill="#355F69" letter-spacing="1.4">ENGLISH PT · EXAM</text>
+<rect x="92" y="145" width="116" height="38" rx="19" fill="#E6F0F2"/>
+<text x="116" y="171" font-family="'Noto Sans KR','Noto Sans CJK KR',Arial,sans-serif" font-size="15" font-weight="800" fill="#355F69">시험 상담</text>
+<text x="91" y="286" font-family="'Noto Sans KR','Noto Sans CJK KR',Arial,sans-serif" font-size="74" font-weight="900" fill="#17231E">시험영어</text>
+<text x="94" y="354" font-family="'Noto Sans KR','Noto Sans CJK KR',Arial,sans-serif" font-size="30" font-weight="750" fill="#52635C">TOEIC · OPIc · IELTS · TOEFL · Duolingo</text>
+<text x="94" y="486" font-family="'Noto Sans KR','Noto Sans CJK KR',Arial,sans-serif" font-size="24" font-weight="650" fill="#6A746F">목표 시험에 맞춰 필요한 준비부터 시작합니다</text>
+<g transform="translate(865,215)">
+  <rect width="210" height="180" rx="26" fill="#E6F0F2" stroke="#355F69" stroke-opacity=".18"/>
+  <circle cx="60" cy="60" r="26" fill="#355F69" opacity=".18"/>
+  <circle cx="150" cy="60" r="26" fill="#355F69" opacity=".36"/>
+  <path d="M88 60h34" stroke="#355F69" stroke-width="8" stroke-linecap="round"/>
+  <path d="M114 49l12 11-12 11" fill="none" stroke="#355F69" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="42" y="118" width="126" height="12" rx="6" fill="#355F69" opacity=".22"/>
+  <rect x="42" y="143" width="86" height="12" rx="6" fill="#355F69" opacity=".42"/>
+</g>
+</svg>
