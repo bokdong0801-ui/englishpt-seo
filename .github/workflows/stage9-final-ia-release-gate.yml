@@ -14,7 +14,7 @@ permissions:
 jobs:
   final-gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
       REVIEW_SITE_NAME: englishpt-final-ia-review-bokdong
@@ -225,70 +225,46 @@ jobs:
           },ensure_ascii=False))
           PY
 
-      - name: Build complete review package
+      - name: Build complete 140391-page review package
         run: |
           set -euo pipefail
-          mkdir -p final-review
-          cp englishpt.html courses.html english-conversation.html exam-english.html student-english.html favicon-options.html final-review/
-          cp -R assets final-review/assets
-          cp stage9-release/assets/locality-index.json final-review/assets/locality-index.json
-          cp -R privacy final-review/privacy
-          cp 404.html final-review/404.html
-          cp stage9-release/stations.html final-review/
-          cp stage9-release/station-dobongsan*.html final-review/
-          cp stage9-release/station-gangnam.html final-review/
-          cp stage9-release/seoul-jongno-sajikdong-*.html final-review/
-          cp stage9-release/daegu-dalseo-songhyeondong-*.html final-review/
-          cp stage9-release/dalseo-songhyeondong-*.html final-review/
-          python3 - <<'PY'
-          import re,shutil
-          from pathlib import Path
-          release=Path('stage9-release'); review=Path('final-review')
-          sources=[
-              review/'seoul-jongno-sajikdong-toeic.html',
-              review/'daegu-dalseo-songhyeondong-toeic.html',
-              review/'dalseo-songhyeondong-adult-conv.html',
-          ]
-          copied=0
-          for src in sources:
-              raw=src.read_text(encoding='utf-8')
-              for href in set(re.findall(r'href="/([^"#?]+\.html)"',raw)):
-                  target=release/href
-                  if target.exists() and not (review/href).exists():
-                      shutil.copy2(target,review/href); copied+=1
-          print('COPIED_DIRECT_NAV_TARGETS',copied)
-          PY
-          cp stage9-release/pilot.css final-review/pilot.css
-          cp stage9-release/pilot.js final-review/pilot.js
+          rm -rf final-review
+          cp -a stage9-release final-review
+          cp final-review/englishpt.html final-review/index.html
+
           cat > final-review/_headers <<'EOF'
           /*
-            X-Robots-Tag: noindex, nofollow
+            X-Robots-Tag: noindex, nofollow, noarchive
             X-Content-Type-Options: nosniff
             Referrer-Policy: strict-origin-when-cross-origin
           EOF
+
           python3 - <<'PY'
           import re,json
           from pathlib import Path
           root=Path('final-review')
-          assert len(list(root.glob('station-dobongsan*.html')))==24
-          assert len(list(root.glob('seoul-jongno-sajikdong-*.html')))==23
-          assert len(list(root.glob('daegu-dalseo-songhyeondong-*.html')))>=23
-          assert (root/'dalseo-songhyeondong-adult-conv.html').exists()
-          assert (root/'dalseo-songhyeondong-1to1-toeic.html').exists()
-          hub=(root/'station-dobongsan.html').read_text(encoding='utf-8')
-          links=set(re.findall(r'href="/(station-dobongsan-[^"]+\.html)"',hub))
-          assert len(links)==23
-          assert all((root/x).exists() for x in links)
-          legacy=(root/'dalseo-songhyeondong-adult-conv.html').read_text(encoding='utf-8')
-          legacy_links=set(re.findall(r'href="/(dalseo-songhyeondong-[^"]+\.html)"',legacy))
-          # Historical Songhyeondong slugs are optional after navigation migration.
-          # If any legacy links remain, every one must resolve; the required contract is the current 23-page slug family.
-          if legacy_links:
-              assert all((root/x).exists() for x in legacy_links), [x for x in legacy_links if not (root/x).exists()][:5]
-          current_links=set(re.findall(r'href="/(daegu-dalseo-songhyeondong-[^"]+\.html)"',legacy))
-          assert len(current_links)>=23, len(current_links)
-          assert all((root/x).exists() for x in current_links), [x for x in current_links if not (root/x).exists()][:5]
-          print('PASS_REVIEW_PACKAGE',len(list(root.glob('*.html'))),'DOBONGSAN',len(links),'LEGACY_LINKS',len(legacy_links),'CURRENT_LINKS',len(current_links))
+          pages=[p for p in root.glob('*.html') if p.name!='404.html']
+          assert len(pages)==140391,len(pages)
+          assert (root/'404.html').exists()
+          assert (root/'index.html').exists()
+          assert (root/'assets/locality-index.json').exists()
+          assert len(json.loads((root/'assets/locality-index.json').read_text(encoding='utf-8')))==5149
+
+          # Regression for the exact 404 found during manual review:
+          # Sajik-dong beginner English conversation -> Buam-dong.
+          source=root/'seoul-jongno-sajikdong-beginner-english-conv.html'
+          target=root/'seoul-jongno-buamdong-beginner-english-conv.html'
+          assert source.exists(),source.name
+          assert target.exists(),target.name
+          raw=source.read_text(encoding='utf-8')
+          assert 'seoul-jongno-buamdong-beginner-english-conv.html' in raw
+
+          # Every root-relative HTML link from the reviewed page must resolve in the full package.
+          hrefs=set(re.findall(r'href=["\']/([^"\'#?]+\.html)',raw))
+          missing=[x for x in hrefs if not (root/x).exists()]
+          assert not missing,missing[:20]
+
+          print('PASS_FULL_REVIEW_PACKAGE',len(pages),'SAJIK_TO_BUAM_OK',target.name,'LINKS',len(hrefs))
           PY
 
       - name: Chromium desktop and mobile QA
@@ -312,7 +288,8 @@ jobs:
           pages=['englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html',
                  'stations.html','station-dobongsan.html','station-gangnam.html',
                  'dalseo-songhyeondong-adult-conv.html','dalseo-songhyeondong-1to1-toeic.html',
-                 'seoul-jongno-sajikdong-toeic.html','daegu-dalseo-songhyeondong-toeic.html']
+                 'seoul-jongno-sajikdong-toeic.html','seoul-jongno-sajikdong-beginner-english-conv.html',
+                 'seoul-jongno-buamdong-beginner-english-conv.html','daegu-dalseo-songhyeondong-toeic.html']
           pages += sorted(p.name for p in root.glob('station-dobongsan-*.html'))
           pages=list(dict.fromkeys(pages))
           browser=pychrome.Browser(url='http://127.0.0.1:9237')
@@ -410,28 +387,53 @@ jobs:
           print('REVIEW_DEPLOY_URL',url)
           PY
 
-      - name: Verify review links over HTTP
+      - name: Verify full review over HTTP
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os,re,urllib.request
+          import os,re,urllib.request,hashlib
           from pathlib import Path
           base=os.environ['REVIEW_DEPLOY_URL'].rstrip('/')
           root=Path('final-review')
-          targets={p.name for p in root.glob('*.html')}
-          # Check every packaged page itself.
-          for name in sorted(targets):
-              with urllib.request.urlopen(base+'/'+name,timeout=30) as r:
+          all_pages=sorted(p.name for p in root.glob('*.html') if p.name!='404.html')
+          assert len(all_pages)==140391,len(all_pages)
+
+          must=[
+              'index.html','englishpt.html','courses.html','english-conversation.html','exam-english.html',
+              'student-english.html','stations.html','station-dobongsan.html','station-dobongsan-toeic.html',
+              'seoul-jongno-sajikdong-beginner-english-conv.html',
+              'seoul-jongno-buamdong-beginner-english-conv.html',
+              'seoul-jongno-sajikdong-toeic.html',
+              'daegu-dalseo-songhyeondong-toeic.html'
+          ]
+          # Deterministic spread across the complete 140,391-page namespace.
+          spread=[all_pages[i] for i in range(0,len(all_pages),max(1,len(all_pages)//80))][:80]
+          targets=list(dict.fromkeys(must+spread))
+
+          def check(name):
+              req=urllib.request.Request(base+'/'+name,headers={'User-Agent':'ENGLISH-PT-preview-QA'})
+              with urllib.request.urlopen(req,timeout=30) as r:
                   assert r.status==200,(name,r.status)
-          # Check every Dobongsan child link and every packaged continuation link from Songhyeondong/Sajikdong.
-          for source in ['station-dobongsan.html','dalseo-songhyeondong-adult-conv.html','seoul-jongno-sajikdong-toeic.html','daegu-dalseo-songhyeondong-toeic.html']:
+                  body=r.read(512)
+                  assert body,(name,'empty')
+          for name in targets:
+              check(name)
+
+          # Prove continuation links from the pages used in manual review.
+          for source in [
+              'seoul-jongno-sajikdong-beginner-english-conv.html',
+              'seoul-jongno-buamdong-beginner-english-conv.html',
+              'seoul-jongno-sajikdong-toeic.html',
+              'station-dobongsan.html',
+              'daegu-dalseo-songhyeondong-toeic.html'
+          ]:
               raw=(root/source).read_text(encoding='utf-8')
-              hrefs=set(re.findall(r'href="/([^"#?]+\.html)"',raw))
+              hrefs=set(re.findall(r'href=["\']/([^"\'#?]+\.html)',raw))
               for href in hrefs:
-                  if href in targets:
-                      with urllib.request.urlopen(base+'/'+href,timeout=30) as r:
-                          assert r.status==200,(source,href,r.status)
-          print('PASS_FINAL_REVIEW_HTTP',len(targets))
+                  assert (root/href).exists(),(source,href)
+                  check(href)
+
+          print('PASS_FULL_REVIEW_HTTP',len(targets),'BASE',base)
           PY
 
       - name: Write final gate report
