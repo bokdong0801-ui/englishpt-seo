@@ -243,7 +243,7 @@ jobs:
           import re,json
           from pathlib import Path
           root=Path('final-review')
-          pages=[p for p in root.glob('*.html') if p.name!='404.html']
+          pages=[p for p in root.glob('*.html') if p.name not in {'404.html','index.html'}]
           assert len(pages)==140391,len(pages)
           assert (root/'404.html').exists()
           assert (root/'index.html').exists()
@@ -308,7 +308,7 @@ jobs:
                   assert m['hero'] or name.startswith('dalseo-songhyeondong-'),(mode,name,'hero')
                   if name in ('englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html'):
                       assert m['finder'],(mode,name,'finder')
-                  if 'sajikdong-' in name or 'daegu-dalseo-songhyeondong-' in name or name.startswith('dalseo-songhyeondong-'):
+                  if 'sajikdong-' in name or 'buamdong-' in name or 'daegu-dalseo-songhyeondong-' in name or name.startswith('dalseo-songhyeondong-'):
                       assert m['localnav'],(mode,name,'localnav')
                   checks+=1
 
@@ -395,7 +395,7 @@ jobs:
           from pathlib import Path
           base=os.environ['REVIEW_DEPLOY_URL'].rstrip('/')
           root=Path('final-review')
-          all_pages=sorted(p.name for p in root.glob('*.html') if p.name!='404.html')
+          all_pages=sorted(p.name for p in root.glob('*.html') if p.name not in {'404.html','index.html'})
           assert len(all_pages)==140391,len(all_pages)
 
           must=[
