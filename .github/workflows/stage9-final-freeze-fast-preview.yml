@@ -8,7 +8,7 @@ on:
       - 'stage9-final-freeze-preview-trigger.txt'
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 jobs:
@@ -196,6 +196,66 @@ jobs:
             final-freeze-preview.zip
             FINAL_FREEZE_CHROMIUM_QA.json
           retention-days: 7
+
+      - name: Publish browser-openable preview branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          export PREVIEW_BASE="https://raw.githack.com/${GITHUB_REPOSITORY}/preview-live"
+
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+
+          root=Path('final-freeze-preview')
+          base=os.environ['PREVIEW_BASE']
+
+          for p in root.rglob('*.html'):
+              s=p.read_text(encoding='utf-8')
+              robots='<meta name="robots" content="noindex,nofollow,noarchive">'
+              if re.search(r'<meta\s+name=["\']robots["\'][^>]*>', s, flags=re.I):
+                  s=re.sub(r'<meta\s+name=["\']robots["\'][^>]*>', robots, s, count=1, flags=re.I)
+              else:
+                  s=s.replace('<head>', '<head>'+robots, 1)
+              for attr in ('href','src','action'):
+                  s=s.replace(f'{attr}="/', f'{attr}="{base}/')
+                  s=s.replace(f"{attr}='/", f"{attr}='{base}/")
+              p.write_text(s,encoding='utf-8')
+
+          js=root/'assets/site.js'
+          if js.exists():
+              s=js.read_text(encoding='utf-8')
+              s=s.replace("'/assets/", f"'{base}/assets/")
+              s=s.replace('"/assets/', f'"{base}/assets/')
+              js.write_text(s,encoding='utf-8')
+
+          idx=root/'assets/locality-index.json'
+          if idx.exists():
+              rows=json.loads(idx.read_text(encoding='utf-8'))
+              for row in rows:
+                  for key in ('url','href','path'):
+                      v=row.get(key)
+                      if isinstance(v,str) and v.startswith('/'):
+                          row[key]=base+v
+              idx.write_text(json.dumps(rows,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
+
+          (root/'index.html').write_text((root/'englishpt.html').read_text(encoding='utf-8'),encoding='utf-8')
+          print('PREVIEW_BRANCH_PACKAGE_READY', base)
+          PY
+
+          TMP_DIR="$(mktemp -d)"
+          cp -R final-freeze-preview/. "$TMP_DIR/"
+          cd "$TMP_DIR"
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -b preview-live
+          git add -A
+          git commit -q -m "Publish ENGLISH PT final-freeze browser preview"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin HEAD:preview-live
+          echo "PREVIEW_URL=https://raw.githack.com/${GITHUB_REPOSITORY}/preview-live/index.html"
 
       - name: Resolve valid Netlify auth
         shell: bash
