@@ -254,6 +254,7 @@ def _add_schema_image(raw: str, image_url: str) -> tuple[str, bool]:
                 types = typ if isinstance(typ, list) else [typ]
                 if any(x in ("WebPage", "CollectionPage", "Service", "EducationalOrganization") for x in types):
                     node["image"] = image_url
+                    node["thumbnailUrl"] = image_url
                     changed = True
                 for value in node.values():
                     walk(value)
@@ -264,6 +265,7 @@ def _add_schema_image(raw: str, image_url: str) -> tuple[str, bool]:
         walk(data)
         if not changed and isinstance(data, dict):
             data["image"] = image_url
+            data["thumbnailUrl"] = image_url
             changed = True
         rep = '<script type="application/ld+json">' + json.dumps(
             data, ensure_ascii=False, separators=(",", ":")
@@ -273,15 +275,75 @@ def _add_schema_image(raw: str, image_url: str) -> tuple[str, bool]:
         return raw, False
 
 
+def _replace_or_insert_body_search_image(raw: str, rel_image: str, image_alt: str) -> tuple[str, str]:
+    """Use the same square search thumbnail as the visible representative image.
+
+    Existing learning-visual figures keep their caption; hub pages receive one
+    compact representative block directly after the hero.
+    """
+    img_tag = (
+        f'<img src="{html.escape(rel_image, quote=True)}" '
+        f'alt="{html.escape(image_alt, quote=True)}" width="1200" height="1200" '
+        'loading="eager" decoding="async">'
+    )
+    figure_img = re.search(
+        r'(<figure class="learning-visual">\s*)<img[^>]*>',
+        raw, re.I | re.S,
+    )
+    if figure_img:
+        raw = raw[:figure_img.start()] + figure_img.group(1) + img_tag + raw[figure_img.end():]
+        return raw, "replaced_learning_visual"
+
+    # Core/station hub pages do not always have a learning-visual. Add one
+    # immediately after the first hero section without changing the hero itself.
+    main_pos = raw.find("<main")
+    hero_pos = raw.find("<section", main_pos if main_pos >= 0 else 0)
+    hero_end = raw.find("</section>", hero_pos if hero_pos >= 0 else 0)
+    if hero_pos >= 0 and hero_end >= 0:
+        hero_end += len("</section>")
+        block = (
+            '<section class="search-thumbnail-section" aria-label="페이지 대표 이미지">'
+            '<div class="wrap"><figure class="search-thumbnail">'
+            + img_tag +
+            '</figure></div></section>'
+        )
+        raw = raw[:hero_end] + block + raw[hero_end:]
+        return raw, "inserted_after_hero"
+    return raw, "body_image_not_inserted"
+
+
 def apply_search_image_metadata(out: Path, failures: list) -> dict:
     pages = sorted(out.glob("*.html"))
+    manifest_path = out / "assets" / "search-thumbnail-manifest.json"
+    if not manifest_path.exists():
+        failures.append("search_thumbnail_manifest_missing")
+        manifest = {}
+    else:
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            failures.append({"search_thumbnail_manifest_parse": str(exc)})
+            manifest = {}
+
     image_counts: dict[str, int] = {}
     schema_failures = []
     missing_assets = []
+    manifest_missing = []
+    body_counts = {
+        "replaced_learning_visual": 0,
+        "inserted_after_hero": 0,
+        "body_image_not_inserted": 0,
+    }
 
     for page in pages:
         raw = page.read_text(encoding="utf-8", errors="ignore")
-        rel_image = _pick_search_image(page.name, raw)
+        entry = manifest.get(page.name)
+        if not entry:
+            manifest_missing.append(page.name)
+            rel_image = _pick_search_image(page.name, raw)
+        else:
+            rel_image = entry["image"]
+
         image_url = _absolute_asset_url(rel_image)
         asset = out / rel_image.lstrip("/")
         if not asset.exists():
@@ -307,22 +369,24 @@ def apply_search_image_metadata(out: Path, failures: list) -> dict:
                 1,
             )
 
-        # Remove any stale image hints before inserting one canonical set.
+        # Remove stale image hints before inserting the canonical square-image set.
         raw = re.sub(r'<meta property="og:image(?::[^"]+)?" content="[^"]*">', '', raw, flags=re.I)
         raw = re.sub(r'<meta name="twitter:(?:card|image)" content="[^"]*">', '', raw, flags=re.I)
         raw = re.sub(r'<link rel="image_src" href="[^"]*">', '', raw, flags=re.I)
 
-        title_m = re.search(r'<title>(.*?)</title>', raw, re.S | re.I)
-        image_alt = html.unescape(re.sub(r'<[^>]+>', '', title_m.group(1))).strip() if title_m else "ENGLISH PT"
-        if "/assets/images/og/" in rel_image:
-            width, height = 1200, 630
+        h1_m = re.search(r'<h1[^>]*>(.*?)</h1>', raw, re.S | re.I)
+        if h1_m:
+            image_alt = html.unescape(re.sub(r'<[^>]+>', ' ', h1_m.group(1)))
+            image_alt = re.sub(r'\s+', ' ', image_alt).strip() + " 대표 이미지"
         else:
-            width, height = 1200, 720
+            title_m = re.search(r'<title>(.*?)</title>', raw, re.S | re.I)
+            image_alt = html.unescape(re.sub(r'<[^>]+>', '', title_m.group(1))).strip() if title_m else "잉글리시PT 대표 이미지"
 
         meta = (
             f'<meta property="og:image" content="{html.escape(image_url, quote=True)}">'
-            f'<meta property="og:image:width" content="{width}">'
-            f'<meta property="og:image:height" content="{height}">'
+            f'<meta property="og:image:secure_url" content="{html.escape(image_url, quote=True)}">'
+            '<meta property="og:image:width" content="1200">'
+            '<meta property="og:image:height" content="1200">'
             '<meta property="og:image:type" content="image/png">'
             f'<meta property="og:image:alt" content="{html.escape(image_alt, quote=True)}">'
             '<meta name="twitter:card" content="summary_large_image">'
@@ -342,20 +406,31 @@ def apply_search_image_metadata(out: Path, failures: list) -> dict:
         raw, schema_ok = _add_schema_image(raw, image_url)
         if not schema_ok:
             schema_failures.append(page.name)
+
+        raw, body_state = _replace_or_insert_body_search_image(raw, rel_image, image_alt)
+        body_counts[body_state] += 1
+
         page.write_text(raw, encoding="utf-8")
         image_counts[rel_image] = image_counts.get(rel_image, 0) + 1
 
+    if manifest_missing:
+        failures.append({"search_thumbnail_manifest_page_missing": manifest_missing[:50], "count": len(manifest_missing)})
     if missing_assets:
         failures.append({"search_image_assets_missing": missing_assets[:50], "count": len(missing_assets)})
     if schema_failures:
         failures.append({"search_image_schema_failed": schema_failures[:50], "count": len(schema_failures)})
+    if body_counts["body_image_not_inserted"]:
+        failures.append({"search_image_body_insert_failed": body_counts["body_image_not_inserted"]})
 
     return {
         "html_pages": len(pages),
         "unique_search_images": len(image_counts),
         "image_usage": dict(sorted(image_counts.items(), key=lambda x: (-x[1], x[0]))),
         "missing_assets": len(missing_assets),
+        "manifest_missing": len(manifest_missing),
         "schema_failures": len(schema_failures),
+        "body_image_updates": body_counts,
+        "square_size": "1200x1200",
     }
 
 
@@ -1077,6 +1152,21 @@ def main() -> None:
             apply_sitewide_operational_markup(page.read_text(encoding="utf-8", errors="ignore")),
             encoding="utf-8",
         )
+
+    thumbnail_generator = ROOT / "scripts" / "stage9-square-search-thumbnails.py"
+    if not thumbnail_generator.exists():
+        failures.append("square_thumbnail_generator_missing")
+    else:
+        proc = subprocess.run(
+            ["python3", str(thumbnail_generator), "--root", str(out)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+        if proc.returncode != 0:
+            failures.append({
+                "square_thumbnail_generation_failed": proc.returncode,
+                "stdout": proc.stdout[-1000:],
+                "stderr": proc.stderr[-1000:],
+            })
 
     search_image_report = apply_search_image_metadata(out, failures)
 
