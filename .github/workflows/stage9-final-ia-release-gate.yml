@@ -130,6 +130,34 @@ jobs:
               assert 'thumbnailUrl' in raw,name
               assert 'search-thumbnail' in raw or 'learning-visual' in raw,name
 
+              assert 'aspect-ratio:auto!important' in raw,name
+              assert 'object-fit:contain!important' in raw,name
+              assert 'width:min(620px,100%)!important' in raw,name
+
+          pilot_css=(root/'pilot.css').read_text(encoding='utf-8')
+          assert 'aspect-ratio:5/3' not in pilot_css
+          assert 'object-fit:contain' in pilot_css
+          assert 'width:min(620px,100%)' in pilot_css
+
+          # Regression for the exact crop failure reported during Preview review.
+          crop_samples=[
+              'seoul-jongno-buamdong-toeic.html',
+              'seoul-jongno-sajikdong-ielts.html',
+              'seoul-jongno-sajikdong-beginner-english-conv.html',
+              'seoul-jongno-hyehwadong-worker-english-conv-academy.html',
+          ]
+          from PIL import Image
+          for name in crop_samples:
+              raw=(root/name).read_text(encoding='utf-8')
+              assert 'aspect-ratio:auto!important' in raw,name
+              assert 'object-fit:contain!important' in raw,name
+              m=re.search(r'<meta property="og:image" content="https://englishpt\.kr(/assets/images/[^"]+)">',raw)
+              assert m,(name,'og image')
+              image_path=root/m.group(1).lstrip('/')
+              assert image_path.exists(),(name,image_path)
+              with Image.open(image_path) as im:
+                  assert im.size==(1200,1200),(name,im.size)
+
           # 911 station hubs -> all 23 existing course pages.
           station_data=json.loads(Path('data/stations.json').read_text(encoding='utf-8'))
           station_course_checks=0
