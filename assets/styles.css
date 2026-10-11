@@ -221,7 +221,7 @@ body.theme-intl{
   border:1px solid var(--line);border-radius:24px;background:#fff;
   box-shadow:0 16px 38px rgba(18,36,28,.08)
 }
-.search-thumbnail img{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:cover}
+.search-thumbnail img{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:contain}
 @media(max-width:640px){
   .search-thumbnail-section{padding:18px 0 14px}
   .search-thumbnail{width:min(92vw,520px);border-radius:18px}
