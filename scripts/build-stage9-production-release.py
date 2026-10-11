@@ -313,7 +313,7 @@ def _replace_or_insert_body_search_image(raw: str, rel_image: str, image_alt: st
 
 
 def apply_search_image_metadata(out: Path, failures: list) -> dict:
-    pages = sorted(out.glob("*.html"))
+    pages = [p for p in sorted(out.glob("*.html")) if p.name != "404.html"]
     manifest_path = out / "assets" / "search-thumbnail-manifest.json"
     if not manifest_path.exists():
         failures.append("search_thumbnail_manifest_missing")
