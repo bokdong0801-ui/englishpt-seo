@@ -90,11 +90,21 @@ jobs:
                   (out/name).write_text(d_raw,encoding='utf-8')
                   written+=1
 
-          first_pages_dir=next(iter(source_root.glob('shard-*/pages')))
-          for asset in ('pilot.css','pilot.js'):
-              src=first_pages_dir/asset
-              assert src.exists(),asset
-              shutil.copy2(src,out/asset)
+          # IMPORTANT: rendered Stage 9 HTML must use the Stage 9 production CSS/JS,
+          # not the old Stage 5 pilot assets.
+          shutil.copy2(root/'assets/stage9-mass-production.css',out/'pilot.css')
+          shutil.copy2(root/'assets/stage9-mass-production.js',out/'pilot.js')
+
+          # Generate the same visual assets that the final production assembler creates.
+          release_spec=importlib.util.spec_from_file_location('release_builder',root/'scripts/build-stage9-production-release.py')
+          release=importlib.util.module_from_spec(release_spec); release_spec.loader.exec_module(release)
+          release.write_visual_assets(out)
+          release.write_representative_candidate_assets(out)
+
+          css=(out/'pilot.css').read_text(encoding='utf-8')
+          for token in ('theme-housewife','site-header','simple-hero','learning-visual','manage-layout','brand-mark'):
+              assert token in css,('production_css_missing',token)
+          assert (out/'assets/images/representative/beginner-conv-1.svg').exists()
 
           # Ensure every Jongno locality has all 23 current intent pages.
           intents=mod.SERVICE_ORDER+mod.EXAM_ORDER+mod.ACADEMY_ORDER+mod.CONV_DERIVED_ORDER
@@ -146,6 +156,11 @@ jobs:
               for attr in ('href','src','action'):
                   s=s.replace(f'{attr}="/',f'{attr}="{base}/')
                   s=s.replace(f"{attr}='/",f"{attr}='{base}/")
+              # Force a fresh Preview asset fetch instead of a cached broken pilot asset.
+              s=s.replace('href="pilot.css"',f'href="{base}/pilot.css?v=20261011-2"')
+              s=s.replace('src="pilot.js"',f'src="{base}/pilot.js?v=20261011-2"')
+              s=re.sub(r'(https://raw\.githack\.com/[^"\']+/preview-neighborhood/assets/[^"\']+\.(?:svg|png|jpg|jpeg|webp))(["\'])',
+                       r'\1?v=20261011-2\2',s,flags=re.I)
               p.write_text(s,encoding='utf-8')
 
           js=root/'assets/site.js'
