@@ -259,7 +259,9 @@ def build(root: Path, force_specific: bool = False) -> dict:
         specific = force_specific or is_indexable(raw)
 
         if specific:
-            title = page_title(raw, key, True)
+            # Core/hub pages keep the approved 29-master copy. Only local/station
+            # pages substitute the real page H1 (region/station + keyword).
+            title = MASTER[key][0] if page.name in CORE_PAGE_KEYS else page_title(raw, key, True)
             out = page_dir / f"{page.stem}.png"
             subtitle, chips = MASTER[key][1], MASTER[key][2]
             draw_thumb(out, key, title, subtitle, chips)
