@@ -233,7 +233,7 @@ def draw_thumb(path: Path, key: str, title: str, subtitle: str, chips: list[str]
     path.parent.mkdir(parents=True, exist_ok=True)
     im.save(path, "PNG", optimize=True)
 
-def build(root: Path) -> dict:
+def build(root: Path, force_specific: bool = False) -> dict:
     master_dir = root / "assets" / "images" / "og-master"
     page_dir = root / "assets" / "images" / "og-pages"
 
@@ -245,9 +245,11 @@ def build(root: Path) -> dict:
     counts = {"masters": len(MASTER), "indexable_unique": 0, "noindex_master": 0}
 
     for page in sorted(root.glob("*.html")):
+        if page.name == "404.html":
+            continue
         raw = page.read_text(encoding="utf-8", errors="ignore")
         key = page_key(page.name)
-        specific = is_indexable(raw)
+        specific = force_specific or is_indexable(raw)
 
         if specific:
             title = page_title(raw, key, True)
@@ -277,11 +279,16 @@ def build(root: Path) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", required=True, help="Built Stage 9 release directory")
+    ap.add_argument(
+        "--force-specific",
+        action="store_true",
+        help="Generate a page-specific square image for every HTML page (Preview QA only).",
+    )
     args = ap.parse_args()
     root = Path(args.root)
     if not root.exists():
         raise SystemExit(f"missing root: {root}")
-    counts = build(root)
+    counts = build(root, force_specific=args.force_specific)
     print("PASS_STAGE9_SQUARE_SEARCH_THUMBNAILS", json.dumps(counts, ensure_ascii=False))
     return 0
 
