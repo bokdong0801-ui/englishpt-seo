@@ -3,3 +3,4 @@
 2026-10-11 square-search-thumbnail-preview-v1
 2026-10-11 square-search-thumbnail-preview-v2-core-copy
 2026-10-11 square-search-thumbnail-preview-v3-cropfix
+2026-10-11 compact-naver-thumbnail-v5-beginner-integrity
