@@ -294,7 +294,7 @@ def _replace_or_insert_body_search_image(raw: str, rel_image: str, image_alt: st
     if figure_img:
         raw = re.sub(
             r'<figure class="learning-visual"[^>]*>',
-            '<figure class="learning-visual" style="width:clamp(148px,16vw,210px)!important;margin:0 auto!important;overflow:hidden;">',
+            '<figure class="learning-visual" style="width:clamp(120px,12vw,160px)!important;margin:0 auto!important;overflow:hidden;">',
             raw, count=1, flags=re.I,
         )
         figure_img = re.search(
@@ -313,7 +313,7 @@ def _replace_or_insert_body_search_image(raw: str, rel_image: str, image_alt: st
         hero_end += len("</section>")
         block = (
             '<section class="search-thumbnail-section" aria-label="페이지 대표 이미지">'
-            '<div class="wrap"><figure class="search-thumbnail" style="width:clamp(148px,16vw,210px)!important;margin:0 auto!important;overflow:hidden;">'
+            '<div class="wrap"><figure class="search-thumbnail" style="width:clamp(120px,12vw,160px)!important;margin:0 auto!important;overflow:hidden;">'
             + img_tag +
             '</figure></div></section>'
         )
@@ -1090,7 +1090,7 @@ def main() -> None:
         shutil.copytree(privacy_src, out / "privacy", dirs_exist_ok=True)
 
     def apply_sitewide_operational_markup(raw: str) -> str:
-        asset_version = "20261011-5"
+        asset_version = "20261011-6"
         raw = raw.replace('href="pilot.css"', f'href="pilot.css?v={asset_version}"')
         raw = raw.replace('src="pilot.js"', f'src="pilot.js?v={asset_version}"')
         raw = raw.replace('href="assets/styles.css"', f'href="assets/styles.css?v={asset_version}"')
