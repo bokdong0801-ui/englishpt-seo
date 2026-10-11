@@ -295,17 +295,17 @@ button,a{-webkit-tap-highlight-color:transparent}
 /* Page visual / Naver square representative thumbnail */
 .visual-break{padding:28px 0 18px;background:var(--paper)}
 .learning-visual{
-  width:min(620px,100%);margin:0 auto;overflow:hidden;
+  width:clamp(148px,16vw,210px);margin:0 auto;overflow:hidden;
   border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow)
 }
 .learning-visual img{
   display:block;width:100%;height:auto;aspect-ratio:1/1;
   object-fit:contain;background:var(--soft)
 }
-.learning-visual figcaption{padding:15px 18px;color:var(--muted);font-size:13.5px;line-height:1.65}
+.learning-visual figcaption{display:none}
 .search-thumbnail-section{padding:30px 0 22px;background:var(--paper)}
 .search-thumbnail{
-  width:min(620px,100%);margin:0 auto;overflow:hidden;
+  width:clamp(148px,16vw,210px);margin:0 auto;overflow:hidden;
   border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow)
 }
 .search-thumbnail img{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:contain}
@@ -414,7 +414,7 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
   .hero-actions .btn{width:100%;padding:12px 10px;font-size:13px}
   .visual-break{padding:14px 0 10px}
   .learning-visual{border-radius:18px}
-  .learning-visual figcaption{padding:10px 12px;font-size:12.5px;line-height:1.45}
+  .learning-visual figcaption{display:none}
   .beginner-exam-guide{padding:3px 0 8px}
   .beginner-guide-box{padding:15px;border-radius:18px}
   .beginner-guide-box h2{font-size:20px;line-height:1.3}
@@ -469,7 +469,7 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
   .hero-actions{grid-template-columns:1fr 1fr}
   .hero-actions .btn{padding:10px 8px;font-size:12px}
   .visual-break{padding:12px 0 8px}
-  .learning-visual figcaption{padding:9px 11px;font-size:12px;line-height:1.4}
+  .learning-visual figcaption{display:none}
   .beginner-guide-box{padding:10px 11px}
   .beginner-guide-box .kicker{margin-bottom:5px;font-size:11px}
   .beginner-guide-box h2{font-size:18px;line-height:1.25}
