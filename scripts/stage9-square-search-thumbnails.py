@@ -16,6 +16,7 @@ import hashlib
 import html
 import json
 import re
+from functools import lru_cache
 from pathlib import Path
 
 try:
@@ -108,6 +109,7 @@ def page_title(raw: str, key: str, specific: bool) -> str:
             return h1
     return MASTER[key][0]
 
+@lru_cache(maxsize=4)
 def font_path(weight: str) -> str:
     candidates = {
         "bold": [
@@ -128,13 +130,18 @@ def font_path(weight: str) -> str:
             return p
     raise RuntimeError("Korean font not found. CI must install fonts-noto-cjk.")
 
+@lru_cache(maxsize=512)
+def _font(weight: str, size: int):
+    return ImageFont.truetype(font_path(weight), size)
+
+
 def fit_font(text: str, max_width: int, start: int, minimum: int = 44):
     p = font_path("bold")
     for size in range(start, minimum - 1, -2):
-        f = ImageFont.truetype(p, size)
+        f = _font("bold", size)
         if ImageDraw.Draw(Image.new("RGB",(10,10))).textbbox((0,0), text, font=f)[2] <= max_width:
             return f
-    return ImageFont.truetype(p, minimum)
+    return _font("bold", minimum)
 
 def wrap_lines(draw: ImageDraw.ImageDraw, text: str, font, max_width: int, max_lines: int = 2) -> list[str]:
     words = text.split()
@@ -204,9 +211,9 @@ def draw_thumb(path: Path, key: str, title: str, subtitle: str, chips: list[str]
     d.ellipse((915,-115,1280,250), fill=soft)
     d.ellipse((-160,930,260,1350), fill=soft)
 
-    brand_font = ImageFont.truetype(font_path("bold"), 38)
-    sub_font = ImageFont.truetype(font_path("bold"), 40)
-    chip_font = ImageFont.truetype(font_path("bold"), 28)
+    brand_font = _font("bold", 38)
+    sub_font = _font("bold", 40)
+    chip_font = _font("bold", 28)
     d.text((82,78), BRAND, font=brand_font, fill=accent)
 
     title_font = fit_font(title, 940, 92, 58)
@@ -231,7 +238,7 @@ def draw_thumb(path: Path, key: str, title: str, subtitle: str, chips: list[str]
         x += w + 16
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    im.save(path, "PNG", optimize=True)
+    im.save(path, "PNG", optimize=False, compress_level=2)
 
 def build(root: Path, force_specific: bool = False) -> dict:
     master_dir = root / "assets" / "images" / "og-master"
