@@ -1,0 +1,206 @@
+name: Stage 9 Neighborhood Preview
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-neighborhood-preview-trigger.txt'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  neighborhood-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download approved Stage 7 source
+        uses: actions/download-artifact@v4
+        with:
+          name: stage7-deploy-preview-rollback
+          path: stage7-source
+          run-id: 36694432423
+          github-token: ${{ github.token }}
+
+      - name: Extract source pages
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || sudo apt-get install -y -qq zstd
+          rm -rf stage9-work neighborhood-preview
+          mkdir -p stage9-work neighborhood-preview
+          mapfile -t PKGS < <(find stage7-source -name 'stage5-shard-*-of-026.tar.zst' | sort)
+          test "${#PKGS[@]}" -eq 26
+          for f in "${PKGS[@]}"; do tar --zstd -xf "$f" -C stage9-work; done
+          test "$(find stage9-work/stage5-full-generation -name '*.html' | wc -l)" -eq 66937
+
+      - name: Build all Jongno neighborhood pages
+        run: |
+          set -euo pipefail
+          cp -R assets neighborhood-preview/assets
+          cp englishpt.html courses.html english-conversation.html exam-english.html student-english.html neighborhood-preview/
+          cp -R privacy neighborhood-preview/privacy
+          cp 404.html neighborhood-preview/404.html
+          python3 scripts/build-locality-index.py --output neighborhood-preview/assets/locality-index.json
+
+          python3 - <<'PY'
+          import importlib.util,re,shutil,json
+          from pathlib import Path
+
+          root=Path('.')
+          source_root=Path('stage9-work/stage5-full-generation')
+          out=Path('neighborhood-preview')
+          spec=importlib.util.spec_from_file_location('renderer',root/'scripts/stage9-clean-mass-renderer.py')
+          mod=importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+
+          source_files=sorted(source_root.glob('shard-*/pages/seoul-jongno-*.html'))
+          assert source_files, 'no Jongno source pages'
+
+          derived_by_base={}
+          for academy,base in mod.ACADEMY_BASE.items():
+              derived_by_base.setdefault(base,[]).append(('academy',academy))
+          for derived,base in mod.CONV_DERIVED_BASE.items():
+              derived_by_base.setdefault(base,[]).append(('conversation',derived))
+
+          written=0
+          localities=set()
+          for src in source_files:
+              source_raw=src.read_text(encoding='utf-8')
+              slug,intent=mod.intent_from_name(src.name)
+              localities.add(slug)
+              raw,problems=mod.render_production_page(source_raw,src.name)
+              assert not problems,(src.name,problems)
+              (out/src.name).write_text(raw,encoding='utf-8')
+              written+=1
+
+              for kind,derived_intent in derived_by_base.get(intent,[]):
+                  name=src.name[:-len(intent+'.html')]+derived_intent+'.html'
+                  if kind=='academy':
+                      d_raw,d_problems=mod.render_academy_page(source_raw,src.name,derived_intent)
+                  else:
+                      d_raw,d_problems=mod.render_conversation_derived_page(source_raw,src.name,derived_intent)
+                  assert not d_problems,(name,d_problems)
+                  (out/name).write_text(d_raw,encoding='utf-8')
+                  written+=1
+
+          first_pages_dir=next(iter(source_root.glob('shard-*/pages')))
+          for asset in ('pilot.css','pilot.js'):
+              src=first_pages_dir/asset
+              assert src.exists(),asset
+              shutil.copy2(src,out/asset)
+
+          # Ensure every Jongno locality has all 23 current intent pages.
+          intents=mod.SERVICE_ORDER+mod.EXAM_ORDER+mod.ACADEMY_ORDER+mod.CONV_DERIVED_ORDER
+          assert len(intents)==23,len(intents)
+          missing=[]
+          for slug in sorted(localities):
+              for intent in intents:
+                  name=f'{slug}-{intent}.html'
+                  if not (out/name).exists(): missing.append(name)
+          assert not missing,missing[:20]
+
+          # Exact manual-review regression.
+          for name in [
+              'seoul-jongno-sajikdong-beginner-english-conv.html',
+              'seoul-jongno-buamdong-beginner-english-conv.html',
+              'seoul-jongno-samcheongdong-beginner-english-conv.html',
+              'seoul-jongno-cheongunhyojadong-beginner-english-conv.html',
+              'seoul-jongno-hyojadong-beginner-english-conv.html',
+              'seoul-jongno-tongindong-beginner-english-conv.html',
+              'seoul-jongno-pyeongchangdong-beginner-english-conv.html',
+              'seoul-jongno-hyehwadong-beginner-english-conv.html',
+              'seoul-jongno-ikseondong-beginner-english-conv.html',
+              'seoul-jongno-insadong-beginner-english-conv.html',
+          ]:
+              assert (out/name).exists(),name
+
+          print('PASS_JONGNO_NEIGHBORHOOD_PREVIEW',{'localities':len(localities),'html_written':written})
+          PY
+
+      - name: Build preview index and rewrite links
+        env:
+          PREVIEW_BASE: https://raw.githack.com/${{ github.repository }}/preview-neighborhood
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,re,html
+          from pathlib import Path
+          root=Path('neighborhood-preview')
+          base=os.environ['PREVIEW_BASE']
+
+          # Rewrite root-relative navigation so it stays inside this preview branch.
+          for p in root.rglob('*.html'):
+              s=p.read_text(encoding='utf-8')
+              robots='<meta name="robots" content="noindex,nofollow,noarchive">'
+              if re.search(r'<meta\s+name=["\']robots["\'][^>]*>',s,re.I):
+                  s=re.sub(r'<meta\s+name=["\']robots["\'][^>]*>',robots,s,count=1,flags=re.I)
+              else:
+                  s=s.replace('<head>','<head>'+robots,1)
+              for attr in ('href','src','action'):
+                  s=s.replace(f'{attr}="/',f'{attr}="{base}/')
+                  s=s.replace(f"{attr}='/",f"{attr}='{base}/")
+              p.write_text(s,encoding='utf-8')
+
+          js=root/'assets/site.js'
+          if js.exists():
+              s=js.read_text(encoding='utf-8')
+              s=s.replace("'/assets/",f"'{base}/assets/")
+              s=s.replace('"/assets/',f'"{base}/assets/')
+              js.write_text(s,encoding='utf-8')
+
+          places=[
+              ('사직동','seoul-jongno-sajikdong'),
+              ('부암동','seoul-jongno-buamdong'),
+              ('삼청동','seoul-jongno-samcheongdong'),
+              ('청운효자동','seoul-jongno-cheongunhyojadong'),
+              ('효자동','seoul-jongno-hyojadong'),
+              ('통인동','seoul-jongno-tongindong'),
+              ('평창동','seoul-jongno-pyeongchangdong'),
+              ('혜화동','seoul-jongno-hyehwadong'),
+              ('익선동','seoul-jongno-ikseondong'),
+              ('인사동','seoul-jongno-insadong'),
+          ]
+          intents=[
+              ('왕초보 영어회화','beginner-english-conv'),
+              ('영어회화학원 비교','english-conv-academy'),
+              ('직장인 영어회화','worker-english-conv-academy'),
+              ('토익과외','toeic'),
+              ('오픽과외','opic'),
+              ('아이엘츠과외','ielts'),
+          ]
+          cards=[]
+          for dong,slug in places:
+              links=''.join(f'<a href="{base}/{slug}-{intent}.html">{html.escape(label)}</a>' for label,intent in intents)
+              cards.append(f'<article><h2>{html.escape(dong)}</h2><div>{links}</div></article>')
+
+          index=f'''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+          <meta name="robots" content="noindex,nofollow,noarchive"><title>ENGLISH PT 종로구 동네 Preview</title>
+          <style>body{{font-family:Arial,"Noto Sans KR",sans-serif;margin:0;background:#f5f3ed;color:#172019}}header{{background:#101915;color:#fff;padding:52px 7vw}}main{{max-width:1180px;margin:auto;padding:34px 7vw 80px}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}}article{{background:#fff;border:1px solid #d7ddd8;border-radius:18px;padding:22px}}article h2{{margin:0 0 16px}}article div{{display:grid;gap:9px}}a{{color:#1f684d;text-decoration:none;font-weight:700;padding:8px 0;border-bottom:1px solid #eee}}p{{line-height:1.7}}</style></head><body>
+          <header><h1>ENGLISH PT 종로구 동네 페이지 Preview</h1><p>사직동·부암동 포함 종로구 전체 동네 × 23개 과정이 이 Preview에 들어 있습니다.</p></header>
+          <main><p>아래는 빠른 확인용 10개 동네입니다. 상세페이지 안의 ‘같은 지역·다른 과정’, ‘다른 동네’ 링크도 눌러볼 수 있습니다.</p><div class="grid">{''.join(cards)}</div></main>
+          </body></html>'''
+          (root/'index.html').write_text(index,encoding='utf-8')
+          PY
+
+      - name: Publish neighborhood preview branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd neighborhood-preview
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -b preview-neighborhood
+          git add -A
+          git commit -q -m "Publish ENGLISH PT Jongno neighborhood preview"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin HEAD:preview-neighborhood
+          echo "PREVIEW=https://raw.githack.com/${GITHUB_REPOSITORY}/preview-neighborhood/index.html"
