@@ -22,6 +22,14 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install thumbnail dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          python -m pip install --quiet pillow
+          python -m py_compile scripts/stage9-square-search-thumbnails.py
+          python -m py_compile scripts/build-stage9-production-release.py
+
       - name: Download approved Stage 7 source
         uses: actions/download-artifact@v4
         with:
@@ -51,7 +59,7 @@ jobs:
           python3 scripts/build-locality-index.py --output neighborhood-preview/assets/locality-index.json
 
           python3 - <<'PY'
-          import importlib.util,re,shutil,json
+          import importlib.util,re,shutil,json,subprocess
           from pathlib import Path
 
           root=Path('.')
@@ -101,10 +109,36 @@ jobs:
           release.write_visual_assets(out)
           release.write_representative_candidate_assets(out)
 
+          # Generate page-specific 1200x1200 Korean thumbnails for Preview QA,
+          # then wire the same file to og:image, body image, alt and schema.
+          subprocess.run([
+              'python3', str(root/'scripts/stage9-square-search-thumbnails.py'),
+              '--root', str(out), '--force-specific'
+          ], check=True)
+          thumb_failures=[]
+          thumb_report=release.apply_search_image_metadata(out,thumb_failures)
+          assert not thumb_failures,thumb_failures
+          assert thumb_report['square_size']=='1200x1200',thumb_report
+          assert thumb_report['missing_assets']==0,thumb_report
+          assert thumb_report['manifest_missing']==0,thumb_report
+          assert thumb_report['schema_failures']==0,thumb_report
+          assert thumb_report['body_image_updates']['body_image_not_inserted']==0,thumb_report
+
           css=(out/'pilot.css').read_text(encoding='utf-8')
           for token in ('theme-housewife','site-header','simple-hero','learning-visual','manage-layout','brand-mark'):
               assert token in css,('production_css_missing',token)
           assert (out/'assets/images/representative/beginner-conv-1.svg').exists()
+
+          assert (out/'assets/images/og-master/main.png').exists()
+          assert (out/'assets/images/og-master/ielts.png').exists()
+          sample=out/'seoul-jongno-sajikdong-ielts.html'
+          sample_raw=sample.read_text(encoding='utf-8')
+          assert 'og:image:width" content="1200"' in sample_raw
+          assert 'og:image:height" content="1200"' in sample_raw
+          assert '/assets/images/og-pages/seoul-jongno-sajikdong-ielts.png' in sample_raw
+          assert 'thumbnailUrl' in sample_raw
+          assert '사직동' in sample_raw
+          assert (out/'assets/images/og-pages/seoul-jongno-sajikdong-ielts.png').exists()
 
           # Ensure every Jongno locality has all 23 current intent pages.
           intents=mod.SERVICE_ORDER+mod.EXAM_ORDER+mod.ACADEMY_ORDER+mod.CONV_DERIVED_ORDER
