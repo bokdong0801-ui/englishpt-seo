@@ -132,12 +132,12 @@ jobs:
 
               assert 'aspect-ratio:auto!important' in raw,name
               assert 'object-fit:contain!important' in raw,name
-              assert 'width:min(620px,100%)!important' in raw,name
+              assert 'width:clamp(148px,16vw,210px)!important' in raw,name
 
           pilot_css=(root/'pilot.css').read_text(encoding='utf-8')
           assert 'aspect-ratio:5/3' not in pilot_css
           assert 'object-fit:contain' in pilot_css
-          assert 'width:min(620px,100%)' in pilot_css
+          assert 'width:clamp(148px,16vw,210px)' in pilot_css
 
           # Regression for the exact crop failure reported during Preview review.
           crop_samples=[
