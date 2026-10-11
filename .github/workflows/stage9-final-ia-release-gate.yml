@@ -34,6 +34,7 @@ jobs:
           python -m py_compile scripts/stage9-clean-mass-renderer.py
           python -m py_compile scripts/stage9-station-renderer.py
           python -m py_compile scripts/stage9-square-search-thumbnails.py
+          python -m py_compile scripts/stage9-copy-quality-qa.py
           python -m py_compile scripts/build-locality-index.py
           node --check assets/site.js
 
@@ -75,6 +76,10 @@ jobs:
       - name: Beginner readability QA
         run: |
           python3 scripts/qa-beginner-readability.py stage9-release             --report STAGE9_BEGINNER_READABILITY_QA.json
+
+      - name: Copy repetition and bug QA
+        run: |
+          python3 scripts/stage9-copy-quality-qa.py             --root stage9-release             --output stage9-release/STAGE9_COPY_QUALITY_QA.json
 
       - name: Full information architecture and SEO gate
         run: |
@@ -510,4 +515,5 @@ jobs:
             STAGE9_FINAL_IA_RELEASE_GATE.json
             STAGE9_BEGINNER_READABILITY_QA.json
             stage9-release/STAGE9_CLEAN_SIMILARITY_QA_V1.json
+            stage9-release/STAGE9_COPY_QUALITY_QA.json
           retention-days: 30
