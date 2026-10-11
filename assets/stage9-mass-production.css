@@ -300,7 +300,7 @@ button,a{-webkit-tap-highlight-color:transparent}
 }
 .learning-visual img{
   display:block;width:100%;height:auto;aspect-ratio:1/1;
-  object-fit:cover;background:var(--soft)
+  object-fit:contain;background:var(--soft)
 }
 .learning-visual figcaption{padding:15px 18px;color:var(--muted);font-size:13.5px;line-height:1.65}
 .search-thumbnail-section{padding:30px 0 22px;background:var(--paper)}
@@ -308,7 +308,7 @@ button,a{-webkit-tap-highlight-color:transparent}
   width:min(620px,100%);margin:0 auto;overflow:hidden;
   border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow)
 }
-.search-thumbnail img{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:cover}
+.search-thumbnail img{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:contain}
 .beginner-exam-guide{padding:8px 0 18px;background:var(--paper)}
 .beginner-guide-box{border:1px solid var(--line);border-radius:22px;background:#fff;padding:24px;box-shadow:0 12px 28px rgba(18,26,23,.06)}
 .beginner-guide-box .kicker{margin:0 0 8px;color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.05em}
