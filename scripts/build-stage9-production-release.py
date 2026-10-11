@@ -284,13 +284,23 @@ def _replace_or_insert_body_search_image(raw: str, rel_image: str, image_alt: st
     img_tag = (
         f'<img src="{html.escape(rel_image, quote=True)}" '
         f'alt="{html.escape(image_alt, quote=True)}" width="1200" height="1200" '
-        'loading="eager" decoding="async">'
+        'loading="eager" decoding="async" '
+        'style="display:block;width:100%;height:auto!important;aspect-ratio:auto!important;object-fit:contain!important;">'
     )
     figure_img = re.search(
         r'(<figure class="learning-visual">\s*)<img[^>]*>',
         raw, re.I | re.S,
     )
     if figure_img:
+        raw = re.sub(
+            r'<figure class="learning-visual"[^>]*>',
+            '<figure class="learning-visual" style="width:min(620px,100%)!important;margin:0 auto!important;overflow:hidden;">',
+            raw, count=1, flags=re.I,
+        )
+        figure_img = re.search(
+            r'(<figure class="learning-visual"[^>]*>\s*)<img[^>]*>',
+            raw, re.I | re.S,
+        )
         raw = raw[:figure_img.start()] + figure_img.group(1) + img_tag + raw[figure_img.end():]
         return raw, "replaced_learning_visual"
 
@@ -303,7 +313,7 @@ def _replace_or_insert_body_search_image(raw: str, rel_image: str, image_alt: st
         hero_end += len("</section>")
         block = (
             '<section class="search-thumbnail-section" aria-label="페이지 대표 이미지">'
-            '<div class="wrap"><figure class="search-thumbnail">'
+            '<div class="wrap"><figure class="search-thumbnail" style="width:min(620px,100%)!important;margin:0 auto!important;overflow:hidden;">'
             + img_tag +
             '</figure></div></section>'
         )
@@ -1080,6 +1090,11 @@ def main() -> None:
         shutil.copytree(privacy_src, out / "privacy", dirs_exist_ok=True)
 
     def apply_sitewide_operational_markup(raw: str) -> str:
+        asset_version = "20261011-4"
+        raw = raw.replace('href="pilot.css"', f'href="pilot.css?v={asset_version}"')
+        raw = raw.replace('src="pilot.js"', f'src="pilot.js?v={asset_version}"')
+        raw = raw.replace('href="assets/styles.css"', f'href="assets/styles.css?v={asset_version}"')
+        raw = raw.replace('src="assets/site.js"', f'src="assets/site.js?v={asset_version}"')
         raw = raw.replace(
             '<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>',
             '',
