@@ -29,9 +29,11 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq librsvg2-bin fonts-noto-cjk
+          python -m pip install --quiet pillow
           python -m py_compile scripts/build-stage9-production-release.py
           python -m py_compile scripts/stage9-clean-mass-renderer.py
           python -m py_compile scripts/stage9-station-renderer.py
+          python -m py_compile scripts/stage9-square-search-thumbnails.py
           python -m py_compile scripts/build-locality-index.py
           node --check assets/site.js
 
@@ -91,6 +93,14 @@ jobs:
           assert report['indexing']['noindex_pages']==118427
           assert report['indexing']['production_ui_failures']==0
 
+          search=report['counts']['search_image_metadata']
+          assert search['square_size']=='1200x1200',search
+          assert search['missing_assets']==0,search
+          assert search['manifest_missing']==0,search
+          assert search['schema_failures']==0,search
+          assert search['body_image_updates']['body_image_not_inserted']==0,search
+          assert search['unique_search_images']>=29,search
+
           files={p.name for p in root.glob('*.html') if p.name!='404.html'}
           assert len(files)==140391,len(files)
           assert (root/'404.html').exists()
@@ -110,6 +120,15 @@ jobs:
           assert '전체지역·과정 바로가기' in home
           assert '누구를 위한' in home
           assert home.index('과정 찾기') < home.index('전체지역·과정 바로가기')
+
+          # Square representative-image contract for search engines and visible body content.
+          for name in core:
+              raw=(root/name).read_text(encoding='utf-8')
+              assert 'og:image:width" content="1200"' in raw,name
+              assert 'og:image:height" content="1200"' in raw,name
+              assert 'og:image:alt' in raw,name
+              assert 'thumbnailUrl' in raw,name
+              assert 'search-thumbnail' in raw or 'learning-visual' in raw,name
 
           # 911 station hubs -> all 23 existing course pages.
           station_data=json.loads(Path('data/stations.json').read_text(encoding='utf-8'))
