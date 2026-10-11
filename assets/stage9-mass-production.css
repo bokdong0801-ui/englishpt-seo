@@ -295,7 +295,7 @@ button,a{-webkit-tap-highlight-color:transparent}
 /* Page visual / Naver square representative thumbnail */
 .visual-break{padding:28px 0 18px;background:var(--paper)}
 .learning-visual{
-  width:clamp(148px,16vw,210px);margin:0 auto;overflow:hidden;
+  width:clamp(120px,12vw,160px);margin:0 auto;overflow:hidden;
   border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow)
 }
 .learning-visual img{
@@ -305,7 +305,7 @@ button,a{-webkit-tap-highlight-color:transparent}
 .learning-visual figcaption{display:none}
 .search-thumbnail-section{padding:30px 0 22px;background:var(--paper)}
 .search-thumbnail{
-  width:clamp(148px,16vw,210px);margin:0 auto;overflow:hidden;
+  width:clamp(120px,12vw,160px);margin:0 auto;overflow:hidden;
   border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow)
 }
 .search-thumbnail img{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:contain}
