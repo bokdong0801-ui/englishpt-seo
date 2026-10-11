@@ -142,7 +142,7 @@ jobs:
 
           assert 'aspect-ratio:auto!important' in sample_raw
           assert 'object-fit:contain!important' in sample_raw
-          assert 'width:clamp(148px,16vw,210px)!important' in sample_raw
+          assert 'width:clamp(120px,12vw,160px)!important' in sample_raw
 
           from PIL import Image
           image_samples=[
@@ -209,10 +209,10 @@ jobs:
                   s=s.replace(f'{attr}="/',f'{attr}="{base}/')
                   s=s.replace(f"{attr}='/",f"{attr}='{base}/")
               # Force a fresh Preview asset fetch instead of a cached broken pilot asset.
-              s=s.replace('href="pilot.css"',f'href="{base}/pilot.css?v=20261011-5"')
-              s=s.replace('src="pilot.js"',f'src="{base}/pilot.js?v=20261011-5"')
+              s=s.replace('href="pilot.css"',f'href="{base}/pilot.css?v=20261011-6"')
+              s=s.replace('src="pilot.js"',f'src="{base}/pilot.js?v=20261011-6"')
               s=re.sub(r'(https://raw\.githack\.com/[^"\']+/preview-neighborhood/assets/[^"\']+\.(?:svg|png|jpg|jpeg|webp))(["\'])',
-                       r'\1?v=20261011-5\2',s,flags=re.I)
+                       r'\1?v=20261011-6\2',s,flags=re.I)
               p.write_text(s,encoding='utf-8')
 
           js=root/'assets/site.js'
