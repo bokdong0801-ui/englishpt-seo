@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+<rect width="1200" height="720" fill="#EDF5FB"/>
+<circle cx="992" cy="102" r="150" fill="#3E89B5" opacity=".10"/>
+<circle cx="183" cy="643" r="175" fill="#9CC9E2" opacity=".14"/>
+<rect x="74" y="64" width="1052" height="592" rx="42" fill="#fff" stroke="#3E89B5" stroke-opacity=".18"/>
+<rect x="120" y="112" width="960" height="64" rx="22" fill="#EDF5FB"/>
+<text x="158" y="154" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="#3E89B5" letter-spacing="1.5">BEGINNER · START SPEAK</text>
+
+<!-- tutor -->
+<circle cx="392" cy="282" r="72" fill="#9CC9E2" opacity=".92"/>
+<path d="M282 497 q110 -165 220 0 v55 h-220z" fill="#9CC9E2" opacity=".85"/>
+<!-- learner -->
+<circle cx="783" cy="308" r="68" fill="#3E89B5" opacity=".88"/>
+<path d="M678 538 q105 -160 210 0 v50 h-210z" fill="#3E89B5" opacity=".76"/>
+
+<!-- desk / learning object -->
+<rect x="265" y="545" width="670" height="34" rx="17" fill="#17394F" opacity=".16"/>
+<rect x="507" y="382" width="190" height="118" rx="12" fill="#17394F" opacity=".90"/>
+<rect x="527" y="400" width="150" height="80" rx="8" fill="#EDF5FB"/>
+<path d="M557 445 h92" stroke="#3E89B5" stroke-width="10" stroke-linecap="round"/>
+<path d="M572 470 h62" stroke="#9CC9E2" stroke-width="8" stroke-linecap="round"/>
+
+<!-- activity accents -->
+<circle cx="327" cy="232" r="10" fill="#3E89B5"/>
+<circle cx="858" cy="250" r="10" fill="#9CC9E2"/>
+<path d="M467 320 C560 290, 650 288, 728 353" fill="none" stroke="#3E89B5" stroke-width="7" stroke-linecap="round" stroke-dasharray="10 14" opacity=".55"/>
+
+<rect x="152" y="606" width="246" height="14" rx="7" fill="#3E89B5" opacity=".20"/>
+<rect x="152" y="632" width="308" height="12" rx="6" fill="#17394F" opacity=".10"/>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+<rect width="1200" height="720" fill="#EAF0F5"/>
+<circle cx="883" cy="217" r="136" fill="#536EA7" opacity=".13"/>
+<circle cx="252" cy="528" r="127" fill="#536EA7" opacity=".09"/>
+<rect x="95" y="88" width="1010" height="544" rx="38" fill="#fff" stroke="#536EA7" stroke-opacity=".20"/>
+<rect x="150" y="146" width="360" height="26" rx="13" fill="#536EA7" opacity=".16"/>
+<rect x="150" y="198" width="245" height="18" rx="9" fill="#192A39" opacity=".10"/>
+<rect x="150" y="235" width="300" height="18" rx="9" fill="#192A39" opacity=".08"/>
+<rect x="150" y="325" width="395" height="192" rx="26" fill="#EAF0F5" stroke="#536EA7" stroke-opacity=".24"/>
+<path d="M190 462 C260 364, 330 502, 500 370" fill="none" stroke="#536EA7" stroke-width="16" stroke-linecap="round"/>
+<circle cx="205" cy="430" r="22" fill="#536EA7"/><circle cx="340" cy="405" r="22" fill="#536EA7" opacity=".72"/><circle cx="490" cy="375" r="22" fill="#536EA7" opacity=".46"/>
+<rect x="625" y="175" width="365" height="315" rx="30" fill="#192A39"/>
+<rect x="662" y="215" width="290" height="190" rx="18" fill="#EAF0F5"/>
+<circle cx="807" cy="310" r="58" fill="#536EA7" opacity=".20"/>
+<path d="M770 315 q37 -55 74 0 q-37 50 -74 0z" fill="#536EA7" opacity=".86"/>
+<rect x="725" y="440" width="165" height="14" rx="7" fill="#fff" opacity=".55"/>
+<text x="150" y="585" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="#536EA7" letter-spacing="3">SPEAK</text>
+</svg>

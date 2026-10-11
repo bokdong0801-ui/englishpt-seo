@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+<rect width="1200" height="720" fill="#F6F0E9"/>
+<circle cx="992" cy="102" r="150" fill="#A8754E" opacity=".10"/>
+<circle cx="183" cy="643" r="175" fill="#D4B394" opacity=".14"/>
+<rect x="74" y="64" width="1052" height="592" rx="42" fill="#fff" stroke="#A8754E" stroke-opacity=".18"/>
+<rect x="120" y="112" width="960" height="64" rx="22" fill="#F6F0E9"/>
+<text x="158" y="154" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="#A8754E" letter-spacing="1.5">ADULT CONVERSATION · LIFE / TRAVEL</text>
+
+<!-- tutor -->
+<circle cx="392" cy="282" r="72" fill="#D4B394" opacity=".92"/>
+<path d="M282 497 q110 -165 220 0 v55 h-220z" fill="#D4B394" opacity=".85"/>
+<!-- learner -->
+<circle cx="783" cy="308" r="68" fill="#A8754E" opacity=".88"/>
+<path d="M678 538 q105 -160 210 0 v50 h-210z" fill="#A8754E" opacity=".76"/>
+
+<!-- desk / learning object -->
+<rect x="265" y="545" width="670" height="34" rx="17" fill="#4A3525" opacity=".16"/>
+<rect x="507" y="382" width="190" height="118" rx="12" fill="#4A3525" opacity=".90"/>
+<rect x="527" y="400" width="150" height="80" rx="8" fill="#F6F0E9"/>
+<path d="M557 445 h92" stroke="#A8754E" stroke-width="10" stroke-linecap="round"/>
+<path d="M572 470 h62" stroke="#D4B394" stroke-width="8" stroke-linecap="round"/>
+
+<!-- activity accents -->
+<circle cx="327" cy="232" r="10" fill="#A8754E"/>
+<circle cx="858" cy="250" r="10" fill="#D4B394"/>
+<path d="M467 320 C560 290, 650 288, 728 353" fill="none" stroke="#A8754E" stroke-width="7" stroke-linecap="round" stroke-dasharray="10 14" opacity=".55"/>
+
+<rect x="152" y="606" width="246" height="14" rx="7" fill="#A8754E" opacity=".20"/>
+<rect x="152" y="632" width="308" height="12" rx="6" fill="#4A3525" opacity=".10"/>
+</svg>
