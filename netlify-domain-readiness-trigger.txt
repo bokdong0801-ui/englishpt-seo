@@ -1,0 +1,1 @@
+Check englishpt.kr public DNS and Netlify SSL readiness.

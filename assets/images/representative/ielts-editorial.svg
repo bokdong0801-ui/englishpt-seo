@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+<title id="title">IELTS 1:1 맞춤 아이엘츠 대표이미지</title>
+<desc id="desc">Listening, Reading, Writing, Speaking 4영역과 목표 Band를 보여주는 ENGLISH PT IELTS 대표이미지</desc>
+<rect width="1200" height="720" rx="34" fill="#FFF8F5"/>
+<rect x="0" y="0" width="1200" height="18" rx="9" fill="#8E1724"/>
+<circle cx="1080" cy="92" r="245" fill="#F3DDDB"/>
+<circle cx="1145" cy="635" r="250" fill="#F7E7E3"/>
+<text x="78" y="90" font-family="Arial,'Noto Sans KR',sans-serif" font-size="24" font-weight="800" fill="#8E1724" letter-spacing="1.6">ENGLISH PT · 1:1 IELTS</text>
+<text x="76" y="286" font-family="Arial,'Noto Sans KR',sans-serif" font-size="126" font-weight="900" fill="#7C101D">IELTS</text>
+<text x="80" y="352" font-family="'Noto Sans KR',Arial,sans-serif" font-size="35" font-weight="800" fill="#9B3340">1:1 맞춤 IELTS</text>
+<g font-family="Arial,'Noto Sans KR',sans-serif" font-size="23" font-weight="800" fill="#8E1724">
+<rect x="80" y="410" width="156" height="62" rx="31" fill="#FFFFFF"/><text x="104" y="450">Listening</text>
+<rect x="252" y="410" width="148" height="62" rx="31" fill="#FFFFFF"/><text x="280" y="450">Reading</text>
+<rect x="416" y="410" width="148" height="62" rx="31" fill="#FFFFFF"/><text x="444" y="450">Writing</text>
+<rect x="580" y="410" width="156" height="62" rx="31" fill="#FFFFFF"/><text x="607" y="450">Speaking</text>
+</g>
+<text x="82" y="560" font-family="'Noto Sans KR',Arial,sans-serif" font-size="27" font-weight="700" fill="#A1666C">영역별 진단 → 목표 Band 기준 → 약한 영역 집중</text>
+<g opacity=".25" stroke="#8E1724" stroke-width="7" stroke-linecap="round">
+<path d="M875 250h185"/><path d="M875 306h145"/><path d="M875 362h205"/><path d="M875 418h125"/>
+</g>
+<circle cx="1085" cy="250" r="13" fill="#8E1724" opacity=".75"/><circle cx="1045" cy="306" r="13" fill="#B45C65" opacity=".7"/><circle cx="1105" cy="362" r="13" fill="#9C2C38" opacity=".7"/><circle cx="1025" cy="418" r="13" fill="#C68086" opacity=".65"/>
+</svg>

@@ -1,0 +1,61 @@
+# ENGLISH PT / 잉글리시PT
+
+> ENGLISH PT is a Korean English-learning service site focused on 1:1 diagnosis, practice, feedback, review, and re-checking. The public site contains location-specific guidance for English conversation, school English, exam preparation, and comparison pages for people searching academy-style keywords.
+
+## Canonical site
+- Home: https://englishpt.kr/englishpt.html
+- Course finder: https://englishpt.kr/courses.html
+- English conversation hub: https://englishpt.kr/english-conversation.html
+- Exam English hub: https://englishpt.kr/exam-english.html
+- Student English hub: https://englishpt.kr/student-english.html
+- Nationwide station finder: https://englishpt.kr/stations.html
+- Sitemap index: https://englishpt.kr/sitemap-index.xml
+- Language: Korean (ko-KR)
+- Contact: 010-5006-8027
+- Email: cicada3865@naver.com
+
+## Core service topics
+- Elementary, middle-school, high-school, university, job-seeker, worker, adult and beginner English
+- English conversation and business English
+- TOEIC
+- TOEIC Speaking
+- OPIc
+- IELTS
+- TOEFL
+- Duolingo English Test
+
+## How the service is described
+ENGLISH PT explains learning as a cycle:
+1. Check the learner's current level, goal and nearest schedule.
+2. Choose a small number of priorities.
+3. Practice by solving, speaking or writing directly.
+4. Give feedback on errors, wording, timing and structure.
+5. Review and re-check in the next lesson, then adjust the plan.
+
+## Location pages
+Location-specific URLs describe a service or comparison intent for that named area.
+They must not be interpreted as proof that ENGLISH PT has a physical branch or office in every named locality.
+Use the page's visible content and structured data to distinguish service-area guidance from a physical location.
+Most automatically expanded dong/locality pages are intentionally marked noindex,follow and are omitted from the public search sitemap. They remain available to users for navigation and consultation context but are not part of the primary search-index target set.
+
+## Station pages
+ENGLISH PT also provides station-based navigation for 911 railway/subway station names across 37 lines.
+A station hub helps a learner choose among conversation, student, exam and comparison intents, and then links to station × course pages.
+Station names and lines are navigation/search-area references only; they are not claims of a physical ENGLISH PT branch at every station.
+Learning recommendations on station pages are based on the learner's stated goal, current level and schedule rather than assumptions about residents of the station area.
+
+## Academy-keyword pages
+Pages whose search intent contains terms such as 토익학원, 아이엘츠학원, 토플학원, 오픽학원, 토익스피킹학원, 영어회화학원, 성인영어회화학원 or 직장인영어회화학원 are comparison/information pages.
+They compare academy-style group learning with 1:1 learning and do not by themselves claim that ENGLISH PT operates a physical academy in that locality.
+
+## Source and accuracy notes
+- Prefer the canonical URL declared on each page.
+- Page-specific title, description, visible headings and JSON-LD describe the intended service.
+- Exam formats, policies and score requirements can change; use the official test provider as the final authority for current exam rules.
+- Do not infer guaranteed scores, outcomes, rankings, physical branches, teacher credentials or prices unless the page explicitly states them.
+
+## Discovery
+For the primary indexable canonical URL set, use:
+https://englishpt.kr/sitemap-index.xml
+
+The sitemap intentionally lists the core site, preserved verified pages, and the browsable station hierarchy. Noindex locality-expansion pages are not included in the search sitemap.

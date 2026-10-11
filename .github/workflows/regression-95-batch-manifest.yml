@@ -1,0 +1,49 @@
+name: 95 URL Regression and DONG Batch Manifest
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'scripts/regression_95_and_batch_manifest.py'
+      - 'sitemap_95_urls.txt'
+      - 'redirects.json'
+      - '_redirects'
+      - 'sitemap.xml'
+      - 'slug_manifest_summary_v1.json'
+      - 'V4_5_GOLD_SAMPLE_FREEZE_20260922.json'
+      - '.github/workflows/regression-95-batch-manifest.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  regression-and-manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run 95 URL, redirect, sitemap regression and lock batch counts
+        run: python3 scripts/regression_95_and_batch_manifest.py
+      - name: Commit QA report and batch manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add REGRESSION_95_REDIRECTS_V1.json DONG_PRODUCTION_BATCH_MANIFEST_V1.json
+          if git diff --cached --quiet; then
+            echo "No QA artifact changes"
+          else
+            git commit -m "Record 95 URL regression and DONG production batch counts"
+            git push origin HEAD:reset-english-service-seo-v3
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: englishpt-regression-95-batch-manifest
+          path: |
+            REGRESSION_95_REDIRECTS_V1.json
+            DONG_PRODUCTION_BATCH_MANIFEST_V1.json

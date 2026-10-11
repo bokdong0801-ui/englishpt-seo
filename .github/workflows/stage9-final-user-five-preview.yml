@@ -1,0 +1,151 @@
+name: Stage 9 Final User Five Preview
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-final-five-trigger.txt'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      REVIEW_SITE_NAME: englishpt-stage9-five-review
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify Netlify auth
+        run: test -n "$NETLIFY_AUTH_TOKEN"
+
+      - name: Download latest proven 13-page production sample
+        uses: actions/download-artifact@v4
+        with:
+          name: stage9-final-ux-samples
+          path: stage9-source
+          run-id: 36967098337
+          github-token: ${{ github.token }}
+
+      - name: Build five reader-first exam pages
+        run: |
+          python3 scripts/build-final-user-five-preview.py \
+            --source stage9-source \
+            --output stage9-final-five
+          test "$(find stage9-final-five -maxdepth 1 -name 'seoul-jongno-sajikdong-*.html' | wc -l)" -eq 5
+          python3 - <<'PY'
+          from pathlib import Path
+          wanted=['ielts','opic','toeic','toeic-speaking','toefl']
+          for x in wanted:
+              p=Path('stage9-final-five')/f'seoul-jongno-sajikdong-{x}.html'
+              raw=p.read_text(encoding='utf-8')
+              for token in [
+                  'class="five-hero"','class="quick-grid"',
+                  'class="section five-manage"','class="after-grid"',
+                  'class="choice-grid"','id="consultation-preview"'
+              ]:
+                  assert token in raw,(p.name,token)
+          print('PASS_FINAL_USER_FIVE_BUILD')
+          PY
+          (cd stage9-final-five && zip -qr ../stage9-final-five.zip .)
+
+      - name: Ensure isolated review site
+        run: |
+          SITE_DOMAIN="$REVIEW_SITE_NAME.netlify.app"
+          if curl -fsS \
+            -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/sites/$SITE_DOMAIN" \
+            -o /tmp/review-site.json; then
+            echo "Using existing review site"
+          else
+            curl -fsS -X POST \
+              -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "{\"name\":\"$REVIEW_SITE_NAME\",\"processing_settings\":{\"html\":{\"pretty_urls\":false}}}" \
+              "https://api.netlify.com/api/v1/sites" \
+              -o /tmp/review-site.json
+          fi
+          python3 - <<'PY'
+          import json,os
+          d=json.load(open('/tmp/review-site.json'))
+          assert d.get('id'),d
+          url=d.get('ssl_url') or d.get('url')
+          assert url,d
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('REVIEW_SITE_ID='+d['id']+'\n')
+              f.write('REVIEW_SITE_URL='+url.replace('http://','https://')+'\n')
+          print('REVIEW_SITE',d.get('name'),url)
+          PY
+
+      - name: Deploy ZIP to isolated review site
+        run: |
+          curl -fsS -X POST \
+            -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            -H "Content-Type: application/zip" \
+            --data-binary "@stage9-final-five.zip" \
+            "https://api.netlify.com/api/v1/sites/$REVIEW_SITE_ID/deploys" \
+            -o /tmp/review-deploy.json
+          python3 - <<'PY'
+          import json,os
+          d=json.load(open('/tmp/review-deploy.json'))
+          assert d.get('id'),d
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('REVIEW_DEPLOY_ID='+d['id']+'\n')
+          print('REVIEW_DEPLOY_ID',d['id'],'STATE',d.get('state'))
+          PY
+
+      - name: Wait until isolated review deploy is ready
+        run: |
+          for i in $(seq 1 20); do
+            curl -fsS \
+              -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+              "https://api.netlify.com/api/v1/deploys/$REVIEW_DEPLOY_ID" \
+              -o /tmp/deploy-state.json
+            STATE=$(python3 -c "import json; print(json.load(open('/tmp/deploy-state.json')).get('state',''))")
+            echo "deploy state=$STATE"
+            if [ "$STATE" = "ready" ]; then exit 0; fi
+            if [ "$STATE" = "error" ]; then cat /tmp/deploy-state.json; exit 1; fi
+            sleep 3
+          done
+          exit 1
+
+      - name: Verify isolated review site and five pages
+        run: |
+          echo "Review URL: $REVIEW_SITE_URL"
+          curl -fsSIL --max-time 30 "$REVIEW_SITE_URL/" >/dev/null
+          for x in ielts opic toeic toeic-speaking toefl; do
+            curl -fsSIL --max-time 30 "$REVIEW_SITE_URL/seoul-jongno-sajikdong-$x.html" >/dev/null
+          done
+          echo "PASS_STAGE9_FINAL_USER_FIVE_PREVIEW"
+
+      - name: Write preview report
+        run: |
+          python3 - <<'PY'
+          import json,os
+          report={
+            "status":"PASS_STAGE9_FINAL_USER_FIVE_PREVIEW",
+            "preview_url":os.environ["REVIEW_SITE_URL"],
+            "scope":["ielts","opic","toeic","toeic-speaking","toefl"],
+            "production_affected":False,
+            "indexing":"blocked by X-Robots-Tag on review site files",
+            "next_step":"user review before expanding structure to all 67032 pages"
+          }
+          open('FINAL_USER_FIVE_PREVIEW_REPORT.json','w',encoding='utf-8').write(
+              json.dumps(report,ensure_ascii=False,indent=2)+'\n'
+          )
+          print(json.dumps(report,ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage9-final-user-five-preview-report
+          path: FINAL_USER_FIVE_PREVIEW_REPORT.json
+          retention-days: 30

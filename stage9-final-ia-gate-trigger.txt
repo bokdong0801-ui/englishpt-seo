@@ -1,0 +1,9 @@
+2026-10-07 final IA release gate run
+2026-10-08 retry after workflow registration
+2026-10-08 final navigation graph verification after regional and station fixes
+2026-10-08 rerun after grouped course navigation QA alignment
+2026-10-08 rerun after legacy Songhyeondong navigation points to current 23 pages
+2026-10-08 rerun final IA gate after review-package assertion fix
+2026-10-08 final zero-broken-link verification after IA gate fix
+2026-10-08 rerun final IA gate with fixed review site id
+2026-10-11 full 140391 preview with Sajik-Buam regression

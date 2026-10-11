@@ -1,0 +1,69 @@
+{
+  "version": "1.0",
+  "status": "STRUCTURAL_PILOT_ONLY",
+  "indexable": false,
+  "live_lead_submission": false,
+  "localities": [
+    {
+      "full_name_ko": "서울특별시 서초구 내곡동",
+      "region_slug": "seoul-seocho-naegokdong",
+      "archetype": "same_name_legal_admin",
+      "legal_dong_ids": [
+        "bjd:1165010900"
+      ],
+      "admin_dong_ids": [
+        "adm:1165066000"
+      ],
+      "selected_intent": "elem-tutor"
+    },
+    {
+      "full_name_ko": "강원특별자치도 강릉시 내곡동",
+      "region_slug": "gangwon-gangneung-naegokdong",
+      "archetype": "same_visible_name_other_jurisdiction",
+      "legal_dong_ids": [
+        "bjd:5115011600"
+      ],
+      "admin_dong_ids": [
+        "adm:5115060000"
+      ],
+      "selected_intent": "mid-conv"
+    },
+    {
+      "full_name_ko": "강원특별자치도 강릉시 강남동",
+      "region_slug": "gangwon-gangneung-gangnamdong",
+      "archetype": "admin_only_visible_locality",
+      "legal_dong_ids": [],
+      "admin_dong_ids": [
+        "adm:5115061500"
+      ],
+      "selected_intent": "biz-business-conv"
+    },
+    {
+      "full_name_ko": "세종특별자치시 고운동",
+      "region_slug": "sejong-goundong",
+      "archetype": "special_city_hierarchy",
+      "legal_dong_ids": [
+        "bjd:3611011200"
+      ],
+      "admin_dong_ids": [
+        "adm:3611055000"
+      ],
+      "selected_intent": "univ-conv"
+    },
+    {
+      "full_name_ko": "부산광역시 해운대구 중동",
+      "region_slug": "busan-haeundae-jungdong",
+      "archetype": "legal_dong_admin_names_differ",
+      "legal_dong_ids": [
+        "bjd:2635010600"
+      ],
+      "admin_dong_ids": [],
+      "related_admin_dong_ids": [
+        "adm:2635053000",
+        "adm:2635054000"
+      ],
+      "selected_intent": "high-conv"
+    }
+  ],
+  "rule": "This manifest is for structural QA only. Do not promote region-name substitution outputs to production."
+}

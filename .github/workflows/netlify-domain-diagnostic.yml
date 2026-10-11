@@ -1,0 +1,106 @@
+name: Netlify Domain Diagnostic
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'netlify-domain-diagnostic-trigger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID || secrets.ENGLISHPT_NETLIFY_SITE_ID || vars.NETLIFY_SITE_ID || vars.ENGLISHPT_NETLIFY_SITE_ID }}
+    steps:
+      - name: Verify credentials present
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN"
+          test -n "$NETLIFY_SITE_ID"
+          echo "PASS credentials present (values hidden)"
+
+      - name: Read Netlify project domain state
+        run: |
+          curl -fsS \
+            -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+            "https://api.netlify.com/api/v1/sites/englishpt-seo.netlify.app" \
+            -o /tmp/site.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/site.json',encoding='utf-8'))
+          safe={
+            'name':d.get('name'),
+            'url':d.get('url'),
+            'ssl_url':d.get('ssl_url'),
+            'custom_domain':d.get('custom_domain'),
+            'domain_aliases':d.get('domain_aliases'),
+            'managed_dns':d.get('managed_dns'),
+            'force_ssl':d.get('force_ssl'),
+            'state':d.get('state'),
+          }
+          print(json.dumps(safe,ensure_ascii=False,indent=2))
+          PY
+
+      - name: Inspect englishpt.kr DNS
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq dnsutils
+          echo "=== A englishpt.kr ==="
+          dig +short A englishpt.kr || true
+          echo "=== AAAA englishpt.kr ==="
+          dig +short AAAA englishpt.kr || true
+          echo "=== CNAME www.englishpt.kr ==="
+          dig +short CNAME www.englishpt.kr || true
+          echo "=== A www.englishpt.kr ==="
+          dig +short A www.englishpt.kr || true
+          echo "=== NS englishpt.kr ==="
+          dig +short NS englishpt.kr || true
+          echo "=== AUTHORITATIVE A englishpt.kr @ ns1.hosting.co.kr ==="
+          dig +short @ns1.hosting.co.kr A englishpt.kr || true
+          echo "=== AUTHORITATIVE CNAME www.englishpt.kr @ ns1.hosting.co.kr ==="
+          dig +short @ns1.hosting.co.kr CNAME www.englishpt.kr || true
+          echo "=== GOOGLE A englishpt.kr @ 8.8.8.8 ==="
+          dig +short @8.8.8.8 A englishpt.kr || true
+          echo "=== CLOUDFLARE A englishpt.kr @ 1.1.1.1 ==="
+          dig +short @1.1.1.1 A englishpt.kr || true
+          echo "=== GOOGLE CNAME www.englishpt.kr @ 8.8.8.8 ==="
+          dig +short @8.8.8.8 CNAME www.englishpt.kr || true
+          echo "=== CLOUDFLARE CNAME www.englishpt.kr @ 1.1.1.1 ==="
+          dig +short @1.1.1.1 CNAME www.englishpt.kr || true
+
+      - name: Inspect public WHOIS routing fields only
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq whois
+          whois -h whois.nic.or.kr englishpt.kr 2>/dev/null \
+            | grep -Ei 'Domain Name|Registered Date|Last Updated Date|Expiration Date|Authorized Agency|Host Name|Registrar|Name Server' \
+            || true
+
+      - name: Probe Netlify custom domain directly at Netlify apex IP
+        run: |
+          echo "=== DIRECT ROBOTS VIA NETLIFY IP ==="
+          curl -sSIL --max-time 20 --resolve englishpt.kr:443:75.2.60.5 https://englishpt.kr/robots.txt || true
+          echo "=== DIRECT SITEMAP VIA NETLIFY IP ==="
+          curl -sSIL --max-time 20 --resolve englishpt.kr:443:75.2.60.5 https://englishpt.kr/sitemap-index.xml || true
+
+      - name: Probe current endpoints
+        run: |
+          python3 - <<'PY'
+          import json, subprocess
+          d=json.load(open('/tmp/site.json',encoding='utf-8'))
+          urls=[
+            d.get('ssl_url') or d.get('url'),
+            'https://englishpt.kr/robots.txt',
+            'https://englishpt.kr/sitemap-index.xml',
+          ]
+          for url in [u for u in urls if u]:
+            print('===',url,'===')
+            p=subprocess.run(['curl','-sSIL','--max-time','15',url],text=True,capture_output=True)
+            print('exit=',p.returncode)
+            print((p.stdout or p.stderr)[-3000:])
+          PY

@@ -1,0 +1,1 @@
+Ensure englishpt.kr and www.englishpt.kr are assigned to the approved Netlify project.

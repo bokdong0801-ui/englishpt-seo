@@ -1,0 +1,439 @@
+name: Stage 9 Final Freeze Fast Preview
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-final-freeze-preview-trigger.txt'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NETLIFY_AUTH_TOKEN_PRIMARY: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_AUTH_TOKEN_FALLBACK: ${{ secrets.NETLIFY_TOKEN }}
+      REVIEW_SITE_NAME: englishpt-final-freeze-review
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download FINAL FREEZE representative 23 pages
+        uses: actions/download-artifact@v4
+        with:
+          name: stage9-final-ux-samples
+          path: final-artifact
+          run-id: 37749558450
+          github-token: ${{ github.token }}
+
+      - name: Build lightweight review package
+        run: |
+          set -euo pipefail
+          rm -rf final-freeze-preview station-preview
+          mkdir -p final-freeze-preview
+          cp final-artifact/stage9-final-ux-samples/*.html final-freeze-preview/
+          cp final-artifact/stage9-final-ux-samples/pilot.css final-freeze-preview/
+          cp final-artifact/stage9-final-ux-samples/pilot.js final-freeze-preview/
+          cp -R assets final-freeze-preview/assets
+          python3 scripts/build-locality-index.py --output final-freeze-preview/assets/locality-index.json
+          cp englishpt.html courses.html english-conversation.html exam-english.html student-english.html favicon-options.html final-freeze-preview/
+          cp -R privacy final-freeze-preview/privacy
+          cp 404.html final-freeze-preview/404.html
+          cp favicon-options.html final-freeze-preview/favicon-options.html
+
+          python3 scripts/stage9-station-renderer.py --output station-preview
+          cp station-preview/stations.html final-freeze-preview/
+          cp station-preview/station-dobongsan.html final-freeze-preview/
+          cp station-preview/station-dobongsan-*.html final-freeze-preview/
+          cp station-preview/station-gangnam.html final-freeze-preview/
+          python3 scripts/build-locality-index.py --output final-freeze-preview/assets/locality-index.json
+
+          cat > final-freeze-preview/_headers <<'EOF'
+          /*
+            X-Robots-Tag: noindex, nofollow
+            X-Content-Type-Options: nosniff
+            Referrer-Policy: strict-origin-when-cross-origin
+          EOF
+
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          root=Path('final-freeze-preview')
+          reps=list(root.glob('seoul-jongno-sajikdong-*.html'))
+          assert len(reps)==23,len(reps)
+          dobongsan=list(root.glob('station-dobongsan*.html'))
+          assert len(dobongsan)==24,len(dobongsan)
+          assert (root/'assets/locality-index.json').exists()
+          import json
+          assert len(json.loads((root/'assets/locality-index.json').read_text(encoding='utf-8')))==5149
+          station_courses=list(root.glob('station-dobongsan-*.html'))
+          assert len(station_courses)==23,len(station_courses)
+          locality_rows=json.loads((root/'assets/locality-index.json').read_text(encoding='utf-8'))
+          assert len(locality_rows)==5149,len(locality_rows)
+          for name in [
+              'englishpt.html','courses.html','english-conversation.html','exam-english.html',
+              'student-english.html','stations.html','station-dobongsan.html',
+              'station-dobongsan-toeic.html','station-dobongsan-english-conv-academy.html',
+              'station-gangnam.html','station-dobongsan-toeic-speaking.html','station-dobongsan-opic.html',
+              'station-dobongsan-ielts.html','station-dobongsan-toefl.html','station-dobongsan-duolingo.html',
+              'station-dobongsan-worker-english-conv-academy.html','privacy/index.html','404.html','favicon-options.html'
+          ]:
+              assert (root/name).exists(),name
+          stations=(root/'stations.html').read_text(encoding='utf-8')
+          assert 'id="applyModal"' in stations
+          assert 'id="leadForm"' in stations
+          assert 'name="englishpt-consultation"' in stations
+          assert 'data-netlify="true"' in stations
+          assert '개인정보처리방침' in stations
+          locality=json.loads((root/'assets/locality-index.json').read_text(encoding='utf-8'))
+          assert len(locality)==5149,len(locality)
+          dobongsan=root/'station-dobongsan.html'
+          hub=dobongsan.read_text(encoding='utf-8')
+          hrefs=re.findall(r'href="/(station-dobongsan-[^"]+\.html)"',hub)
+          assert len(set(hrefs))==23,len(set(hrefs))
+          for href in set(hrefs):
+              assert (root/href).exists(),href
+          print('PASS_FINAL_FREEZE_FAST_PACKAGE',len(reps),'DOBONGSAN_LINKS',len(set(hrefs)),'LOCALITIES',len(locality))
+          PY
+
+          (cd final-freeze-preview && zip -qr ../final-freeze-preview.zip .)
+
+      - name: Chromium responsive QA
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          python3 -m pip install --quiet pychrome
+          python3 -m http.server 8777 --directory final-freeze-preview >/tmp/final-freeze-http.log 2>&1 &
+          SERVER_PID=$!
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars             --remote-debugging-port=9237 --remote-allow-origins='*'             --user-data-dir=/tmp/final-freeze-chrome about:blank >/tmp/final-freeze-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:9237/json/version >/dev/null 2>&1 && break
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:9237/json/version >/dev/null
+
+          python3 - <<'PY'
+          import json,time
+          from pathlib import Path
+          import pychrome
+
+          root=Path('final-freeze-preview')
+          pages=[
+            'englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html',
+            'stations.html','station-dobongsan.html','station-gangnam.html'
+          ] + sorted(p.name for p in root.glob('station-dobongsan-*.html')) + sorted(p.name for p in root.glob('seoul-jongno-sajikdong-*.html'))
+          assert len(pages)==54,len(pages)
+
+          browser=pychrome.Browser(url='http://127.0.0.1:9237')
+          tab=browser.new_tab(); tab.start(); tab.Page.enable(); tab.Runtime.enable()
+          expr=r'''(()=>{
+            const box=(s)=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {top:Math.round(r.top),bottom:Math.round(r.bottom),height:Math.round(r.height),width:Math.round(r.width)}};
+            return {
+              width:window.innerWidth,
+              height:window.innerHeight,
+              scrollWidth:document.documentElement.scrollWidth,
+              hero:box('.hero'),
+              simpleHero:box('.hero.simple-hero'),
+              actions:box('.hero-actions'),
+              visual:box('.visual-break'),
+              beginner:box('.beginner-exam-guide'),
+              intro:box('.section.intro-detail'),
+              modal:!!document.querySelector('#applyModal'),
+              form:!!document.querySelector('#leadForm'),
+              regionFinder:!!document.querySelector('[data-region-finder]'),
+              sidoOptions:document.querySelector('[data-region-sido]')?.options?.length||0
+            };
+          })()'''
+          rows=[]
+          for mode,w,h,mobile in [('desktop',1440,900,False),('mobile',390,844,True)]:
+            tab.call_method('Emulation.setDeviceMetricsOverride',width=w,height=h,deviceScaleFactor=1,mobile=mobile,screenWidth=w,screenHeight=h,dontSetVisibleSize=False)
+            for name in pages:
+              tab.Page.navigate(url='http://127.0.0.1:8777/'+name)
+              core_region_page=name in {'englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html'}
+              deadline=time.time()+4.0
+              while True:
+                time.sleep(0.1)
+                m=tab.Runtime.evaluate(expression=expr,returnByValue=True)['result']['value']
+                if not core_region_page or m['sidoOptions'] > 2 or time.time() >= deadline:
+                  break
+              assert m['width']==w and m['height']==h,(mode,name,m)
+              assert m['scrollWidth']<=w,(mode,name,'horizontal_overflow',m)
+              assert m['hero'],(mode,name,'hero_missing')
+              if name=='stations.html':
+                assert m['modal'] and m['form'],(mode,name,'consultation_missing')
+              if core_region_page:
+                assert m['regionFinder'],(mode,name,'region_finder_missing')
+                assert m['sidoOptions'] > 2,(mode,name,'region_data_not_loaded',m)
+              if mode=='mobile' and m['simpleHero']:
+                assert m['simpleHero']['height']<=315,(mode,name,m)
+                if m['visual']:
+                  assert m['visual']['height']<=330,(mode,name,m)
+                if m['beginner']:
+                  assert m['beginner']['top']<=700,(mode,name,m)
+                  assert m['intro'] and m['intro']['top']<=940,(mode,name,m)
+              rows.append({'mode':mode,'page':name,'metrics':m})
+          tab.stop(); browser.close_tab(tab)
+          Path('FINAL_FREEZE_CHROMIUM_QA.json').write_text(json.dumps({'status':'PASS_FINAL_FREEZE_CHROMIUM_QA','checks':len(rows),'pages':len(pages),'rows':rows},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('PASS_FINAL_FREEZE_CHROMIUM_QA',len(rows),'checks')
+          PY
+
+      - name: Upload validated preview package
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage9-final-freeze-preview-package
+          path: |
+            final-freeze-preview.zip
+            FINAL_FREEZE_CHROMIUM_QA.json
+          retention-days: 7
+
+      - name: Publish browser-openable preview branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          export PREVIEW_BASE="https://raw.githack.com/${GITHUB_REPOSITORY}/preview-live"
+
+          python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+
+          root=Path('final-freeze-preview')
+          base=os.environ['PREVIEW_BASE']
+
+          for p in root.rglob('*.html'):
+              s=p.read_text(encoding='utf-8')
+              robots='<meta name="robots" content="noindex,nofollow,noarchive">'
+              if re.search(r'<meta\s+name=["\']robots["\'][^>]*>', s, flags=re.I):
+                  s=re.sub(r'<meta\s+name=["\']robots["\'][^>]*>', robots, s, count=1, flags=re.I)
+              else:
+                  s=s.replace('<head>', '<head>'+robots, 1)
+              for attr in ('href','src','action'):
+                  s=s.replace(f'{attr}="/', f'{attr}="{base}/')
+                  s=s.replace(f"{attr}='/", f"{attr}='{base}/")
+              p.write_text(s,encoding='utf-8')
+
+          js=root/'assets/site.js'
+          if js.exists():
+              s=js.read_text(encoding='utf-8')
+              s=s.replace("'/assets/", f"'{base}/assets/")
+              s=s.replace('"/assets/', f'"{base}/assets/')
+              js.write_text(s,encoding='utf-8')
+
+          idx=root/'assets/locality-index.json'
+          if idx.exists():
+              rows=json.loads(idx.read_text(encoding='utf-8'))
+              for row in rows:
+                  for key in ('url','href','path'):
+                      v=row.get(key)
+                      if isinstance(v,str) and v.startswith('/'):
+                          row[key]=base+v
+              idx.write_text(json.dumps(rows,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
+
+          (root/'index.html').write_text((root/'englishpt.html').read_text(encoding='utf-8'),encoding='utf-8')
+          print('PREVIEW_BRANCH_PACKAGE_READY', base)
+          PY
+
+          TMP_DIR="$(mktemp -d)"
+          cp -R final-freeze-preview/. "$TMP_DIR/"
+          cd "$TMP_DIR"
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -b preview-live
+          git add -A
+          git commit -q -m "Publish ENGLISH PT final-freeze browser preview"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin HEAD:preview-live
+          echo "PREVIEW_URL=https://raw.githack.com/${GITHUB_REPOSITORY}/preview-live/index.html"
+
+      - name: Resolve valid Netlify auth
+        shell: bash
+        run: |
+          set -euo pipefail
+          SELECTED_TOKEN=""
+          for VAR_NAME in NETLIFY_AUTH_TOKEN_PRIMARY NETLIFY_AUTH_TOKEN_FALLBACK; do
+            TOKEN="${!VAR_NAME:-}"
+            test -n "$TOKEN" || continue
+            CODE="$(curl -sS -o /tmp/netlify-auth-check.json -w '%{http_code}' \
+              -H "Authorization: Bearer $TOKEN" \
+              "https://api.netlify.com/api/v1/user" || true)"
+            if [ "$CODE" = "200" ]; then
+              SELECTED_TOKEN="$TOKEN"
+              echo "::add-mask::$TOKEN"
+              break
+            fi
+          done
+          test -n "$SELECTED_TOKEN" || { echo "No valid Netlify auth token is configured"; exit 1; }
+          printf 'NETLIFY_AUTH_TOKEN=%s\n' "$SELECTED_TOKEN" >> "$GITHUB_ENV"
+
+      - name: Ensure isolated review site
+        run: |
+          set -euo pipefail
+          SITE_DOMAIN="$REVIEW_SITE_NAME.netlify.app"
+          if curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/sites/$SITE_DOMAIN" -o /tmp/review-site.json; then
+            echo "Using existing review site"
+          else
+            curl -fsS -X POST               -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"               -H "Content-Type: application/json"               --data "{\"name\":\"$REVIEW_SITE_NAME\",\"processing_settings\":{\"html\":{\"pretty_urls\":false}}}"               "https://api.netlify.com/api/v1/sites" -o /tmp/review-site.json
+          fi
+          python3 - <<'PY'
+          import json,os
+          d=json.load(open('/tmp/review-site.json'))
+          assert d.get('id'),d
+          url=(d.get('ssl_url') or d.get('url')).replace('http://','https://')
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('REVIEW_SITE_ID='+d['id']+'\n')
+              f.write('REVIEW_SITE_URL='+url+'\n')
+          print('REVIEW_SITE_URL',url)
+          PY
+
+      - name: Enable Netlify Forms detection on review site
+        run: |
+          set -euo pipefail
+          curl -fsS -X PUT             -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             -H "Content-Type: application/json"             --data '{"processing_settings":{"html":{"pretty_urls":false},"ignore_html_forms":false}}'             "https://api.netlify.com/api/v1/sites/$REVIEW_SITE_ID"             -o /tmp/review-site-updated.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/review-site-updated.json',encoding='utf-8'))
+          p=d.get('processing_settings') or {}
+          print('REVIEW_PROCESSING_SETTINGS',json.dumps(p,ensure_ascii=False))
+          assert p.get('ignore_html_forms') is False,p
+          PY
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Netlify CLI
+        run: npm install --global netlify-cli@latest
+
+      - name: Deploy isolated review with Netlify CLI
+        run: |
+          set -euo pipefail
+          netlify deploy \
+            --dir=final-freeze-preview \
+            --site="$REVIEW_SITE_ID" \
+            --auth="$NETLIFY_AUTH_TOKEN" \
+            --message="ENGLISH PT FINAL FREEZE review" \
+            --json | tee /tmp/review-deploy.json
+          python3 - <<'PY'
+          import json,os
+          d=json.load(open('/tmp/review-deploy.json',encoding='utf-8'))
+          deploy_id=d.get('deploy_id') or d.get('id')
+          assert deploy_id,d
+          url=(d.get('deploy_url') or d.get('url') or os.environ['REVIEW_SITE_URL']).replace('http://','https://')
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('REVIEW_DEPLOY_ID='+deploy_id+'\n')
+              f.write('REVIEW_DEPLOY_URL='+url+'\n')
+          print('PASS_REVIEW_NETLIFY_CLI_DEPLOY',deploy_id,url)
+          PY
+
+      - name: Verify review URLs
+        run: |
+          set -euo pipefail
+          for path in englishpt.html courses.html english-conversation.html exam-english.html student-english.html stations.html station-dobongsan.html station-gangnam.html seoul-jongno-sajikdong-toeic.html seoul-jongno-sajikdong-opic.html seoul-jongno-sajikdong-beginner-english-conv.html privacy/ 404.html
+          do
+            curl -fsSIL --max-time 30 "$REVIEW_SITE_URL/$path" >/dev/null
+          done
+          for path in $(cd final-freeze-preview && printf '%s\n' station-dobongsan-*.html); do
+            curl -fsSIL --max-time 30 "$REVIEW_SITE_URL/$path" >/dev/null
+          done
+          HEADER=$(curl -fsSI "$REVIEW_SITE_URL/englishpt.html")
+          echo "$HEADER" | grep -qi 'x-robots-tag: noindex'
+          echo "PASS_FINAL_FREEZE_FAST_PREVIEW"
+
+      - name: Configure review consultation email notification
+        run: |
+          set -euo pipefail
+          curl -fsS -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN"             "https://api.netlify.com/api/v1/hooks?site_id=$REVIEW_SITE_ID"             -o /tmp/review-hooks.json
+          python3 - <<'PY'
+          import json,os,urllib.request
+          hooks=json.load(open('/tmp/review-hooks.json',encoding='utf-8'))
+          email='cicada3865@naver.com'
+          exists=any(
+              h.get('type')=='email' and h.get('event')=='submission_created'
+              and (h.get('data') or {}).get('email')==email
+              for h in hooks
+          )
+          if exists:
+              print('PASS review email hook already exists')
+          else:
+              body=json.dumps({
+                  'site_id':os.environ['REVIEW_SITE_ID'],
+                  'type':'email',
+                  'event':'submission_created',
+                  'data':{'email':email},
+              }).encode()
+              req=urllib.request.Request(
+                  'https://api.netlify.com/api/v1/hooks',
+                  data=body,
+                  headers={'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN'],'Content-Type':'application/json'},
+                  method='POST',
+              )
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  out=json.loads(r.read().decode())
+              assert out.get('id'),out
+              print('PASS created review consultation email hook',out['id'])
+          PY
+
+      - name: Submit review consultation and verify storage
+        run: |
+          set -euo pipefail
+          TEST_NAME="ENGLISH PT 알림 테스트"
+          curl -fsS -X POST "$REVIEW_DEPLOY_URL/englishpt.html"             -H "Content-Type: application/x-www-form-urlencoded"             --data-urlencode "form-name=englishpt-consultation"             --data-urlencode "subject=ENGLISH PT 알림 테스트"             --data-urlencode "name=$TEST_NAME"             --data-urlencode "phone=010-0000-0000"             --data-urlencode "area=FINAL FREEZE PREVIEW TEST"             --data-urlencode "wantedClass=상담 이메일 알림 테스트"             --data-urlencode "message=[테스트] 실제 상담이 아닙니다. Netlify Forms 이메일 알림 연결 확인용입니다."             --data-urlencode "consent=agreed"             --data-urlencode "pageTitle=ENGLISH PT FINAL FREEZE PREVIEW"             --data-urlencode "pageUrl=$REVIEW_DEPLOY_URL/englishpt.html"             --data-urlencode "submittedAt=$(date -u +%Y-%m-%dT%H:%M:%SZ)"             >/tmp/review-form-response.html
+          python3 - <<'PY'
+          import json,os,time,urllib.request
+          token=os.environ['NETLIFY_AUTH_TOKEN']; site=os.environ['REVIEW_SITE_ID']
+          found=False
+          for _ in range(18):
+              req=urllib.request.Request(
+                  f'https://api.netlify.com/api/v1/sites/{site}/submissions?per_page=20',
+                  headers={'Authorization':'Bearer '+token},
+              )
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  rows=json.loads(r.read().decode())
+              for row in rows:
+                  if (row.get('data') or {}).get('name')=='ENGLISH PT 알림 테스트':
+                      print('PASS_REVIEW_NETLIFY_FORM_SUBMISSION',row.get('id'))
+                      found=True
+                      break
+              if found: break
+              time.sleep(5)
+          assert found,'review consultation submission not found'
+          PY
+
+      - name: Write report
+        run: |
+          python3 - <<'PY'
+          import json,os
+          report={
+            "status":"PASS_STAGE9_FINAL_FREEZE_FAST_PREVIEW",
+            "preview_url":os.environ["REVIEW_SITE_URL"],
+            "source_preflight_run":37577998837,
+            "representative_course_pages":23,
+            "includes":["home","4 national hubs","stations","station hub","station course","privacy","404"],
+            "production_affected":False,
+            "indexing":"blocked with X-Robots-Tag: noindex, nofollow"
+          }
+          open('STAGE9_FINAL_FREEZE_FAST_PREVIEW_REPORT.json','w',encoding='utf-8').write(
+              json.dumps(report,ensure_ascii=False,indent=2)+'\n'
+          )
+          print(json.dumps(report,ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage9-final-freeze-fast-preview-report
+          path: |
+            STAGE9_FINAL_FREEZE_FAST_PREVIEW_REPORT.json
+            FINAL_FREEZE_CHROMIUM_QA.json
+          retention-days: 30
