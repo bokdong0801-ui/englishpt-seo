@@ -9,3 +9,4 @@
 2026-10-11 full 140391 preview with Sajik-Buam regression
 2026-10-11 final preflight with square thumbnail crop fix
 2026-10-11 final preflight compact thumbnail v5 + copy quality QA
+2026-10-11 final preflight v6 Naver-scale thumbnails + copy QA
