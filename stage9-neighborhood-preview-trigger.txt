@@ -1,3 +1,4 @@
 2026-10-11 expanded Jongno neighborhood preview
 2026-10-11 fix production assets neighborhood preview
 2026-10-11 square-search-thumbnail-preview-v1
+2026-10-11 square-search-thumbnail-preview-v2-core-copy
