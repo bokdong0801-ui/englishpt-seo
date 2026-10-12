@@ -15,3 +15,4 @@
 2026-10-12 final-faq-phone-trial-v12b
 2026-10-12 final-latest-faq-phone-trial-v13
 2026-10-12 dedupe-copy-qa-v14
+2026-10-12 dedupe-headings-hero-eyebrow-v13
