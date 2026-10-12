@@ -276,20 +276,33 @@ def _add_schema_image(raw: str, image_url: str) -> tuple[str, bool]:
 
 
 def _remove_body_representative_visuals(raw: str) -> tuple[str, int]:
-    """Keep search thumbnails metadata-only and remove visible representative art.
+    """Keep search imagery metadata-only and remove every visible body image.
 
-    The square 1200x1200 image remains wired to og:image/Twitter/Schema, but
-    visitors should move directly from the hero into useful page content.
+    Search/OG images remain available in <head> metadata and Schema, but the
+    production UI must not render photography/representative artwork in page
+    bodies. This is intentionally stricter than matching only known wrappers.
     """
+    body_match = re.search(r'<body\\b', raw, re.I)
+    if not body_match:
+        return raw, 0
+
+    head = raw[:body_match.start()]
+    body = raw[body_match.start():]
     removed = 0
-    patterns = (
+
+    wrapper_patterns = (
         r'<section class="visual-break"[^>]*>.*?</section>',
         r'<section class="search-thumbnail-section"[^>]*>.*?</section>',
+        r'<figure\\b[^>]*>.*?<img\\b[^>]*>.*?</figure>',
+        r'<picture\\b[^>]*>.*?</picture>',
     )
-    for pattern in patterns:
-        raw, n = re.subn(pattern, '', raw, flags=re.I | re.S)
+    for pattern in wrapper_patterns:
+        body, n = re.subn(pattern, '', body, flags=re.I | re.S)
         removed += n
-    return raw, removed
+
+    body, n = re.subn(r'<img\\b[^>]*>', '', body, flags=re.I | re.S)
+    removed += n
+    return head + body, removed
 
 
 def apply_search_image_metadata(out: Path, failures: list) -> dict:
@@ -1160,6 +1173,58 @@ def main() -> None:
             })
 
     search_image_report = apply_search_image_metadata(out, failures)
+
+    # Sitewide render-integrity contract. A production page is considered
+    # "broken" if its core local assets or local HTML targets are missing,
+    # if the document structure is incomplete, or if any visible body image
+    # survived the metadata-only image policy.
+    release_pages = sorted(p for p in out.glob("*.html") if p.name != "404.html")
+    release_names = {p.name for p in release_pages}
+    body_image_pages = []
+    structure_failures = []
+    missing_local_assets = []
+    missing_local_html = []
+
+    asset_ref_re = re.compile(r'(?:href|src)=["\\\'](/?(?:assets/[^"\\\'#?]+|pilot\\.css|pilot\\.js))["\\\']', re.I)
+    html_ref_re = re.compile(r'href=["\\\'](/?[^"\\\'#?]+\\.html)(?:#[^"\\\']*)?["\\\']', re.I)
+
+    for page in release_pages:
+        raw = page.read_text(encoding="utf-8", errors="ignore")
+        lower = raw.lower()
+        if "<html" not in lower or "<body" not in lower or "</body>" not in lower or "</html>" not in lower:
+            structure_failures.append(page.name)
+
+        body = raw.split("<body", 1)[1] if "<body" in raw else raw
+        if re.search(r'<img\\b', body, re.I):
+            body_image_pages.append(page.name)
+
+        for ref in asset_ref_re.findall(raw):
+            rel = ref.lstrip("/")
+            if not (out / rel).exists():
+                missing_local_assets.append((page.name, rel))
+
+        for ref in html_ref_re.findall(raw):
+            rel = ref.lstrip("/")
+            if "/" in rel:
+                target = out / rel
+                if not target.exists():
+                    missing_local_html.append((page.name, rel))
+            elif rel not in release_names and rel != "404.html":
+                missing_local_html.append((page.name, rel))
+
+    if body_image_pages:
+        failures.append({"visible_body_images": body_image_pages[:50], "count": len(body_image_pages)})
+    if structure_failures:
+        failures.append({"html_structure_failures": structure_failures[:50], "count": len(structure_failures)})
+    if missing_local_assets:
+        failures.append({"missing_local_assets": missing_local_assets[:50], "count": len(missing_local_assets)})
+    if missing_local_html:
+        failures.append({"missing_local_html": missing_local_html[:50], "count": len(missing_local_html)})
+
+    search_image_report["visible_body_image_pages"] = len(body_image_pages)
+    search_image_report["missing_local_assets"] = len(missing_local_assets)
+    search_image_report["missing_local_html"] = len(missing_local_html)
+    search_image_report["html_structure_failures"] = len(structure_failures)
 
     # Rebuild sitemaps from the exact final HTML set because Stage 9 adds
     # five exam-academy intents plus four conversation-search intents per locality.
