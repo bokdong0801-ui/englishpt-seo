@@ -1,2 +1,2 @@
-Run final preflight v20 beginner comfort and render integrity
-Final candidate: zero visible photos, approachable beginner copy, full local asset/link integrity, and responsive layout validation.
+Run final preflight v21 corrected local-link integrity
+Final candidate with corrected absolute-URL exclusion, zero visible photos, beginner-friendly copy, full render integrity, and responsive validation.
