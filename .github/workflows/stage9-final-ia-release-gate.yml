@@ -150,6 +150,25 @@ jobs:
               with Image.open(image_path) as im:
                   assert im.size==(1200,1200),(name,im.size)
 
+          # Floating phone/trial conversion controls + FAQ depth on detailed course pages.
+          conversion_samples={
+              'seoul-jongno-sajikdong-beginner-english-conv.html':4,
+              'seoul-jongno-buamdong-toeic.html':5,
+              'seoul-jongno-sajikdong-ielts.html':5,
+              'seoul-jongno-sajikdong-ielts-academy.html':6,
+          }
+          for name,faq_target in conversion_samples.items():
+              raw=(root/name).read_text(encoding='utf-8')
+              assert 'class="mid-consult-cta"' not in raw,(name,'old mid CTA')
+              assert raw.count('class="floating-contact"')==1,(name,'floating contact')
+              assert 'href="tel:+821050068027"' in raw,(name,'phone CTA')
+              assert 'data-trial-cta' in raw,(name,'trial CTA')
+              assert 'name="requestType" value="무료 PT 진단"' in raw,(name,'request type')
+              faq=re.search(r'<div class="faq">(.*?)</div>',raw,re.S)
+              assert faq,(name,'FAQ')
+              faq_count=len(re.findall(r'<details>.*?</details>',faq.group(1),re.S))
+              assert faq_count==faq_target,(name,faq_count,faq_target)
+
           # 911 station hubs -> all 23 existing course pages.
           station_data=json.loads(Path('data/stations.json').read_text(encoding='utf-8'))
           station_course_checks=0
