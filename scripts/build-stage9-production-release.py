@@ -532,6 +532,17 @@ def simplify_preserved_consultation(raw: str) -> tuple[str, bool]:
     return updated, n == 1
 
 
+def clean_preserved_copy(raw: str) -> str:
+    """Remove obsolete preserved-page FAQ copy and exact repeated long paragraphs."""
+    raw = re.sub(
+        r'<details>\s*<summary>\s*변화는 어떻게 확인하나요\?\s*</summary>.*?</details>',
+        '',
+        raw,
+        flags=re.S | re.I,
+    )
+    return CLEAN_RENDERER.dedupe_substantive_paragraphs(raw)
+
+
 PRESERVED_EASY_REPLACEMENTS = {
     "장면": "상황",
     "판단라는 기준": "판단 기준",
@@ -826,6 +837,7 @@ def main() -> None:
             preserved_raw = preserved_page.read_text(encoding="utf-8")
             preserved_raw, changed = simplify_preserved_consultation(preserved_raw)
             preserved_raw = humanize_preserved_page(preserved_raw, preserved_page.name)
+            preserved_raw = clean_preserved_copy(preserved_raw)
             # Preserved Stage 7 pages must not be dead ends: add the same nationwide
             # locality/course selector used by the current national hubs.
             if preserved_page.name != "englishpt.html" and 'data-region-finder' not in preserved_raw:
