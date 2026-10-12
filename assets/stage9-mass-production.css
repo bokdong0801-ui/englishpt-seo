@@ -612,7 +612,7 @@ input,select,textarea,button{max-width:100%}
   .header{gap:10px}
   .brand{min-width:0}
   .hero.simple-hero{padding:48px 0 52px}
-  .hero h1{font-size:clamp(30px,8.6vw,38px);line-height:1.17;letter-spacing:-.04em;max-width:16ch}
+  .hero h1{font-size:clamp(30px,8.6vw,38px);line-height:1.17;letter-spacing:-.04em;max-width:100%}
   .hero-subline{font-size:14px;line-height:1.55;max-width:32ch}
   .hero-actions .btn{min-height:48px}
   .section{padding:46px 0}
@@ -635,7 +635,7 @@ input,select,textarea,button{max-width:100%}
   .brand-name{font-size:12.5px}
   .nav-cta{padding:8px 10px;font-size:11px}
   .hero.simple-hero{padding:40px 0 44px}
-  .hero h1{font-size:30px;max-width:15ch}
+  .hero h1{font-size:30px;max-width:100%}
   .hero-subline{font-size:13.5px;max-width:30ch}
   .hero-actions{gap:7px}
   .hero-actions .btn{font-size:12px;padding:10px 8px}
@@ -655,7 +655,7 @@ input,select,textarea,button{max-width:100%}
 
 @media(max-width:360px){
   .wrap,.mass-context>.wrap,.consult>.wrap,.exam-reader-roadmap>.wrap{width:calc(100% - 20px)}
-  .hero h1{font-size:28px;max-width:14ch}
+  .hero h1{font-size:28px;max-width:100%}
   .hero-actions{grid-template-columns:1fr}
   .hero-actions .btn{font-size:12.5px}
   .beginner-term{grid-template-columns:1fr}
