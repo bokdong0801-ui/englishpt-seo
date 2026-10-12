@@ -285,7 +285,7 @@ input,select,textarea,button{max-width:100%}
   .hero{padding:48px 0 68px}
   .home-hero{padding-top:116px}
   .hero-grid{gap:30px}
-  .hero h1{font-size:clamp(34px,8.7vw,40px);line-height:1.14;letter-spacing:-.052em;max-width:16ch}
+  .hero h1{font-size:clamp(34px,8.7vw,40px);line-height:1.14;letter-spacing:-.052em;max-width:100%}
   .hero-statement{font-size:clamp(18px,4.8vw,21px)!important;line-height:1.5!important;max-width:31ch!important}
   .hero-copy{font-size:15.5px!important;line-height:1.75!important}
   .hero-sheet{padding:20px}
@@ -306,7 +306,7 @@ input,select,textarea,button{max-width:100%}
   .brand{min-width:0}
   .hero{padding:42px 0 60px}
   .home-hero{padding-top:106px}
-  .hero h1{font-size:clamp(32px,9.2vw,36px);max-width:15ch}
+  .hero h1{font-size:clamp(32px,9.2vw,36px);max-width:100%}
   .hero-statement{font-size:18px!important}
   .hero-copy{font-size:15px!important}
   .btn{min-height:50px;padding:0 18px;font-size:14px}
@@ -332,7 +332,7 @@ input,select,textarea,button{max-width:100%}
 
 @media(max-width:420px){
   .wrap{width:calc(100% - 24px)}
-  .hero h1{font-size:31px;line-height:1.17;max-width:14ch}
+  .hero h1{font-size:31px;line-height:1.17;max-width:100%}
   .hero-statement{font-size:17px!important;line-height:1.48!important}
   .hero-copy{font-size:14.5px!important}
   .section h2,.coach h2,.report-section h2,.guide-section h2,.faq-wrap>h2,.fit h2,.final h2{font-size:27px}
@@ -348,7 +348,7 @@ input,select,textarea,button{max-width:100%}
   .brand{font-size:13px}
   .brand-mark{width:28px;height:28px}
   .mobile-menu{padding:7px 10px}
-  .hero h1{font-size:29px;max-width:13ch}
+  .hero h1{font-size:29px;max-width:100%}
   .hero-statement{font-size:16px!important}
   .btn{font-size:13px}
   .section{padding:56px 0}
