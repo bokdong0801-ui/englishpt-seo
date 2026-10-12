@@ -2458,12 +2458,53 @@ def dedupe_substantive_paragraphs(raw: str) -> str:
     return raw[:main.start()] + main.group(1) + body + main.group(3) + raw[main.end():]
 
 
+def dedupe_substantive_headings(raw: str, intent: str) -> str:
+    """Rename later exact duplicate h2/h3 headings inside <main>.
+
+    Duplicate section titles make long pages feel machine-generated even when
+    the underlying sections differ. Keep the first heading and give later
+    duplicates a concise intent-specific label.
+    """
+    main = re.search(r'(<main\b[^>]*>)(.*?)(</main>)', raw, re.S | re.I)
+    if not main:
+        return raw
+    seen: set[str] = set()
+    duplicate_index = 0
+    label = intent_label(intent)
+    alternatives = [
+        f"{label} 준비에서 확인할 부분",
+        f"{label} 수업에서 확인할 기준",
+        f"{label} 준비 흐름을 다시 확인해보세요",
+    ]
+
+    def repl(m: re.Match) -> str:
+        nonlocal duplicate_index
+        inner = m.group(3)
+        text = re.sub(r'<[^>]+>', ' ', inner)
+        text = re.sub(r'\s+', ' ', html.unescape(text)).strip()
+        if len(text) < 4:
+            return m.group(0)
+        if text not in seen:
+            seen.add(text)
+            return m.group(0)
+        new_text = alternatives[min(duplicate_index, len(alternatives)-1)]
+        duplicate_index += 1
+        return m.group(1) + esc(new_text) + m.group(4)
+
+    body = re.sub(
+        r'(<h([23])\b[^>]*>)(.*?)(</h\2>)',
+        repl, main.group(2), flags=re.S | re.I
+    )
+    return raw[:main.start()] + main.group(1) + body + main.group(3) + raw[main.end():]
+
+
 def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,list[str]]:
     problems=[]
     raw = apply_intent_faq(raw, intent)
     raw = trim_gold_page(raw, loc["slug"] + "|" + intent, family)
     raw = raw.replace("장면", "상황")
     raw = raw.replace("판단라는 기준", "판단이라는 기준")
+    raw = raw.replace("연습하는 것 연습의 우선순위", "연습하는 것이 우선순위")
     if 'rel="icon" href="/assets/favicon.svg"' not in raw:
         raw = raw.replace(
             '<meta name="viewport" content="width=device-width,initial-scale=1">',
@@ -2520,7 +2561,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
 
     hero_html = (
         '<section class="hero simple-hero"><div class="wrap simple-hero-inner">'
-        f'<p class="eyebrow">ENGLISH PT · {esc(loc["dong"])}</p>'
+        '<p class="eyebrow">ENGLISH PT · 1:1 맞춤 영어</p>'
         f'<h1>{esc(h1)}</h1>'
         f'<p class="hero-subline">{esc(HERO_STATEMENTS[intent])}</p>'
         '<div class="hero-actions">'
@@ -2632,6 +2673,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     raw = apply_exam_reader_pilot(raw, base_exam_intent(intent))
     raw = ensure_faq_count(raw, intent)
     raw = dedupe_substantive_paragraphs(raw)
+    raw = dedupe_substantive_headings(raw, intent)
     raw = raw.replace('</body>', floating_contact() + '</body>', 1)
 
     forbidden=[
