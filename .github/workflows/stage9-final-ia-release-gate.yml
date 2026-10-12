@@ -103,7 +103,7 @@ jobs:
           assert search['missing_assets']==0,search
           assert search['manifest_missing']==0,search
           assert search['schema_failures']==0,search
-          assert search['body_image_updates']['body_image_not_inserted']==0,search
+          assert search['body_search_thumbnail_policy']=='metadata_only',search
           assert search['unique_search_images']>=29,search
 
           files={p.name for p in root.glob('*.html') if p.name!='404.html'}
@@ -126,36 +126,23 @@ jobs:
           assert '누구를 위한' in home
           assert home.index('과정 찾기') < home.index('전체지역·과정 바로가기')
 
-          # Square representative-image contract for search engines and visible body content.
-          for name in core:
-              raw=(root/name).read_text(encoding='utf-8')
-              assert 'og:image:width" content="1200"' in raw,name
-              assert 'og:image:height" content="1200"' in raw,name
-              assert 'og:image:alt' in raw,name
-              assert 'thumbnailUrl' in raw,name
-              assert 'search-thumbnail' in raw or 'learning-visual' in raw,name
-
-              assert 'aspect-ratio:auto!important' in raw,name
-              assert 'object-fit:contain!important' in raw,name
-              assert 'width:clamp(76px,8vw,100px)!important' in raw,name
-
-          pilot_css=(root/'pilot.css').read_text(encoding='utf-8')
-          assert 'aspect-ratio:5/3' not in pilot_css
-          assert 'object-fit:contain' in pilot_css
-          assert 'width:clamp(76px,8vw,100px)' in pilot_css
-
-          # Regression for the exact crop failure reported during Preview review.
-          crop_samples=[
+          # Search thumbnail contract: metadata only, never visible body content.
+          from PIL import Image
+          metadata_samples=core+[
               'seoul-jongno-buamdong-toeic.html',
               'seoul-jongno-sajikdong-ielts.html',
               'seoul-jongno-sajikdong-beginner-english-conv.html',
               'seoul-jongno-hyehwadong-worker-english-conv-academy.html',
           ]
-          from PIL import Image
-          for name in crop_samples:
+          for name in metadata_samples:
               raw=(root/name).read_text(encoding='utf-8')
-              assert 'aspect-ratio:auto!important' in raw,name
-              assert 'object-fit:contain!important' in raw,name
+              assert 'og:image:width" content="1200"' in raw,name
+              assert 'og:image:height" content="1200"' in raw,name
+              assert 'og:image:alt' in raw,name
+              assert 'thumbnailUrl' in raw,name
+              assert 'class="visual-break"' not in raw,name
+              assert 'class="learning-visual"' not in raw,name
+              assert 'search-thumbnail-section' not in raw,name
               m=re.search(r'<meta property="og:image" content="https://englishpt\.kr(/assets/images/[^"]+)">',raw)
               assert m,(name,'og image')
               image_path=root/m.group(1).lstrip('/')
