@@ -106,196 +106,6 @@ FINAL_PROMPTS = {
     "beginner-english-conv":"영어가 자신 없어도 지금 가능한 한 문장부터 확인해보세요.",
 }
 
-MID_CTA_MAP = {
-    # 학생·생활·업무 회화: 수업 흐름을 이해한 뒤 상담으로 이어집니다.
-    "elem-tutor": {
-        "anchor":"management",
-        "title":"아이에게 지금 필요한 영어부터 확인해보세요",
-        "body":"읽기·기초 문장·학교영어 중 어디부터 시작할지 현재 수준과 가까운 일정 기준으로 함께 정리합니다.",
-        "button":"무료 PT 진단으로 확인하기 →",
-    },
-    "mid-conv": {
-        "anchor":"management",
-        "title":"가장 가까운 학교 일정부터 준비 순서를 잡아보세요",
-        "body":"수행평가·발표·교과서 영어 중 지금 먼저 준비할 내용을 현재 수준에 맞춰 확인합니다.",
-        "button":"내 상황으로 상담하기 →",
-    },
-    "high-conv": {
-        "anchor":"management",
-        "title":"내신·수능·수행 중 무엇부터 잡아야 할지 확인해보세요",
-        "body":"해야 할 영어가 많다면 가장 급한 일정과 현재 어려운 부분부터 나눠 우선순위를 정합니다.",
-        "button":"우선순위 상담 받아보기 →",
-    },
-    "univ-conv": {
-        "anchor":"management",
-        "title":"다음 발표·세미나·면접에 필요한 영어부터 준비해보세요",
-        "body":"막연한 회화보다 실제로 영어를 써야 하는 상황을 기준으로 연습 범위와 시작점을 정합니다.",
-        "button":"내 목표로 상담하기 →",
-    },
-    "jobseeker-conv": {
-        "anchor":"management",
-        "title":"면접에서 가장 막히는 질문부터 점검해보세요",
-        "body":"지원 일정과 자기소개·경험 답변에서 어려운 부분을 기준으로 실제 말하기 준비 순서를 잡습니다.",
-        "button":"면접 영어 진단받기 →",
-    },
-    "biz-business-conv": {
-        "anchor":"management",
-        "title":"다음 업무에서 바로 써야 할 영어부터 확인해보세요",
-        "body":"회의·발표·전화·고객 대응 중 가장 가까운 상황을 기준으로 필요한 표현과 연습 순서를 정합니다.",
-        "button":"업무 영어 상담하기 →",
-    },
-    "housewife-conv": {
-        "anchor":"management",
-        "title":"부담 없이 다시 시작할 수 있는 범위를 확인해보세요",
-        "body":"생활·여행에서 자주 쓰는 영어와 현재 가능한 시간을 함께 보고 무리하지 않는 시작점을 정합니다.",
-        "button":"편하게 상담 받아보기 →",
-    },
-
-    # 시험 과외형: 시험 구조·관리 흐름까지 읽은 뒤 상담으로 이어집니다.
-    "toeic": {
-        "anchor":"exam-reader-outputs",
-        "title":"목표 점수까지 무엇부터 보완해야 할까요?",
-        "body":"시험일과 최근 결과를 기준으로 LC·RC 중 먼저 손봐야 할 파트와 시간 배분을 확인합니다.",
-        "button":"토익 준비 순서 확인하기 →",
-    },
-    "toeic-speaking": {
-        "anchor":"exam-reader-outputs",
-        "title":"목표 Level에 필요한 말하기부터 점검해보세요",
-        "body":"첫 문장·답변 구조·제한 시간 중 어디에서 막히는지 확인해 실전 연습 순서를 정합니다.",
-        "button":"토스 말하기 진단받기 →",
-    },
-    "opic": {
-        "anchor":"exam-reader-outputs",
-        "title":"목표 등급에 필요한 답변 흐름부터 확인해보세요",
-        "body":"돌발 질문과 경험 답변에서 막히는 지점을 보고 IH·AL 목표에 맞는 연습 순서를 잡습니다.",
-        "button":"오픽 준비 방향 확인하기 →",
-    },
-    "ielts": {
-        "anchor":"exam-reader-outputs",
-        "title":"목표 Band까지 가장 먼저 올려야 할 영역은 무엇일까요?",
-        "body":"Listening·Reading·Writing·Speaking 중 현재 차이가 큰 영역부터 시험일까지의 우선순위를 정합니다.",
-        "button":"IELTS 준비 순서 확인하기 →",
-    },
-    "duolingo": {
-        "anchor":"exam-reader-outputs",
-        "title":"제출 일정에 맞춰 먼저 보완할 영역을 확인해보세요",
-        "body":"시험 형식 적응과 읽기·듣기·말하기·쓰기 중 결과를 흔드는 부분부터 우선순위를 정합니다.",
-        "button":"DET 준비 방향 확인하기 →",
-    },
-    "toefl": {
-        "anchor":"exam-reader-outputs",
-        "title":"목표 점수까지 통합형에서 막히는 부분부터 확인해보세요",
-        "body":"읽고 들은 내용을 말하고 쓰는 과정에서 어디가 끊기는지 보고 네 영역의 준비 순서를 정합니다.",
-        "button":"TOEFL 준비 순서 확인하기 →",
-    },
-
-    # 시험 학원형: 학원형/1:1 비교 기준을 읽은 직후 상담으로 이어집니다.
-    "toeic-academy": {
-        "anchor":"academy-choice",
-        "title":"토익학원과 1:1 수업, 내게 맞는 방식부터 비교해보세요",
-        "body":"시험일·약한 파트·질문과 오답관리 범위를 기준으로 어떤 수업 방식이 필요한지 함께 확인합니다.",
-        "button":"수업 방식 상담하기 →",
-    },
-    "toeic-speaking-academy": {
-        "anchor":"academy-choice",
-        "title":"말하기 시간과 개인 피드백이 얼마나 필요한지 확인해보세요",
-        "body":"목표 등급과 현재 발화 수준을 기준으로 그룹형 진도와 1:1 피드백 중 필요한 비중을 비교합니다.",
-        "button":"토스 수업 비교 상담 →",
-    },
-    "opic-academy": {
-        "anchor":"academy-choice",
-        "title":"스크립트보다 실제 답변 피드백이 필요한지 확인해보세요",
-        "body":"목표 등급·돌발 질문·직접 말하는 시간을 기준으로 수업 방식과 관리 범위를 비교합니다.",
-        "button":"오픽 수업 비교 상담 →",
-    },
-    "ielts-academy": {
-        "anchor":"academy-choice",
-        "title":"네 영역을 같은 비중으로 들어야 하는지부터 비교해보세요",
-        "body":"목표 Band와 약한 영역, Writing 첨삭·Speaking 피드백 필요도를 기준으로 수업 방식을 확인합니다.",
-        "button":"IELTS 수업 비교 상담 →",
-    },
-    "duolingo-academy": {
-        "anchor":"academy-choice",
-        "title":"빠른 진도보다 지금 필요한 관리 범위를 먼저 비교해보세요",
-        "body":"제출 일정과 시험 형식 적응, 말하기·쓰기 피드백 필요도를 기준으로 수업 방식을 확인합니다.",
-        "button":"DET 수업 비교 상담 →",
-    },
-    "toefl-academy": {
-        "anchor":"academy-choice",
-        "title":"통합형 연습과 개인 피드백 비중부터 확인해보세요",
-        "body":"목표 점수와 시험일까지 남은 기간을 기준으로 네 영역 관리와 1:1 보완 필요도를 비교합니다.",
-        "button":"TOEFL 수업 비교 상담 →",
-    },
-
-    # 회화 학원형: 학원형/1:1 말하기 구조를 비교한 직후 상담으로 이어집니다.
-    "english-conv-academy": {
-        "anchor":"academy-choice",
-        "title":"내가 직접 말하고 피드백받는 시간이 충분한지 확인해보세요",
-        "body":"현재 말하기 수준과 회화 목적을 기준으로 그룹형 수업과 1:1 맞춤 수업의 차이를 비교합니다.",
-        "button":"회화 수업 비교 상담 →",
-    },
-    "adult-english-conv-academy": {
-        "anchor":"academy-choice",
-        "title":"생활에 맞게 꾸준히 이어갈 수 있는 수업인지 비교해보세요",
-        "body":"기초 수준·생활/여행 목적·가능한 시간을 기준으로 진도와 개인 피드백 방식을 확인합니다.",
-        "button":"성인회화 상담 받아보기 →",
-    },
-    "worker-english-conv-academy": {
-        "anchor":"academy-choice",
-        "title":"실제 업무에 바로 연결되는 수업인지 확인해보세요",
-        "body":"회의·발표·전화 등 필요한 업무 상황과 개인 피드백 비중을 기준으로 수업 방식을 비교합니다.",
-        "button":"직장인 회화 상담하기 →",
-    },
-    "beginner-english-conv": {
-        "anchor":"management",
-        "title":"영어가 자신 없어도 지금 가능한 한 문장부터 확인해보세요",
-        "body":"인사·자기소개처럼 쉬운 표현부터 현재 할 수 있는 범위를 보고 부담 없는 시작 순서를 정합니다.",
-        "button":"왕초보 시작점 확인하기 →",
-    },
-}
-
-MID_CTA_ANCHOR_CLASS = {
-    "management": "section management",
-    "exam-reader-outputs": "section exam-reader-outputs",
-    "academy-choice": "section academy-choice",
-}
-
-def middle_consult_cta(loc: dict, intent: str) -> str:
-    spec = MID_CTA_MAP[intent]
-    dong = esc(loc["dong"])
-    return (
-        '<section class="mid-consult-cta" data-mid-cta="' + esc(intent) + '">'
-        '<div class="wrap"><div class="mid-consult-card">'
-        '<div class="mid-consult-copy">'
-        '<p class="kicker">지금 상담해도 괜찮습니다</p>'
-        f'<h2>{esc(spec["title"])}</h2>'
-        f'<p>{esc(spec["body"])}</p>'
-        '</div>'
-        f'<a class="btn mid-consult-button" href="#consultation-preview">{esc(spec["button"])}</a>'
-        '</div></div></section>'
-    )
-
-def insert_middle_consult_cta(raw: str, loc: dict, intent: str) -> tuple[str, bool]:
-    if 'class="mid-consult-cta"' in raw:
-        return raw, True
-    spec = MID_CTA_MAP.get(intent)
-    if not spec:
-        return raw, False
-    class_value = MID_CTA_ANCHOR_CLASS[spec["anchor"]]
-    pattern = re.compile(
-        r'<section class="' + re.escape(class_value) + r'">.*?</section>',
-        re.S,
-    )
-    m = pattern.search(raw)
-    if not m:
-        # Safe fallback: management exists across all current 23 intent pages.
-        m = re.search(r'<section class="section management">.*?</section>', raw, re.S)
-    if not m:
-        return raw, False
-    block = middle_consult_cta(loc, intent)
-    return raw[:m.end()] + block + raw[m.end():], True
-
-
 ACADEMY_FAQ = {
     "toeic-academy": [
         ["영어 기초가 부족하고 토익에도 자신감이 없는데 학원 수업부터 시작해도 될까요?", "가능합니다. 처음 상담에서 최근 점수나 기초 수준을 확인하고, 정해진 진도를 따라갈 수 있는지와 약한 파트를 따로 보완할 수 있는지를 먼저 비교하는 것이 좋습니다."],
@@ -346,6 +156,121 @@ ACADEMY_FAQ = {
         ["지원 일정이 가까우면 네 영역을 모두 같은 비중으로 공부하나요?", "현재 점수와 목표 차이에 따라 약한 영역에 더 많은 시간을 배정할 수 있어야 합니다. 남은 기간에 맞춘 우선순위 조정이 가능한지 비교해보세요."],
     ],
 }
+
+FAQ_TARGET_COUNT = {
+    "elem-tutor":4, "mid-conv":4, "high-conv":4, "univ-conv":4,
+    "jobseeker-conv":5, "biz-business-conv":5, "housewife-conv":4,
+    "toeic":5, "toeic-speaking":5, "opic":5, "ielts":5, "duolingo":5, "toefl":5,
+    "toeic-academy":6, "toeic-speaking-academy":6, "opic-academy":6,
+    "ielts-academy":6, "duolingo-academy":6, "toefl-academy":6,
+    "english-conv-academy":5, "adult-english-conv-academy":5,
+    "worker-english-conv-academy":5, "beginner-english-conv":4,
+}
+
+FAQ_EXTRA = {
+    "elem-tutor":[
+        ["학교 영어와 회화를 같이 준비할 수 있나요?","가능합니다. 교과서·읽기·기초 문장을 확인하면서 학교에서 필요한 표현을 직접 말해보는 연습을 함께 연결할 수 있습니다."],
+        ["숙제는 어느 정도 해야 하나요?","양을 많이 주기보다 아이가 혼자 다시 해볼 수 있는 짧은 읽기·문장 연습을 남기고 다음 수업에서 확인하는 방식이 좋습니다."],
+    ],
+    "mid-conv":[
+        ["수행평가나 발표 일정에 맞춰 준비할 수 있나요?","가능합니다. 가장 가까운 학교 일정을 먼저 확인하고 발표 문장·질문 대응·교과서 표현 중 필요한 범위를 우선합니다."],
+        ["학교 시험과 말하기를 함께 준비하면 진도가 느려지지 않나요?","모든 범위를 동시에 늘리기보다 시험·수행평가 일정에 따라 비중을 조절하면 필요한 부분을 함께 관리할 수 있습니다."],
+    ],
+    "high-conv":[
+        ["내신 준비와 영어회화를 같이 할 수 있나요?","가능합니다. 내신 일정이 가까우면 학교 영어 비중을 높이고, 발표·면접 일정이 있으면 필요한 말하기를 연결하는 식으로 조절합니다."],
+        ["수능 준비 중인데 회화까지 하는 게 부담되지 않을까요?","회화를 별도 과목처럼 크게 늘리기보다 실제로 필요한 발표·면접·질문 대응이 있을 때 짧게 연결하는 방식이 현실적입니다."],
+    ],
+    "univ-conv":[
+        ["발표나 세미나 자료를 가지고 수업할 수 있나요?","가능합니다. 실제 발표 자료나 예상 질문을 기준으로 설명 순서와 표현을 연습하면 준비 범위를 빠르게 좁힐 수 있습니다."],
+        ["교환학생 준비도 함께 할 수 있나요?","면접·수업 참여·생활회화처럼 실제로 필요한 상황을 나눠 우선순위를 정해 연습할 수 있습니다."],
+    ],
+    "jobseeker-conv":[
+        ["지원하는 회사 질문에 맞춰 모의면접을 할 수 있나요?","가능합니다. 자기소개·지원동기·경험 질문을 실제 면접처럼 말해보고 답변 길이와 표현을 바로 수정합니다."],
+        ["외운 답변이 아닌데도 영어면접을 준비할 수 있나요?","핵심 경험과 키워드를 먼저 정리한 뒤 질문 표현이 달라져도 다시 말할 수 있게 반복하는 편이 실전 대응에 도움이 됩니다."],
+        ["면접이 얼마 남지 않아도 시작할 수 있나요?","남은 기간이 짧다면 새로운 표현을 넓히기보다 자주 나올 질문과 반복해서 막히는 답변을 우선해 완성도를 높입니다."],
+    ],
+    "biz-business-conv":[
+        ["실제 회사 자료로 회의·발표 연습이 가능한가요?","보안에 문제가 없는 범위라면 실제 업무 상황과 표현을 기준으로 설명·질문·응답을 연습하는 것이 가장 직접적입니다."],
+        ["이메일이나 보고서 표현도 함께 볼 수 있나요?","필요하다면 말하기와 연결해 자주 쓰는 이메일·보고 표현을 함께 정리할 수 있습니다."],
+        ["업무 일정이 자주 바뀌어도 수업 주제를 조정할 수 있나요?","가까운 회의·발표·전화 일정이 바뀌면 다음 수업의 우선 상황도 함께 바꾸는 방식이 효율적입니다."],
+    ],
+    "housewife-conv":[
+        ["영어를 오래 쉬었는데 문법부터 다시 해야 하나요?","문법을 처음부터 전부 복습하기보다 생활·여행에서 자주 쓰는 문장을 말해보고 필요한 문법만 연결하는 방식으로 시작할 수 있습니다."],
+        ["여행영어와 생활영어를 함께 배울 수 있나요?","가능합니다. 실제로 자주 쓸 상황을 먼저 고르고 질문·대답을 반복하면서 표현 범위를 넓혀갑니다."],
+    ],
+    "beginner-english-conv":[
+        ["문법을 거의 몰라도 영어회화를 시작할 수 있나요?","가능합니다. 인사·자기소개·기본 질문처럼 짧은 문장을 직접 말해본 뒤 필요한 문법을 그 문장 안에서 설명합니다."],
+        ["한국어 설명도 받을 수 있나요?","이해가 필요한 문법·뉘앙스·발음은 한국어로 설명하면서 실제 말하기는 영어로 반복할 수 있습니다."],
+    ],
+    "english-conv-academy":[
+        ["그룹수업과 1:1 수업은 무엇을 기준으로 비교하면 좋나요?","직접 말하는 시간, 질문 기회, 현재 수준에 맞춘 진도 조정, 수업 후 피드백 범위를 비교하는 것이 좋습니다."],
+        ["회화 수업은 얼마나 자주 듣는 게 좋나요?","횟수보다 수업 사이에 배운 표현을 다시 말해볼 시간이 있는지가 중요합니다. 실제 가능한 일정에 맞춰 꾸준히 이어갈 수 있는 빈도를 정하는 편이 좋습니다."],
+        ["왕초보도 회화학원형 수업을 들을 수 있나요?","가능하지만 정해진 진도를 따라가는 데 부담이 없는지, 기초 수준에 맞춘 설명과 말하기 시간이 충분한지 먼저 확인해보세요."],
+    ],
+    "adult-english-conv-academy":[
+        ["성인 초보도 중간부터 시작할 수 있나요?","현재 가능한 문장과 생활·여행 목표를 먼저 확인하고 기초 보완과 회화 연습의 비중을 조절할 수 있는지 비교해보세요."],
+        ["수업 시간이 고정돼 있으면 꾸준히 다니기 어려운데 어떻게 비교할까요?","출석 가능한 시간과 결석·보강 기준, 일정 변경 가능 범위를 함께 확인하는 것이 좋습니다."],
+        ["생활영어와 여행영어를 함께 준비할 수 있나요?","자주 쓰는 상황을 기준으로 묶으면 두 목적을 함께 연습할 수 있습니다."],
+    ],
+    "worker-english-conv-academy":[
+        ["회의·발표처럼 실제 업무 상황으로 연습할 수 있나요?","직장인 수업이라면 일반 회화보다 실제 업무 질문과 자료를 얼마나 반영할 수 있는지 확인하는 것이 좋습니다."],
+        ["업무 일정 때문에 결석하면 보강이 가능한가요?","고정형 수업이라면 결석·보강 기준과 일정 조정 범위를 미리 확인하는 것이 중요합니다."],
+        ["비즈니스영어가 처음이어도 가능한가요?","업무 영어 전체를 먼저 배우기보다 가까운 회의·발표·전화에서 꼭 필요한 표현부터 시작할 수 있는지 확인해보세요."],
+    ],
+    "toeic":[
+        ["최근 점수가 없어도 시작할 수 있나요?","가능합니다. 짧은 진단 문제로 LC·RC에서 어디가 더 흔들리는지 확인한 뒤 시작점을 정할 수 있습니다."],
+        ["시험일까지 시간이 얼마 없으면 어떻게 준비하나요?","새 범위를 넓히기보다 반복 오답, 시간 사용, 약한 파트를 우선해 실전 점수를 흔드는 부분부터 줄입니다."],
+        ["숙제와 오답은 어떻게 관리하나요?","틀린 문제를 다시 푸는 것뿐 아니라 틀린 이유와 다음에 같은 실수를 줄일 방법까지 정리해 다음 수업에서 확인합니다."],
+    ],
+    "toeic-speaking":[
+        ["말하기가 거의 처음이어도 시작할 수 있나요?","가능합니다. 문제 유형별 첫 문장과 짧은 답변부터 시작해 답변 길이와 제한 시간에 맞춰 단계적으로 늘립니다."],
+        ["녹음한 답변을 직접 피드백받나요?","실제 발화를 녹음해 공백·반복·발음·답변 구조를 확인하면 어떤 부분을 먼저 고칠지 더 분명해집니다."],
+        ["시험 직전에는 무엇을 가장 많이 연습하나요?","새 템플릿을 늘리기보다 제한 시간 안에 답변을 완성하고 반복 오류를 줄이는 실전 연습을 우선합니다."],
+    ],
+    "opic":[
+        ["배경설문은 어떻게 정해야 하나요?","실제로 말할 경험이 있는 주제를 중심으로 선택해야 답변을 자연스럽게 이어가기 쉽습니다."],
+        ["돌발 질문은 어떻게 대비하나요?","모든 질문을 외우기보다 시간을 확보하고 가까운 경험으로 연결하는 방식과 자주 쓰는 답변 구조를 연습합니다."],
+        ["스크립트를 외우지 않아도 목표 등급을 준비할 수 있나요?","핵심 경험과 표현을 정리한 뒤 질문이 달라져도 다시 조합해 말하는 연습이 필요합니다."],
+    ],
+    "ielts":[
+        ["Writing 첨삭은 어떤 부분을 확인하나요?","문법 교정뿐 아니라 논리·문단 구성·근거와 반복되는 오류를 확인하고 수정한 글을 다시 써보는 과정이 중요합니다."],
+        ["Speaking도 실제 시험처럼 연습할 수 있나요?","질문을 받고 바로 답한 뒤 답변 길이·구체성·표현을 피드백하고 다시 답하는 방식으로 연습할 수 있습니다."],
+        ["시험일까지 시간이 짧으면 네 영역을 모두 같은 비중으로 공부하나요?","현재 Band와 목표 차이가 큰 영역에 시간을 더 배정하고 이미 안정된 영역은 유지 중심으로 조절하는 편이 효율적입니다."],
+    ],
+    "duolingo":[
+        ["시험 방식이 낯설어도 시작할 수 있나요?","가능합니다. 먼저 문제 형식과 시간 흐름을 익힌 뒤 읽기·듣기·말하기·쓰기 중 약한 응답을 집중적으로 보완합니다."],
+        ["말하기와 쓰기 응답도 피드백받을 수 있나요?","응답의 내용 완성도와 반복 오류를 직접 확인해 다음 연습에 반영하는 것이 중요합니다."],
+        ["지원 학교의 인정 여부도 확인해야 하나요?","네. 학교·프로그램별 인정 조건과 제출 마감은 공식 안내를 반드시 확인해야 합니다."],
+    ],
+    "toefl":[
+        ["통합형 문제는 어떻게 연습하나요?","읽고 들은 핵심을 메모한 뒤 말하거나 쓰는 전 과정을 실제 시간에 맞춰 반복합니다."],
+        ["메모 방법도 피드백받을 수 있나요?","많이 적는 것보다 답변에 필요한 관계와 핵심이 남는지가 중요해 개인 메모를 함께 점검할 수 있습니다."],
+        ["시험일까지 시간이 짧으면 네 영역을 모두 같은 비중으로 준비하나요?","현재 점수와 목표 차이에 따라 약한 영역과 통합형 연결에 더 많은 시간을 배정하는 편이 효율적입니다."],
+    ],
+}
+
+def ensure_faq_count(raw: str, intent: str) -> str:
+    target = FAQ_TARGET_COUNT.get(intent, 3)
+    fq = re.search(r'(<div class="faq">)(.*?)(</div>)', raw, re.S)
+    if not fq:
+        return raw
+    items = re.findall(r'<details>.*?</details>', fq.group(2), re.S)
+    existing_q = set()
+    for item in items:
+        m = re.search(r'<summary>(.*?)</summary>', item, re.S)
+        if m:
+            existing_q.add(re.sub(r'<[^>]+>', '', html.unescape(m.group(1))).strip())
+    source_pairs = ACADEMY_FAQ.get(intent, []) + FAQ_EXTRA.get(intent, [])
+    for q, ans in source_pairs:
+        if len(items) >= target:
+            break
+        if q in existing_q:
+            continue
+        items.append(f'<details><summary>{esc(q)}</summary><p>{esc(ans)}</p></details>')
+        existing_q.add(q)
+    body = ''.join(items[:target])
+    return raw[:fq.start()] + fq.group(1) + body + fq.group(3) + raw[fq.end():]
+
 
 CONV_ACADEMY_INTENTS = {
     "english-conv-academy",
@@ -516,12 +441,13 @@ TITLE_VARIANTS = {
 }
 
 def consultation_form(loc: dict, h1: str) -> str:
-    return f'''<form id="leadForm" class="lead-form" name="englishpt-consultation" method="POST" data-netlify="true" data-netlify-honeypot="bot-field"><input type="hidden" name="form-name" value="englishpt-consultation"><input type="hidden" name="subject" data-remove-prefix value="ENGLISH PT 새 상담 신청"><p hidden><label>비워두세요 <input name="bot-field"></label></p>
+    return f'''<form id="leadForm" class="lead-form" name="englishpt-consultation" method="POST" data-netlify="true" data-netlify-honeypot="bot-field"><input type="hidden" name="form-name" value="englishpt-consultation"><input type="hidden" id="leadSubject" name="subject" data-remove-prefix value="ENGLISH PT 새 상담 신청"><p hidden><label>비워두세요 <input name="bot-field"></label></p>
 <label>이름 <span>*</span><input id="leadName" name="name" autocomplete="name" required></label>
 <label>연락처 <span>*</span><input id="leadPhone" name="phone" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required></label>
 <label>지역 <span>*</span><input id="leadArea" name="area" value="{esc(loc["dong"])}" required></label>
 <label class="full">문의내용<textarea id="leadMessage" name="message" rows="4" placeholder="현재 어려운 부분, 목표하는 부분을 자유롭게 작성해주세요."></textarea></label>
 <input type="hidden" id="leadClass" name="wantedClass" value="{esc(h1)}">
+<input type="hidden" id="leadRequestType" name="requestType" value="무료 PT 진단">
 <label class="privacy-check"><input id="leadConsent" name="consent" type="checkbox" required> <span>상담을 위한 개인정보 수집·이용에 동의합니다.</span></label>
 <details class="privacy-detail"><summary>수집·이용 안내</summary><p>수집 항목: 이름, 연락처, 지역, 문의내용. 이용 목적: 영어 학습 상담 및 연락. 상담 정보는 상담 종료 후 3개월까지 보관한 뒤 파기하며, 관계 법령상 보존 의무가 있는 경우 해당 기간 동안 보관합니다. 자세한 내용은 <a href="/privacy/">개인정보처리방침</a>에서 확인할 수 있습니다.</p></details>
 <button class="submit-lead" type="submit">무료 PT 진단 신청 →</button>
@@ -2198,6 +2124,17 @@ def v44_header() -> str:
     )
 
 
+def floating_contact() -> str:
+    return (
+        '<div class="floating-contact" aria-label="빠른 상담 메뉴">'
+        '<a class="floating-contact-btn floating-phone" href="tel:+821050068027">'
+        '<strong>전화상담</strong><span>010-5006-8027</span></a>'
+        '<a class="floating-contact-btn floating-trial" href="#consultation-preview" data-trial-cta>'
+        '<strong>체험수업 신청</strong><span>간단히 신청하기</span></a>'
+        '</div>'
+    )
+
+
 def v44_snapshot(loc: dict, family: str) -> str:
     if family == "exam":
         rows = [
@@ -2575,10 +2512,8 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     raw = rewrite_reader_headings(raw, loc, intent, family)
     raw = personalize_confidence_faq(raw, loc, intent)
     raw = apply_exam_reader_pilot(raw, base_exam_intent(intent))
-    raw, mid_cta_ok = insert_middle_consult_cta(raw, loc, intent)
-    if not mid_cta_ok:
-        problems.append("mid_consult_cta")
-    raw = raw.replace('</body>','<div class="mobile-sticky"><a href="#consultation-preview">무료 PT 진단 신청</a></div></body>',1)
+    raw = ensure_faq_count(raw, intent)
+    raw = raw.replace('</body>', floating_contact() + '</body>', 1)
 
     forbidden=[
         "production 미배포","검수용 페이지","실제 상담 전송은 비활성화",
@@ -2592,7 +2527,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         'name="name"','name="phone"','name="area"','name="message"','name="wantedClass"','name="consent"',
         'class="breadcrumb wrap"','class="mobile-sticky"',
         'name="englishpt-consultation"','data-netlify="true"','class="section mass-context"',
-        'class="site-header"','class="hero simple-hero"','class="snapshot"','class="trust"','class="section management"','class="mid-consult-cta"',
+        'class="site-header"','class="hero simple-hero"','class="snapshot"','class="trust"','class="section management"',
         '"@type":"Service"','"@type":"WebSite"','"mainEntity":{"@id":',
     ]
     if any(x not in raw for x in required):
