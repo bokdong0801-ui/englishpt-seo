@@ -1,2 +1,2 @@
-Run final preflight v17 mobile hero grid fix
-Responsive mobile hero grid collapse corrected after v16 matrix failure.
+Run final preflight v18 downloadable package build
+Includes offline sample ZIP and full 140391-page release archive before Netlify review deployment.
