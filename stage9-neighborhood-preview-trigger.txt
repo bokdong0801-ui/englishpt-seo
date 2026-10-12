@@ -12,3 +12,4 @@
 2026-10-12 floating-phone-trial-faq-v10b-contract-fix
 2026-10-12 faq-curation-phone-popover-trial-v11
 2026-10-12 sitewide-trial-copy-faq-phone-v12
+2026-10-12 final-faq-phone-trial-v12b
