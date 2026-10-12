@@ -474,7 +474,7 @@ LIVE_FORM = '''<form id="pilotForm" class="lead-form" name="englishpt-consultati
 <label class="full">가장 가까운 일정<input name="deadline" placeholder="시험·발표·면접·사용 일정"></label>
 <label class="full">가장 막히는 장면<textarea name="difficulty" rows="3" placeholder="최근 어려웠던 문제·응답·상황"></textarea></label>
 <label class="privacy-check"><input name="consent" type="checkbox" required><span>상담을 위한 개인정보 수집·이용에 동의합니다. <a href="/privacy/">개인정보처리방침</a></span></label>
-<div class="submit-row"><button class="btn primary" type="submit">무료 PT 진단 신청 →</button><a class="btn phone" href="tel:+821050068027">전화 010-5006-8027</a></div>
+<div class="submit-row"><button class="btn primary" type="submit">체험수업 신청 →</button><a class="btn phone" href="tel:+821050068027">전화상담</a></div>
 <p class="pilot-status" aria-live="polite"></p>
 </form>'''
 
@@ -752,7 +752,7 @@ def normalize_production_page(raw: str, name: str) -> tuple[str, list[str]]:
     if 'class="mobile-sticky"' not in raw:
         raw = raw.replace(
             "</body>",
-            '<div class="mobile-sticky"><a href="#consultation-preview">무료 PT 진단 신청</a></div></body>',
+            '<div class="mobile-sticky"><a href="#consultation-preview">체험수업 신청</a></div></body>',
             1,
         )
 
