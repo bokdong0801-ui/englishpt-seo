@@ -13,3 +13,4 @@
 2026-10-12 final-preflight-faq-phone-trial-sitewide
 2026-10-12 rerun-final-preflight-after-copy-dedupe-faq-phone-trial
 2026-10-12 final-preflight-v13-copy-dedupe-success-preview
+2026-10-12 final-preflight-v14-clean-preserved-faq-duplicates
