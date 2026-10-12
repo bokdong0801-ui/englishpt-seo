@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+<title id="title">TOEFL 1:1 맞춤 토플 대표이미지</title>
+<desc id="desc">Reading, Listening, Speaking, Writing 4영역과 통합형 적응을 보여주는 ENGLISH PT TOEFL 대표이미지</desc>
+<rect width="1200" height="720" rx="34" fill="#FBFAF2"/>
+<rect x="0" y="0" width="1200" height="18" rx="9" fill="#175C43"/>
+<circle cx="1080" cy="92" r="245" fill="#E0E9DF"/>
+<circle cx="1145" cy="635" r="250" fill="#EAF0E5"/>
+<text x="78" y="90" font-family="Arial,'Noto Sans KR',sans-serif" font-size="24" font-weight="800" fill="#175C43" letter-spacing="1.6">ENGLISH PT · 1:1 EXAM</text>
+<text x="76" y="286" font-family="Arial,'Noto Sans KR',sans-serif" font-size="126" font-weight="900" fill="#0D5138">TOEFL</text>
+<text x="80" y="352" font-family="'Noto Sans KR',Arial,sans-serif" font-size="35" font-weight="800" fill="#4C7A65">1:1 맞춤 TOEFL</text>
+<g font-family="Arial,'Noto Sans KR',sans-serif" font-size="23" font-weight="800" fill="#175C43">
+<rect x="80" y="410" width="148" height="62" rx="31" fill="#FFFFFF"/><text x="108" y="450">Reading</text>
+<rect x="244" y="410" width="156" height="62" rx="31" fill="#FFFFFF"/><text x="268" y="450">Listening</text>
+<rect x="416" y="410" width="156" height="62" rx="31" fill="#FFFFFF"/><text x="443" y="450">Speaking</text>
+<rect x="588" y="410" width="148" height="62" rx="31" fill="#FFFFFF"/><text x="616" y="450">Writing</text>
+</g>
+<text x="82" y="560" font-family="'Noto Sans KR',Arial,sans-serif" font-size="27" font-weight="700" fill="#6A8C7C">4영역 정리 → 통합형 적응 → 실전 흐름 점검</text>
+<g opacity=".23" stroke="#175C43" stroke-width="7" stroke-linecap="round">
+<path d="M875 250h185"/><path d="M875 306h145"/><path d="M875 362h205"/><path d="M875 418h125"/>
+</g>
+<circle cx="1085" cy="250" r="13" fill="#175C43" opacity=".8"/><circle cx="1045" cy="306" r="13" fill="#79A18E" opacity=".7"/><circle cx="1105" cy="362" r="13" fill="#2E7056" opacity=".75"/><circle cx="1025" cy="418" r="13" fill="#9AB7AA" opacity=".7"/>
+</svg>
