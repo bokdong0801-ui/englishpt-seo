@@ -657,9 +657,9 @@ jobs:
           (out/'SAMPLE-MANIFEST.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           PY
 
-          python3 -m zipfile -c englishpt-sample-preview-v18.zip englishpt-sample-preview
-          tar --zstd -cf englishpt-final-release-140391-v18.tar.zst -C final-review .
-          sha256sum englishpt-sample-preview-v18.zip englishpt-final-release-140391-v18.tar.zst > ENGLISHPT_RELEASE_SHA256.txt
+          python3 -m zipfile -c englishpt-sample-preview-v19.zip englishpt-sample-preview
+          tar --zstd -cf englishpt-final-release-140391-v19.tar.zst -C final-review .
+          sha256sum englishpt-sample-preview-v19.zip englishpt-final-release-140391-v19.tar.zst > ENGLISHPT_RELEASE_SHA256.txt
 
           python3 - <<'PY'
           import json, os
@@ -669,12 +669,12 @@ jobs:
           assert len([p for p in html if p.name!='index.html'])==140391
           report={
               'status':'PASS_DOWNLOADABLE_RELEASE_PACKAGE',
-              'sample_zip':'englishpt-sample-preview-v18.zip',
+              'sample_zip':'englishpt-sample-preview-v19.zip',
               'sample_pages':8,
-              'final_archive':'englishpt-final-release-140391-v18.tar.zst',
+              'final_archive':'englishpt-final-release-140391-v19.tar.zst',
               'html_total':140391,
-              'sample_bytes':Path('englishpt-sample-preview-v18.zip').stat().st_size,
-              'final_bytes':Path('englishpt-final-release-140391-v18.tar.zst').stat().st_size,
+              'sample_bytes':Path('englishpt-sample-preview-v19.zip').stat().st_size,
+              'final_bytes':Path('englishpt-final-release-140391-v19.tar.zst').stat().st_size,
           }
           Path('ENGLISHPT_DOWNLOADABLE_RELEASE_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           print(json.dumps(report,ensure_ascii=False))
@@ -683,10 +683,10 @@ jobs:
       - name: Upload downloadable pre-production files
         uses: actions/upload-artifact@v4
         with:
-          name: englishpt-v18-preproduction-files
+          name: englishpt-v19-preproduction-files
           path: |
-            englishpt-sample-preview-v18.zip
-            englishpt-final-release-140391-v18.tar.zst
+            englishpt-sample-preview-v19.zip
+            englishpt-final-release-140391-v19.tar.zst
             ENGLISHPT_RELEASE_SHA256.txt
             ENGLISHPT_DOWNLOADABLE_RELEASE_REPORT.json
             final-review/STAGE9_RESPONSIVE_QA_V16.json
