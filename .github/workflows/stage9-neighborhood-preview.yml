@@ -29,6 +29,7 @@ jobs:
           python -m pip install --quiet pillow
           python -m py_compile scripts/stage9-square-search-thumbnails.py
           python -m py_compile scripts/build-stage9-production-release.py
+          python -m py_compile scripts/stage9-copy-quality-qa.py
 
       - name: Download approved Stage 7 source
         uses: actions/download-artifact@v4
@@ -230,6 +231,10 @@ jobs:
           print('PASS_JONGNO_NEIGHBORHOOD_PREVIEW',{'localities':len(localities),'html_written':written})
           PY
 
+      - name: Neighborhood copy quality QA
+        run: |
+          python3 scripts/stage9-copy-quality-qa.py             --root neighborhood-preview             --output neighborhood-preview/STAGE9_COPY_QUALITY_QA.json
+
       - name: Build preview index and rewrite links
         env:
           PREVIEW_BASE: https://raw.githack.com/${{ github.repository }}/preview-neighborhood
@@ -253,10 +258,10 @@ jobs:
                   s=s.replace(f'{attr}="/',f'{attr}="{base}/')
                   s=s.replace(f"{attr}='/",f"{attr}='{base}/")
               # Force a fresh Preview asset fetch instead of a cached broken pilot asset.
-              s=s.replace('href="pilot.css"',f'href="{base}/pilot.css?v=20261012-12"')
-              s=s.replace('src="pilot.js"',f'src="{base}/pilot.js?v=20261012-12"')
+              s=s.replace('href="pilot.css"',f'href="{base}/pilot.css?v=20261012-14"')
+              s=s.replace('src="pilot.js"',f'src="{base}/pilot.js?v=20261012-14"')
               s=re.sub(r'(https://raw\.githack\.com/[^"\']+/preview-neighborhood/assets/[^"\']+\.(?:svg|png|jpg|jpeg|webp))(["\'])',
-                       r'\1?v=20261012-12\2',s,flags=re.I)
+                       r'\1?v=20261012-14\2',s,flags=re.I)
               p.write_text(s,encoding='utf-8')
 
           js=root/'assets/site.js'
