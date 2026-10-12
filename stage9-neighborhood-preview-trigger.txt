@@ -8,3 +8,4 @@
 2026-10-12 compact-thumbnail-v7-76-100
 2026-10-12 metadata-only-og-no-body-image-v8
 2026-10-12 mid-cta-pilot-v9-beginner-toeic-ielts
+2026-10-12 floating-phone-trial-faq-v10
