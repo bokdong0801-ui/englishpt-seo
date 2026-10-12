@@ -1,2 +1,2 @@
-Run final preflight v19 comfort integrity pass
-Checks zero visible body photos, sitewide local asset/link integrity, beginner comfort language, and responsive layout.
+Run final preflight v20 beginner comfort and render integrity
+Final candidate: zero visible photos, approachable beginner copy, full local asset/link integrity, and responsive layout validation.
