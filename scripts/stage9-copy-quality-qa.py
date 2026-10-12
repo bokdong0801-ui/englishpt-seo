@@ -22,7 +22,7 @@ from pathlib import Path
 TAG_RE = re.compile(r"<[^>]+>", re.S)
 MAIN_RE = re.compile(r"<main\b[^>]*>(.*?)</main>", re.S | re.I)
 P_RE = re.compile(r"<p\b[^>]*>(.*?)</p>", re.S | re.I)
-H_RE = re.compile(r"<h([1-3])\b[^>]*>(.*?)</h\1>", re.S | re.I)
+H_RE = re.compile(r"<h([12])\b[^>]*>(.*?)</h\1>", re.S | re.I)
 SCRIPT_STYLE_RE = re.compile(r"<(?:script|style)\b.*?</(?:script|style)>", re.S | re.I)
 
 STALE_FAQ_QUESTIONS = {
@@ -100,11 +100,15 @@ def issue_page(path: Path) -> list[dict]:
                 out.append({"type": "adjacent_repeated_sentence", "sample": a[:180]})
                 break
 
-    # Obvious accidental doubled word, but ignore short grammatical repetitions.
-    txt = plain(main)
-    m = re.search(r"(?<![가-힣A-Za-z])([가-힣A-Za-z]{3,})\s+\1(?![가-힣A-Za-z])", txt)
-    if m:
-        out.append({"type": "doubled_word", "sample": m.group(0)})
+    # Catch doubled words only inside one semantic text element.
+    # Flattening all of <main> creates false positives at adjacent locality cards
+    # such as "덕천동 덕천동".
+    candidates = paragraphs + headings
+    for candidate in candidates:
+        m = re.search(r"(?<![가-힣A-Za-z])([가-힣A-Za-z]{3,})\s+\1(?![가-힣A-Za-z])", candidate)
+        if m:
+            out.append({"type": "doubled_word", "sample": m.group(0)})
+            break
 
     return out
 
