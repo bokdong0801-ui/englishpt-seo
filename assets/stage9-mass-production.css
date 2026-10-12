@@ -578,3 +578,89 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
   .floating-contact-btn strong{font-size:13px}
   .floating-contact-btn span{font-size:10.5px}
 }
+/* RESPONSIVE POLISH V15 — 2026-10-12
+   All 118,427 generated locality × intent pages */
+html{max-width:100%;overflow-x:clip}
+body{max-width:100%;overflow-x:clip;overflow-wrap:break-word}
+img,svg,video,canvas{max-width:100%;height:auto}
+:where(.intro-grid,.trust-in,.grid4,.proofs,.decision-grid,.decision-list,.exam-roadmap-grid,.exam-output-layout,.academy-compare,.academy-fit,.manage-layout,.lead-form,.local-nav-block .links,.related-groups,.nearby-locality-grid,.local-nav-actions,.final .wrap,.mid-cta .wrap)>*{min-width:0}
+:where(h1,h2,h3,.hero-subline,.lead,.card,.decision-list>div,.context-block,.exam-roadmap-card,.local-nav-block,.related-group,.nearby-locality-grid a,.related-course-links a,.floating-contact-btn){overflow-wrap:anywhere}
+:where(h1,h2,h3,.hero-subline,.section h2,.final h2,.beginner-guide-box h2){word-break:keep-all;text-wrap:balance}
+:where(p,li,.lead,.card p,.context-block p,.exam-reader-lead,.beginner-guide-lead,.beginner-guide-context){text-wrap:pretty}
+input,select,textarea,button{max-width:100%}
+.wrap{width:min(1180px,calc(100% - clamp(32px,5vw,56px)))}
+.simple-hero-inner{max-width:880px}
+.hero h1{font-size:clamp(42px,5vw,60px);max-width:19ch;margin-left:auto;margin-right:auto}
+.hero-subline{max-width:46rem}
+.section h2{font-size:clamp(26px,3vw,34px)}
+.local-nav-block .links a,.related-course-links a,.nearby-locality-grid a{min-width:0}
+.local-nav-block .links a,.related-course-links a,.nearby-locality-grid a strong{overflow-wrap:anywhere}
+
+@media (min-width:901px) and (max-width:1180px){
+  .wrap,.mass-context>.wrap,.consult>.wrap{width:calc(100% - 52px)}
+  .hero.simple-hero{padding:68px 0 72px}
+  .hero h1{font-size:clamp(40px,5vw,52px)}
+  .intro-grid{grid-template-columns:minmax(0,1fr) minmax(290px,.82fr);gap:28px}
+  .section{padding:58px 0}
+  .decision-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .local-decision-note .decision-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .local-nav-block .links{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:760px){
+  .wrap,.mass-context>.wrap,.consult>.wrap,.exam-reader-roadmap>.wrap{width:calc(100% - 28px)}
+  .header{gap:10px}
+  .brand{min-width:0}
+  .hero.simple-hero{padding:48px 0 52px}
+  .hero h1{font-size:clamp(30px,8.6vw,38px);line-height:1.17;letter-spacing:-.04em;max-width:16ch}
+  .hero-subline{font-size:14px;line-height:1.55;max-width:32ch}
+  .hero-actions .btn{min-height:48px}
+  .section{padding:46px 0}
+  .section h2{font-size:clamp(23px,6.8vw,29px);line-height:1.32}
+  .section p{line-height:1.7}
+  .snapshot,.card,.decision-list>div,.feedback,.context-block,.exam-roadmap-card,.local-nav-block,.related-group{min-width:0}
+  .steps li{grid-template-columns:40px minmax(0,1fr);gap:11px}
+  .beginner-term{grid-template-columns:minmax(76px,88px) minmax(0,1fr)}
+  .lead-form{gap:12px}
+  .local-nav-block .links{grid-template-columns:1fr}
+  .related-course-links{max-height:none}
+  .nearby-locality-grid{grid-template-columns:1fr 1fr}
+  .floating-contact-btn strong,.floating-contact-btn span{overflow-wrap:anywhere}
+}
+
+@media(max-width:420px){
+  .wrap,.mass-context>.wrap,.consult>.wrap,.exam-reader-roadmap>.wrap{width:calc(100% - 24px)}
+  .header{height:58px}
+  .brand-mark{margin-right:7px}
+  .brand-name{font-size:12.5px}
+  .nav-cta{padding:8px 10px;font-size:11px}
+  .hero.simple-hero{padding:40px 0 44px}
+  .hero h1{font-size:30px;max-width:15ch}
+  .hero-subline{font-size:13.5px;max-width:30ch}
+  .hero-actions{gap:7px}
+  .hero-actions .btn{font-size:12px;padding:10px 8px}
+  .section{padding:42px 0}
+  .section h2{font-size:24px}
+  .card,.decision-list>div,.feedback,.snapshot,.exam-roadmap-card{padding:17px}
+  .beginner-guide-box{padding:13px}
+  .beginner-term{grid-template-columns:80px minmax(0,1fr)}
+  .lead-form{padding:16px}
+  .local-nav-block{padding:16px}
+  .nearby-locality-grid{grid-template-columns:1fr}
+  .floating-contact{gap:6px;padding-left:8px;padding-right:8px}
+  .floating-contact-btn{min-width:0;padding:8px}
+  .floating-contact-btn strong{font-size:12.5px}
+  .floating-contact-btn span{font-size:10px}
+}
+
+@media(max-width:360px){
+  .wrap,.mass-context>.wrap,.consult>.wrap,.exam-reader-roadmap>.wrap{width:calc(100% - 20px)}
+  .hero h1{font-size:28px;max-width:14ch}
+  .hero-actions{grid-template-columns:1fr}
+  .hero-actions .btn{font-size:12.5px}
+  .beginner-term{grid-template-columns:1fr}
+  .beginner-term b{margin-bottom:2px}
+  .steps li{grid-template-columns:34px minmax(0,1fr);padding:14px 12px}
+  .lead-form{padding:14px}
+  .floating-contact-btn strong{font-size:12px}
+}
