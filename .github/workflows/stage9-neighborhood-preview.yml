@@ -158,6 +158,22 @@ jobs:
                   assert im.size==(1200,1200),(image_path,im.size)
                   assert im.format=='PNG',(image_path,im.format)
 
+          # Mid-page CTA pilot: one CTA, after the intended decision section.
+          cta_samples={
+              'seoul-jongno-sajikdong-beginner-english-conv.html':'section management',
+              'seoul-jongno-buamdong-toeic.html':'section exam-reader-outputs',
+              'seoul-jongno-sajikdong-ielts.html':'section exam-reader-outputs',
+          }
+          for name,anchor_class in cta_samples.items():
+              raw=(out/name).read_text(encoding='utf-8')
+              assert raw.count('class="mid-consult-cta"')==1,(name,'mid cta count')
+              assert 'href="#consultation-preview"' in raw,(name,'cta target')
+              anchor_pos=raw.find(f'class="{anchor_class}"')
+              cta_pos=raw.find('class="mid-consult-cta"')
+              form_pos=raw.find('id="consultation-preview"')
+              assert anchor_pos>=0 and cta_pos>anchor_pos,(name,anchor_pos,cta_pos)
+              assert form_pos<0 or cta_pos<form_pos,(name,cta_pos,form_pos)
+
           # Ensure every Jongno locality has all 23 current intent pages.
           intents=mod.SERVICE_ORDER+mod.EXAM_ORDER+mod.ACADEMY_ORDER+mod.CONV_DERIVED_ORDER
           assert len(intents)==23,len(intents)
@@ -209,10 +225,10 @@ jobs:
                   s=s.replace(f'{attr}="/',f'{attr}="{base}/')
                   s=s.replace(f"{attr}='/",f"{attr}='{base}/")
               # Force a fresh Preview asset fetch instead of a cached broken pilot asset.
-              s=s.replace('href="pilot.css"',f'href="{base}/pilot.css?v=20261012-8"')
-              s=s.replace('src="pilot.js"',f'src="{base}/pilot.js?v=20261012-8"')
+              s=s.replace('href="pilot.css"',f'href="{base}/pilot.css?v=20261012-9"')
+              s=s.replace('src="pilot.js"',f'src="{base}/pilot.js?v=20261012-9"')
               s=re.sub(r'(https://raw\.githack\.com/[^"\']+/preview-neighborhood/assets/[^"\']+\.(?:svg|png|jpg|jpeg|webp))(["\'])',
-                       r'\1?v=20261012-8\2',s,flags=re.I)
+                       r'\1?v=20261012-9\2',s,flags=re.I)
               p.write_text(s,encoding='utf-8')
 
           js=root/'assets/site.js'
