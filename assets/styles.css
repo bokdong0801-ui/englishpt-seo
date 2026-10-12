@@ -245,3 +245,113 @@ body.theme-intl{
   color:#fff;text-align:center;font-weight:800;text-decoration:none
 }
 @media(max-width:900px){.desktop-nav .header-phone{display:none}}
+/* RESPONSIVE POLISH V15 — 2026-10-12
+   Shared core / hub / preserved locality / station pages */
+html{max-width:100%;overflow-x:clip}
+body{max-width:100%;overflow-x:clip;word-break:keep-all;overflow-wrap:break-word}
+img,svg,video,canvas{max-width:100%;height:auto}
+:where(.hero-grid,.section-head,.coach-grid,.guide-intro,.quad,.protocol,.case-grid,.route-cards,.hub-conversion-box,.teacher-trust-grid,.region-finder-grid,.station-course-links,.station-index-grid,.quick-directory-grid,.change-grid,.change-snapshot,.fit-grid,.report,.check,.metrics,.metric,.progress,.footer-grid,.final-box,.related-inner)>*{min-width:0}
+:where(h1,h2,h3,.hero-statement,.hero-copy,.lead,.guide-block,.editorial,.teacher-trust-card,.route-card,.path-card,.station-course-links a,.station-index-link,.local-nav-block .links a,.related-course-links a,.nearby-locality-grid a,.region-path-links a){overflow-wrap:anywhere}
+:where(h1,h2,h3,.hero-statement,.section-head h2,.guide-block h3,.final h2,.hub-conversion-box h2,.teacher-trust-card h3){word-break:keep-all;text-wrap:balance}
+:where(p,li,.lead,.hero-copy,.guide-block p,.editorial p,.teacher-trust-card p,.hub-check span){text-wrap:pretty}
+input,select,textarea,button{max-width:100%}
+.wrap{width:min(1180px,calc(100% - clamp(32px,6vw,88px)))}
+.hero-grid{grid-template-columns:minmax(0,7fr) minmax(320px,5fr);gap:clamp(38px,5vw,82px)}
+.hero h1{font-size:clamp(46px,4.2vw,58px);max-width:18ch}
+.hero-statement{font-size:clamp(21px,2vw,24px)!important;max-width:30ch!important}
+.section h2,.coach h2,.report-section h2,.guide-section h2,.faq-wrap>h2,.fit h2,.final h2{font-size:clamp(34px,3.2vw,41px)}
+.station-course-links a,.local-nav-block .links a,.related-course-links a,.nearby-locality-grid a,.station-index-link{min-width:0}
+.station-course-links a span,.local-nav-block .links a,.related-course-links a,.nearby-locality-grid a strong,.station-index-link{overflow-wrap:anywhere}
+
+@media (min-width:901px) and (max-width:1180px){
+  .wrap{width:calc(100% - 56px)}
+  .hero{padding-bottom:92px}
+  .hero-grid{grid-template-columns:minmax(0,1.18fr) minmax(300px,.82fr);gap:42px}
+  .hero h1{font-size:clamp(44px,4.5vw,52px)}
+  .hero-statement{font-size:21px!important}
+  .hero-sheet{padding:22px 24px}
+  .section{padding:92px 0}
+  .section-head,.coach-grid,.guide-intro{gap:44px}
+  .change-grid{gap:14px}
+  .station-index-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .station-course-links{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:900px){
+  .wrap{width:calc(100% - 36px)}
+  .breadcrumb{scrollbar-width:none}
+  .breadcrumb::-webkit-scrollbar{display:none}
+  .hero{padding:48px 0 68px}
+  .home-hero{padding-top:116px}
+  .hero-grid{gap:30px}
+  .hero h1{font-size:clamp(34px,8.7vw,40px);line-height:1.14;letter-spacing:-.052em;max-width:16ch}
+  .hero-statement{font-size:clamp(18px,4.8vw,21px)!important;line-height:1.5!important;max-width:31ch!important}
+  .hero-copy{font-size:15.5px!important;line-height:1.75!important}
+  .hero-sheet{padding:20px}
+  .hero-sheet strong{font-size:15px}
+  .section{padding:70px 0}
+  .section h2,.coach h2,.report-section h2,.guide-section h2,.faq-wrap>h2,.fit h2,.final h2{font-size:clamp(27px,7.2vw,31px);line-height:1.24}
+  .guide-block h3{font-size:clamp(21px,5.8vw,24px)}
+  .form-sheet{width:100%;max-width:560px}
+  .station-index-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .station-course-links{grid-template-columns:1fr}
+  .teacher-trust-card,.local-nav-block,.region-finder-shell{min-width:0}
+}
+
+@media(max-width:640px){
+  .wrap{width:calc(100% - 28px)}
+  .site-header{height:60px}
+  .header-inner{gap:10px}
+  .brand{min-width:0}
+  .hero{padding:42px 0 60px}
+  .home-hero{padding-top:106px}
+  .hero h1{font-size:clamp(32px,9.2vw,36px);max-width:15ch}
+  .hero-statement{font-size:18px!important}
+  .hero-copy{font-size:15px!important}
+  .btn{min-height:50px;padding:0 18px;font-size:14px}
+  .section{padding:62px 0}
+  .section-head{margin-bottom:30px}
+  .quad article,.protocol article,.case-grid article,.route-card{padding:20px}
+  .hero-sheet{padding:18px}
+  .guide-section{padding:70px 0}
+  .guide-block{padding:34px 0}
+  .guide-block p{line-height:1.82}
+  .faq summary{padding:18px 0;font-size:16px}
+  .final{padding:60px 0 88px}
+  .region-finder-shell{padding:18px}
+  .teacher-trust-card{padding:20px}
+  .station-index-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .station-index-link{font-size:12px;padding:10px 7px}
+  .station-course-group{padding:18px!important}
+  .station-course-links a{padding:13px 12px}
+  .change-snapshot{grid-template-columns:1fr}
+  .change-arrow{margin:auto;transform:rotate(90deg)}
+  .form-sheet{padding:38px 18px 100px}
+}
+
+@media(max-width:420px){
+  .wrap{width:calc(100% - 24px)}
+  .hero h1{font-size:31px;line-height:1.17;max-width:14ch}
+  .hero-statement{font-size:17px!important;line-height:1.48!important}
+  .hero-copy{font-size:14.5px!important}
+  .section h2,.coach h2,.report-section h2,.guide-section h2,.faq-wrap>h2,.fit h2,.final h2{font-size:27px}
+  .hub-conversion-box,.fit-grid article,.check-intro{padding:20px}
+  .metrics{padding:4px 16px}
+  .region-finder-shell,.local-nav-block{padding:16px}
+  .region-path-links a{font-size:12px}
+  .mobile-sticky{padding-left:10px;padding-right:10px}
+}
+
+@media(max-width:360px){
+  .wrap{width:calc(100% - 20px)}
+  .brand{font-size:13px}
+  .brand-mark{width:28px;height:28px}
+  .mobile-menu{padding:7px 10px}
+  .hero h1{font-size:29px;max-width:13ch}
+  .hero-statement{font-size:16px!important}
+  .btn{font-size:13px}
+  .section{padding:56px 0}
+  .section h2,.coach h2,.report-section h2,.guide-section h2,.faq-wrap>h2,.fit h2,.final h2{font-size:25px}
+  .station-index-grid{grid-template-columns:1fr 1fr}
+  .form-sheet{padding-left:14px;padding-right:14px}
+}
