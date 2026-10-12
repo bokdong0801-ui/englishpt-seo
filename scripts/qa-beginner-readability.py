@@ -97,7 +97,7 @@ FORBIDDEN_VISIBLE = [
 ]
 
 HOME_REQUIRED = [
-    "수준 확인 → 학습 계획 → 직접 연습 → 부족한 점 확인 → 다시 점검",
+    "지금 수준 확인 → 쉬운 것부터 시작 → 함께 연습 → 다시 확인 → 조금씩 늘리기",
     "잘되는 부분과 반복해서 어려운 부분을 나눕니다.",
     "국제학교 수업과 평가 방식의 차이",
     "<small>현재</small>",
@@ -108,6 +108,9 @@ HOME_REQUIRED = [
     "911개 역으로 찾기",
     "stations.html",
 ]
+
+HOME_PRESSURE_FORBIDDEN = ["훈련", "진단", "병목", "재점검", "재검증"]
+BEGINNER_CONV_PRESSURE_FORBIDDEN = ["훈련", "진단", "실전", "교정", "병목", "재점검", "재검증"]
 
 HUBS_REQUIRED = {
     "courses.html": [
@@ -179,6 +182,9 @@ def main() -> int:
         for phrase in FORBIDDEN_VISIBLE:
             if contains_forbidden(text, phrase):
                 failures.append({"file":"englishpt.html","rule":"home_difficult_term","value":phrase})
+        for phrase in HOME_PRESSURE_FORBIDDEN:
+            if contains_forbidden(text, phrase):
+                failures.append({"file":"englishpt.html","rule":"home_pressure_term","value":phrase})
         if raw.count('class="change-card"') != 3 or '변화 리포트' not in raw or '사례 유형' not in raw:
             failures.append({"file":"englishpt.html","rule":"home_change_report_missing_or_wrong_count","count":raw.count('class="change-card"')})
         if 'data-course="학습 변화 상담"' not in raw:
@@ -266,6 +272,10 @@ def main() -> int:
                     failures.append({"file":p.name,"rule":"beginner_definition_missing","exam":base,"value":phrase})
         elif conv:
             counts["conversation_pages_checked"] += 1
+            if p.name.endswith("-beginner-english-conv.html"):
+                for phrase in BEGINNER_CONV_PRESSURE_FORBIDDEN:
+                    if contains_forbidden(text, phrase):
+                        failures.append({"file":p.name,"rule":"beginner_conversation_pressure_term","value":phrase})
 
     report = {
         "status": "PASS_BEGINNER_READABILITY_QA" if not failures else "FAIL_BEGINNER_READABILITY_QA",
@@ -275,6 +285,8 @@ def main() -> int:
             "guide_must_precede_intro_or_follow_legacy_hero": True,
             "blocked_visible_terms": FORBIDDEN_VISIBLE,
             "homepage_easy_copy_required": HOME_REQUIRED,
+            "homepage_pressure_terms_blocked": HOME_PRESSURE_FORBIDDEN,
+            "beginner_conversation_pressure_terms_blocked": BEGINNER_CONV_PRESSURE_FORBIDDEN,
             "songhyeondong_home_links": "must_be_zero",
             "national_hubs_required": list(HUBS_REQUIRED),
         },
