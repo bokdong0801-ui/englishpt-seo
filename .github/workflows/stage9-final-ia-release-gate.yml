@@ -121,6 +121,14 @@ jobs:
               assert 'data-region-finder' in raw,name
               assert 'data-region-sido' in raw and 'data-region-jurisdiction' in raw and 'data-region-dong' in raw,name
               assert '영어권 교포 선생님' in raw,name
+          for name in core:
+              raw=(root/name).read_text(encoding='utf-8')
+              assert '무료 PT 진단' not in raw,name
+              assert '체험수업 신청' in raw,name
+              assert 'data-phone-toggle' in raw,name
+              assert 'id="header-phone-popover"' in raw,name
+              assert 'href="tel:+821050068027"' in raw,name
+
           home=(root/'englishpt.html').read_text(encoding='utf-8')
           assert '전체지역·과정 바로가기' in home
           assert '누구를 위한' in home
@@ -202,6 +210,10 @@ jobs:
               assert hub.exists(),hub.name
               raw=hub.read_text(encoding='utf-8')
               assert 'station-hub-page' in raw,hub.name
+              assert '무료 PT 진단' not in raw,hub.name
+              assert '체험수업 신청' in raw,hub.name
+              assert 'data-phone-toggle' in raw,hub.name
+              assert 'id="header-phone-popover"' in raw,hub.name
               assert 'teacher-trust' in raw and '한국어' in raw,hub.name
               prefix=f'station-{row["slug"]}-'
               hrefs=set(re.findall(r'href="/(station-[^"]+\.html)"',raw))
