@@ -1,4 +1,28 @@
 document.addEventListener("DOMContentLoaded",()=>{
+  const form=document.querySelector("#leadForm");
+  const requestType=form?.querySelector("#leadRequestType");
+  const subject=form?.querySelector("#leadSubject");
+  const submit=form?.querySelector('button[type="submit"]');
+
+  const setMode=(mode)=>{
+    if(!form) return;
+    const trial=mode==="trial";
+    if(requestType) requestType.value=trial ? "체험수업 신청" : "무료 PT 진단";
+    if(subject) subject.value=trial ? "ENGLISH PT 체험수업 신청" : "ENGLISH PT 새 상담 신청";
+    if(submit) submit.textContent=trial ? "체험수업 신청 →" : "무료 PT 진단 신청 →";
+  };
+
+  document.querySelectorAll("[data-trial-cta]").forEach(a=>{
+    a.addEventListener("click",()=>{
+      setMode("trial");
+      setTimeout(()=>document.querySelector("#leadName")?.focus({preventScroll:true}),450);
+    });
+  });
+
+  document.querySelectorAll('a[href="#consultation-preview"]:not([data-trial-cta])').forEach(a=>{
+    a.addEventListener("click",()=>setMode("diagnosis"));
+  });
+
   const forms=document.querySelectorAll("#pilotForm,#leadForm");
   forms.forEach(form=>{
     form.addEventListener("submit",async e=>{
@@ -22,7 +46,11 @@ document.addEventListener("DOMContentLoaded",()=>{
       }catch(err){
         if(status) status.innerHTML='전송 중 문제가 발생했습니다. <a href="tel:+821050068027">010-5006-8027</a> 또는 <a href="mailto:cicada3865@naver.com">cicada3865@naver.com</a>로 문의해주세요.';
       }finally{
-        if(btn){btn.disabled=false;btn.textContent="무료 PT 진단 신청 →";}
+        if(btn){
+          btn.disabled=false;
+          const trial=form.querySelector("#leadRequestType")?.value==="체험수업 신청";
+          btn.textContent=trial ? "체험수업 신청 →" : "무료 PT 진단 신청 →";
+        }
       }
     });
   });
