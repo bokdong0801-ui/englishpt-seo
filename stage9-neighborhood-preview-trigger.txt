@@ -9,3 +9,4 @@
 2026-10-12 metadata-only-og-no-body-image-v8
 2026-10-12 mid-cta-pilot-v9-beginner-toeic-ielts
 2026-10-12 floating-phone-trial-faq-v10
+2026-10-12 floating-phone-trial-faq-v10b-contract-fix
