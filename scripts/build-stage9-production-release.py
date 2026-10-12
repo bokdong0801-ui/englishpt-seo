@@ -1191,7 +1191,7 @@ def main() -> None:
         re.I,
     )
     html_ref_re = re.compile(
-        r'''href=["'](/?[^"'#?]+\.html)(?:#[^"']*)?["']''',
+        r'''href=["']((?!(?:https?:)?//)/?[^"'#?]+\.html)(?:#[^"']*)?["']''',
         re.I,
     )
 
