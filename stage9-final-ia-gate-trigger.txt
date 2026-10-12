@@ -11,3 +11,4 @@
 2026-10-11 final preflight compact thumbnail v5 + copy quality QA
 2026-10-11 final preflight v6 Naver-scale thumbnails + copy QA
 2026-10-12 final-preflight-faq-phone-trial-sitewide
+2026-10-12 rerun-final-preflight-after-copy-dedupe-faq-phone-trial
