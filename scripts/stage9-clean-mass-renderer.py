@@ -2568,7 +2568,6 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         '<a class="btn primary" href="#detail">내용 보기</a>'
         '<a class="btn ghost" href="#consultation-preview">체험수업 신청</a>'
         '</div></div></section>'
-        + visual_section(loc,intent,h1)
         + (beginner_exam_guide(intent, loc) if family == "exam" else "")
     )
     raw = re.sub(r'<section class="hero">.*?</section>', hero_html, raw, count=1, flags=re.S)
@@ -2668,6 +2667,24 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         problems.append("machine_schema")
 
     raw = humanize_visible_copy(raw, family)
+
+    # Audience comfort pass: "training" language feels demanding to first-time learners.
+    # Use approachable "practice" wording sitewide, and an even softer vocabulary
+    # contract for the true-beginner English conversation intent.
+    raw = raw.replace("훈련", "연습")
+    if intent == "beginner-english-conv":
+        beginner_soften = {
+            "진단": "확인",
+            "실전": "실제 상황",
+            "교정": "고쳐보기",
+            "오류": "실수",
+            "재점검": "다시 확인",
+            "재검증": "다시 확인",
+            "병목": "어려운 부분",
+        }
+        for before, after in beginner_soften.items():
+            raw = raw.replace(before, after)
+
     raw = rewrite_reader_headings(raw, loc, intent, family)
     raw = personalize_confidence_faq(raw, loc, intent)
     raw = apply_exam_reader_pilot(raw, base_exam_intent(intent))
@@ -2708,6 +2725,11 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     stiff_found = [x for x in stiff_visible if x in visible_for_language_qa]
     if stiff_found:
         problems.append("stiff_visible_copy:"+",".join(stiff_found))
+    if intent == "beginner-english-conv":
+        beginner_pressure_terms = ["훈련","진단","실전","교정","병목","재점검","재검증"]
+        pressure_found = [x for x in beginner_pressure_terms if x in visible_for_language_qa]
+        if pressure_found:
+            problems.append("beginner_pressure_copy:"+",".join(pressure_found))
     min_visible = 4000 if exam_reader_pilot_enabled(base_exam_intent(intent)) else 5200
     if not (min_visible <= len(visible) <= 16000):
         problems.append(f"visible_chars:{len(visible)}")
