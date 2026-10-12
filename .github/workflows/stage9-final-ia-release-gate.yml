@@ -594,6 +594,105 @@ jobs:
           print('FINAL_VISUAL_COMPARE',json.dumps(visual_compare,ensure_ascii=False,sort_keys=True))
           PY
 
+      - name: Build downloadable sample and final release archives
+        run: |
+          set -euo pipefail
+          rm -rf englishpt-sample-preview
+          mkdir -p englishpt-sample-preview
+          python3 - <<'PY'
+          import re, shutil, json
+          from pathlib import Path
+
+          src=Path('final-review')
+          out=Path('englishpt-sample-preview')
+          samples=[
+              'englishpt.html',
+              'seoul-jongno-sajikdong-beginner-english-conv.html',
+              'seoul-jongno-sajikdong-toeic.html',
+              'seoul-jongno-sajikdong-ielts.html',
+              'dalseo-songhyeondong.html',
+              'station-gangnam.html',
+              'station-amsayeoksagongwon.html',
+              'seoul-jongno-sajikdong-worker-english-conv-academy.html',
+          ]
+          for name in samples:
+              p=src/name
+              assert p.exists(), name
+
+          shutil.copytree(src/'assets',out/'assets')
+          if (src/'pilot.css').exists(): shutil.copy2(src/'pilot.css',out/'pilot.css')
+          if (src/'pilot.js').exists(): shutil.copy2(src/'pilot.js',out/'pilot.js')
+
+          sample_set=set(samples)
+          for name in samples:
+              raw=(src/name).read_text(encoding='utf-8')
+              raw=re.sub(r'(["\'])/assets/',r'\1assets/',raw)
+              raw=re.sub(r'(["\'])/pilot\.css',r'\1pilot.css',raw)
+              raw=re.sub(r'(["\'])/pilot\.js',r'\1pilot.js',raw)
+              for target in samples:
+                  raw=raw.replace(f'href="/{target}"',f'href="{target}"')
+              (out/name).write_text(raw,encoding='utf-8')
+
+          labels={
+              'englishpt.html':'메인',
+              'seoul-jongno-sajikdong-beginner-english-conv.html':'사직동 왕초보영어회화',
+              'seoul-jongno-sajikdong-toeic.html':'사직동 토익',
+              'seoul-jongno-sajikdong-ielts.html':'사직동 IELTS',
+              'dalseo-songhyeondong.html':'송현동 지역 허브',
+              'station-gangnam.html':'강남역 허브',
+              'station-amsayeoksagongwon.html':'긴 역명 예시 · 암사역사공원역',
+              'seoul-jongno-sajikdong-worker-english-conv-academy.html':'긴 과정명 예시 · 직장인영어회화학원',
+          }
+          links=''.join(f'<li><a href="{name}">{labels[name]}</a></li>' for name in samples)
+          launcher=f'''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ENGLISH PT 최종 배포 전 예시</title><style>body{{font-family:Arial,sans-serif;max-width:760px;margin:48px auto;padding:0 20px;line-height:1.7}}a{{color:#145c43}}li{{margin:10px 0}}.note{{padding:14px 16px;background:#f3f6f4;border-radius:12px}}</style></head><body><h1>ENGLISH PT 최종 배포 전 예시</h1><p class="note">아래 8개는 최종 release에서 그대로 추출한 대표 화면입니다. 시각 확인용 파일이며, 표본 밖 내부링크와 일부 동적 기능은 전체 배포본 또는 Review Preview에서 확인합니다.</p><ul>{links}</ul></body></html>'''
+          (out/'OPEN-ME.html').write_text(launcher,encoding='utf-8')
+
+          manifest={
+              'source':'final-review',
+              'sample_pages':samples,
+              'sample_count':len(samples),
+              'full_html_total':140391,
+              'purpose':'pre-production visual review'
+          }
+          (out/'SAMPLE-MANIFEST.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+
+          python3 -m zipfile -c englishpt-sample-preview-v18.zip englishpt-sample-preview
+          tar --zstd -cf englishpt-final-release-140391-v18.tar.zst -C final-review .
+          sha256sum englishpt-sample-preview-v18.zip englishpt-final-release-140391-v18.tar.zst > ENGLISHPT_RELEASE_SHA256.txt
+
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          root=Path('final-review')
+          html=[p for p in root.glob('*.html') if p.name!='404.html']
+          assert len([p for p in html if p.name!='index.html'])==140391
+          report={
+              'status':'PASS_DOWNLOADABLE_RELEASE_PACKAGE',
+              'sample_zip':'englishpt-sample-preview-v18.zip',
+              'sample_pages':8,
+              'final_archive':'englishpt-final-release-140391-v18.tar.zst',
+              'html_total':140391,
+              'sample_bytes':Path('englishpt-sample-preview-v18.zip').stat().st_size,
+              'final_bytes':Path('englishpt-final-release-140391-v18.tar.zst').stat().st_size,
+          }
+          Path('ENGLISHPT_DOWNLOADABLE_RELEASE_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False))
+          PY
+
+      - name: Upload downloadable pre-production files
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v18-preproduction-files
+          path: |
+            englishpt-sample-preview-v18.zip
+            englishpt-final-release-140391-v18.tar.zst
+            ENGLISHPT_RELEASE_SHA256.txt
+            ENGLISHPT_DOWNLOADABLE_RELEASE_REPORT.json
+            final-review/STAGE9_RESPONSIVE_QA_V16.json
+          compression-level: 0
+          retention-days: 30
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
