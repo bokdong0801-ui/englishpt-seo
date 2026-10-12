@@ -279,6 +279,7 @@ input,select,textarea,button{max-width:100%}
 
 @media(max-width:900px){
   .wrap{width:calc(100% - 36px)}
+  .hero-grid{grid-template-columns:minmax(0,1fr)}
   .breadcrumb{scrollbar-width:none}
   .breadcrumb::-webkit-scrollbar{display:none}
   .hero{padding:48px 0 68px}
