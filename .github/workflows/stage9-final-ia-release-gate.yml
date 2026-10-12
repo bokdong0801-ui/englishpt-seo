@@ -435,6 +435,132 @@ jobs:
           print('PASS_FINAL_IA_CHROMIUM',checks)
           PY
 
+      - name: Responsive typography and viewport matrix QA
+        run: |
+          set -euo pipefail
+
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('final-review')
+          pages=[p for p in root.glob('*.html') if p.name not in {'404.html','index.html'}]
+          assert len(pages)==140391,len(pages)
+          bad_viewport=[]
+          bad_css=[]
+          for p in pages:
+              raw=p.read_text(encoding='utf-8',errors='ignore')
+              if 'name="viewport"' not in raw:
+                  bad_viewport.append(p.name)
+              if 'pilot.css' not in raw and 'styles.css' not in raw:
+                  bad_css.append(p.name)
+          assert not bad_viewport,bad_viewport[:20]
+          assert not bad_css,bad_css[:20]
+          print('PASS_RESPONSIVE_STATIC_CONTRACT',len(pages))
+          PY
+
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          python3 -m http.server 8778 --directory final-review >/tmp/responsive-review-http.log 2>&1 &
+          SERVER_PID=$!
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars             --remote-debugging-port=9238 --remote-allow-origins='*'             --user-data-dir=/tmp/final-responsive-chrome about:blank >/tmp/final-responsive-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:9238/json/version >/dev/null 2>&1 && break; sleep .5; done
+
+          python3 - <<'PY'
+          import json,time
+          from pathlib import Path
+          import pychrome
+
+          root=Path('final-review')
+          intents=[
+              'elem-tutor','mid-conv','high-conv','univ-conv','jobseeker-conv',
+              'biz-business-conv','housewife-conv',
+              'toeic','toeic-speaking','opic','ielts','duolingo','toefl',
+              'toeic-academy','toeic-speaking-academy','opic-academy',
+              'ielts-academy','duolingo-academy','toefl-academy',
+              'english-conv-academy','adult-english-conv-academy',
+              'worker-english-conv-academy','beginner-english-conv'
+          ]
+          pages=[
+              'englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html',
+              'stations.html',
+              'station-gangnam.html','station-419minjumyoji.html','station-amsayeoksagongwon.html',
+              'station-yonginjungangsijang.html',
+              'dalseo-songhyeondong-adult-conv.html','dalseo-songhyeondong-1to1-toeic.html',
+              'dalseo-songhyeondong-intl-academic-writing.html'
+          ]
+          pages += [f'seoul-jongno-sajikdong-{x}.html' for x in intents]
+          pages += [f'daegu-dalseo-songhyeondong-{x}.html' for x in intents]
+          pages += [f'station-gangnam-{x}.html' for x in intents]
+          pages=list(dict.fromkeys(pages))
+          missing=[x for x in pages if not (root/x).exists()]
+          assert not missing,missing
+
+          viewports=[
+              ('desktop-xl',1440,900,False),
+              ('desktop',1280,800,False),
+              ('desktop-compact',1024,768,False),
+              ('tablet',768,1024,True),
+              ('mobile-wide',430,932,True),
+              ('mobile',390,844,True),
+              ('mobile-narrow',360,800,True),
+              ('mobile-min',320,700,True),
+          ]
+
+          browser=pychrome.Browser(url='http://127.0.0.1:9238')
+          tab=browser.new_tab(); tab.start(); tab.Page.enable(); tab.Runtime.enable()
+          expr=r'''(()=>{
+            const visible=el=>{
+              const s=getComputedStyle(el),r=el.getBoundingClientRect();
+              return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0;
+            };
+            const textEls=[...document.querySelectorAll('h1,h2,h3,p,li,a,button,summary,strong,span,label')].filter(visible);
+            const nowrap=textEls.filter(el=>{
+              if(el.closest('.breadcrumb')) return false;
+              const s=getComputedStyle(el);
+              return s.whiteSpace==='nowrap' && el.scrollWidth>el.clientWidth+2;
+            }).slice(0,8).map(el=>({tag:el.tagName,cls:el.className,text:(el.textContent||'').trim().slice(0,80),sw:el.scrollWidth,cw:el.clientWidth}));
+            const h1=document.querySelector('.hero h1,h1');
+            let heroLines=0;
+            if(h1&&visible(h1)){
+              const s=getComputedStyle(h1),r=h1.getBoundingClientRect();
+              let lh=parseFloat(s.lineHeight);
+              if(!Number.isFinite(lh)) lh=parseFloat(s.fontSize)*1.2;
+              heroLines=Math.max(1,Math.round(r.height/lh));
+            }
+            return {
+              w:innerWidth,
+              sw:document.documentElement.scrollWidth,
+              bodySw:document.body.scrollWidth,
+              nowrap,
+              heroLines,
+              h1:(h1?.textContent||'').trim().slice(0,100)
+            };
+          })()'''
+
+          checks=0
+          report=[]
+          for mode,w,h,mobile in viewports:
+              tab.call_method('Emulation.setDeviceMetricsOverride',width=w,height=h,deviceScaleFactor=1,mobile=mobile,screenWidth=w,screenHeight=h,dontSetVisibleSize=False)
+              for name in pages:
+                  tab.Page.navigate(url='http://127.0.0.1:8778/'+name)
+                  time.sleep(.10)
+                  m=tab.Runtime.evaluate(expression=expr,returnByValue=True)['result']['value']
+                  assert m['sw']<=w+1,(mode,name,'document-overflow',m)
+                  assert m['bodySw']<=w+1,(mode,name,'body-overflow',m)
+                  assert not m['nowrap'],(mode,name,'nowrap-text-overflow',m['nowrap'])
+                  assert m['heroLines']<=3,(mode,name,'hero-lines',m['heroLines'],m['h1'])
+                  checks+=1
+              report.append({'mode':mode,'width':w,'height':h,'pages':len(pages)})
+
+          tab.stop(); browser.close_tab(tab)
+          (root/'STAGE9_RESPONSIVE_QA_V15.json').write_text(
+              json.dumps({'status':'PASS','checks':checks,'pages':len(pages),'viewports':report},ensure_ascii=False,indent=2)+'\n',
+              encoding='utf-8'
+          )
+          print('PASS_RESPONSIVE_VIEWPORT_MATRIX',checks,'PAGES',len(pages),'VIEWPORTS',len(viewports))
+          PY
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
