@@ -486,7 +486,7 @@ jobs:
               'stations.html',
               'station-gangnam.html','station-419minjumyoji.html','station-amsayeoksagongwon.html',
               'station-yonginjungangsijang.html',
-              'dalseo-songhyeondong-adult-conv.html','dalseo-songhyeondong-1to1-toeic.html',
+              'dalseo-songhyeondong.html','dalseo-songhyeondong-adult-conv.html','dalseo-songhyeondong-1to1-toeic.html',
               'dalseo-songhyeondong-intl-academic-writing.html'
           ]
           pages += [f'seoul-jongno-sajikdong-{x}.html' for x in intents]
@@ -521,25 +521,54 @@ jobs:
               return s.whiteSpace==='nowrap' && el.scrollWidth>el.clientWidth+2;
             }).slice(0,8).map(el=>({tag:el.tagName,cls:el.className,text:(el.textContent||'').trim().slice(0,80),sw:el.scrollWidth,cw:el.clientWidth}));
             const h1=document.querySelector('.hero h1,h1');
-            let heroLines=0;
-            if(h1&&visible(h1)){
-              const s=getComputedStyle(h1),r=h1.getBoundingClientRect();
-              let lh=parseFloat(s.lineHeight);
-              if(!Number.isFinite(lh)) lh=parseFloat(s.fontSize)*1.2;
-              heroLines=Math.max(1,Math.round(r.height/lh));
-            }
+            const countLines=el=>{
+              if(!el||!visible(el)) return 0;
+              const range=document.createRange();
+              range.selectNodeContents(el);
+              const rects=[...range.getClientRects()].filter(r=>r.width>0&&r.height>0);
+              const tops=[];
+              for(const r of rects){
+                if(!tops.some(t=>Math.abs(t-r.top)<2)) tops.push(r.top);
+              }
+              return Math.max(1,tops.length);
+            };
+            const heroLines=countLines(h1);
+            const hs=h1?getComputedStyle(h1):null;
+            const hr=h1?h1.getBoundingClientRect():null;
+            const gridCols=sel=>{
+              const el=document.querySelector(sel);
+              return el&&visible(el)?getComputedStyle(el).gridTemplateColumns:'';
+            };
             return {
               w:innerWidth,
               sw:document.documentElement.scrollWidth,
               bodySw:document.body.scrollWidth,
               nowrap,
               heroLines,
-              h1:(h1?.textContent||'').trim().slice(0,100)
+              h1:(h1?.textContent||'').trim().slice(0,100),
+              h1Font:hs?hs.fontSize:'',
+              h1LineHeight:hs?hs.lineHeight:'',
+              h1Width:hr?Math.round(hr.width):0,
+              h1Height:hr?Math.round(hr.height):0,
+              heroGrid:gridCols('.hero-grid'),
+              mainGrid:gridCols('.grid4,.quad,.station-course-links,.quick-directory-grid,.teacher-trust-grid,.region-finder-grid'),
+              heroSheetVisible:!!document.querySelector('.hero-sheet')&&visible(document.querySelector('.hero-sheet')),
+              floatingVisible:!!document.querySelector('.floating-contact')&&visible(document.querySelector('.floating-contact')),
+              mobileStickyVisible:!!document.querySelector('.mobile-sticky')&&visible(document.querySelector('.mobile-sticky'))
             };
           })()'''
 
           checks=0
           report=[]
+          visual_targets={
+              'englishpt.html',
+              'seoul-jongno-sajikdong-beginner-english-conv.html',
+              'seoul-jongno-sajikdong-toeic.html',
+              'seoul-jongno-sajikdong-ielts.html',
+              'dalseo-songhyeondong.html',
+              'station-gangnam.html',
+          }
+          visual_compare={}
           for mode,w,h,mobile in viewports:
               tab.call_method('Emulation.setDeviceMetricsOverride',width=w,height=h,deviceScaleFactor=1,mobile=mobile,screenWidth=w,screenHeight=h,dontSetVisibleSize=False)
               for name in pages:
@@ -549,16 +578,20 @@ jobs:
                   assert m['sw']<=w+1,(mode,name,'document-overflow',m)
                   assert m['bodySw']<=w+1,(mode,name,'body-overflow',m)
                   assert not m['nowrap'],(mode,name,'nowrap-text-overflow',m['nowrap'])
-                  assert m['heroLines']<=3,(mode,name,'hero-lines',m['heroLines'],m['h1'])
+                  assert m['heroLines']<=3,(mode,name,'hero-lines',m['heroLines'],m['h1'],m)
+                  if name in visual_targets and mode in {'desktop-xl','mobile'}:
+                      visual_compare.setdefault(name,{})[mode]=m
                   checks+=1
               report.append({'mode':mode,'width':w,'height':h,'pages':len(pages)})
 
           tab.stop(); browser.close_tab(tab)
-          (root/'STAGE9_RESPONSIVE_QA_V15.json').write_text(
-              json.dumps({'status':'PASS','checks':checks,'pages':len(pages),'viewports':report},ensure_ascii=False,indent=2)+'\n',
+          responsive_report={'status':'PASS','checks':checks,'pages':len(pages),'viewports':report,'visual_compare':visual_compare}
+          (root/'STAGE9_RESPONSIVE_QA_V16.json').write_text(
+              json.dumps(responsive_report,ensure_ascii=False,indent=2)+'\n',
               encoding='utf-8'
           )
           print('PASS_RESPONSIVE_VIEWPORT_MATRIX',checks,'PAGES',len(pages),'VIEWPORTS',len(viewports))
+          print('FINAL_VISUAL_COMPARE',json.dumps(visual_compare,ensure_ascii=False,sort_keys=True))
           PY
 
       - uses: actions/setup-node@v4
