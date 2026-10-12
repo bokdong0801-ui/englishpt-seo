@@ -1079,7 +1079,8 @@ def main() -> None:
         shutil.copytree(privacy_src, out / "privacy", dirs_exist_ok=True)
 
     def apply_sitewide_operational_markup(raw: str) -> str:
-        asset_version = "20261012-8"
+        asset_version = "20261012-9"
+        raw = raw.replace("훈련", "연습")
         raw = raw.replace('href="pilot.css"', f'href="pilot.css?v={asset_version}"')
         raw = raw.replace('src="pilot.js"', f'src="pilot.js?v={asset_version}"')
         raw = raw.replace('href="assets/styles.css"', f'href="assets/styles.css?v={asset_version}"')
@@ -1185,8 +1186,14 @@ def main() -> None:
     missing_local_assets = []
     missing_local_html = []
 
-    asset_ref_re = re.compile(r'(?:href|src)=["\\\'](/?(?:assets/[^"\\\'#?]+|pilot\\.css|pilot\\.js))["\\\']', re.I)
-    html_ref_re = re.compile(r'href=["\\\'](/?[^"\\\'#?]+\\.html)(?:#[^"\\\']*)?["\\\']', re.I)
+    asset_ref_re = re.compile(
+        r'''(?:href|src)=["'](/?(?:assets/[^"'#?]+|pilot\.css|pilot\.js))(?:\?[^"']*)?["']''',
+        re.I,
+    )
+    html_ref_re = re.compile(
+        r'''href=["'](/?[^"'#?]+\.html)(?:#[^"']*)?["']''',
+        re.I,
+    )
 
     for page in release_pages:
         raw = page.read_text(encoding="utf-8", errors="ignore")
