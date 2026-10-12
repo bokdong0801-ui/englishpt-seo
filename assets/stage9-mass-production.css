@@ -371,16 +371,21 @@ button,a{-webkit-tap-highlight-color:transparent}
 footer{padding:28px 0;background:#0F1512;color:#d7ded9;font-size:12px}
 footer strong{display:block;margin-bottom:3px;color:#fff}
 
-/* Mobile sticky */
-.mobile-sticky{
-  display:none;position:fixed;left:0;right:0;bottom:0;z-index:60;
-  padding:9px 12px calc(9px + env(safe-area-inset-bottom));
-  background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line)
+/* Floating quick contact */
+.floating-contact{
+  position:fixed;right:22px;bottom:22px;z-index:70;
+  display:grid;gap:10px;width:188px
 }
-.mobile-sticky a{
-  display:block;max-width:680px;margin:auto;text-align:center;
-  background:var(--hero);color:#fff;padding:13px 14px;border-radius:999px;font-weight:900
+.floating-contact-btn{
+  display:flex;flex-direction:column;gap:2px;justify-content:center;
+  min-height:62px;padding:12px 15px;border-radius:18px;
+  box-shadow:0 14px 32px rgba(15,21,18,.16);border:1px solid var(--line);
+  backdrop-filter:blur(12px)
 }
+.floating-contact-btn strong{font-size:14px;line-height:1.25}
+.floating-contact-btn span{font-size:11.5px;line-height:1.3;opacity:.8}
+.floating-phone{background:#fff;color:var(--hero)}
+.floating-trial{background:var(--hero);color:#fff;border-color:transparent}
 
 @media(max-width:900px){
   .wrap,.mass-context>.wrap,.consult>.wrap{width:min(100% - 36px,100%)}
@@ -397,7 +402,7 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
 }
 
 @media(max-width:760px){
-  body{padding-bottom:78px}
+  body{padding-bottom:76px}
   .wrap,.mass-context>.wrap,.consult>.wrap{width:calc(100% - 36px)}
   .header{height:60px}
   .brand-mark{width:31px;height:31px;border-radius:9px}
@@ -456,7 +461,6 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
   .final{padding:48px 0}
   .final .wrap{display:block}
   .final .btn{margin-top:18px;width:100%}
-  .mobile-sticky{display:block}
 }
 
 @media(max-width:390px){
@@ -537,22 +541,25 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
 @media(max-width:520px){.nearby-locality-grid{grid-template-columns:1fr}.related-hub-actions{display:grid}.related-hub-actions a{justify-content:center}}
 
 
-/* Mid-page consultation CTA: one contextual conversion point per detailed course page */
-.mid-consult-cta{padding:22px 0 26px;background:var(--paper)}
-.mid-consult-card{
-  display:flex;align-items:center;justify-content:space-between;gap:28px;
-  padding:26px 28px;border:1px solid var(--line);border-radius:24px;
-  background:linear-gradient(135deg,#fff 0%,var(--soft) 100%);
-  box-shadow:0 14px 32px rgba(18,26,23,.06)
-}
-.mid-consult-copy{max-width:760px}
-.mid-consult-copy .kicker{margin:0 0 7px;color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.04em}
-.mid-consult-copy h2{margin:0;font-size:clamp(21px,2.6vw,30px);line-height:1.35}
-.mid-consult-copy p:last-child{margin:9px 0 0;color:var(--muted);line-height:1.7}
-.mid-consult-button{flex:0 0 auto;white-space:nowrap}
+
 @media(max-width:760px){
   .mid-consult-cta{padding:16px 0 20px}
   .mid-consult-card{display:block;padding:22px 20px;border-radius:20px}
   .mid-consult-copy h2{font-size:22px}
   .mid-consult-button{display:inline-flex;margin-top:18px}
+}
+
+@media(max-width:760px){
+  .floating-contact{
+    left:0;right:0;bottom:0;width:auto;display:grid;grid-template-columns:1fr 1fr;
+    gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+    background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
+    border-top:1px solid var(--line)
+  }
+  .floating-contact-btn{
+    min-height:50px;padding:9px 10px;border-radius:14px;text-align:center;
+    align-items:center;box-shadow:none
+  }
+  .floating-contact-btn strong{font-size:13px}
+  .floating-contact-btn span{font-size:10.5px}
 }
