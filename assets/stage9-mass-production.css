@@ -535,3 +535,24 @@ footer strong{display:block;margin-bottom:3px;color:#fff}
 .related-hub-actions a{display:inline-flex;align-items:center;min-height:42px;padding:0 14px;border-radius:999px;background:var(--hero);color:var(--heroText);font-size:12.5px;font-weight:800;text-decoration:none}
 @media(max-width:800px){.related-groups{grid-template-columns:1fr}.nearby-locality-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:520px){.nearby-locality-grid{grid-template-columns:1fr}.related-hub-actions{display:grid}.related-hub-actions a{justify-content:center}}
+
+
+/* Mid-page consultation CTA: one contextual conversion point per detailed course page */
+.mid-consult-cta{padding:22px 0 26px;background:var(--paper)}
+.mid-consult-card{
+  display:flex;align-items:center;justify-content:space-between;gap:28px;
+  padding:26px 28px;border:1px solid var(--line);border-radius:24px;
+  background:linear-gradient(135deg,#fff 0%,var(--soft) 100%);
+  box-shadow:0 14px 32px rgba(18,26,23,.06)
+}
+.mid-consult-copy{max-width:760px}
+.mid-consult-copy .kicker{margin:0 0 7px;color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.04em}
+.mid-consult-copy h2{margin:0;font-size:clamp(21px,2.6vw,30px);line-height:1.35}
+.mid-consult-copy p:last-child{margin:9px 0 0;color:var(--muted);line-height:1.7}
+.mid-consult-button{flex:0 0 auto;white-space:nowrap}
+@media(max-width:760px){
+  .mid-consult-cta{padding:16px 0 20px}
+  .mid-consult-card{display:block;padding:22px 20px;border-radius:20px}
+  .mid-consult-copy h2{font-size:22px}
+  .mid-consult-button{display:inline-flex;margin-top:18px}
+}
