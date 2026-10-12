@@ -1,2 +1,2 @@
-Run final preflight v18 downloadable package build
-Includes offline sample ZIP and full 140391-page release archive before Netlify review deployment.
+Run final preflight v19 comfort integrity pass
+Checks zero visible body photos, sitewide local asset/link integrity, beginner comfort language, and responsive layout.
