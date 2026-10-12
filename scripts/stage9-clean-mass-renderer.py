@@ -106,6 +106,196 @@ FINAL_PROMPTS = {
     "beginner-english-conv":"영어가 자신 없어도 지금 가능한 한 문장부터 확인해보세요.",
 }
 
+MID_CTA_MAP = {
+    # 학생·생활·업무 회화: 수업 흐름을 이해한 뒤 상담으로 이어집니다.
+    "elem-tutor": {
+        "anchor":"management",
+        "title":"아이에게 지금 필요한 영어부터 확인해보세요",
+        "body":"읽기·기초 문장·학교영어 중 어디부터 시작할지 현재 수준과 가까운 일정 기준으로 함께 정리합니다.",
+        "button":"무료 PT 진단으로 확인하기 →",
+    },
+    "mid-conv": {
+        "anchor":"management",
+        "title":"가장 가까운 학교 일정부터 준비 순서를 잡아보세요",
+        "body":"수행평가·발표·교과서 영어 중 지금 먼저 준비할 내용을 현재 수준에 맞춰 확인합니다.",
+        "button":"내 상황으로 상담하기 →",
+    },
+    "high-conv": {
+        "anchor":"management",
+        "title":"내신·수능·수행 중 무엇부터 잡아야 할지 확인해보세요",
+        "body":"해야 할 영어가 많다면 가장 급한 일정과 현재 어려운 부분부터 나눠 우선순위를 정합니다.",
+        "button":"우선순위 상담 받아보기 →",
+    },
+    "univ-conv": {
+        "anchor":"management",
+        "title":"다음 발표·세미나·면접에 필요한 영어부터 준비해보세요",
+        "body":"막연한 회화보다 실제로 영어를 써야 하는 상황을 기준으로 연습 범위와 시작점을 정합니다.",
+        "button":"내 목표로 상담하기 →",
+    },
+    "jobseeker-conv": {
+        "anchor":"management",
+        "title":"면접에서 가장 막히는 질문부터 점검해보세요",
+        "body":"지원 일정과 자기소개·경험 답변에서 어려운 부분을 기준으로 실제 말하기 준비 순서를 잡습니다.",
+        "button":"면접 영어 진단받기 →",
+    },
+    "biz-business-conv": {
+        "anchor":"management",
+        "title":"다음 업무에서 바로 써야 할 영어부터 확인해보세요",
+        "body":"회의·발표·전화·고객 대응 중 가장 가까운 상황을 기준으로 필요한 표현과 연습 순서를 정합니다.",
+        "button":"업무 영어 상담하기 →",
+    },
+    "housewife-conv": {
+        "anchor":"management",
+        "title":"부담 없이 다시 시작할 수 있는 범위를 확인해보세요",
+        "body":"생활·여행에서 자주 쓰는 영어와 현재 가능한 시간을 함께 보고 무리하지 않는 시작점을 정합니다.",
+        "button":"편하게 상담 받아보기 →",
+    },
+
+    # 시험 과외형: 시험 구조·관리 흐름까지 읽은 뒤 상담으로 이어집니다.
+    "toeic": {
+        "anchor":"exam-reader-outputs",
+        "title":"목표 점수까지 무엇부터 보완해야 할까요?",
+        "body":"시험일과 최근 결과를 기준으로 LC·RC 중 먼저 손봐야 할 파트와 시간 배분을 확인합니다.",
+        "button":"토익 준비 순서 확인하기 →",
+    },
+    "toeic-speaking": {
+        "anchor":"exam-reader-outputs",
+        "title":"목표 Level에 필요한 말하기부터 점검해보세요",
+        "body":"첫 문장·답변 구조·제한 시간 중 어디에서 막히는지 확인해 실전 연습 순서를 정합니다.",
+        "button":"토스 말하기 진단받기 →",
+    },
+    "opic": {
+        "anchor":"exam-reader-outputs",
+        "title":"목표 등급에 필요한 답변 흐름부터 확인해보세요",
+        "body":"돌발 질문과 경험 답변에서 막히는 지점을 보고 IH·AL 목표에 맞는 연습 순서를 잡습니다.",
+        "button":"오픽 준비 방향 확인하기 →",
+    },
+    "ielts": {
+        "anchor":"exam-reader-outputs",
+        "title":"목표 Band까지 가장 먼저 올려야 할 영역은 무엇일까요?",
+        "body":"Listening·Reading·Writing·Speaking 중 현재 차이가 큰 영역부터 시험일까지의 우선순위를 정합니다.",
+        "button":"IELTS 준비 순서 확인하기 →",
+    },
+    "duolingo": {
+        "anchor":"exam-reader-outputs",
+        "title":"제출 일정에 맞춰 먼저 보완할 영역을 확인해보세요",
+        "body":"시험 형식 적응과 읽기·듣기·말하기·쓰기 중 결과를 흔드는 부분부터 우선순위를 정합니다.",
+        "button":"DET 준비 방향 확인하기 →",
+    },
+    "toefl": {
+        "anchor":"exam-reader-outputs",
+        "title":"목표 점수까지 통합형에서 막히는 부분부터 확인해보세요",
+        "body":"읽고 들은 내용을 말하고 쓰는 과정에서 어디가 끊기는지 보고 네 영역의 준비 순서를 정합니다.",
+        "button":"TOEFL 준비 순서 확인하기 →",
+    },
+
+    # 시험 학원형: 학원형/1:1 비교 기준을 읽은 직후 상담으로 이어집니다.
+    "toeic-academy": {
+        "anchor":"academy-choice",
+        "title":"토익학원과 1:1 수업, 내게 맞는 방식부터 비교해보세요",
+        "body":"시험일·약한 파트·질문과 오답관리 범위를 기준으로 어떤 수업 방식이 필요한지 함께 확인합니다.",
+        "button":"수업 방식 상담하기 →",
+    },
+    "toeic-speaking-academy": {
+        "anchor":"academy-choice",
+        "title":"말하기 시간과 개인 피드백이 얼마나 필요한지 확인해보세요",
+        "body":"목표 등급과 현재 발화 수준을 기준으로 그룹형 진도와 1:1 피드백 중 필요한 비중을 비교합니다.",
+        "button":"토스 수업 비교 상담 →",
+    },
+    "opic-academy": {
+        "anchor":"academy-choice",
+        "title":"스크립트보다 실제 답변 피드백이 필요한지 확인해보세요",
+        "body":"목표 등급·돌발 질문·직접 말하는 시간을 기준으로 수업 방식과 관리 범위를 비교합니다.",
+        "button":"오픽 수업 비교 상담 →",
+    },
+    "ielts-academy": {
+        "anchor":"academy-choice",
+        "title":"네 영역을 같은 비중으로 들어야 하는지부터 비교해보세요",
+        "body":"목표 Band와 약한 영역, Writing 첨삭·Speaking 피드백 필요도를 기준으로 수업 방식을 확인합니다.",
+        "button":"IELTS 수업 비교 상담 →",
+    },
+    "duolingo-academy": {
+        "anchor":"academy-choice",
+        "title":"빠른 진도보다 지금 필요한 관리 범위를 먼저 비교해보세요",
+        "body":"제출 일정과 시험 형식 적응, 말하기·쓰기 피드백 필요도를 기준으로 수업 방식을 확인합니다.",
+        "button":"DET 수업 비교 상담 →",
+    },
+    "toefl-academy": {
+        "anchor":"academy-choice",
+        "title":"통합형 연습과 개인 피드백 비중부터 확인해보세요",
+        "body":"목표 점수와 시험일까지 남은 기간을 기준으로 네 영역 관리와 1:1 보완 필요도를 비교합니다.",
+        "button":"TOEFL 수업 비교 상담 →",
+    },
+
+    # 회화 학원형: 학원형/1:1 말하기 구조를 비교한 직후 상담으로 이어집니다.
+    "english-conv-academy": {
+        "anchor":"academy-choice",
+        "title":"내가 직접 말하고 피드백받는 시간이 충분한지 확인해보세요",
+        "body":"현재 말하기 수준과 회화 목적을 기준으로 그룹형 수업과 1:1 맞춤 수업의 차이를 비교합니다.",
+        "button":"회화 수업 비교 상담 →",
+    },
+    "adult-english-conv-academy": {
+        "anchor":"academy-choice",
+        "title":"생활에 맞게 꾸준히 이어갈 수 있는 수업인지 비교해보세요",
+        "body":"기초 수준·생활/여행 목적·가능한 시간을 기준으로 진도와 개인 피드백 방식을 확인합니다.",
+        "button":"성인회화 상담 받아보기 →",
+    },
+    "worker-english-conv-academy": {
+        "anchor":"academy-choice",
+        "title":"실제 업무에 바로 연결되는 수업인지 확인해보세요",
+        "body":"회의·발표·전화 등 필요한 업무 상황과 개인 피드백 비중을 기준으로 수업 방식을 비교합니다.",
+        "button":"직장인 회화 상담하기 →",
+    },
+    "beginner-english-conv": {
+        "anchor":"management",
+        "title":"영어가 자신 없어도 지금 가능한 한 문장부터 확인해보세요",
+        "body":"인사·자기소개처럼 쉬운 표현부터 현재 할 수 있는 범위를 보고 부담 없는 시작 순서를 정합니다.",
+        "button":"왕초보 시작점 확인하기 →",
+    },
+}
+
+MID_CTA_ANCHOR_CLASS = {
+    "management": "section management",
+    "exam-reader-outputs": "section exam-reader-outputs",
+    "academy-choice": "section academy-choice",
+}
+
+def middle_consult_cta(loc: dict, intent: str) -> str:
+    spec = MID_CTA_MAP[intent]
+    dong = esc(loc["dong"])
+    return (
+        '<section class="mid-consult-cta" data-mid-cta="' + esc(intent) + '">'
+        '<div class="wrap"><div class="mid-consult-card">'
+        '<div class="mid-consult-copy">'
+        '<p class="kicker">지금 상담해도 괜찮습니다</p>'
+        f'<h2>{esc(spec["title"])}</h2>'
+        f'<p>{esc(spec["body"])}</p>'
+        '</div>'
+        f'<a class="btn mid-consult-button" href="#consultation-preview">{esc(spec["button"])}</a>'
+        '</div></div></section>'
+    )
+
+def insert_middle_consult_cta(raw: str, loc: dict, intent: str) -> tuple[str, bool]:
+    if 'class="mid-consult-cta"' in raw:
+        return raw, True
+    spec = MID_CTA_MAP.get(intent)
+    if not spec:
+        return raw, False
+    class_value = MID_CTA_ANCHOR_CLASS[spec["anchor"]]
+    pattern = re.compile(
+        r'<section class="' + re.escape(class_value) + r'">.*?</section>',
+        re.S,
+    )
+    m = pattern.search(raw)
+    if not m:
+        # Safe fallback: management exists across all current 23 intent pages.
+        m = re.search(r'<section class="section management">.*?</section>', raw, re.S)
+    if not m:
+        return raw, False
+    block = middle_consult_cta(loc, intent)
+    return raw[:m.end()] + block + raw[m.end():], True
+
+
 ACADEMY_FAQ = {
     "toeic-academy": [
         ["영어 기초가 부족하고 토익에도 자신감이 없는데 학원 수업부터 시작해도 될까요?", "가능합니다. 처음 상담에서 최근 점수나 기초 수준을 확인하고, 정해진 진도를 따라갈 수 있는지와 약한 파트를 따로 보완할 수 있는지를 먼저 비교하는 것이 좋습니다."],
@@ -2385,6 +2575,9 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     raw = rewrite_reader_headings(raw, loc, intent, family)
     raw = personalize_confidence_faq(raw, loc, intent)
     raw = apply_exam_reader_pilot(raw, base_exam_intent(intent))
+    raw, mid_cta_ok = insert_middle_consult_cta(raw, loc, intent)
+    if not mid_cta_ok:
+        problems.append("mid_consult_cta")
     raw = raw.replace('</body>','<div class="mobile-sticky"><a href="#consultation-preview">무료 PT 진단 신청</a></div></body>',1)
 
     forbidden=[
@@ -2399,7 +2592,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         'name="name"','name="phone"','name="area"','name="message"','name="wantedClass"','name="consent"',
         'class="breadcrumb wrap"','class="mobile-sticky"',
         'name="englishpt-consultation"','data-netlify="true"','class="section mass-context"',
-        'class="site-header"','class="hero simple-hero"','class="snapshot"','class="trust"','class="section management"',
+        'class="site-header"','class="hero simple-hero"','class="snapshot"','class="trust"','class="section management"','class="mid-consult-cta"',
         '"@type":"Service"','"@type":"WebSite"','"mainEntity":{"@id":',
     ]
     if any(x not in raw for x in required):
