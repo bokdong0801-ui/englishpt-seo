@@ -1,18 +1,2 @@
-2026-10-07 final IA release gate run
-2026-10-08 retry after workflow registration
-2026-10-08 final navigation graph verification after regional and station fixes
-2026-10-08 rerun after grouped course navigation QA alignment
-2026-10-08 rerun after legacy Songhyeondong navigation points to current 23 pages
-2026-10-08 rerun final IA gate after review-package assertion fix
-2026-10-08 final zero-broken-link verification after IA gate fix
-2026-10-08 rerun final IA gate with fixed review site id
-2026-10-11 full 140391 preview with Sajik-Buam regression
-2026-10-11 final preflight with square thumbnail crop fix
-2026-10-11 final preflight compact thumbnail v5 + copy quality QA
-2026-10-11 final preflight v6 Naver-scale thumbnails + copy QA
-2026-10-12 final-preflight-faq-phone-trial-sitewide
-2026-10-12 rerun-final-preflight-after-copy-dedupe-faq-phone-trial
-2026-10-12 final-preflight-v13-copy-dedupe-success-preview
-2026-10-12 final-preflight-v14-clean-preserved-faq-duplicates
-2026-10-12 final-preflight-v15-responsive-polish-all-page-types
-2026-10-12 final-preflight-v16-responsive-linebox-fix-and-six-page-compare
+Run final preflight v17 mobile hero grid fix
+Responsive mobile hero grid collapse corrected after v16 matrix failure.
