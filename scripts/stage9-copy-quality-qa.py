@@ -25,6 +25,14 @@ P_RE = re.compile(r"<p\b[^>]*>(.*?)</p>", re.S | re.I)
 H_RE = re.compile(r"<h([1-3])\b[^>]*>(.*?)</h\1>", re.S | re.I)
 SCRIPT_STYLE_RE = re.compile(r"<(?:script|style)\b.*?</(?:script|style)>", re.S | re.I)
 
+STALE_FAQ_QUESTIONS = {
+    "오류가 줄었는지는 어떻게 보나요?",
+    "변화는 어떻게 확인하나요?",
+    "교재 진도보다 실제 상황을 먼저 보나요?",
+    "수업 기록은 얼마나 자세해야 하나요?",
+    "다른 상황에도 활용이 안 되면 새 표현을 더 배우나요?",
+}
+
 KNOWN_BAD = (
     "복습회수",
     "현재범위",
@@ -42,11 +50,6 @@ KNOWN_BAD = (
     "}}",
     "undefined",
     "TODO",
-    "오류가 줄었는지는 어떻게 보나요?",
-    "변화는 어떻게 확인하나요?",
-    "교재 진도보다 실제 상황을 먼저 보나요?",
-    "수업 기록은 얼마나 자세해야 하나요?",
-    "다른 상황에도 활용이 안 되면 새 표현을 더 배우나요?",
 )
 
 def plain(value: str) -> str:
@@ -64,6 +67,13 @@ def issue_page(path: Path) -> list[dict]:
     bad = [token for token in KNOWN_BAD if token in main]
     if bad:
         out.append({"type": "known_bad_token", "tokens": bad})
+
+    faq_questions = {
+        plain(x) for x in re.findall(r"<summary>(.*?)</summary>", main, re.S | re.I)
+    }
+    stale_faq = sorted(faq_questions & STALE_FAQ_QUESTIONS)
+    if stale_faq:
+        out.append({"type": "stale_faq_question", "questions": stale_faq})
 
     paragraphs = [plain(x) for x in P_RE.findall(main)]
     substantive = [x for x in paragraphs if len(x) >= 45]
