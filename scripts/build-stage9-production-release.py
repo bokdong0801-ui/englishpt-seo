@@ -275,51 +275,21 @@ def _add_schema_image(raw: str, image_url: str) -> tuple[str, bool]:
         return raw, False
 
 
-def _replace_or_insert_body_search_image(raw: str, rel_image: str, image_alt: str) -> tuple[str, str]:
-    """Use the same square search thumbnail as the visible representative image.
+def _remove_body_representative_visuals(raw: str) -> tuple[str, int]:
+    """Keep search thumbnails metadata-only and remove visible representative art.
 
-    Existing learning-visual figures keep their caption; hub pages receive one
-    compact representative block directly after the hero.
+    The square 1200x1200 image remains wired to og:image/Twitter/Schema, but
+    visitors should move directly from the hero into useful page content.
     """
-    img_tag = (
-        f'<img src="{html.escape(rel_image, quote=True)}" '
-        f'alt="{html.escape(image_alt, quote=True)}" width="1200" height="1200" '
-        'loading="eager" decoding="async" '
-        'style="display:block;width:100%;height:auto!important;aspect-ratio:auto!important;object-fit:contain!important;">'
+    removed = 0
+    patterns = (
+        r'<section class="visual-break"[^>]*>.*?</section>',
+        r'<section class="search-thumbnail-section"[^>]*>.*?</section>',
     )
-    figure_img = re.search(
-        r'(<figure class="learning-visual">\s*)<img[^>]*>',
-        raw, re.I | re.S,
-    )
-    if figure_img:
-        raw = re.sub(
-            r'<figure class="learning-visual"[^>]*>',
-            '<figure class="learning-visual" style="width:clamp(76px,8vw,100px)!important;margin:0 auto!important;overflow:hidden;">',
-            raw, count=1, flags=re.I,
-        )
-        figure_img = re.search(
-            r'(<figure class="learning-visual"[^>]*>\s*)<img[^>]*>',
-            raw, re.I | re.S,
-        )
-        raw = raw[:figure_img.start()] + figure_img.group(1) + img_tag + raw[figure_img.end():]
-        return raw, "replaced_learning_visual"
-
-    # Core/station hub pages do not always have a learning-visual. Add one
-    # immediately after the first hero section without changing the hero itself.
-    main_pos = raw.find("<main")
-    hero_pos = raw.find("<section", main_pos if main_pos >= 0 else 0)
-    hero_end = raw.find("</section>", hero_pos if hero_pos >= 0 else 0)
-    if hero_pos >= 0 and hero_end >= 0:
-        hero_end += len("</section>")
-        block = (
-            '<section class="search-thumbnail-section" aria-label="페이지 대표 이미지">'
-            '<div class="wrap"><figure class="search-thumbnail" style="width:clamp(76px,8vw,100px)!important;margin:0 auto!important;overflow:hidden;">'
-            + img_tag +
-            '</figure></div></section>'
-        )
-        raw = raw[:hero_end] + block + raw[hero_end:]
-        return raw, "inserted_after_hero"
-    return raw, "body_image_not_inserted"
+    for pattern in patterns:
+        raw, n = re.subn(pattern, '', raw, flags=re.I | re.S)
+        removed += n
+    return raw, removed
 
 
 def apply_search_image_metadata(out: Path, failures: list) -> dict:
@@ -339,11 +309,7 @@ def apply_search_image_metadata(out: Path, failures: list) -> dict:
     schema_failures = []
     missing_assets = []
     manifest_missing = []
-    body_counts = {
-        "replaced_learning_visual": 0,
-        "inserted_after_hero": 0,
-        "body_image_not_inserted": 0,
-    }
+    body_visuals_removed = 0
 
     for page in pages:
         raw = page.read_text(encoding="utf-8", errors="ignore")
@@ -417,8 +383,8 @@ def apply_search_image_metadata(out: Path, failures: list) -> dict:
         if not schema_ok:
             schema_failures.append(page.name)
 
-        raw, body_state = _replace_or_insert_body_search_image(raw, rel_image, image_alt)
-        body_counts[body_state] += 1
+        raw, removed_visuals = _remove_body_representative_visuals(raw)
+        body_visuals_removed += removed_visuals
 
         page.write_text(raw, encoding="utf-8")
         image_counts[rel_image] = image_counts.get(rel_image, 0) + 1
@@ -429,9 +395,6 @@ def apply_search_image_metadata(out: Path, failures: list) -> dict:
         failures.append({"search_image_assets_missing": missing_assets[:50], "count": len(missing_assets)})
     if schema_failures:
         failures.append({"search_image_schema_failed": schema_failures[:50], "count": len(schema_failures)})
-    if body_counts["body_image_not_inserted"]:
-        failures.append({"search_image_body_insert_failed": body_counts["body_image_not_inserted"]})
-
     return {
         "html_pages": len(pages),
         "unique_search_images": len(image_counts),
@@ -439,7 +402,8 @@ def apply_search_image_metadata(out: Path, failures: list) -> dict:
         "missing_assets": len(missing_assets),
         "manifest_missing": len(manifest_missing),
         "schema_failures": len(schema_failures),
-        "body_image_updates": body_counts,
+        "body_visuals_removed": body_visuals_removed,
+        "body_search_thumbnail_policy": "metadata_only",
         "square_size": "1200x1200",
     }
 
@@ -1090,7 +1054,7 @@ def main() -> None:
         shutil.copytree(privacy_src, out / "privacy", dirs_exist_ok=True)
 
     def apply_sitewide_operational_markup(raw: str) -> str:
-        asset_version = "20261012-7"
+        asset_version = "20261012-8"
         raw = raw.replace('href="pilot.css"', f'href="pilot.css?v={asset_version}"')
         raw = raw.replace('src="pilot.js"', f'src="pilot.js?v={asset_version}"')
         raw = raw.replace('href="assets/styles.css"', f'href="assets/styles.css?v={asset_version}"')
