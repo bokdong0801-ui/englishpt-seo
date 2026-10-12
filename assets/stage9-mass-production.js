@@ -4,24 +4,43 @@ document.addEventListener("DOMContentLoaded",()=>{
   const subject=form?.querySelector("#leadSubject");
   const submit=form?.querySelector('button[type="submit"]');
 
-  const setMode=(mode)=>{
+  const setMode=()=>{
     if(!form) return;
-    const trial=mode==="trial";
-    if(requestType) requestType.value=trial ? "체험수업 신청" : "무료 PT 진단";
-    if(subject) subject.value=trial ? "ENGLISH PT 체험수업 신청" : "ENGLISH PT 새 상담 신청";
-    if(submit) submit.textContent=trial ? "체험수업 신청 →" : "무료 PT 진단 신청 →";
+    if(requestType) requestType.value="체험수업 신청";
+    if(subject) subject.value="ENGLISH PT 체험수업 신청";
+    if(submit) submit.textContent="체험수업 신청 →";
   };
+  setMode();
 
   document.querySelectorAll("[data-trial-cta]").forEach(a=>{
     a.addEventListener("click",()=>{
-      setMode("trial");
+      setMode();
       setTimeout(()=>document.querySelector("#leadName")?.focus({preventScroll:true}),450);
     });
   });
 
-  document.querySelectorAll('a[href="#consultation-preview"]:not([data-trial-cta])').forEach(a=>{
-    a.addEventListener("click",()=>setMode("diagnosis"));
+  document.querySelectorAll('a[href="#consultation-preview"]').forEach(a=>{
+    a.addEventListener("click",()=>setMode());
   });
+
+
+  const phoneToggle=document.querySelector("[data-phone-toggle]");
+  const phonePopover=document.querySelector("#header-phone-popover");
+  if(phoneToggle && phonePopover){
+    const closePhone=()=>{
+      phonePopover.hidden=true;
+      phoneToggle.setAttribute("aria-expanded","false");
+    };
+    phoneToggle.addEventListener("click",e=>{
+      e.stopPropagation();
+      const next=phonePopover.hidden;
+      phonePopover.hidden=!next;
+      phoneToggle.setAttribute("aria-expanded",next ? "true" : "false");
+    });
+    phonePopover.addEventListener("click",e=>e.stopPropagation());
+    document.addEventListener("click",closePhone);
+    document.addEventListener("keydown",e=>{ if(e.key==="Escape") closePhone(); });
+  }
 
   const forms=document.querySelectorAll("#pilotForm,#leadForm");
   forms.forEach(form=>{
@@ -48,8 +67,7 @@ document.addEventListener("DOMContentLoaded",()=>{
       }finally{
         if(btn){
           btn.disabled=false;
-          const trial=form.querySelector("#leadRequestType")?.value==="체험수업 신청";
-          btn.textContent=trial ? "체험수업 신청 →" : "무료 PT 진단 신청 →";
+          btn.textContent="체험수업 신청 →";
         }
       }
     });
