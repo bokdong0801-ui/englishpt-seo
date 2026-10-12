@@ -1711,6 +1711,25 @@ BEGINNER_EXAM_GUIDE = {
 }
 
 
+BEGINNER_GUIDE_TITLES = {
+    "toeic":"토익 시험 구조를 먼저 간단히 보면",
+    "toeic-speaking":"토익스피킹 시험 구조를 먼저 간단히 보면",
+    "opic":"오픽 시험 구조를 먼저 간단히 보면",
+    "ielts":"아이엘츠 시험 구조를 먼저 간단히 보면",
+    "duolingo":"듀오링고 영어시험 구조를 먼저 간단히 보면",
+    "toefl":"토플 시험 구조를 먼저 간단히 보면",
+}
+
+EXAM_ROADMAP_HEADLINES = {
+    "toeic":"LC·RC를 실제 문제 흐름에 맞춰 나눠 연습합니다",
+    "toeic-speaking":"문제 유형별로 준비 시간과 답변 흐름을 나눠 연습합니다",
+    "opic":"익숙한 질문부터 돌발 질문까지 답변 범위를 넓혀갑니다",
+    "ielts":"네 영역을 따로 보고 약한 영역에 시간을 더 배분합니다",
+    "duolingo":"시험 방식에 익숙해진 뒤 약한 응답 유형을 집중해서 봅니다",
+    "toefl":"네 영역과 통합형을 연결해 실제 시험 흐름으로 연습합니다",
+}
+
+
 BEGINNER_GUIDE_LEADS = [
     "처음 보는 용어부터 짧게 정리한 뒤 아래 설명을 읽어보세요.",
     "시험 이름은 익숙해도 용어가 낯설다면 이 세 가지만 먼저 확인하면 됩니다.",
@@ -1738,7 +1757,8 @@ def beginner_exam_guide(intent: str, loc: dict) -> str:
         '<section class="beginner-exam-guide" data-beginner-guide="true"><div class="wrap">'
         '<div class="beginner-guide-box">'
         '<p class="kicker">이 시험이 처음이라면</p>'
-        f'<h2>{esc(d["intro"])}</h2>'
+        f'<h2>{esc(BEGINNER_GUIDE_TITLES[base])}</h2>'
+        f'<p class="beginner-guide-definition">{esc(d["intro"])}</p>'
         f'<p class="beginner-guide-lead">{esc(BEGINNER_GUIDE_LEADS[variant])}</p>'
         f'<p class="beginner-guide-context">{esc(loc["dong"])}에서 {esc(loc["service"])} 정보를 처음 알아보는 분도 이해할 수 있도록 쉬운 뜻부터 정리했습니다.</p>'
         f'<div class="beginner-terms">{terms_html}</div>'
@@ -1760,7 +1780,7 @@ def exam_reader_roadmap(intent: str) -> str:
     return (
         '<section class="section exam-reader-roadmap" data-exam-reader-pilot="true"><div class="wrap">'
         f'<p class="kicker">{esc(d["label"])}</p>'
-        f'<h2>{esc(d["headline"])}</h2>'
+        f'<h2>{esc(EXAM_ROADMAP_HEADLINES[intent])}</h2>'
         f'<p class="exam-reader-lead">{esc(d["sub"])}</p>'
         f'<div class="exam-roadmap-grid">{cards}</div>'
         '</div></section>'
@@ -2121,6 +2141,9 @@ def humanize_visible_copy(raw: str, family: str) -> str:
         "외운 답변는": "외운 답변은",
         "응답가": "응답이",
         "첨삭": "글 피드백",
+        "회수 속도": "표현을 떠올리는 속도",
+        "회수 문제": "표현을 떠올리는 문제",
+        "연습하는 것 연습의": "연습하는 것이",
     }
     if family == "exam":
         replacements.update({
@@ -2409,6 +2432,32 @@ def add_breadcrumb_schema(raw: str, h1: str, canonical: str) -> tuple[str, bool]
         return raw, False
 
 
+def dedupe_substantive_paragraphs(raw: str) -> str:
+    """Remove later exact repeats of substantive <p> copy inside <main>.
+
+    This keeps the first occurrence and prevents CTA/final or source-section
+    boilerplate from appearing twice on one page.
+    """
+    main = re.search(r'(<main\b[^>]*>)(.*?)(</main>)', raw, re.S | re.I)
+    if not main:
+        return raw
+    seen: set[str] = set()
+
+    def repl(m: re.Match) -> str:
+        inner = m.group(2)
+        text = re.sub(r'<[^>]+>', ' ', inner)
+        text = re.sub(r'\s+', ' ', html.unescape(text)).strip()
+        if len(text) < 45:
+            return m.group(0)
+        if text in seen:
+            return ''
+        seen.add(text)
+        return m.group(0)
+
+    body = re.sub(r'(<p\b[^>]*>)(.*?)(</p>)', repl, main.group(2), flags=re.S | re.I)
+    return raw[:main.start()] + main.group(1) + body + main.group(3) + raw[main.end():]
+
+
 def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,list[str]]:
     problems=[]
     raw = apply_intent_faq(raw, intent)
@@ -2582,6 +2631,7 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     raw = personalize_confidence_faq(raw, loc, intent)
     raw = apply_exam_reader_pilot(raw, base_exam_intent(intent))
     raw = ensure_faq_count(raw, intent)
+    raw = dedupe_substantive_paragraphs(raw)
     raw = raw.replace('</body>', floating_contact() + '</body>', 1)
 
     forbidden=[
