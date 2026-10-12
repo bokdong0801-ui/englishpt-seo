@@ -217,12 +217,12 @@ body.theme-intl{
 /* Naver / OG square representative thumbnail */
 .search-thumbnail-section{padding:30px 0 22px;background:var(--paper)}
 .search-thumbnail{
-  width:clamp(120px,12vw,160px);margin:0 auto;overflow:hidden;
+  width:clamp(76px,8vw,100px);margin:0 auto;overflow:hidden;
   border:1px solid var(--line);border-radius:24px;background:#fff;
   box-shadow:0 16px 38px rgba(18,36,28,.08)
 }
 .search-thumbnail img{display:block;width:100%;height:auto;aspect-ratio:1/1;object-fit:contain}
 @media(max-width:640px){
   .search-thumbnail-section{padding:16px 0 12px}
-  .search-thumbnail{width:120px;border-radius:14px}
+  .search-thumbnail{width:76px;border-radius:14px}
 }
