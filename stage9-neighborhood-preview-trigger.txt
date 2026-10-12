@@ -5,3 +5,4 @@
 2026-10-11 square-search-thumbnail-preview-v3-cropfix
 2026-10-11 compact-naver-thumbnail-v5-beginner-integrity
 2026-10-11 compact-naver-thumbnail-v6-120-160
+2026-10-12 compact-thumbnail-v7-76-100
