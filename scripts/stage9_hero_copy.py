@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import html
+import re
 
 STUDENT = {"elem-tutor", "mid-conv", "high-conv"}
 WORKER = {"biz-business-conv", "worker-english-conv-academy"}
@@ -310,7 +311,10 @@ def audit_copy(loc: dict, intent: str, existing_h1: str) -> list[str]:
     if rendered.count("<h1>") != 1:
         problems.append("h1_count")
     if intent in BEGINNER:
+        # Whole-term matching: local names such as 병목안동 must remain intact,
+        # while genuine jargon (e.g. "병목 확인") is still rejected.
         for forbidden in ("훈련", "진단", "실전", "교정", "병목", "재점검", "재검증"):
-            if forbidden in rendered:
+            pattern = r"(?<![가-힣A-Za-z0-9])" + re.escape(forbidden) + r"(?![가-힣A-Za-z0-9])"
+            if re.search(pattern, rendered):
                 problems.append(f"pressure_term:{forbidden}")
     return problems
