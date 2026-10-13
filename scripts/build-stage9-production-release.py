@@ -1382,6 +1382,7 @@ def main() -> None:
             "robots_contract_failures": len(set(bad_robot_pages)),
             "robots_txt_allows_crawl": "Disallow: /" not in robots,
             "production_ui_failures": len(bad_ui_pages),
+            "production_ui_problem_samples": bad_ui_pages[:12],
         },
         "ai_discovery": {
             "oai_searchbot_allowed": "User-agent: OAI-SearchBot" in robots,
