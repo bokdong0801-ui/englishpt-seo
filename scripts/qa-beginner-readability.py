@@ -97,7 +97,8 @@ FORBIDDEN_VISIBLE = [
 ]
 
 HOME_REQUIRED = [
-    "지금 수준 확인 → 쉬운 것부터 시작 → 함께 연습 → 다시 확인 → 조금씩 늘리기",
+    "지금 내 수준에 맞게 시작하세요.",
+    "나에게 맞는 과정 찾기", 
     "잘되는 부분과 반복해서 어려운 부분을 나눕니다.",
     "국제학교 수업과 평가 방식의 차이",
     "<small>현재</small>",
@@ -114,8 +115,8 @@ BEGINNER_CONV_PRESSURE_FORBIDDEN = ["훈련", "진단", "실전", "교정", "병
 
 HUBS_REQUIRED = {
     "courses.html": [
-        "영어 과정 찾기", "전국 과정 안내", "english-conversation.html", "exam-english.html",
-        "student-english.html", "과정을 잘 몰라도 괜찮습니다", "data-region-finder",
+        "영어 과정 찾기", "고객 유형별 안내", "english-conversation.html", "exam-english.html",
+        "student-english.html", "과정명을 몰라도 괜찮습니다", "data-region-finder",
         "지역별 과정 페이지 보기", "영어권 교포 선생님",
     ],
     "english-conversation.html": [
