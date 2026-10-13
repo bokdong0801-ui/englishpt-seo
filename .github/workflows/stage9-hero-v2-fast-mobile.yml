@@ -1,0 +1,28 @@
+name: Hero V2 Fast Mobile Layout QA
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - '.github/workflows/stage9-hero-v2-fast-mobile.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install browser driver and Korean fonts
+        run: |
+          python3 -m pip install --quiet pychrome
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+      - name: Chromium responsive 320–1440px Hero CTA preflight
+        run: python3 scripts/test_stage9_hero_mobile.py
