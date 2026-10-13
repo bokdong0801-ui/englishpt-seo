@@ -1,0 +1,250 @@
+name: ENGLISH PT v22 Review Preview Deploy (No Production)
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - '.github/workflows/stage9-v22-review-deploy-only.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v22-review-deploy-only
+  cancel-in-progress: false
+
+jobs:
+  review-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      REVIEW_SITE_ID: 803550a8-03af-4776-bc8a-bd0bae85f5c7
+      REVIEW_SITE_NAME: englishpt-final-ia-review-bokdong
+      V22_SOURCE_RUN: '38382279889'
+      V22_SOURCE_SHA: 34d0e140740ce22d4fd6f29d0cd27d9dc17f3b9a
+      NETLIFY_CLI_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Require successful immutable Hero V2 source build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY']
+          rid=os.environ['V22_SOURCE_RUN']
+          req=urllib.request.Request(
+              f'https://api.github.com/repos/{repo}/actions/runs/{rid}',
+              headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                       'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(req,timeout=40) as resp: run=json.load(resp)
+          assert run.get('status')=='completed'
+          assert run.get('conclusion')=='success',run.get('conclusion')
+          assert run.get('head_sha')==os.environ['V22_SOURCE_SHA']
+          assert run.get('name')=='Stage 9 Hero V2 Full 140391 QA (No Deploy)'
+          print('PASS_APPROVED_V22_SOURCE_RUN',rid,run['head_sha'])
+          PY
+
+      - name: Download existing full v22 artifact (no regeneration)
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v22-hero-v2-preproduction-files
+          run-id: 38382279889
+          path: v22-artifact
+          github-token: ${{ github.token }}
+
+      - name: Verify SHA256 and extract 140391 verified pages
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || sudo apt-get install -y -qq zstd
+          df -h .
+          cd v22-artifact
+          sha256sum -c ENGLISHPT_RELEASE_SHA256.txt
+          python3 - <<'PY'
+          import json,zipfile
+          from pathlib import Path
+          report=json.loads(Path('ENGLISHPT_DOWNLOADABLE_RELEASE_REPORT.json').read_text())
+          assert report['status']=='PASS_DOWNLOADABLE_RELEASE_PACKAGE'
+          assert report['html_total']==140391
+          with zipfile.ZipFile('englishpt-sample-preview-v22.zip') as z:
+              manifest=json.loads(z.read('englishpt-sample-preview/SAMPLE-MANIFEST.json'))
+              assert manifest['sample_count']==8
+              assert manifest['full_html_total']==140391
+          hero=json.loads(Path('stage9-release/STAGE9_HERO_V2_FULL_QA.json').read_text())
+          assert hero['status']=='PASS_HERO_V2_FULL_RELEASE_QA'
+          assert hero['html_total']==140391
+          for key in ('missing_local_assets','missing_local_html','html_structure_failures','visible_body_image_pages'):
+              assert hero[key]==0,(key,hero[key])
+          release=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text())
+          assert release['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY'
+          assert release['indexing']['production_ui_failures']==0
+          print('PASS_V22_ARTIFACT_SHA256_AND_ALL_REQUIRED_QA')
+          PY
+          cd ..
+          mkdir -p final-review
+          tar --zstd -xf v22-artifact/englishpt-final-release-140391-v22.tar.zst -C final-review
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('final-review')
+          pages=[p for p in root.glob('*.html') if p.name not in {'index.html','404.html'}]
+          assert len(pages)==140391,len(pages)
+          assert (root/'index.html').exists()
+          assert (root/'404.html').exists()
+          assert (root/'assets/site.js').exists()
+          assert (root/'assets/styles.css').exists()
+          assert 'noindex' in (root/'_headers').read_text(encoding='utf-8')
+          for name in ['englishpt.html','courses.html','english-conversation.html',
+                       'exam-english.html','student-english.html','stations.html',
+                       'seoul-jongno-sajikdong-beginner-english-conv.html',
+                       'seoul-jongno-sajikdong-toeic.html',
+                       'seoul-jongno-sajikdong-ielts.html',
+                       'dalseo-songhyeondong.html','station-gangnam.html',
+                       'station-amsayeoksagongwon.html',
+                       'seoul-jongno-sajikdong-worker-english-conv-academy.html']:
+              assert (root/name).exists(),name
+          print('PASS_EXTRACTED_DRAFT_REVIEW',len(pages))
+          PY
+          df -h .
+
+      - name: Confirm Review-only Netlify site identity
+        run: |
+          set -euo pipefail
+          test -n "$NETLIFY_AUTH_TOKEN"
+          python3 - <<'PY'
+          import json,os,urllib.request
+          sid=os.environ['REVIEW_SITE_ID']
+          request=urllib.request.Request(
+              'https://api.netlify.com/api/v1/sites/'+sid,
+              headers={'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN']})
+          with urllib.request.urlopen(request,timeout=40) as resp: site=json.load(resp)
+          assert site.get('id')==sid
+          assert site.get('name')==os.environ['REVIEW_SITE_NAME'],site.get('name')
+          url=(site.get('ssl_url') or site.get('url') or '').lower()
+          assert 'englishpt-final-ia-review-bokdong.netlify.app' in url,url
+          assert 'englishpt.kr' not in url
+          assert (site.get('custom_domain') or '').lower() not in {'englishpt.kr','www.englishpt.kr'}
+          print('PASS_NETLIFY_ISOLATED_REVIEW_SITE',sid,url)
+          PY
+
+      - name: Install Netlify CLI
+        run: npm install --global netlify-cli@latest
+
+      - name: Upload v22 as a DRAFT review deploy (never Production)
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: |
+          set -euo pipefail
+          # DO NOT add --prod / --prod-if-unlocked or switch to the Production site.
+          netlify deploy \
+            --dir=final-review \
+            --site="$REVIEW_SITE_ID" \
+            --auth="$NETLIFY_AUTH_TOKEN" \
+            --message="ENGLISH PT v22 Hero V2 full QA PASS; isolated draft preview" \
+            --json > /tmp/v22-draft-result.json
+          python3 - <<'PY'
+          import json,os
+          from urllib.parse import urlparse
+          result=json.load(open('/tmp/v22-draft-result.json',encoding='utf-8'))
+          url=result.get('deploy_url') or ''
+          parsed=urlparse(url)
+          hostname=parsed.hostname or ''
+          suffix='--'+os.environ['REVIEW_SITE_NAME']+'.netlify.app'
+          assert parsed.scheme=='https',result
+          assert hostname.endswith(suffix),('Not a draft preview URL',hostname)
+          assert 'englishpt.kr' not in url
+          deploy_id=result.get('deploy_id') or result.get('id')
+          assert deploy_id,'Netlify deploy ID missing'
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('REVIEW_DEPLOY_URL='+url.rstrip('/')+'\n')
+              f.write('REVIEW_DEPLOY_ID='+str(deploy_id)+'\n')
+          print('PASS_V22_DRAFT_DEPLOY_URL',url)
+          print('PASS_V22_DRAFT_DEPLOY_ID',deploy_id)
+          PY
+
+      - name: Check live 8-page Hero V2 and consultation navigation (no form submissions)
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,re,time,urllib.request
+          from pathlib import Path
+          base=os.environ['REVIEW_DEPLOY_URL'].rstrip('/')
+          root=Path('final-review')
+          samples=[
+            'englishpt.html',
+            'seoul-jongno-sajikdong-beginner-english-conv.html',
+            'seoul-jongno-sajikdong-toeic.html',
+            'seoul-jongno-sajikdong-ielts.html',
+            'dalseo-songhyeondong.html',
+            'station-gangnam.html',
+            'station-amsayeoksagongwon.html',
+            'seoul-jongno-sajikdong-worker-english-conv-academy.html',
+          ]
+          must=['index.html','courses.html','english-conversation.html',
+                'exam-english.html','student-english.html','stations.html',*samples]
+          pages=sorted(p.name for p in root.glob('*.html') if p.name not in {'404.html','index.html'})
+          spread=[pages[i] for i in range(0,len(pages),max(1,len(pages)//30))][:30]
+          targets=list(dict.fromkeys(must+spread))
+          checked=[];failures=[]
+          for name in targets:
+              for attempt in range(4):
+                  try:
+                      request=urllib.request.Request(base+'/'+name,headers={'User-Agent':'ENGLISH-PT-v22-Review-QA'})
+                      with urllib.request.urlopen(request,timeout=40) as resp:
+                          assert resp.status==200,(name,resp.status)
+                          html=resp.read().decode('utf-8',errors='replace')
+                      assert '<h1' in html,(name,'H1 missing')
+                      if name in samples:
+                          if name.startswith('seoul-jongno-sajikdong-'):
+                              assert 'data-hero-copy="audience-v2"' in html,(name,'not v22 Hero')
+                              assert 'href="#consultation-preview"' in html,(name,'CTA missing')
+                              assert 'id="consultation-preview"' in html,(name,'form anchor missing')
+                          if name=='englishpt.html':
+                              assert 'id="audience-path"' in html
+                              assert '지금 내 수준에 맞게 시작하세요.' in html
+                          if name.startswith('station-'):
+                              assert 'hero-entry-panel' in html,(name,'station audience cards missing')
+                      checked.append({'name':name,'http':200,'chars':len(html)})
+                      break
+                  except Exception as exc:
+                      if attempt==3:failures.append({'name':name,'error':str(exc)})
+                      else:time.sleep((attempt+1)*5)
+          assert not failures,failures[:12]
+          report={
+              'status':'PASS_V22_DRAFT_HTTP_REVIEW',
+              'source_run':os.environ['V22_SOURCE_RUN'],
+              'source_sha':os.environ['V22_SOURCE_SHA'],
+              'draft_review_url':base,
+              'netlify_deploy_id':os.environ['REVIEW_DEPLOY_ID'],
+              'production_affected':False,
+              'real_form_submit_tested':False,
+              'http_pages_checked':len(checked),
+              'representative_urls':{name:base+'/'+name for name in samples},
+              'checks':checked,
+          }
+          Path('ENGLISHPT_V22_DRAFT_REVIEW_REPORT.json').write_text(
+              json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('PASS_V22_DRAFT_HTTP_REVIEW',len(checked),base)
+          print('V22_REPRESENTATIVE_URLS',json.dumps(report['representative_urls'],ensure_ascii=False))
+          PY
+
+      - name: Upload review verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v22-review-deploy-report
+          path: ENGLISHPT_V22_DRAFT_REVIEW_REPORT.json
+          retention-days: 30
+          if-no-files-found: warn
