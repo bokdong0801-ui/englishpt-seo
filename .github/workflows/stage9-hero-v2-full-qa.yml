@@ -329,8 +329,9 @@ jobs:
           report=json.loads((root/'STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
           counts=report['counts']
           assert counts['html_total']==140391,counts
+          image_qa=counts['search_image_metadata']
           for key in ('visible_body_image_pages','missing_local_assets','missing_local_html','html_structure_failures'):
-              assert counts[key]==0,(key,counts[key])
+              assert image_qa[key]==0,(key,image_qa[key])
           mass=0; station_courses=0; station_hubs=0; beginners=0; errors=[]
           pressure=('훈련','진단','실전','교정','병목','재점검','재검증')
           for p in root.glob('*.html'):
@@ -372,10 +373,10 @@ jobs:
               'station_course_hero_pages':station_courses,
               'station_hub_audience_pages':station_hubs,
               'beginner_and_main_pressure_pages_checked':beginners,
-              'visible_body_image_pages':counts['visible_body_image_pages'],
-              'missing_local_assets':counts['missing_local_assets'],
-              'missing_local_html':counts['missing_local_html'],
-              'html_structure_failures':counts['html_structure_failures'],
+              'visible_body_image_pages':image_qa['visible_body_image_pages'],
+              'missing_local_assets':image_qa['missing_local_assets'],
+              'missing_local_html':image_qa['missing_local_html'],
+              'html_structure_failures':image_qa['html_structure_failures'],
               'production_deployed':False
           }
           (root/'STAGE9_HERO_V2_FULL_QA.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
