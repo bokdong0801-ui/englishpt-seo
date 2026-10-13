@@ -1,0 +1,68 @@
+name: Stage 5 Final 2-Shard Refresh
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - '.github/workflows/stage5-final-2shard-refresh.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage5-final-2shard-refresh-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 8]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reconstruct frozen Stage 5 input
+        run: python3 scripts/materialize-production-localities-5149.py
+
+      - name: Verify preserved 95 URLs and 74 redirects
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+      - name: Generate and QA refreshed shard
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+        run: |
+          python3 scripts/generate-production-stage5-shard.py \
+            --shard-index "$SHARD_INDEX" \
+            --shard-count 26 \
+            --shard-size 200
+
+      - name: Package refreshed shard
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          SHARD_NUM=$(printf "%03d" $((SHARD_INDEX + 1)))
+          SHARD_DIR="stage5-full-generation/shard-${SHARD_NUM}-of-026"
+          mkdir -p stage5-packages
+          tar -I 'zstd -19 -T0' -cf "stage5-packages/stage5-shard-${SHARD_NUM}-of-026.tar.zst" "$SHARD_DIR"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage5-final-shard-${{ matrix.shard }}
+          path: stage5-packages/*.tar.zst
+          compression-level: 0
+          retention-days: 14
+          if-no-files-found: error

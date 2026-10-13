@@ -1,0 +1,105 @@
+name: Stage 8 Production Approval Packet
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - '.github/workflows/stage8-production-approval-packet.yml'
+      - 'scripts/build-stage8-production-approval.py'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: stage8-production-approval-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stage8:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify locked final domain
+        run: python3 scripts/set-domain.py https://englishpt.kr
+
+      - name: Re-run preserved 95 URLs and 74 redirects regression
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+      - name: Download confirmed Stage 7 release proof
+        uses: actions/download-artifact@v4
+        with:
+          name: stage7-deploy-preview-rollback
+          path: stage8-source
+          run-id: 36694432423
+          github-token: ${{ github.token }}
+
+      - name: Build Stage 8 production approval packet
+        run: |
+          python3 scripts/build-stage8-production-approval.py \
+            --stage7-root stage8-source/stage7-preview \
+            --package-root stage8-source \
+            --output stage8-approval \
+            --stage7-run 36694432423 \
+            --source-commit ${{ github.sha }}
+
+      - name: Assert Stage 8 approval gate
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('stage8-approval/STAGE8_PRODUCTION_APPROVAL_PACKET_V1.json').read_text(encoding='utf-8'))
+          assert q['status']=='PASS_STAGE8_PRODUCTION_APPROVAL_PACKET_READY_NOT_DEPLOYED',q['status']
+          assert q['final_domain']=='https://englishpt.kr'
+          assert q['final_domain_confirmed'] is True
+          assert q['counts']['new_pages']==66937
+          assert q['counts']['preserved_pages']==95
+          assert q['counts']['deploy_html_total']==67032
+          assert q['counts']['legacy_redirects']==74
+          assert q['counts']['sitemap_urls']==67032
+          assert q['counts']['sitemap_shards']==135
+          assert q['counts']['final_shard_packages']==26
+          assert q['rollback']['available'] is True
+          assert q['approval']['status']=='AWAITING_EXPLICIT_PRODUCTION_DEPLOY_APPROVAL'
+          assert q['approval']['next_stage']=='STAGE9_PRODUCTION_DEPLOY'
+          assert q['safety']['main_merge'] is False
+          assert q['safety']['production_deploy'] is False
+          assert q['safety']['sitemap_live'] is False
+          assert q['safety']['bulk_index_request'] is False
+          print(json.dumps({
+            'status':'PASS',
+            'domain':q['final_domain'],
+            'total':q['counts']['deploy_html_total'],
+            'sitemap_urls':q['counts']['sitemap_urls'],
+            'sitemap_shards':q['counts']['sitemap_shards'],
+            'redirects':q['counts']['legacy_redirects'],
+            'packages':q['counts']['final_shard_packages'],
+            'rollback':q['rollback']['available'],
+            'next_stage':q['approval']['next_stage'],
+          },ensure_ascii=False))
+          PY
+
+      - name: Verify final production sitemap and robots
+        run: |
+          grep -F "Sitemap: https://englishpt.kr/sitemap-index.xml" stage8-approval/release-config/robots.txt
+          test "$(grep -o '<sitemap><loc>' stage8-approval/release-config/sitemap-index.xml | wc -l)" -eq 135
+          ! grep -R -E "englishup\.kr|example\.com|\{\{FINAL_DOMAIN\}\}" stage8-approval/release-config
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage8-production-approval-packet
+          path: stage8-approval/
+          retention-days: 30
+          if-no-files-found: error

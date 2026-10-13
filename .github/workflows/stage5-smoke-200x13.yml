@@ -1,0 +1,79 @@
+name: Stage 5 Smoke 200x13
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'scripts/generate-production-stage5-shard.py'
+      - '.github/workflows/stage5-smoke-200x13.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage5-smoke-200x13-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reconstruct frozen 5,149-row Stage 5 input
+        run: python3 scripts/materialize-production-localities-5149.py
+
+      - name: Verify preserved 95 URLs and 74 redirects
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+      - name: Generate only shard 0 — 200 localities x 13 intents
+        run: |
+          python3 scripts/generate-production-stage5-shard.py \
+            --shard-index 0 \
+            --shard-count 26 \
+            --shard-size 200
+
+      - name: Print smoke QA
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('stage5-full-generation/shard-001-of-026/STAGE5_SHARD_QA_V1.json')
+          if not p.exists():
+              print('STAGE5_SHARD_QA_V1.json missing')
+              raise SystemExit(0)
+          q=json.loads(p.read_text(encoding='utf-8'))
+          print(json.dumps({
+              'status':q['status'],
+              'pages':q['page_count'],
+              'localities':q['locality_count'],
+              'static_failures':q['static_failure_count'],
+              'duplicate_failures':q['duplicate_gate']['failure_count'],
+              'max_cosine':q['duplicate_gate']['max_cosine'],
+              'max_jaccard5':q['duplicate_gate']['max_5_shingle_jaccard'],
+              'visible_chars':q['visible_chars'],
+              'production_deploy':q['safety']['production_deploy'],
+              'main_merge':q['safety']['main_merge'],
+          },ensure_ascii=False,indent=2))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage5-smoke-200x13-review
+          path: |
+            stage5-full-generation/shard-001-of-026/STAGE5_SHARD_QA_V1.json
+            stage5-full-generation/shard-001-of-026/STAGE5_SHARD_MANIFEST_V1.json
+          retention-days: 7
+          if-no-files-found: warn

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+<title id="title">Duolingo English Test 1:1 맞춤 듀오링고 영어시험 대표이미지</title>
+<desc id="desc">읽기·듣기, 쓰기·말하기, 시험 방식 적응을 한눈에 보여주는 ENGLISH PT 듀오링고 영어시험 대표이미지</desc>
+<rect width="1200" height="720" rx="34" fill="#F3FBF8"/>
+<rect x="0" y="0" width="1200" height="18" rx="9" fill="#176B5B"/>
+<circle cx="1080" cy="92" r="245" fill="#DCEFE9"/>
+<circle cx="1145" cy="635" r="250" fill="#E8F5F0"/>
+<text x="78" y="90" font-family="Arial,'Noto Sans KR',sans-serif" font-size="24" font-weight="800" fill="#176B5B" letter-spacing="1.6">ENGLISH PT · 1:1 EXAM</text>
+<text x="76" y="270" font-family="Arial,'Noto Sans KR',sans-serif" font-size="112" font-weight="900" fill="#0C5649">DUOLINGO</text>
+<text x="80" y="342" font-family="'Noto Sans KR',Arial,sans-serif" font-size="34" font-weight="800" fill="#467B6F">1:1 맞춤 듀오링고 영어시험</text>
+<g font-family="'Noto Sans KR',Arial,sans-serif" font-size="23" font-weight="800" fill="#176B5B">
+<rect x="80" y="405" width="174" height="62" rx="31" fill="#FFFFFF"/><text x="112" y="445">읽기·듣기</text>
+<rect x="270" y="405" width="174" height="62" rx="31" fill="#FFFFFF"/><text x="302" y="445">쓰기·말하기</text>
+<rect x="460" y="405" width="174" height="62" rx="31" fill="#FFFFFF"/><text x="492" y="445">시험 적응</text>
+</g>
+<text x="82" y="555" font-family="'Noto Sans KR',Arial,sans-serif" font-size="27" font-weight="700" fill="#6B9187">시험 방식 익히기 → 답변 완성 → 시간 안에 마무리</text>
+<g opacity=".22" stroke="#176B5B" stroke-width="7" stroke-linecap="round">
+<rect x="875" y="220" width="214" height="150" rx="18" fill="none"/>
+<path d="M910 270h142"/><path d="M910 312h96"/>
+<path d="M930 420h124"/><path d="M956 390v60"/>
+</g>
+<circle cx="1054" cy="312" r="13" fill="#176B5B" opacity=".66"/>
+<circle cx="1090" cy="420" r="13" fill="#61A092" opacity=".68"/>
+</svg>

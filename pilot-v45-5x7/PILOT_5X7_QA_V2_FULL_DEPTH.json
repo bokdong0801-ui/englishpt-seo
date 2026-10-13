@@ -1,0 +1,707 @@
+{
+  "version": "2.0",
+  "status": "STATIC_AND_RENDER_PASS_HUMAN_REVIEW_REQUIRED",
+  "gold_standard": "V4_5_FULL_DEPTH_7TARGET_GOLD_STANDARD.md",
+  "page_count": 35,
+  "static_failures": 0,
+  "visible_chars": {
+    "min": 6362,
+    "max": 6824,
+    "avg": 6551.3
+  },
+  "natural_korean": {
+    "malformed_particle_failures": 0
+  },
+  "duplicate_gate": {
+    "status": "PASS",
+    "same_intent_pairs": 70,
+    "max_cosine": 0.7566,
+    "max_5_shingle_jaccard": 0.2149,
+    "thresholds": {
+      "cosine_lt": 0.82,
+      "jaccard5_lt": 0.24
+    },
+    "pairs": [
+      {
+        "intent": "biz-business-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-gangnamdong",
+        "cosine": 0.6917,
+        "jaccard5": 0.2073
+      },
+      {
+        "intent": "biz-business-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.7027,
+        "jaccard5": 0.1916
+      },
+      {
+        "intent": "biz-business-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "sejong-goundong",
+        "cosine": 0.6332,
+        "jaccard5": 0.1703
+      },
+      {
+        "intent": "biz-business-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7311,
+        "jaccard5": 0.199
+      },
+      {
+        "intent": "biz-business-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.5976,
+        "jaccard5": 0.1774
+      },
+      {
+        "intent": "biz-business-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "sejong-goundong",
+        "cosine": 0.5634,
+        "jaccard5": 0.1703
+      },
+      {
+        "intent": "biz-business-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.6872,
+        "jaccard5": 0.2019
+      },
+      {
+        "intent": "biz-business-conv",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "sejong-goundong",
+        "cosine": 0.7309,
+        "jaccard5": 0.207
+      },
+      {
+        "intent": "biz-business-conv",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7192,
+        "jaccard5": 0.1888
+      },
+      {
+        "intent": "biz-business-conv",
+        "a": "sejong-goundong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.6985,
+        "jaccard5": 0.1898
+      },
+      {
+        "intent": "elem-tutor",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-gangnamdong",
+        "cosine": 0.708,
+        "jaccard5": 0.2033
+      },
+      {
+        "intent": "elem-tutor",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.7062,
+        "jaccard5": 0.184
+      },
+      {
+        "intent": "elem-tutor",
+        "a": "busan-haeundae-jungdong",
+        "b": "sejong-goundong",
+        "cosine": 0.6489,
+        "jaccard5": 0.1628
+      },
+      {
+        "intent": "elem-tutor",
+        "a": "busan-haeundae-jungdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7418,
+        "jaccard5": 0.1948
+      },
+      {
+        "intent": "elem-tutor",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.6103,
+        "jaccard5": 0.174
+      },
+      {
+        "intent": "elem-tutor",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "sejong-goundong",
+        "cosine": 0.5916,
+        "jaccard5": 0.1628
+      },
+      {
+        "intent": "elem-tutor",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7102,
+        "jaccard5": 0.1971
+      },
+      {
+        "intent": "elem-tutor",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "sejong-goundong",
+        "cosine": 0.7338,
+        "jaccard5": 0.1995
+      },
+      {
+        "intent": "elem-tutor",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.717,
+        "jaccard5": 0.1811
+      },
+      {
+        "intent": "elem-tutor",
+        "a": "sejong-goundong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7094,
+        "jaccard5": 0.1873
+      },
+      {
+        "intent": "high-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-gangnamdong",
+        "cosine": 0.6961,
+        "jaccard5": 0.2111
+      },
+      {
+        "intent": "high-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.7082,
+        "jaccard5": 0.1916
+      },
+      {
+        "intent": "high-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "sejong-goundong",
+        "cosine": 0.6325,
+        "jaccard5": 0.1687
+      },
+      {
+        "intent": "high-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.731,
+        "jaccard5": 0.2017
+      },
+      {
+        "intent": "high-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.5954,
+        "jaccard5": 0.1777
+      },
+      {
+        "intent": "high-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "sejong-goundong",
+        "cosine": 0.5606,
+        "jaccard5": 0.1693
+      },
+      {
+        "intent": "high-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.6944,
+        "jaccard5": 0.2052
+      },
+      {
+        "intent": "high-conv",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "sejong-goundong",
+        "cosine": 0.7238,
+        "jaccard5": 0.2057
+      },
+      {
+        "intent": "high-conv",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7105,
+        "jaccard5": 0.1875
+      },
+      {
+        "intent": "high-conv",
+        "a": "sejong-goundong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.6931,
+        "jaccard5": 0.1915
+      },
+      {
+        "intent": "housewife-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-gangnamdong",
+        "cosine": 0.7182,
+        "jaccard5": 0.2149
+      },
+      {
+        "intent": "housewife-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.7191,
+        "jaccard5": 0.1969
+      },
+      {
+        "intent": "housewife-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "sejong-goundong",
+        "cosine": 0.6542,
+        "jaccard5": 0.174
+      },
+      {
+        "intent": "housewife-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7566,
+        "jaccard5": 0.2061
+      },
+      {
+        "intent": "housewife-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.6301,
+        "jaccard5": 0.1838
+      },
+      {
+        "intent": "housewife-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "sejong-goundong",
+        "cosine": 0.6028,
+        "jaccard5": 0.1747
+      },
+      {
+        "intent": "housewife-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7268,
+        "jaccard5": 0.2093
+      },
+      {
+        "intent": "housewife-conv",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "sejong-goundong",
+        "cosine": 0.7425,
+        "jaccard5": 0.2105
+      },
+      {
+        "intent": "housewife-conv",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7299,
+        "jaccard5": 0.192
+      },
+      {
+        "intent": "housewife-conv",
+        "a": "sejong-goundong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7125,
+        "jaccard5": 0.1971
+      },
+      {
+        "intent": "jobseeker-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-gangnamdong",
+        "cosine": 0.6921,
+        "jaccard5": 0.2101
+      },
+      {
+        "intent": "jobseeker-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.6894,
+        "jaccard5": 0.1901
+      },
+      {
+        "intent": "jobseeker-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "sejong-goundong",
+        "cosine": 0.625,
+        "jaccard5": 0.1709
+      },
+      {
+        "intent": "jobseeker-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7254,
+        "jaccard5": 0.2022
+      },
+      {
+        "intent": "jobseeker-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.5883,
+        "jaccard5": 0.1784
+      },
+      {
+        "intent": "jobseeker-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "sejong-goundong",
+        "cosine": 0.5575,
+        "jaccard5": 0.171
+      },
+      {
+        "intent": "jobseeker-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.6853,
+        "jaccard5": 0.2046
+      },
+      {
+        "intent": "jobseeker-conv",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "sejong-goundong",
+        "cosine": 0.7172,
+        "jaccard5": 0.2082
+      },
+      {
+        "intent": "jobseeker-conv",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.6998,
+        "jaccard5": 0.1892
+      },
+      {
+        "intent": "jobseeker-conv",
+        "a": "sejong-goundong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.6873,
+        "jaccard5": 0.1889
+      },
+      {
+        "intent": "mid-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-gangnamdong",
+        "cosine": 0.699,
+        "jaccard5": 0.2071
+      },
+      {
+        "intent": "mid-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.6946,
+        "jaccard5": 0.1866
+      },
+      {
+        "intent": "mid-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "sejong-goundong",
+        "cosine": 0.6275,
+        "jaccard5": 0.1667
+      },
+      {
+        "intent": "mid-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7377,
+        "jaccard5": 0.197
+      },
+      {
+        "intent": "mid-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.59,
+        "jaccard5": 0.1764
+      },
+      {
+        "intent": "mid-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "sejong-goundong",
+        "cosine": 0.5595,
+        "jaccard5": 0.1671
+      },
+      {
+        "intent": "mid-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.6984,
+        "jaccard5": 0.2003
+      },
+      {
+        "intent": "mid-conv",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "sejong-goundong",
+        "cosine": 0.7131,
+        "jaccard5": 0.2037
+      },
+      {
+        "intent": "mid-conv",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7018,
+        "jaccard5": 0.1856
+      },
+      {
+        "intent": "mid-conv",
+        "a": "sejong-goundong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.6858,
+        "jaccard5": 0.1902
+      },
+      {
+        "intent": "univ-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-gangnamdong",
+        "cosine": 0.6966,
+        "jaccard5": 0.2104
+      },
+      {
+        "intent": "univ-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.6866,
+        "jaccard5": 0.1947
+      },
+      {
+        "intent": "univ-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "sejong-goundong",
+        "cosine": 0.6282,
+        "jaccard5": 0.1715
+      },
+      {
+        "intent": "univ-conv",
+        "a": "busan-haeundae-jungdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7345,
+        "jaccard5": 0.2015
+      },
+      {
+        "intent": "univ-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "gangwon-gangneung-naegokdong",
+        "cosine": 0.5907,
+        "jaccard5": 0.1817
+      },
+      {
+        "intent": "univ-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "sejong-goundong",
+        "cosine": 0.569,
+        "jaccard5": 0.172
+      },
+      {
+        "intent": "univ-conv",
+        "a": "gangwon-gangneung-gangnamdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7008,
+        "jaccard5": 0.2049
+      },
+      {
+        "intent": "univ-conv",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "sejong-goundong",
+        "cosine": 0.7195,
+        "jaccard5": 0.2067
+      },
+      {
+        "intent": "univ-conv",
+        "a": "gangwon-gangneung-naegokdong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.7,
+        "jaccard5": 0.1904
+      },
+      {
+        "intent": "univ-conv",
+        "a": "sejong-goundong",
+        "b": "seoul-seocho-naegokdong",
+        "cosine": 0.6922,
+        "jaccard5": 0.1944
+      }
+    ]
+  },
+  "page_checks": [
+    {
+      "file": "busan-haeundae-jungdong-biz-business-conv.html",
+      "visible_chars": 6470,
+      "status": "PASS"
+    },
+    {
+      "file": "busan-haeundae-jungdong-elem-tutor.html",
+      "visible_chars": 6507,
+      "status": "PASS"
+    },
+    {
+      "file": "busan-haeundae-jungdong-high-conv.html",
+      "visible_chars": 6559,
+      "status": "PASS"
+    },
+    {
+      "file": "busan-haeundae-jungdong-housewife-conv.html",
+      "visible_chars": 6619,
+      "status": "PASS"
+    },
+    {
+      "file": "busan-haeundae-jungdong-jobseeker-conv.html",
+      "visible_chars": 6547,
+      "status": "PASS"
+    },
+    {
+      "file": "busan-haeundae-jungdong-mid-conv.html",
+      "visible_chars": 6500,
+      "status": "PASS"
+    },
+    {
+      "file": "busan-haeundae-jungdong-univ-conv.html",
+      "visible_chars": 6630,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-biz-business-conv.html",
+      "visible_chars": 6447,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-elem-tutor.html",
+      "visible_chars": 6509,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-high-conv.html",
+      "visible_chars": 6520,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-housewife-conv.html",
+      "visible_chars": 6591,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-jobseeker-conv.html",
+      "visible_chars": 6535,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-mid-conv.html",
+      "visible_chars": 6464,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-gangnamdong-univ-conv.html",
+      "visible_chars": 6609,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-biz-business-conv.html",
+      "visible_chars": 6402,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-elem-tutor.html",
+      "visible_chars": 6362,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-high-conv.html",
+      "visible_chars": 6430,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-housewife-conv.html",
+      "visible_chars": 6528,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-jobseeker-conv.html",
+      "visible_chars": 6456,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-mid-conv.html",
+      "visible_chars": 6398,
+      "status": "PASS"
+    },
+    {
+      "file": "gangwon-gangneung-naegokdong-univ-conv.html",
+      "visible_chars": 6528,
+      "status": "PASS"
+    },
+    {
+      "file": "sejong-goundong-biz-business-conv.html",
+      "visible_chars": 6417,
+      "status": "PASS"
+    },
+    {
+      "file": "sejong-goundong-elem-tutor.html",
+      "visible_chars": 6453,
+      "status": "PASS"
+    },
+    {
+      "file": "sejong-goundong-high-conv.html",
+      "visible_chars": 6474,
+      "status": "PASS"
+    },
+    {
+      "file": "sejong-goundong-housewife-conv.html",
+      "visible_chars": 6577,
+      "status": "PASS"
+    },
+    {
+      "file": "sejong-goundong-jobseeker-conv.html",
+      "visible_chars": 6480,
+      "status": "PASS"
+    },
+    {
+      "file": "sejong-goundong-mid-conv.html",
+      "visible_chars": 6464,
+      "status": "PASS"
+    },
+    {
+      "file": "sejong-goundong-univ-conv.html",
+      "visible_chars": 6578,
+      "status": "PASS"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-biz-business-conv.html",
+      "visible_chars": 6647,
+      "status": "PASS"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-elem-tutor.html",
+      "visible_chars": 6742,
+      "status": "PASS"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-high-conv.html",
+      "visible_chars": 6759,
+      "status": "PASS"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-housewife-conv.html",
+      "visible_chars": 6820,
+      "status": "PASS"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-jobseeker-conv.html",
+      "visible_chars": 6731,
+      "status": "PASS"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-mid-conv.html",
+      "visible_chars": 6718,
+      "status": "PASS"
+    },
+    {
+      "file": "seoul-seocho-naegokdong-univ-conv.html",
+      "visible_chars": 6824,
+      "status": "PASS"
+    }
+  ],
+  "failures": [],
+  "render_qa": {
+    "status": "PASS",
+    "workflow_run_id": 35679447273,
+    "source_sha": "a2e11172a2ae20ca5e82099e43b652fdaa80536b",
+    "render_cases": 70,
+    "desktop_cases": 35,
+    "mobile_cases": 35,
+    "failures": 0,
+    "horizontal_overflow_failures": 0,
+    "console_or_page_error_cases": 0
+  },
+  "production_deploy": false
+}

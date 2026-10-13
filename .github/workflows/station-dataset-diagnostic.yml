@@ -1,0 +1,47 @@
+name: EnglishUp Review Pattern Diagnostic
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'station-dataset-diagnostic-trigger.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect EnglishUp review and outcome patterns
+        run: |
+          python3 -m pip install --quiet beautifulsoup4
+          curl -A "Mozilla/5.0" -fsSL "https://englishup.kr/" -o /tmp/main.html
+          curl -A "Mozilla/5.0" -fsSL "https://englishup.kr/sub-dobongsan" -o /tmp/dobongsan.html
+          python3 - <<'PY'
+          from bs4 import BeautifulSoup
+          import json,re
+
+          def extract(path):
+              soup=BeautifulSoup(open(path,encoding='utf-8').read(),'html.parser')
+              items=[]
+              for tag in soup.find_all(['h2','h3','h4','p','li','strong','span']):
+                  t=' '.join(tag.stripped_strings)
+                  if not t or len(t)<8: continue
+                  if any(k in t for k in ['후기','수강','변화','달성','목표','성장','개월','주차','점수','등급','자신감','직장인','학생','대학생','성인','왕초보','오픽','토익','IELTS','TOEFL']):
+                      items.append(t)
+              # unique preserve order
+              out=[]; seen=set()
+              for t in items:
+                  if t not in seen:
+                      seen.add(t); out.append(t)
+              return out[:220]
+
+          print("MAIN_PATTERNS")
+          print(json.dumps(extract('/tmp/main.html'),ensure_ascii=False,indent=2))
+          print("DOBONGSAN_PATTERNS")
+          print(json.dumps(extract('/tmp/dobongsan.html'),ensure_ascii=False,indent=2))
+          PY

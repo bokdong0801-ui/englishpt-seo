@@ -1,0 +1,113 @@
+name: Stage 6 Incremental Final Proof
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - '.github/workflows/stage6-incremental-final-proof.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install proof dependencies
+        run: python3 -m pip install --disable-pip-version-check --quiet numpy scipy scikit-learn
+
+      - name: Verify preserved 95 URLs and 74 redirects
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+      - name: Download baseline 26 shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: stage5-shard-*
+          path: base-packages
+          merge-multiple: true
+          run-id: 36671864892
+          github-token: ${{ github.token }}
+
+      - name: Download refreshed two shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: stage5-final-shard-*
+          path: refresh-packages
+          merge-multiple: true
+          run-id: 36676434790
+          github-token: ${{ github.token }}
+
+      - name: Download previous exact global QA
+        uses: actions/download-artifact@v4
+        with:
+          name: stage6-global-cross-shard-review
+          path: previous-qa
+          run-id: 36673605223
+          github-token: ${{ github.token }}
+
+      - name: Build baseline delta set and final 66,937-page set
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          mkdir -p base-affected final-work
+
+          tar --zstd -xf base-packages/stage5-shard-002-of-026.tar.zst -C base-affected
+          tar --zstd -xf base-packages/stage5-shard-009-of-026.tar.zst -C base-affected
+
+          for f in base-packages/*.tar.zst; do
+            tar --zstd -xf "$f" -C final-work
+          done
+          for f in refresh-packages/*.tar.zst; do
+            tar --zstd -xf "$f" -C final-work
+          done
+
+          test "$(find final-work/stage5-full-generation -name '*.html' | wc -l)" -eq 66937
+          test "$(find base-affected/stage5-full-generation -name '*.html' | wc -l)" -eq 5200
+
+      - name: Run exact incremental global proof
+        run: |
+          python3 scripts/stage6-incremental-final-qa.py \
+            --base-root base-affected/stage5-full-generation \
+            --final-root final-work/stage5-full-generation \
+            --previous-qa previous-qa/STAGE6_GLOBAL_CROSS_SHARD_QA_V1.json \
+            --output stage6-incremental
+
+      - name: Assert final incremental proof
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('stage6-incremental/STAGE6_INCREMENTAL_GLOBAL_PROOF_V1.json').read_text(encoding='utf-8'))
+          assert q['status']=='PASS_STAGE6_INCREMENTAL_GLOBAL_PROOF_NOT_PRODUCTION',q['status']
+          assert q['page_count']==66937
+          assert q['delta_verification']['changed_html']==[
+              'busan-yeonje-yeonsanje1dong-toefl.html',
+              'gyeongbuk-gimcheon-daesindong-opic.html',
+          ]
+          assert q['changed_pair_cosine_failure_count']==0
+          assert q['changed_pair_hashed_jaccard5_failure_count']==0
+          assert q['changed_pair_exact_jaccard5_failure_count']==0
+          assert q['safety']['production_deploy'] is False
+          assert q['safety']['main_merge'] is False
+          print(json.dumps({'status':'PASS','checks':q['changed_page_checks']},ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage6-incremental-final-proof
+          path: stage6-incremental/STAGE6_INCREMENTAL_GLOBAL_PROOF_V1.json
+          retention-days: 14
+          if-no-files-found: error

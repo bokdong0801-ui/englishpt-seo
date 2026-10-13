@@ -1,0 +1,48 @@
+{
+  "version": "5.0",
+  "status": "REVIEW_CANDIDATE_NOT_ALLOWLISTED",
+  "production_deploy": false,
+  "standard": "CONVERSION_PROOF_STANDARD_V5.md",
+  "proof_contract": "PROOF_DATA_CONTRACT_V1.json",
+  "cro_spec": "CRO_MEASUREMENT_SPEC_V1.json",
+  "pages": [
+    {
+      "audience": "elem",
+      "base_blueprint": "v4-elem-parent-evidence-v2",
+      "candidate": "v5-elem-decision-proof-v1",
+      "status": "PASS_LOCAL_QA"
+    },
+    {
+      "audience": "mid",
+      "base_blueprint": "v4-mid-school-bridge-v2",
+      "candidate": "v5-mid-decision-proof-v1",
+      "status": "PASS_LOCAL_QA"
+    },
+    {
+      "audience": "high",
+      "base_blueprint": "v4-high-priority-deadline-v2",
+      "candidate": "v5-high-decision-proof-v1",
+      "status": "PASS_LOCAL_QA"
+    },
+    {
+      "audience": "worker",
+      "base_blueprint": "v4-worker-work-output-v2",
+      "candidate": "v5-worker-decision-proof-v1",
+      "status": "PASS_LOCAL_QA"
+    },
+    {
+      "audience": "housewife",
+      "base_blueprint": "v4-housewife-lifefit-v2",
+      "candidate": "v5-housewife-decision-proof-v1",
+      "status": "PASS_LOCAL_QA_HOUSEWIFE_STILL_REVIEW"
+    }
+  ],
+  "rollout_gate": [
+    "user content review",
+    "shared-assets integration",
+    "existing 95 URL regression",
+    "deploy preview",
+    "real analytics wiring",
+    "explicit production approval"
+  ]
+}

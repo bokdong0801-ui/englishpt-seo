@@ -1,0 +1,217 @@
+name: Stage 5 66,937 Full Generation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage5-full-run-trigger.txt'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage5-66937-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reconstruct and verify frozen 5,149-row manifest
+        run: python3 scripts/materialize-production-localities-5149.py
+
+      - name: Verify Stage 4 gate and preserved production baseline
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          plan=json.loads(Path('PRODUCTION_13INTENT_BATCH_PLAN_V1.json').read_text(encoding='utf-8'))
+          assert plan['locality_count']==5149
+          assert plan['intent_count']==13
+          assert plan['page_count']==66937
+          assert plan['stage4']['status']=='PASS_READY_FOR_STAGE5'
+          assert plan['stage4']['human_review']=='PASS'
+          assert plan['stage4']['production_deploy'] is False
+          assert plan['next_required_gate']=='STAGE5_FULL_GENERATION_5149_X_13_66937_PAGES'
+          print(json.dumps({'status':'PASS','stage4':plan['stage4']['status'],'next':plan['next_required_gate']},ensure_ascii=False))
+          PY
+          python3 scripts/regression_95_and_batch_manifest.py
+
+  generate:
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 13
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reconstruct frozen Stage 5 input
+        run: python3 scripts/materialize-production-localities-5149.py
+
+      - name: Generate and QA shard
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+        run: |
+          python3 scripts/generate-production-stage5-shard.py \
+            --shard-index "$SHARD_INDEX" \
+            --shard-count 26 \
+            --shard-size 200
+
+      - name: Package shard with cross-file compression
+        if: always()
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          SHARD_NUM=$(printf "%03d" $((SHARD_INDEX + 1)))
+          SHARD_DIR="stage5-full-generation/shard-${SHARD_NUM}-of-026"
+          mkdir -p stage5-packages
+          if [ -d "$SHARD_DIR" ]; then
+            tar -I 'zstd -19 -T0' -cf "stage5-packages/stage5-shard-${SHARD_NUM}-of-026.tar.zst" "$SHARD_DIR"
+            ls -lh "stage5-packages/stage5-shard-${SHARD_NUM}-of-026.tar.zst"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage5-shard-${{ matrix.shard }}
+          path: stage5-packages/*.tar.zst
+          compression-level: 0
+          retention-days: 14
+          if-no-files-found: error
+
+  aggregate:
+    needs: generate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reconstruct frozen Stage 5 input
+        run: python3 scripts/materialize-production-localities-5149.py
+
+      - name: Re-run preserved 95 URLs / 74 redirects regression
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: stage5-shard-*
+          path: stage5-packages
+          merge-multiple: true
+
+      - name: Extract all 26 generated shards
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          mkdir -p stage5-work
+          test "$(find stage5-packages -name '*.tar.zst' | wc -l)" -eq 26
+          for f in stage5-packages/*.tar.zst; do
+            tar --zstd -xf "$f" -C stage5-work
+          done
+          test "$(find stage5-work/stage5-full-generation -name '*.html' | wc -l)" -eq 66937
+
+      - name: Aggregate exact counts, sitemap prototypes and review sample pack
+        run: |
+          python3 scripts/aggregate-production-stage5.py \
+            --work-root stage5-work \
+            --output stage5-aggregate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright for sampled desktop/mobile render QA
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Start local artifact server
+        run: |
+          python3 -m http.server 8000 >/tmp/stage5-http.log 2>&1 &
+          sleep 2
+
+      - name: Render Stage 5 sample pack on desktop and mobile
+        run: |
+          node scripts/render-production-stage5-samples.mjs \
+            stage5-aggregate/STAGE5_SAMPLE_PACK_V1.json \
+            stage5-aggregate/STAGE5_RENDER_QA_V1.json \
+            stage5-aggregate/STAGE5_66937_QA_V1.json
+
+      - name: Final Stage 5 generation sanity check
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          qa=json.loads(Path('stage5-aggregate/STAGE5_66937_QA_V1.json').read_text(encoding='utf-8'))
+          rr=json.loads(Path('stage5-aggregate/STAGE5_RENDER_QA_V1.json').read_text(encoding='utf-8'))
+          assert qa['status']=='PASS_FULL_GENERATION_AND_SAMPLE_RENDER_READY_STAGE6_REQUIRED_NOT_PRODUCTION',qa['status']
+          assert qa['page_count']==66937
+          assert qa['locality_count']==5149
+          assert qa['file_integrity']['filenames_unique']==66937
+          assert qa['file_integrity']['canonicals_unique']==66937
+          assert qa['file_integrity']['reserved_95_conflicts']==0
+          assert qa['static_qa']['failures']==0
+          assert qa['sitemap_prototype']['url_count']==66937
+          assert qa['regression_95_redirects_74']['status']=='PASS'
+          assert rr['status']=='PASS'
+          assert qa['safety']['production_deploy'] is False
+          assert qa['safety']['main_merge'] is False
+          print(json.dumps({
+            'status':'PASS',
+            'pages':qa['page_count'],
+            'localities':qa['locality_count'],
+            'html_gib':qa['package_sizing']['html_gib'],
+            'sitemap_shards':qa['sitemap_prototype']['shard_count'],
+            'render_cases':rr['render_cases'],
+            'next_gate':qa['next_gate'],
+          },ensure_ascii=False))
+          PY
+
+      - name: Package Stage 5 aggregate QA and sample pages
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          tar -I 'zstd -19 -T0' -cf stage5-aggregate-review.tar.zst stage5-aggregate
+          ls -lh stage5-aggregate-review.tar.zst
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage5-66937-aggregate-review
+          path: |
+            stage5-aggregate-review.tar.zst
+            stage5-aggregate/STAGE5_66937_QA_V1.json
+            stage5-aggregate/STAGE5_SAMPLE_PACK_V1.json
+            stage5-aggregate/STAGE5_RENDER_QA_V1.json
+          compression-level: 0
+          retention-days: 14
+          if-no-files-found: error

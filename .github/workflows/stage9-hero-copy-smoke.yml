@@ -1,0 +1,48 @@
+name: ENGLISH PT Hero Copy V2 Smoke
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - '.github/workflows/stage9-hero-copy-smoke.yml'
+      - 'scripts/stage9_hero_copy.py'
+      - 'scripts/test_stage9_hero_copy.py'
+      - 'scripts/test_stage9_hero_integration.py'
+      - 'scripts/stage9-clean-mass-renderer.py'
+      - 'scripts/stage9-station-renderer.py'
+      - 'englishpt.html'
+      - 'student-english.html'
+      - 'english-conversation.html'
+      - 'exam-english.html'
+      - 'courses.html'
+      - 'assets/styles.css'
+      - 'assets/stage9-mass-production.css'
+
+permissions:
+  contents: read
+
+jobs:
+  hero-copy-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile new and existing Stage 9 generators
+        run: |
+          python -m py_compile scripts/stage9_hero_copy.py
+          python -m py_compile scripts/stage9-clean-mass-renderer.py
+          python -m py_compile scripts/stage9-station-renderer.py
+          python -m py_compile scripts/build-stage9-production-release.py
+      - name: Verify audience copy, 23 intents, links and safety
+        run: |
+          python -m unittest discover -s scripts -p test_stage9_hero_copy.py -v
+      - name: Render nine real station×course samples
+        run: python scripts/test_stage9_hero_integration.py
+      - name: Report safe smoke pass
+        run: |
+          echo 'PASS: Hero V2 static and deterministic samples.'
+          echo 'No Netlify deploy and no Production deploy in this workflow.'

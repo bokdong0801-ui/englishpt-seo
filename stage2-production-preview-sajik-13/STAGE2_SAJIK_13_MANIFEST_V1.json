@@ -1,0 +1,175 @@
+{
+  "version": "1.0",
+  "status": "STAGE2_1X13_STATIC_RENDER_PASS_USER_REVIEW_REQUIRED_NOT_PRODUCTION",
+  "stage": "STAGE2_ONE_LOCALITY_X_13_INTENTS_PREVIEW",
+  "locality": {
+    "locality_key": "서울특별시 종로구|사직동",
+    "sido": "서울특별시",
+    "jurisdiction_full": "서울특별시 종로구",
+    "dong_name": "사직동",
+    "full_name_ko": "서울특별시 종로구 사직동",
+    "entity_mix": "ADMIN_DONG+LEGAL_DONG",
+    "region_slug": "seoul-jongno-sajikdong",
+    "landing_eligibility": "ELIGIBLE_AFTER_SLUG_QA",
+    "variation_pack_id": "Ve4a779a721",
+    "variation_signature": "parent-view|scene-check-train-report-fit|schedule-context|three-moments|goal-check|compact-direct|comprehension-skill",
+    "content_seed": "76bc829bb4fb1cf9"
+  },
+  "variation_adapter": {
+    "dimensions": {
+      "intro_pattern": "parent-view",
+      "section_order": "scene-check-train-report-fit",
+      "local_context_mode": "schedule-context",
+      "case_frame": "three-moments",
+      "cta_frame": "goal-check",
+      "sentence_rhythm": "compact-direct",
+      "diagnosis_emphasis": "comprehension-skill"
+    },
+    "base_gold_frame": "scene",
+    "source_gold_locality": "seoul-seocho-naegokdong",
+    "note": "Stage 2 validates the integrated production interface. Full multi-locality variation composition is the Stage 3 gate."
+  },
+  "gold_sources": {
+    "service": "V4_5_GOLD_SAMPLE_FREEZE_20260922.json",
+    "exam": "pilot-v45-exam-5x6/PILOT_EXAM_5X6_GOLD_FREEZE_V1.md"
+  },
+  "page_count": 13,
+  "files": [
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-elem-tutor.html",
+      "family": "service",
+      "intent": "elem-tutor",
+      "h1": "사직동 초등학생영어과외",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-elem-tutor.html",
+      "blueprint": "v4-elem-parent-evidence-v2"
+    },
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-mid-conv.html",
+      "family": "service",
+      "intent": "mid-conv",
+      "h1": "사직동 중학생영어회화",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-mid-conv.html",
+      "blueprint": "v4-mid-school-bridge-v2"
+    },
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-high-conv.html",
+      "family": "service",
+      "intent": "high-conv",
+      "h1": "사직동 고등학생영어회화",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-high-conv.html",
+      "blueprint": "v4-high-priority-deadline-v2"
+    },
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-univ-conv.html",
+      "family": "service",
+      "intent": "univ-conv",
+      "h1": "사직동 대학생영어회화",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-univ-conv.html",
+      "blueprint": "v4-univ-campus-output-v2"
+    },
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-jobseeker-conv.html",
+      "family": "service",
+      "intent": "jobseeker-conv",
+      "h1": "사직동 취준생영어회화",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-jobseeker-conv.html",
+      "blueprint": "v4-job-interview-evidence-v2"
+    },
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-biz-business-conv.html",
+      "family": "service",
+      "intent": "biz-business-conv",
+      "h1": "사직동 직장인비즈니스영어",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-biz-business-conv.html",
+      "blueprint": "v4-worker-work-output-v2"
+    },
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-housewife-conv.html",
+      "family": "service",
+      "intent": "housewife-conv",
+      "h1": "사직동 주부영어회화",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-housewife-conv.html",
+      "blueprint": "v4-housewife-lifefit-v2"
+    },
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-toeic.html",
+      "family": "exam",
+      "intent": "toeic",
+      "exam": "toeic",
+      "h1": "사직동 토익과외",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-toeic.html",
+      "blueprint": "v45-exam-toeic-bottleneck-v1"
+    },
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-toeic-speaking.html",
+      "family": "exam",
+      "intent": "toeic-speaking",
+      "exam": "toeic-speaking",
+      "h1": "사직동 토익스피킹과외",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-toeic-speaking.html",
+      "blueprint": "v45-exam-toeic-speaking-response-v1"
+    },
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-opic.html",
+      "family": "exam",
+      "intent": "opic",
+      "exam": "opic",
+      "h1": "사직동 오픽과외",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-opic.html",
+      "blueprint": "v45-exam-opic-story-recovery-v1"
+    },
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-ielts.html",
+      "family": "exam",
+      "intent": "ielts",
+      "exam": "ielts",
+      "h1": "사직동 아이엘츠과외",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-ielts.html",
+      "blueprint": "v45-exam-ielts-four-skill-band-v1"
+    },
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-duolingo.html",
+      "family": "exam",
+      "intent": "duolingo",
+      "exam": "duolingo",
+      "h1": "사직동 듀오링고영어테스트",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-duolingo.html",
+      "blueprint": "v45-exam-det-adaptive-output-v1"
+    },
+    {
+      "path": "stage2-production-preview-sajik-13/seoul-jongno-sajikdong-toefl.html",
+      "family": "exam",
+      "intent": "toefl",
+      "exam": "toefl",
+      "h1": "사직동 토플과외",
+      "canonical": "https://englishpt.kr/seoul-jongno-sajikdong-toefl.html",
+      "blueprint": "v45-exam-toefl-integrated-academic-v1"
+    }
+  ],
+  "tos_policy": {
+    "standalone_page": false,
+    "canonical_exam": "toeic-speaking",
+    "aliases": [
+      "토스",
+      "TOS"
+    ]
+  },
+  "safety": {
+    "robots": "noindex,nofollow",
+    "live_lead_submission": false,
+    "sitemap": false,
+    "main_merge": false,
+    "production_deploy": false
+  },
+  "render_qa": {
+    "status": "PASS",
+    "file": "stage2-production-preview-sajik-13/STAGE2_SAJIK_13_RENDER_QA_V1.json",
+    "render_cases": 26,
+    "desktop_cases": 13,
+    "mobile_cases": 13,
+    "failures": 0,
+    "horizontal_overflow_failures": 0,
+    "console_or_page_error_cases": 0,
+    "production_deploy": false
+  }
+}

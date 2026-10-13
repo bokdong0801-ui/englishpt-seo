@@ -1,0 +1,93 @@
+name: Stage 9 Station Expansion QA
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-station-qa-trigger.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+      - name: Render all station pages
+        run: |
+          rm -rf station-qa-out
+          python3 scripts/stage9-station-renderer.py --output station-qa-out | tee STAGE9_STATION_RENDER_QA.json
+      - name: Assert station contracts
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          root=Path('station-qa-out')
+          data=json.loads(Path('data/stations.json').read_text(encoding='utf-8'))
+          assert data['station_count']==911
+          assert data['line_count']==37
+          pages=list(root.glob('*.html'))
+          assert len(pages)==21865,len(pages)
+          assert (root/'stations.html').exists()
+          assert (root/'station-dobongsan.html').exists()
+          assert (root/'station-dobongsan-toeic.html').exists()
+          assert (root/'station-dobongsan-english-conv-academy.html').exists()
+
+          hub=(root/'station-dobongsan.html').read_text(encoding='utf-8')
+          assert '<h1>도봉산역<br>영어회화·영어과외</h1>' in hub
+          assert '1호선 · 7호선' in hub
+          assert '과정별 바로가기' in hub
+          assert hub.count('href="/station-dobongsan-')==23,hub.count('href="/station-dobongsan-')
+          for phrase in ('영어가 거의 처음이어도','목표가 시험이라면','무엇부터 시작할지 모르겠다면'):
+              assert phrase in hub,phrase
+          for nearby in ('station-mangwolsa.html','station-dobong.html','station-jangam.html'):
+              assert nearby in hub,nearby
+          assert '<meta name="robots" content="index,follow,max-image-preview:large">' in hub
+          assert '<link rel="canonical" href="https://englishpt.kr/station-dobongsan.html">' in hub
+
+          toeic=(root/'station-dobongsan-toeic.html').read_text(encoding='utf-8')
+          assert '<meta name="robots" content="index,follow">' in toeic
+          assert 'https://englishpt.kr/station-dobongsan-toeic.html' in toeic
+          assert '도봉산역 전체 과정 보기' in toeic
+          assert '이 시험이 처음이라면' in toeic
+          assert '듣기 (LC)' in toeic and '읽기 (RC)' in toeic
+
+          index=(root/'stations.html').read_text(encoding='utf-8')
+          assert '전국 37개 노선 · 911개 역' in index
+          assert index.count('class="station-index-link"')>=911
+          assert 'station-dobongsan.html' in index
+          assert 'station-ara.html' in index
+          assert '역 이름 검색' in index
+
+          canon=[]
+          for p in pages:
+              raw=p.read_text(encoding='utf-8')
+              assert 'noindex' not in raw.lower(),p.name
+              m=re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)',raw,re.I)
+              assert m,p.name
+              canon.append(m.group(1))
+          assert len(set(canon))==21865,(len(canon),len(set(canon)))
+          print('PASS_STAGE9_STATION_EXPANSION_QA')
+          PY
+      - name: Package representative station pages
+        run: |
+          mkdir -p station-qa-samples
+          cp station-qa-out/stations.html station-qa-samples/
+          cp station-qa-out/station-dobongsan.html station-qa-samples/
+          cp station-qa-out/station-dobongsan-toeic.html station-qa-samples/
+          cp station-qa-out/station-dobongsan-english-conv-academy.html station-qa-samples/
+          cp assets/styles.css station-qa-samples/
+          cp assets/site.js station-qa-samples/
+          cp assets/stage9-mass-production.css station-qa-samples/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage9-station-qa-samples
+          path: |
+            station-qa-samples
+            STAGE9_STATION_RENDER_QA.json
+          retention-days: 30

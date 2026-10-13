@@ -1,0 +1,46 @@
+name: Netlify Domain Readiness
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'netlify-domain-readiness-trigger.txt'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install DNS tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq dnsutils
+
+      - name: Verify public DNS propagation
+        run: |
+          AUTH_A="$(dig +short @ns1.hosting.co.kr A englishpt.kr | tail -n1)"
+          GOOGLE_A="$(dig +short @8.8.8.8 A englishpt.kr | tail -n1)"
+          CF_A="$(dig +short @1.1.1.1 A englishpt.kr | tail -n1)"
+          GOOGLE_WWW="$(dig +short @8.8.8.8 CNAME www.englishpt.kr | tail -n1)"
+          CF_WWW="$(dig +short @1.1.1.1 CNAME www.englishpt.kr | tail -n1)"
+          echo "AUTH_A=$AUTH_A"
+          echo "GOOGLE_A=$GOOGLE_A"
+          echo "CF_A=$CF_A"
+          echo "GOOGLE_WWW=$GOOGLE_WWW"
+          echo "CF_WWW=$CF_WWW"
+          test "$AUTH_A" = "75.2.60.5"
+          test "$GOOGLE_A" = "75.2.60.5"
+          test "$CF_A" = "75.2.60.5"
+          test "$GOOGLE_WWW" = "englishpt-seo.netlify.app."
+          test "$CF_WWW" = "englishpt-seo.netlify.app."
+
+      - name: Verify Netlify SSL and custom-domain response
+        run: |
+          curl -fsS --max-time 20 --resolve englishpt.kr:443:75.2.60.5 https://englishpt.kr/robots.txt -o /tmp/robots.txt
+          grep -F "Sitemap: https://englishpt.kr/sitemap-index.xml" /tmp/robots.txt
+          curl -fsS --max-time 20 --resolve englishpt.kr:443:75.2.60.5 https://englishpt.kr/sitemap-index.xml -o /tmp/sitemap-index.xml
+          echo "PASS englishpt.kr public DNS and Netlify SSL are ready"

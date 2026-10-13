@@ -1,0 +1,71 @@
+{
+  "version": "1.0",
+  "status": "REQUIRED_BEFORE_RENDERING_REAL_PROOF",
+  "modules": {
+    "teacher_profile": {
+      "render_only_if_verified": true,
+      "required": [
+        "display_name",
+        "verified_experience",
+        "teaching_focus",
+        "class_method",
+        "verified_at"
+      ],
+      "optional": [
+        "photo_asset",
+        "available_time_note"
+      ],
+      "forbidden": [
+        "invented_career",
+        "AI-generated_person_presented_as_real_teacher",
+        "unverified_awards"
+      ]
+    },
+    "testimonial": {
+      "render_only_if_verified": true,
+      "required": [
+        "consent",
+        "source_record",
+        "audience",
+        "goal",
+        "quote_or_paraphrase",
+        "date_or_period"
+      ],
+      "forbidden": [
+        "invented_review",
+        "fabricated_rating",
+        "unverified_score_gain",
+        "fixed_result_promise"
+      ]
+    },
+    "lesson_artifact": {
+      "render_only_if_verified": true,
+      "required": [
+        "artifact_type",
+        "privacy_scrubbed",
+        "source_owner_permission",
+        "context"
+      ],
+      "examples": [
+        "feedback_excerpt",
+        "worksheet_excerpt",
+        "before_after_sentence",
+        "consultation_direction_sheet"
+      ]
+    },
+    "outcome_case": {
+      "render_only_if_verified": true,
+      "required": [
+        "baseline",
+        "period",
+        "intervention",
+        "observed_result",
+        "verification_source"
+      ],
+      "forbidden": [
+        "guaranteed_result",
+        "causal_claim_without_basis"
+      ]
+    }
+  }
+}

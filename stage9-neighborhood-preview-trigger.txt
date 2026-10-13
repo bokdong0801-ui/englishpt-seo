@@ -1,0 +1,18 @@
+2026-10-11 expanded Jongno neighborhood preview
+2026-10-11 fix production assets neighborhood preview
+2026-10-11 square-search-thumbnail-preview-v1
+2026-10-11 square-search-thumbnail-preview-v2-core-copy
+2026-10-11 square-search-thumbnail-preview-v3-cropfix
+2026-10-11 compact-naver-thumbnail-v5-beginner-integrity
+2026-10-11 compact-naver-thumbnail-v6-120-160
+2026-10-12 compact-thumbnail-v7-76-100
+2026-10-12 metadata-only-og-no-body-image-v8
+2026-10-12 mid-cta-pilot-v9-beginner-toeic-ielts
+2026-10-12 floating-phone-trial-faq-v10
+2026-10-12 floating-phone-trial-faq-v10b-contract-fix
+2026-10-12 faq-curation-phone-popover-trial-v11
+2026-10-12 sitewide-trial-copy-faq-phone-v12
+2026-10-12 final-faq-phone-trial-v12b
+2026-10-12 final-latest-faq-phone-trial-v13
+2026-10-12 dedupe-copy-qa-v14
+2026-10-12 dedupe-headings-hero-eyebrow-v13

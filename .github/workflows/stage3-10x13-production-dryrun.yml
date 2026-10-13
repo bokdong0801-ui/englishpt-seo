@@ -1,0 +1,77 @@
+name: Stage 3 10x13 Production Dry Run
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'scripts/generate-production-stage3-10x13.py'
+      - 'scripts/render-production-stage3-10x13.mjs'
+      - 'stage3_localities_10_v1.json'
+      - 'scripts/generate-v45-full-depth-pilot.py'
+      - 'scripts/generate-v45-exam-pilot.py'
+      - '.github/workflows/stage3-10x13-production-dryrun.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: stage3-production-dryrun-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  generate-static-duplicate-render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate 130 pages and run static duplicate QA
+        run: python3 scripts/generate-production-stage3-10x13.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: npm install --no-save playwright && npx playwright install --with-deps chromium
+      - name: Start local server
+        run: |
+          python3 -m http.server 8000 >/tmp/stage3-http.log 2>&1 &
+          sleep 2
+      - name: Render QA 130 pages x desktop/mobile
+        run: node scripts/render-production-stage3-10x13.mjs
+      - name: Mark Stage 3 render pass
+        run: |
+          python3 - <<'PY'
+          import json,pathlib
+          root=pathlib.Path('stage3-production-dryrun-10x13')
+          qa=json.loads((root/'STAGE3_10X13_QA_V1.json').read_text(encoding='utf-8'))
+          rr=json.loads((root/'STAGE3_10X13_RENDER_QA_V1.json').read_text(encoding='utf-8'))
+          mf=json.loads((root/'STAGE3_10X13_MANIFEST_V1.json').read_text(encoding='utf-8'))
+          assert qa['status']=='PASS',qa
+          assert rr['status']=='PASS',rr
+          r={'status':'PASS','file':'stage3-production-dryrun-10x13/STAGE3_10X13_RENDER_QA_V1.json','render_cases':rr['render_cases'],'desktop_cases':rr['desktop_cases'],'mobile_cases':rr['mobile_cases'],'failures':rr['failures'],'horizontal_overflow_failures':rr['horizontal_overflow_failures'],'console_or_page_error_cases':rr['console_or_page_error_cases'],'production_deploy':False}
+          qa['render_qa']=r;qa['status']='STATIC_DUPLICATE_RENDER_PASS_HUMAN_REVIEW_REQUIRED_NOT_PRODUCTION'
+          mf['render_qa']=r;mf['status']='STAGE3_130_STATIC_DUPLICATE_RENDER_PASS_HUMAN_REVIEW_REQUIRED_NOT_PRODUCTION'
+          (root/'STAGE3_10X13_QA_V1.json').write_text(json.dumps(qa,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          (root/'STAGE3_10X13_MANIFEST_V1.json').write_text(json.dumps(mf,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+      - name: Commit Stage 3 outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add stage3-production-dryrun-10x13
+          if git diff --cached --quiet; then
+            echo "No Stage 3 output changes"
+          else
+            git commit -m "Generate Stage 3 10x13 production dry run"
+            git pull --rebase origin reset-english-service-seo-v3
+            git push origin HEAD:reset-english-service-seo-v3
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stage3-10x13-production-dryrun
+          path: stage3-production-dryrun-10x13/**
+          if-no-files-found: error

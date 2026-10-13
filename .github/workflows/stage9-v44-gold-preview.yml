@@ -1,0 +1,919 @@
+name: Stage 9 V4.4 Gold Netlify Preview
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-v44-preview-trigger.txt'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID || secrets.ENGLISHPT_NETLIFY_SITE_ID || vars.NETLIFY_SITE_ID || vars.ENGLISHPT_NETLIFY_SITE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install search image rasterizer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin fonts-noto-cjk
+
+
+      - name: Verify preview credentials
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN"
+          test -n "$NETLIFY_SITE_ID"
+
+      - name: Download approved Stage 7 source
+        uses: actions/download-artifact@v4
+        with:
+          name: stage7-deploy-preview-rollback
+          path: stage7-source
+          run-id: 36694432423
+          github-token: ${{ github.token }}
+
+      - name: Download approved Stage 8 packet
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8-production-approval-packet
+          path: stage8-source
+          run-id: 36694845460
+          github-token: ${{ github.token }}
+
+      - name: Extract all proven Stage 5 source pages
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          mkdir -p stage9-work
+          mapfile -t PKGS < <(find stage7-source -name 'stage5-shard-*-of-026.tar.zst' | sort)
+          test "${#PKGS[@]}" -eq 26
+          for f in "${PKGS[@]}"; do
+            tar --zstd -xf "$f" -C stage9-work
+          done
+          test "$(find stage9-work/stage5-full-generation -name '*.html' | wc -l)" -eq 66937
+
+      - name: Assemble exact current Production output
+        run: |
+          python3 scripts/build-stage9-production-release.py \
+            --stage7-root stage7-source/stage7-preview \
+            --stage8-root stage8-source \
+            --work-root stage9-work \
+            --output stage9-release
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
+          assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
+          assert q['counts']['html_total']==140391, q
+          assert q['indexing']['production_ui_failures']==0, q
+          assert q['source']['mass_renderer']=='stage9-clean-gold-v1', q
+          print('PASS_EXACT_PRODUCTION_ASSEMBLY')
+          PY
+
+      - name: Build 23-page reader-first preview from exact renderer output
+        run: |
+          rm -rf stage9-v44-preview
+          mkdir -p stage9-v44-preview
+          cp -a stage9-release/. stage9-v44-preview/
+          test "$(find stage9-v44-preview -maxdepth 1 -name '*.html' | wc -l)" -ge 140391
+          python3 - <<'PY'
+          import html, json, shutil
+          from pathlib import Path
+          q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          out=Path('stage9-v44-preview')
+          pages=[]
+          for row in q['representative_13']['pages']:
+              name=row['canonical'].rsplit('/',1)[-1]
+              src=Path('stage9-release')/name
+              assert src.exists(), name
+              raw=src.read_text(encoding='utf-8')
+              assert 'class="site-header"' in raw, name
+              assert 'class="hero simple-hero"' in raw, name
+              assert 'class="snapshot"' in raw, name
+              assert 'class="trust"' in raw, name
+              title=raw.split('<title>',1)[1].split('</title>',1)[0]
+              assert 'ENGLISH PT' not in title, (name,title)
+              shutil.copy2(src,out/name)
+              pages.append((name,title,'기존'))
+          academy_bases=['toeic','toeic-speaking','opic','ielts','duolingo','toefl']
+          academy_names=[]
+          for base in academy_bases:
+              source=next((name for name,_,_ in pages if name.endswith(f'-{base}.html')),None)
+              assert source, base
+              academy=source[:-len(base+'.html')] + base + '-academy.html'
+              src=Path('stage9-release')/academy
+              assert src.exists(), academy
+              raw=src.read_text(encoding='utf-8')
+              assert 'class="section academy-choice"' in raw, academy
+              assert 'intent-academy' in raw, academy
+              title=raw.split('<title>',1)[1].split('</title>',1)[0]
+              assert '학원' in title, (academy,title)
+              shutil.copy2(src,out/academy)
+              pages.append((academy,title,'학원검색'))
+              academy_names.append(academy)
+          conv_specs=[
+              ('housewife-conv','english-conv-academy','회화학원'),
+              ('housewife-conv','adult-english-conv-academy','회화학원'),
+              ('biz-business-conv','worker-english-conv-academy','회화학원'),
+              ('housewife-conv','beginner-english-conv','왕초보'),
+          ]
+          for base_intent,derived,kind in conv_specs:
+              source=next((name for name,_,_ in pages if name.endswith(f'-{base_intent}.html')),None)
+              assert source, base_intent
+              name=source[:-len(base_intent+'.html')] + derived + '.html'
+              src=Path('stage9-release')/name
+              assert src.exists(), name
+              raw=src.read_text(encoding='utf-8')
+              title=raw.split('<title>',1)[1].split('</title>',1)[0]
+              if derived.endswith('-academy'):
+                  assert 'class="section academy-choice"' in raw, name
+                  assert 'intent-academy' in raw, name
+                  assert '학원' in title, (name,title)
+              else:
+                  assert 'intent-audience' in raw, name
+                  assert '왕초보영어회화' in title, (name,title)
+              shutil.copy2(src,out/name)
+              pages.append((name,title,kind))
+              academy_names.append(name)
+          assert len(pages)==23, len(pages)
+          cards=''.join(
+              f'<a class="card" href="/{html.escape(name)}"><small>{html.escape(kind)}</small><b>{html.escape(title)}</b><span>페이지 열기 →</span></a>'
+              for name,title,kind in pages
+          )
+          index=f'''<!doctype html><html lang="ko"><head><meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <meta name="robots" content="noindex,nofollow">
+          <title>ENGLISH PT 23개 최종 후보 Preview</title>
+          <style>
+          *{{box-sizing:border-box}}body{{margin:0;font-family:Pretendard,"Apple SD Gothic Neo",Arial,sans-serif;background:#F5F2EA;color:#14201A}}
+          .wrap{{width:min(1050px,calc(100% - 36px));margin:0 auto;padding:54px 0}}
+          h1{{font-size:clamp(30px,5vw,52px);line-height:1.12;margin:0 0 12px}}p{{color:#66716B;line-height:1.7}}
+          .note{{background:#fff;border:1px solid #D7DDD8;border-radius:18px;padding:18px;margin:24px 0}}
+          .grid{{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}}
+          .card{{display:grid;gap:7px;background:#fff;border:1px solid #D7DDD8;border-radius:17px;padding:18px;color:inherit;text-decoration:none}}
+          .card small{{font-size:10px;font-weight:900;letter-spacing:.08em;color:#7A817D}}.card b{{font-size:15px}}.card span{{font-size:12px;color:#315F4C;font-weight:800}}
+          @media(max-width:700px){{.grid{{grid-template-columns:1fr}}.wrap{{padding:36px 0}}}}
+          </style></head><body><main class="wrap"><p>NETLIFY PREVIEW · 실제 Production renderer 산출물</p>
+          <h1>V4.4 + Reader-first + 23개 검색의도</h1>
+          <p>기존 13개 대표 페이지, 시험 학원 검색 페이지 6개, 영어회화학원·성인영어회화학원·직장인영어회화학원·왕초보영어회화 4개를 같은 Production 생성기에서 뽑았습니다.</p>
+          <div class="note"><b>확인 포인트</b><p>시험별 색상 변화, 첫 화면의 가독성, 학원 검색 페이지의 비교 설명, 관리 과정, PC/모바일 반응형을 확인해주세요. 이 Preview는 검색엔진 색인을 막아두었습니다.</p></div>
+          <p><a href="/image-review.html" style="display:inline-block;padding:12px 16px;border-radius:999px;background:#14201A;color:#fff;text-decoration:none;font-weight:900">대표이미지 후보 27개 비교하기 →</a></p>
+          <div class="grid">{cards}</div></main></body></html>'''
+          (out/'review-index.html').write_text(index,encoding='utf-8')
+
+          image_specs=[
+              ('toeic','토익'),
+              ('toeic-speaking','토익스피킹'),
+              ('opic','오픽'),
+              ('ielts','아이엘츠'),
+              ('toefl','토플'),
+              ('english-conv','영어회화'),
+              ('adult-conv','성인영어회화'),
+              ('worker-conv','직장인영어회화'),
+              ('beginner-conv','왕초보영어회화'),
+          ]
+          image_cards=[]
+          for family,label in image_specs:
+              options=''.join(
+                  f'<figure><img src="/assets/images/representative/{family}-{v}.svg" alt="{html.escape(label)} 대표이미지 후보 {v}"><figcaption>{html.escape(label)} 후보 {v}</figcaption></figure>'
+                  for v in (1,2,3)
+              )
+              image_cards.append(f'<section><h2>{html.escape(label)}</h2><div class="image-grid">{options}</div></section>')
+          image_review=f'''<!doctype html><html lang="ko"><head><meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <meta name="robots" content="noindex,nofollow">
+          <title>ENGLISH PT 대표이미지 후보 비교</title>
+          <style>
+          *{{box-sizing:border-box}}body{{margin:0;font-family:Pretendard,"Apple SD Gothic Neo",Arial,sans-serif;background:#F7F5EF;color:#14201A}}
+          .wrap{{width:min(1180px,calc(100% - 36px));margin:0 auto;padding:46px 0}}
+          a{{color:#315F4C;font-weight:900;text-decoration:none}}h1{{font-size:clamp(30px,5vw,50px);margin:8px 0 14px}}
+          h2{{font-size:22px;margin:34px 0 12px}}p{{color:#66716B;line-height:1.7}}
+          .image-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}}
+          figure{{margin:0;background:#fff;border:1px solid #D7DDD8;border-radius:18px;overflow:hidden}}
+          img{{display:block;width:100%;height:auto;aspect-ratio:5/3;object-fit:cover}}
+          figcaption{{padding:12px 14px;font-size:13px;font-weight:800}}
+          @media(max-width:760px){{.image-grid{{grid-template-columns:1fr}}.wrap{{padding:30px 0}}}}
+          </style></head><body><main class="wrap"><a href="/">← Preview 목록으로</a>
+          <h1>대표이미지 후보 27개</h1>
+          <p>토익·토스·OPIc·IELTS·TOEFL·영어회화·성인·직장인·왕초보 9개 키워드군마다 3개씩 비교할 수 있습니다. 실제 각 페이지에는 현재 후보 1~2 중 하나를 기본 이미지로 연결해두었습니다.</p>
+          {''.join(image_cards)}</main></body></html>'''
+          (out/'image-review.html').write_text(image_review,encoding='utf-8')
+          (out/'_headers').write_text('/*\n  X-Robots-Tag: noindex, nofollow\n',encoding='utf-8')
+          (out/'ACADEMY_PREVIEW_PAGES.json').write_text(json.dumps(academy_names,ensure_ascii=False,indent=2),encoding='utf-8')
+          PY
+
+      - name: Audit full preview navigation graph
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          root=Path('stage9-v44-preview')
+          assert (root/'assets'/'locality-index.json').exists()
+          localities=json.loads((root/'assets'/'locality-index.json').read_text(encoding='utf-8'))
+          assert len(localities)==5149,len(localities)
+
+          # Every one of the 23 Dobongsan station links must resolve in the preview.
+          dobong=(root/'station-dobongsan.html').read_text(encoding='utf-8')
+          station_links=re.findall(r'href="(/station-dobongsan-[^"]+\.html)"',dobong)
+          assert len(station_links)==23,('dobongsan_station_links',len(station_links),station_links)
+          for href in station_links:
+              assert (root/href.lstrip('/')).exists(),('missing_dobongsan_target',href)
+          print('PASS_NAV_AUDIT_DOBONGSAN_23')
+
+          # Representative localities must be reachable and must expose onward navigation.
+          samples=[
+              'seoul-jongno-sajikdong-toeic.html',
+              'daegu-dalseo-songhyeondong-toeic.html',
+              'busan-dongnae-sajikdong-english-conv-academy.html',
+          ]
+          for name in samples:
+              p=root/name
+              assert p.exists(),name
+              raw=p.read_text(encoding='utf-8')
+              assert '같은 지역 · 다른 과정' in raw,name
+              assert '다른 동네' in raw,name
+              assert '전체 과정 찾기' in raw,name
+              assert '911개 역으로 찾기' in raw,name
+              hrefs=re.findall(r'href="(/[^"]+\.html)"',raw)
+              for href in hrefs:
+                  if href.startswith('/station-') or any(x in href for x in ('sajikdong','songhyeondong')):
+                      assert (root/href.lstrip('/')).exists(),(name,href)
+
+          print('PASS_NAV_AUDIT_LOCALITY_SAMPLES')
+
+          # National hubs must have the region selector, complete relevant intent sets, and teacher trust.
+          expected_options={
+              'englishpt.html':23,'courses.html':23,'english-conversation.html':8,
+              'exam-english.html':12,'student-english.html':3,
+          }
+          for name,expected in expected_options.items():
+              raw=(root/name).read_text(encoding='utf-8')
+              assert 'data-region-finder' in raw,name
+              assert '영어권 교포 선생님' in raw,name
+              m=re.search(r'<select data-region-intent>(.*?)</select>',raw,re.S)
+              assert m,name
+              values=[x for x in re.findall(r'<option value="([^"]*)"',m.group(1)) if x]
+              assert len(values)==expected,(name,len(values),expected)
+              assert len(set(values))==len(values),(name,'duplicate_intents')
+
+          print('PASS_NAV_AUDIT_NATIONAL_HUBS')
+          home=(root/'englishpt.html').read_text(encoding='utf-8')
+          assert '전체지역·과정 바로가기' in home
+          assert '과정 중심 탐색과 겹치지 않도록' in home
+          assert home.index('과정 찾기') < home.index('전체지역·과정 바로가기')
+
+          print('PASS_NAV_AUDIT_HOME_SEPARATION')
+
+          # Preserved Songhyeondong pages must connect into the nationwide navigation graph too.
+          preserved=root/'dalseo-songhyeondong-adult-conv.html'
+          assert preserved.exists()
+          preserved_raw=preserved.read_text(encoding='utf-8')
+          assert 'preserved-region-navigation' in preserved_raw
+          assert 'data-region-finder' in preserved_raw
+          pm=re.search(r'<select data-region-intent>(.*?)</select>',preserved_raw,re.S)
+          assert pm
+          pvalues=[x for x in re.findall(r'<option value="([^"]*)"',pm.group(1)) if x]
+          assert len(pvalues)==23,len(pvalues)
+          assert 'dalseo-songhyeondong-adult-tutor.html' in preserved_raw
+          assert '/englishpt.html#region' in preserved_raw
+          assert '/stations.html' in preserved_raw
+
+          print('PASS_NAV_AUDIT_PRESERVED_SONGHYEONDONG')
+          styles=(root/'assets'/'styles.css').read_text(encoding='utf-8')
+          assert '.station-hub-page .station-hero' in styles
+          assert '.region-finder-shell' in styles
+          assert '.teacher-trust-grid' in styles
+          print('PASS_NAV_AUDIT_STYLES')
+          print('PASS_FULL_PREVIEW_LINK_GRAPH')
+          PY
+
+      - name: Audit main national hubs and five beginner exam pages
+        run: |
+          python3 - <<'PY'
+          import html, json, re
+          from pathlib import Path
+
+          root=Path('stage9-v44-preview')
+          q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          base_names=[row['canonical'].rsplit('/',1)[-1] for row in q['representative_13']['pages']]
+
+          def by_suffix(suffix):
+              return next(name for name in base_names if name.endswith('-'+suffix+'.html'))
+
+          toeic=by_suffix('toeic')
+          toeic_speaking=by_suffix('toeic-speaking')
+          opic=by_suffix('opic')
+          ielts=by_suffix('ielts')
+          duolingo=by_suffix('duolingo')
+          toefl=by_suffix('toefl')
+          housewife=by_suffix('housewife-conv')
+          conv=housewife[:-len('housewife-conv.html')]+'english-conv-academy.html'
+
+          def one(name):
+              p=root/name
+              raw=p.read_text(encoding='utf-8')
+              def first(pattern, flags=re.I|re.S):
+                  m=re.search(pattern,raw,flags)
+                  return html.unescape(re.sub(r'<[^>]+>','',m.group(1))).strip() if m else None
+              form=''
+              fm=re.search(r'<form id="leadForm"[^>]*>(.*?)</form>',raw,re.I|re.S)
+              if fm: form=fm.group(1)
+              img=re.search(r'<figure class="learning-visual">.*?<img[^>]*src="([^"]+)"[^>]*alt="([^"]*)"[^>]*>.*?(?:<figcaption>(.*?)</figcaption>)?.*?</figure>',raw,re.I|re.S)
+              return {
+                'file':name,
+                'title':first(r'<title>(.*?)</title>'),
+                'description':first(r'<meta name="description" content="([^"]*)"'),
+                'canonical':first(r'<link rel="canonical" href="([^"]*)"'),
+                'h1':first(r'<h1>(.*?)</h1>'),
+                'image_src':html.unescape(img.group(1)) if img else None,
+                'image_alt':html.unescape(img.group(2)) if img else None,
+                'image_caption':html.unescape(re.sub(r'<[^>]+>','',img.group(3))).strip() if img and img.group(3) else None,
+                'form_fields':sorted(set(re.findall(r'name="([^"]+)"',form))),
+                'has_purpose': 'name="purpose"' in form,
+                'has_difficulty': 'name="difficulty"' in form,
+                'internal_links': raw.count('href="/'),
+                'hero_index': raw.index('class="hero simple-hero"'),
+                'visual_index': raw.index('class="visual-break"'),
+                'intro_index': raw.index('class="section intro-detail"'),
+                'visual_count': raw.count('class="visual-break"'),
+                'image_loading_eager': 'loading="eager"' in raw,
+                'markers': {
+                  'site_header':'class="site-header"' in raw,
+                  'hero':'class="hero simple-hero"' in raw,
+                  'snapshot':'class="snapshot"' in raw,
+                  'trust':'class="trust"' in raw,
+                  'management':'class="section management"' in raw,
+                  'learning_visual':'class="learning-visual"' in raw,
+                }
+              }
+
+          home_raw=(root/'englishpt.html').read_text(encoding='utf-8')
+          def hfirst(pattern):
+              m=re.search(pattern,home_raw,re.I|re.S)
+              return html.unescape(re.sub(r'<[^>]+>','',m.group(1))).strip() if m else None
+          home_form=re.search(r'<form id="leadForm"[^>]*>(.*?)</form>',home_raw,re.I|re.S)
+          hf=home_form.group(1) if home_form else ''
+          report={
+            'home':{
+              'file':'englishpt.html',
+              'title':hfirst(r'<title>(.*?)</title>'),
+              'description':hfirst(r'<meta name="description" content="([^"]*)"'),
+              'canonical':hfirst(r'<link rel="canonical" href="([^"]*)"'),
+              'h1':hfirst(r'<h1>(.*?)</h1>'),
+              'form_fields':sorted(set(re.findall(r'name="([^"]+)"',hf))),
+              'has_purpose':'name="purpose"' in hf,
+              'has_difficulty':'name="difficulty"' in hf,
+              'schema_fixed_songhyeondong':'"areaServed":{"@type":"AdministrativeArea","name":"대구 달서구 송현동"}' in home_raw,
+              'footer_fixed_songhyeondong':'대구 달서구 송현동 · 1:1 맞춤 영어관리' in home_raw,
+              'form_default_songhyeondong':'value="송현동"' in hf,
+            },
+            'toeic':one(toeic),
+            'toeic_speaking':one(toeic_speaking),
+            'opic':one(opic),
+            'ielts':one(ielts),
+            'duolingo':one(duolingo),
+            'toefl':one(toefl),
+            'english_conversation':one(conv),
+            'national_hubs':{
+              name:{
+                'exists':(root/name).exists(),
+                'canonical_ok':f'https://englishpt.kr/{name}' in (root/name).read_text(encoding='utf-8'),
+                'songhyeondong':('songhyeondong' in (root/name).read_text(encoding='utf-8').lower() or '송현동' in (root/name).read_text(encoding='utf-8')),
+              }
+              for name in ('courses.html','english-conversation.html','exam-english.html','student-english.html')
+            },
+            'station_samples':{
+              name:{
+                'exists':(root/name).exists(),
+                'canonical':(
+                  re.search(r'<link rel="canonical" href="([^"]+)"',(root/name).read_text(encoding='utf-8'),re.I).group(1)
+                  if re.search(r'<link rel="canonical" href="([^"]+)"',(root/name).read_text(encoding='utf-8'),re.I)
+                  else None
+                ),
+              }
+              for name in ('stations.html','station-dobongsan.html','station-dobongsan-toeic.html','station-dobongsan-english-conv-academy.html','station-gangnam.html')
+            },
+          }
+          assert report['home']['title']=='1:1 영어과외·영어회화·시험영어 | 잉글리시PT',report['home']
+          assert '1:1 영어과외·영어회화부터' in report['home']['description'],report['home']
+          assert report['home']['schema_fixed_songhyeondong'] is False,report['home']
+          assert report['home']['footer_fixed_songhyeondong'] is False,report['home']
+          assert report['home']['form_default_songhyeondong'] is False,report['home']
+          assert '전체지역·과정 바로가기' in home_raw
+          assert 'data-region-finder' in home_raw
+          assert '지역별 과정 페이지 보기' in home_raw
+          assert '911개 역으로 찾기' in home_raw
+          for station_link in ('station-gangnam.html','station-dobongsan.html','station-busan.html','station-suwon.html'):
+              assert station_link in home_raw,station_link
+          assert '영어권 교포 선생님' in home_raw
+          assert all(row['exists'] and row['canonical_ok'] and not row['songhyeondong'] for row in report['national_hubs'].values()),report['national_hubs']
+          assert all(row['exists'] and row['canonical'] and row['canonical'].startswith('https://englishpt.kr/') for row in report['station_samples'].values()),report['station_samples']
+          station_index=(root/'stations.html').read_text(encoding='utf-8')
+          station_hub=(root/'station-dobongsan.html').read_text(encoding='utf-8')
+          station_toeic=(root/'station-dobongsan-toeic.html').read_text(encoding='utf-8')
+          assert '전국 37개 노선 · 911개 역' in station_index
+          assert '역 이름 검색' in station_index
+          assert station_index.count('class="station-index-link"')>=911
+          assert '<h1>도봉산역<br>영어회화·영어과외</h1>' in station_hub
+          assert station_hub.count('href="/station-dobongsan-')==23
+          assert '1호선 · 7호선' in station_hub
+          assert '영어가 거의 처음이어도' in station_hub
+          assert '목표가 시험이라면' in station_hub
+          assert '무엇부터 시작할지 모르겠다면' in station_hub
+          assert '도봉산역 전체 과정 보기' in station_toeic
+          assert report['toeic']['image_src']=='/assets/images/representative/toeic-editorial.svg',report['toeic']
+          assert report['toeic_speaking']['image_src']=='/assets/images/representative/toeic-speaking-editorial.svg',report['toeic_speaking']
+          assert report['opic']['image_src']=='/assets/images/representative/opic-editorial.svg',report['opic']
+          assert report['ielts']['image_src']=='/assets/images/representative/ielts-editorial.svg',report['ielts']
+          assert report['duolingo']['image_src']=='/assets/images/representative/duolingo-editorial.svg',report['duolingo']
+          assert report['toefl']['image_src']=='/assets/images/representative/toefl-editorial.svg',report['toefl']
+          assert report['english_conversation']['image_src']=='/assets/images/representative/english-conv-editorial.svg',report['english_conversation']
+          for key in ('toeic','toeic_speaking','opic','ielts','duolingo','toefl','english_conversation'):
+              row=report[key]
+              required_fields={'area','consent','message','name','phone','wantedClass'}
+              assert required_fields.issubset(set(row['form_fields'])),row
+              assert {'form-name','subject','bot-field'}.issubset(set(row['form_fields'])),row
+              assert row['has_purpose'] is False and row['has_difficulty'] is False,row
+              assert all(row['markers'].values()),row
+              assert row['hero_index'] < row['visual_index'] < row['intro_index'],row
+              assert row['visual_count']==1,row
+              assert row['image_loading_eager'] is True,row
+              assert row['image_caption'] and len(row['image_caption'])<=55,row
+              assert row['internal_links']>=22,row
+          Path('STAGE9_KEY_PAGE_QA_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+
+      - name: Run beginner readability QA on reader preview
+        run: |
+          python3 scripts/qa-beginner-readability.py stage9-v44-preview \
+            --report STAGE9_BEGINNER_READABILITY_QA.json
+
+      - name: QA mobile first screen with Chromium
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          "$CHROME" --version
+          mkdir -p mobile-qa
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          names=[row['canonical'].rsplit('/',1)[-1] for row in q['representative_13']['pages']]
+          def by_suffix(suffix):
+              return next(name for name in names if name.endswith('-'+suffix+'.html'))
+          housewife=by_suffix('housewife-conv')
+          conv=housewife[:-len('housewife-conv.html')]+'english-conv-academy.html'
+          targets=[
+              by_suffix('elem-tutor'),
+              by_suffix('toeic'),
+              by_suffix('toeic-speaking'),
+              by_suffix('opic'),
+              by_suffix('ielts'),
+              by_suffix('duolingo'),
+              by_suffix('toefl'),
+              conv,
+          ]
+          Path('mobile-qa/targets.json').write_text(json.dumps(targets,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+
+          python3 -m http.server 8765 --directory stage9-v44-preview >/tmp/stage9-mobile-http.log 2>&1 &
+          SERVER_PID=$!
+          CHROME_PID=""
+          trap 'kill "$SERVER_PID" ${CHROME_PID:-} 2>/dev/null || true' EXIT
+          READY=0
+          for attempt in 1 2 3; do
+            rm -rf "/tmp/stage9-chrome-qa-${attempt}"
+            "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars               --remote-debugging-port=9222 --remote-allow-origins='*'               --user-data-dir="/tmp/stage9-chrome-qa-${attempt}" about:blank               >"/tmp/stage9-chrome-${attempt}.log" 2>&1 &
+            CHROME_PID=$!
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:9222/json/version >/dev/null 2>&1; then
+                READY=1
+                break
+              fi
+              if ! kill -0 "$CHROME_PID" 2>/dev/null; then
+                break
+              fi
+              sleep 0.5
+            done
+            if [ "$READY" -eq 1 ]; then
+              break
+            fi
+            kill "$CHROME_PID" 2>/dev/null || true
+            wait "$CHROME_PID" 2>/dev/null || true
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            cat /tmp/stage9-chrome-*.log || true
+            exit 1
+          fi
+          python3 -m pip install --quiet pychrome
+
+          python3 - <<'PY'
+          import base64, json, time
+          from pathlib import Path
+          import pychrome
+
+          targets=json.loads(Path('mobile-qa/targets.json').read_text(encoding='utf-8'))
+          browser=pychrome.Browser(url='http://127.0.0.1:9222')
+          tab=browser.new_tab()
+          tab.start()
+          tab.Page.enable()
+          tab.Runtime.enable()
+          tab.call_method(
+              'Emulation.setDeviceMetricsOverride',
+              width=390,
+              height=844,
+              deviceScaleFactor=1,
+              mobile=False,
+              screenWidth=390,
+              screenHeight=844,
+              dontSetVisibleSize=False,
+          )
+          expression=r'''(()=>{
+            const box=(s)=>{
+              const e=document.querySelector(s);
+              if(!e)return null;
+              const r=e.getBoundingClientRect();
+              return {top:Math.round(r.top),bottom:Math.round(r.bottom),height:Math.round(r.height),width:Math.round(r.width)};
+            };
+            return {
+              viewport:{width:window.innerWidth,height:window.innerHeight,dpr:window.devicePixelRatio},
+              hero:box('.hero.simple-hero'),
+              actions:box('.hero-actions'),
+              visual:box('.visual-break'),
+              figure:box('.learning-visual'),
+              caption:box('.learning-visual figcaption'),
+              beginner:box('.beginner-exam-guide'),
+              intro:box('.section.intro-detail')
+            };
+          })()'''
+          rows=[]
+          for i,name in enumerate(targets,1):
+              url='http://127.0.0.1:8765/'+name
+              tab.Page.navigate(url=url)
+              time.sleep(1.2)
+              result=tab.Runtime.evaluate(expression=expression,returnByValue=True)
+              metrics=result['result']['value']
+              shot=tab.Page.captureScreenshot(format='png',fromSurface=True,captureBeyondViewport=False)
+              shot_path=Path('mobile-qa')/f'{i:02d}-{name}.png'
+              shot_path.write_bytes(base64.b64decode(shot['data']))
+              assert metrics['viewport']['width']==390,(name,metrics)
+              assert metrics['viewport']['height']==844,(name,metrics)
+              assert metrics['hero'] and metrics['visual'] and metrics['intro'] and metrics['actions'],(name,metrics)
+              assert abs(metrics['visual']['top']-metrics['hero']['bottom']) <= 3,(name,metrics)
+              assert metrics['actions']['height'] <= 62,(name,metrics)
+              assert metrics['hero']['height'] <= 315,(name,metrics)
+              assert metrics['visual']['height'] <= 330,(name,metrics)
+              is_exam=any(token in name for token in ['-toeic.html','-toeic-speaking.html','-opic.html','-ielts.html','-duolingo.html','-toefl.html'])
+              if is_exam:
+                  assert metrics['beginner'],(name,metrics)
+                  assert abs(metrics['beginner']['top']-metrics['visual']['bottom']) <= 3,(name,metrics)
+                  assert metrics['beginner']['top'] <= 700,(name,metrics)
+                  assert metrics['beginner']['height'] <= 310,(name,metrics)
+                  assert metrics['intro']['top'] <= 980,(name,metrics)
+              else:
+                  assert metrics['intro']['top'] <= 820,(name,metrics)
+              rows.append({'page':name,**metrics,'screenshot':str(shot_path)})
+          tab.stop()
+          browser.close_tab(tab)
+          report={
+              'status':'PASS_MOBILE_FIRST_SCREEN_QA',
+              'viewport':'390x844 CSS px',
+              'rule':'Conversation: Hero -> image -> intro within 820px. Exams: Hero -> image -> beginner guide -> intro within 980px; beginner guide begins within the first 700px so meaningful content remains visible in the first 844px viewport.',
+              'pages':rows,
+          }
+          Path('STAGE9_MOBILE_FIRST_SCREEN_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+
+      - name: QA four national hubs on desktop and mobile
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          mkdir -p hub-qa
+          python3 -m http.server 8766 --directory stage9-v44-preview >/tmp/stage9-hub-http.log 2>&1 &
+          SERVER_PID=$!
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --remote-debugging-port=9223 --remote-allow-origins='*' --user-data-dir=/tmp/stage9-hub-chrome about:blank >/tmp/stage9-hub-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:9223/json/version >/dev/null 2>&1; then break; fi
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:9223/json/version >/dev/null
+          python3 - <<'PY'
+          import base64, json, time
+          from pathlib import Path
+          import pychrome
+
+          hubs={
+            'courses.html':{'cards':6,'ctas':0,'bridge':True},
+            'english-conversation.html':{'cards':6,'ctas':6,'bridge':False},
+            'exam-english.html':{'cards':6,'ctas':6,'bridge':False},
+            'student-english.html':{'cards':4,'ctas':4,'bridge':False},
+          }
+          browser=pychrome.Browser(url='http://127.0.0.1:9223')
+          tab=browser.new_tab(); tab.start(); tab.Page.enable(); tab.Runtime.enable()
+          expression=r'''(()=>{
+            const box=(s)=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {top:Math.round(r.top),bottom:Math.round(r.bottom),left:Math.round(r.left),right:Math.round(r.right),height:Math.round(r.height),width:Math.round(r.width)}};
+            const cards=[...document.querySelectorAll('.route-card')].slice(0,2).map(e=>{const r=e.getBoundingClientRect();return {top:Math.round(r.top),bottom:Math.round(r.bottom),left:Math.round(r.left),right:Math.round(r.right),width:Math.round(r.width),height:Math.round(r.height)}});
+            const sticky=document.querySelector('.mobile-sticky');
+            return {
+              viewport:{width:window.innerWidth,height:window.innerHeight},
+              scrollWidth:document.documentElement.scrollWidth,
+              hero:box('.hero'),
+              routes:box('.route-cards'),
+              region:box('#region'),
+              final:box('.final'),
+              bridge:box('.hub-conversion-box'),
+              cardCount:document.querySelectorAll('.route-card').length,
+              ctaCount:document.querySelectorAll('.route-cta').length,
+              cards,
+              stickyDisplay:sticky?getComputedStyle(sticky).display:null,
+              regionFinder:!!document.querySelector('[data-region-finder]'),
+              sidoOptions:document.querySelector('[data-region-sido]')?.options.length||0,
+            };
+          })()'''
+          rows=[]
+          for mode,width,height,mobile in [('desktop',1440,900,False),('mobile',390,844,True)]:
+            tab.call_method('Emulation.setDeviceMetricsOverride',width=width,height=height,deviceScaleFactor=1,mobile=mobile,screenWidth=width,screenHeight=height,dontSetVisibleSize=False)
+            for idx,(name,expect) in enumerate(hubs.items(),1):
+              tab.Page.navigate(url='http://127.0.0.1:8766/'+name); time.sleep(1.0)
+              metrics=tab.Runtime.evaluate(expression=expression,returnByValue=True)['result']['value']
+              assert metrics['viewport']['width']==width,(mode,name,metrics)
+              assert metrics['scrollWidth'] <= width+1,(mode,name,metrics)
+              assert metrics['hero'] and metrics['routes'] and metrics['region'] and metrics['final'],(mode,name,metrics)
+              assert metrics['cardCount']==expect['cards'],(mode,name,metrics)
+              assert metrics['ctaCount']==expect['ctas'],(mode,name,metrics)
+              assert bool(metrics['bridge'])==expect['bridge'],(mode,name,metrics)
+              assert metrics['regionFinder'] is True,(mode,name,metrics)
+              assert metrics['sidoOptions'] >= 10,(mode,name,metrics)
+              assert len(metrics['cards'])==2,(mode,name,metrics)
+              if mode=='desktop':
+                assert metrics['cards'][0]['top']==metrics['cards'][1]['top'],(mode,name,metrics)
+                assert metrics['cards'][1]['left']>metrics['cards'][0]['left'],(mode,name,metrics)
+                assert metrics['stickyDisplay']=='none',(mode,name,metrics)
+              else:
+                assert metrics['hero']['height'] <= 620,(mode,name,metrics)
+                assert metrics['routes']['top'] <= 1050,(mode,name,metrics)
+                assert abs(metrics['cards'][0]['left']-metrics['cards'][1]['left'])<=1,(mode,name,metrics)
+                assert metrics['cards'][1]['top']>=metrics['cards'][0]['bottom']-1,(mode,name,metrics)
+                assert metrics['stickyDisplay']=='block',(mode,name,metrics)
+              shot=tab.Page.captureScreenshot(format='png',fromSurface=True,captureBeyondViewport=False)
+              path=Path('hub-qa')/f'{mode}-{idx:02d}-{name}.png'
+              path.write_bytes(base64.b64decode(shot['data']))
+              rows.append({'mode':mode,'page':name,**metrics,'screenshot':str(path)})
+          tab.stop(); browser.close_tab(tab)
+          report={'status':'PASS_NATIONAL_HUB_RESPONSIVE_QA','desktop':'1440x900','mobile':'390x844','pages':rows}
+          Path('STAGE9_NATIONAL_HUB_RESPONSIVE_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+
+      - name: QA homepage and station pages on desktop and mobile
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          mkdir -p station-responsive-qa
+          python3 -m http.server 8767 --directory stage9-v44-preview >/tmp/stage9-station-http.log 2>&1 &
+          SERVER_PID=$!
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --hide-scrollbars --remote-debugging-port=9224 --remote-allow-origins='*' --user-data-dir=/tmp/stage9-station-chrome about:blank >/tmp/stage9-station-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:9224/json/version >/dev/null 2>&1; then break; fi
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:9224/json/version >/dev/null
+          python3 -m pip install --quiet pychrome
+          python3 - <<'PY'
+          import base64,json,time
+          from pathlib import Path
+          import pychrome
+
+          targets={
+            'englishpt.html':'home',
+            'stations.html':'station-index',
+            'station-dobongsan.html':'station-hub',
+            'station-dobongsan-toeic.html':'station-course',
+          }
+          browser=pychrome.Browser(url='http://127.0.0.1:9224')
+          tab=browser.new_tab(); tab.start(); tab.Page.enable(); tab.Runtime.enable()
+          expression=r'''(()=>{
+            const box=(s)=>{const e=document.querySelector(s);if(!e)return null;const r=e.getBoundingClientRect();return {top:Math.round(r.top),bottom:Math.round(r.bottom),height:Math.round(r.height),width:Math.round(r.width)}};
+            const sticky=document.querySelector('.mobile-sticky');
+            return {
+              viewport:{width:window.innerWidth,height:window.innerHeight},
+              scrollWidth:document.documentElement.scrollWidth,
+              hero:box('.hero'),
+              quick:box('.quick-directory'),
+              courses:box('.station-course-section'),
+              stationLines:box('#stationLines'),
+              final:box('.final'),
+              stickyDisplay:sticky?getComputedStyle(sticky).display:null,
+              stationCourseLinks:document.querySelectorAll('.station-course-links a').length,
+              stationIndexLinks:document.querySelectorAll('.station-index-link').length,
+            };
+          })()'''
+          rows=[]
+          for mode,width,height,mobile in [('desktop',1440,900,False),('mobile',390,844,True)]:
+            tab.call_method('Emulation.setDeviceMetricsOverride',width=width,height=height,deviceScaleFactor=1,mobile=mobile,screenWidth=width,screenHeight=height,dontSetVisibleSize=False)
+            for idx,(name,kind) in enumerate(targets.items(),1):
+              tab.Page.navigate(url='http://127.0.0.1:8767/'+name);time.sleep(1)
+              metrics=tab.Runtime.evaluate(expression=expression,returnByValue=True)['result']['value']
+              assert metrics['viewport']['width']==width,(mode,name,metrics)
+              assert metrics['scrollWidth']<=width+1,(mode,name,metrics)
+              assert metrics['hero'],(mode,name,metrics)
+              if kind=='home':
+                assert metrics['quick'],(mode,name,metrics)
+              elif kind=='station-index':
+                assert metrics['stationLines'],(mode,name,metrics)
+                assert metrics['stationIndexLinks']>=911,(mode,name,metrics)
+              elif kind=='station-hub':
+                assert metrics['courses'] and metrics['final'],(mode,name,metrics)
+                assert metrics['stationCourseLinks']==23,(mode,name,metrics)
+                if mode=='mobile':
+                  assert metrics['hero']['height']<=620,(mode,name,metrics)
+                  assert metrics['stickyDisplay']=='block',(mode,name,metrics)
+              shot=tab.Page.captureScreenshot(format='png',fromSurface=True,captureBeyondViewport=False)
+              p=Path('station-responsive-qa')/f'{mode}-{idx:02d}-{name}.png'
+              p.write_bytes(base64.b64decode(shot['data']))
+              rows.append({'mode':mode,'page':name,'kind':kind,**metrics,'screenshot':str(p)})
+          tab.stop();browser.close_tab(tab)
+          report={'status':'PASS_HOME_STATION_RESPONSIVE_QA','desktop':'1440x900','mobile':'390x844','pages':rows}
+          Path('STAGE9_HOME_STATION_RESPONSIVE_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+
+      - name: QA real navigation clicks with Chromium
+        run: |
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          python3 -m http.server 8768 --directory stage9-v44-preview >/tmp/stage9-nav-http.log 2>&1 &
+          SERVER_PID=$!
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --remote-debugging-port=9225 --remote-allow-origins='*' --user-data-dir=/tmp/stage9-nav-chrome about:blank >/tmp/stage9-nav-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            curl -fsS http://127.0.0.1:9225/json/version >/dev/null 2>&1 && break
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:9225/json/version >/dev/null
+          python3 -m pip install --quiet pychrome
+          python3 - <<'PY'
+          import json,time
+          from pathlib import Path
+          import pychrome
+
+          browser=pychrome.Browser(url='http://127.0.0.1:9225')
+          tab=browser.new_tab(); tab.start(); tab.Page.enable(); tab.Runtime.enable()
+
+          def nav(path,wait=1.0):
+              tab.Page.navigate(url='http://127.0.0.1:8768/'+path)
+              time.sleep(wait)
+
+          def val(expr):
+              return tab.Runtime.evaluate(expression=expr,returnByValue=True)['result'].get('value')
+
+          # Home: Seoul -> Jongno -> Sajikdong -> TOEIC must open the generated locality page.
+          nav('englishpt.html',1.2)
+          count=val("document.querySelector('[data-region-sido]').options.length")
+          assert count and count>10,count
+          val("""(()=>{const e=document.querySelector('[data-region-sido]');e.value='서울특별시';e.dispatchEvent(new Event('change',{bubbles:true}));return true})()""")
+          val("""(()=>{const e=document.querySelector('[data-region-jurisdiction]');e.value='서울특별시 종로구';e.dispatchEvent(new Event('change',{bubbles:true}));return [...e.options].map(x=>x.value)})()""")
+          dong_values=val("[...document.querySelector('[data-region-dong]').options].map(x=>x.value)")
+          assert 'seoul-jongno-sajikdong' in dong_values,dong_values[:20]
+          val("""(()=>{document.querySelector('[data-region-dong]').value='seoul-jongno-sajikdong';document.querySelector('[data-region-intent]').value='toeic';document.querySelector('[data-region-go]').click();return true})()""")
+          time.sleep(0.8)
+          path=val("location.pathname"); h1=val("document.querySelector('h1')?.innerText||''")
+          assert path.endswith('/seoul-jongno-sajikdong-toeic.html'),(path,h1)
+          assert '사직동' in h1 and '토익' in h1,(path,h1)
+
+          # Hub route card must preset the regional course instead of opening only consultation.
+          nav('english-conversation.html',1.2)
+          val("""document.querySelector('[data-region-preset="worker-english-conv-academy"]').click()""")
+          time.sleep(0.3)
+          assert val("document.querySelector('[data-region-intent]').value")=='worker-english-conv-academy'
+          assert val("location.hash")=='#region'
+
+          # Dobongsan hub -> TOEIC child page must resolve.
+          nav('station-dobongsan.html')
+          val("""document.querySelector('a[href="/station-dobongsan-toeic.html"]').click()""")
+          time.sleep(0.7)
+          path=val("location.pathname"); h1=val("document.querySelector('h1')?.innerText||''")
+          assert path.endswith('/station-dobongsan-toeic.html'),(path,h1)
+          assert '도봉산역' in h1 and '토익' in h1,(path,h1)
+
+          # Preserved Songhyeondong page must connect into the nationwide generated graph.
+          nav('dalseo-songhyeondong-adult-conv.html',1.2)
+          assert val("!!document.querySelector('.preserved-region-navigation')")
+          val("""(()=>{const e=document.querySelector('[data-region-sido]');e.value='대구광역시';e.dispatchEvent(new Event('change',{bubbles:true}));return true})()""")
+          val("""(()=>{const e=document.querySelector('[data-region-jurisdiction]');e.value='대구광역시 달서구';e.dispatchEvent(new Event('change',{bubbles:true}));return true})()""")
+          dongs=val("[...document.querySelector('[data-region-dong]').options].map(x=>x.value)")
+          song=next((x for x in dongs if 'songhyeondong' in x),None)
+          assert song,(dongs[:40])
+          val(f"""(()=>{{document.querySelector('[data-region-dong]').value='{song}';document.querySelector('[data-region-intent]').value='toeic';document.querySelector('[data-region-go]').click();return true}})()""")
+          time.sleep(0.8)
+          path=val("location.pathname"); h1=val("document.querySelector('h1')?.innerText||''")
+          assert path.endswith('-songhyeondong-toeic.html'),(path,h1)
+          assert '송현동' in h1 and '토익' in h1,(path,h1)
+
+          report={
+            'status':'PASS_REAL_NAVIGATION_CLICK_QA',
+            'home_to_sajik_toeic':True,
+            'worker_course_to_region_finder':True,
+            'dobongsan_to_toeic':True,
+            'preserved_songhyeondong_to_generated_region':True,
+          }
+          Path('STAGE9_REAL_NAVIGATION_CLICK_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          tab.stop();browser.close_tab(tab)
+          PY
+
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli@latest
+
+      - name: Deploy isolated Netlify preview
+        run: |
+          netlify deploy \
+            --dir=stage9-v44-preview \
+            --site="$NETLIFY_SITE_ID" \
+            --auth="$NETLIFY_AUTH_TOKEN" \
+            --alias=stage9-v44-gold-preview | tee /tmp/netlify-preview.txt
+          echo "PREVIEW_URL=https://stage9-v44-gold-preview--englishpt-seo.netlify.app" >> "$GITHUB_ENV"
+
+      - name: Verify preview URL and representative pages
+        run: |
+          curl -fsSIL --max-time 30 "$PREVIEW_URL/" | head
+          python3 - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          base='https://stage9-v44-gold-preview--englishpt-seo.netlify.app'
+          names=[row['canonical'].rsplit('/',1)[-1] for row in q['representative_13']['pages']]
+          names += json.loads(Path('stage9-v44-preview/ACADEMY_PREVIEW_PAGES.json').read_text(encoding='utf-8'))
+          assert len(names)==23, len(names)
+          names += ['courses.html','english-conversation.html','exam-english.html','student-english.html']
+          names += ['stations.html','station-dobongsan.html','station-dobongsan-toeic.html','station-dobongsan-english-conv-academy.html','station-gangnam.html']
+          for name in names:
+              subprocess.run(['curl','-fsSIL','--max-time','30',f'{base}/{name}'],check=True,stdout=subprocess.DEVNULL)
+          extra=[
+              'station-dobongsan-opic.html','station-dobongsan-ielts.html',
+              'station-dobongsan-toefl.html','station-dobongsan-duolingo.html',
+              'daegu-dalseo-songhyeondong-toeic.html',
+              'seoul-jongno-sajikdong-toeic.html',
+              'busan-dongnae-sajikdong-english-conv-academy.html',
+              'review-index.html'
+          ]
+          for name in extra:
+              subprocess.run(['curl','-fsSIL','--max-time','30',f'{base}/{name}'],check=True,stdout=subprocess.DEVNULL)
+          print('PASS_STAGE9_FULL_SITE_READER_PREVIEW')
+          PY
+
+      - name: Write preview report
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report={
+            "status":"PASS_STAGE9_FULL_SITE_READER_PREVIEW",
+            "preview_url":"https://stage9-v44-gold-preview--englishpt-seo.netlify.app",
+            "source":"exact current Stage 9 production renderer with national hubs and 911-station expansion",
+            "production_affected":False,
+            "representative_pages":23,
+            "station_sample_pages":5,
+            "full_site_html_deployed":140391,
+            "locality_selector_rows":5149,
+            "final_html_total":140391,
+            "preview_indexing":"blocked by X-Robots-Tag only"
+          }
+          Path('STAGE9_V44_GOLD_PREVIEW_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage9-v44-gold-netlify-preview-report
+          path: |
+            STAGE9_V44_GOLD_PREVIEW_REPORT.json
+            STAGE9_KEY_PAGE_QA_REPORT.json
+            STAGE9_BEGINNER_READABILITY_QA.json
+            STAGE9_MOBILE_FIRST_SCREEN_QA.json
+            STAGE9_NATIONAL_HUB_RESPONSIVE_QA.json
+            STAGE9_HOME_STATION_RESPONSIVE_QA.json
+            mobile-qa/*.png
+            hub-qa/*.png
+            station-responsive-qa/*.png
+          retention-days: 30

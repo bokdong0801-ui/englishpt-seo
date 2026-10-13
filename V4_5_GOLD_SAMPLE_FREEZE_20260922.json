@@ -1,0 +1,81 @@
+{
+  "version": "V4.5-GOLD-SAMPLE-20260922",
+  "status": "GOLD_SAMPLE_FROZEN_DEPLOYMENT_SYSTEM_PHASE",
+  "approved_at": "2026-09-22",
+  "approved_branch": "reset-english-service-seo-v3",
+  "approved_head_sha": "a6bd5aafb0b1748834bbc53de65cf353a30c7c7c",
+  "integrated_qa_run_id": 35679447273,
+  "gold_standard": "V4_5_FULL_DEPTH_7TARGET_GOLD_STANDARD.md",
+  "page_count": 35,
+  "localities": 5,
+  "targets": 7,
+  "target_blueprints": {
+    "elementary": "v4-elem-parent-evidence-v2",
+    "middle": "v4-mid-school-bridge-v2",
+    "high": "v4-high-priority-deadline-v2",
+    "university": "v4-univ-campus-output-v2",
+    "jobseeker": "v4-job-interview-evidence-v2",
+    "worker": "v4-worker-work-output-v2",
+    "housewife": "v4-housewife-lifefit-v2"
+  },
+  "static_qa": {
+    "failures": 0,
+    "visible_chars_min": 6362,
+    "visible_chars_max": 6824,
+    "visible_chars_avg": 6551.3,
+    "malformed_particle_failures": 0,
+    "same_intent_pairs": 70,
+    "max_cosine": 0.7566,
+    "cosine_threshold_lt": 0.82,
+    "max_5_shingle_jaccard": 0.2149,
+    "jaccard_threshold_lt": 0.24
+  },
+  "render_qa": {
+    "status": "PASS",
+    "render_cases": 70,
+    "desktop_cases": 35,
+    "mobile_cases": 35,
+    "failures": 0,
+    "horizontal_overflow_failures": 0,
+    "console_or_page_error_cases": 0
+  },
+  "human_review": {
+    "status": "PASS_FOR_GOLD_SAMPLE",
+    "scope": "All 35 pages previously human-reviewed; latest full-depth representative pages re-reviewed for elementary, university, jobseeker and housewife after final generator copy polish.",
+    "representative_pages": [
+      "pilot-v45-5x7/sejong-goundong-elem-tutor.html",
+      "pilot-v45-5x7/seoul-seocho-naegokdong-univ-conv.html",
+      "pilot-v45-5x7/busan-haeundae-jungdong-jobseeker-conv.html",
+      "pilot-v45-5x7/gangwon-gangneung-gangnamdong-housewife-conv.html"
+    ]
+  },
+  "freeze_policy": {
+    "new_design_changes": "STOP",
+    "new_content_direction_changes": "STOP",
+    "blueprint_changes": "STOP_UNLESS_BLOCKING_DEFECT",
+    "allowed_changes": [
+      "generator/system defects",
+      "regression failures",
+      "URL/canonical/schema/internal-link defects",
+      "redirect/sitemap defects",
+      "deployment and rollback tooling",
+      "search-engine submission readiness"
+    ],
+    "phase": "BUILD_DEPLOYABLE_SYSTEM"
+  },
+  "safety": {
+    "main_merge": false,
+    "production_deploy": false,
+    "pilot_noindex": true,
+    "live_lead_submission": false
+  },
+  "next_gate": [
+    "existing 95 URL and redirect regression",
+    "production-scale generator/dry-run for 5,149 localities",
+    "bulk QA and collision checks",
+    "production sitemap generation",
+    "deploy preview and rollback package",
+    "explicit production approval",
+    "production deploy and search-engine collection request"
+  ]
+}

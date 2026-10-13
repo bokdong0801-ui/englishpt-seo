@@ -1,0 +1,46 @@
+name: V4.5 Exam 5x6 Generate
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'scripts/generate-v45-exam-pilot.py'
+      - 'V4_5_EXAM_BLUEPRINTS.json'
+      - 'V4_5_EXAM_GENERATOR_ALLOWLIST.json'
+      - 'V4_5_FULL_DEPTH_6_EXAM_GOLD_STANDARD.md'
+      - '.github/workflows/v45-exam-pilot-generate.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  generate-static-duplicate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: reset-english-service-seo-v3
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate 30 exam pages and run static duplicate QA
+        run: python3 scripts/generate-v45-exam-pilot.py
+      - name: Commit exam pilot and QA
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pilot-v45-exam-5x6
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+          else
+            git commit -m "Generate V4.5 5x6 exam full-depth pilot"
+            git push origin HEAD:reset-english-service-seo-v3
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v45-exam-5x6-static-qa
+          path: |
+            pilot-v45-exam-5x6/PILOT_EXAM_5X6_QA_V1.json
+            pilot-v45-exam-5x6/PILOT_EXAM_5X6_MANIFEST_V1.json

@@ -1,0 +1,4 @@
+Run final preflight v21 corrected local-link integrity
+Final candidate with corrected absolute-URL exclusion, zero visible photos, beginner-friendly copy, full render integrity, and responsive validation.
+retry-stage9-after-netlify-token-update-20261013
+6.

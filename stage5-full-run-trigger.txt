@@ -1,0 +1,5 @@
+stage5 full generation trigger: locality-aware signature v3
+rerun: final-edge-case-v4
+rerun: final-incheon-collision-v5
+rerun: stage6-stem-lexicon-pass-v6
+rerun: final-exact-lexicon-v7

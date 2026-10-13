@@ -1,0 +1,681 @@
+name: Stage 9 Final UX Preflight
+
+on:
+  push:
+    branches:
+      - reset-english-service-seo-v3
+    paths:
+      - 'stage9-final-ux-preflight-trigger.txt'
+
+permissions:
+  contents: read
+  actions: read
+  statuses: write
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish preflight start status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'pending',
+              context: 'stage9/final-ux-preflight',
+              description: '140,391-page final preflight is running',
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install search image rasterizer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq librsvg2-bin fonts-noto-cjk
+
+
+      - name: Compile changed production scripts
+        run: |
+          python -m py_compile scripts/build-stage9-production-release.py
+          python -m py_compile scripts/stage9-clean-mass-renderer.py
+          python -m py_compile scripts/stage9-clean-similarity-qa.py
+          python -m py_compile scripts/build-locality-index.py
+          node --check assets/site.js
+          python -m py_compile scripts/generate-production-stage3-10x13.py
+          python -m py_compile scripts/generate-production-stage5-shard.py
+
+      - name: Re-run preserved baseline regression
+        run: python3 scripts/regression_95_and_batch_manifest.py
+
+      - name: Download approved Stage 7 source
+        uses: actions/download-artifact@v4
+        with:
+          name: stage7-deploy-preview-rollback
+          path: stage7-source
+          run-id: 36694432423
+          github-token: ${{ github.token }}
+
+      - name: Download approved Stage 8 packet
+        uses: actions/download-artifact@v4
+        with:
+          name: stage8-production-approval-packet
+          path: stage8-source
+          run-id: 36694845460
+          github-token: ${{ github.token }}
+
+      - name: Extract all 66,937 proven generated pages
+        run: |
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd)
+          mkdir -p stage9-work
+          mapfile -t PKGS < <(find stage7-source -name 'stage5-shard-*-of-026.tar.zst' | sort)
+          test "${#PKGS[@]}" -eq 26
+          for f in "${PKGS[@]}"; do
+            tar --zstd -xf "$f" -C stage9-work
+          done
+          test "$(find stage9-work/stage5-full-generation -name '*.html' | wc -l)" -eq 66937
+
+      - name: Assemble final production package without deploying
+        run: |
+          python3 scripts/build-stage9-production-release.py \
+            --stage7-root stage7-source/stage7-preview \
+            --stage8-root stage8-source \
+            --work-root stage9-work \
+            --output stage9-release
+
+      - name: Assert navigation graph and link integrity
+        run: |
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          root=Path('stage9-release')
+          files={p.name for p in root.glob('*.html') if p.name!='404.html'}
+          assert len(files)==140391,len(files)
+
+          locality=root/'assets/locality-index.json'
+          assert locality.exists()
+          rows=json.loads(locality.read_text(encoding='utf-8'))
+          assert len(rows)==5149,len(rows)
+
+          # National entry points must expose a true region-first route.
+          for name in ['englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html']:
+              raw=(root/name).read_text(encoding='utf-8')
+              assert 'data-region-finder' in raw,name
+              assert 'data-region-sido' in raw and 'data-region-jurisdiction' in raw and 'data-region-dong' in raw,name
+          home=(root/'englishpt.html').read_text(encoding='utf-8')
+          assert '전체지역·과정 바로가기' in home
+          assert '누구를 위한' in home
+          assert 'teacher-trust' in home
+
+          # Every station hub must expose exactly 23 existing course pages.
+          station_data=json.loads(Path('data/stations.json').read_text(encoding='utf-8'))
+          station_hubs=[root/f'station-{row["slug"]}.html' for row in station_data['stations']]
+          assert len(station_hubs)==911 and all(p.exists() for p in station_hubs),len(station_hubs)
+          for hub in station_hubs:
+              raw=hub.read_text(encoding='utf-8')
+              prefix=hub.stem+'-'
+              links=set(re.findall(r'href="/(station-[^"]+\.html)"',raw))
+              course_links={x for x in links if x.startswith(prefix)}
+              assert len(course_links)==23,(hub.name,len(course_links))
+              missing=[x for x in course_links if x not in files]
+              assert not missing,(hub.name,missing[:5])
+              assert 'station-hub-page' in raw,hub.name
+              assert '영어권 교포' in raw and '한국어' in raw,hub.name
+
+          # Every new locality page must link to existing same-locality courses.
+          clean_pages=0
+          link_checks=0
+          nearby_checks=0
+          for p in root.glob('*.html'):
+              raw=p.read_text(encoding='utf-8')
+              if 'data-stage9-clean="true"' not in raw or p.name.startswith('station-'):
+                  continue
+              clean_pages+=1
+              assert 'local-navigation' in raw,p.name
+              nav=raw.split('<section class="section related local-navigation">',1)[1].split('</section>',1)[0]
+              course_links=set(re.findall(r'href="/([^"]+\.html)"',nav))
+              assert len(course_links)==22,(p.name,len(course_links))
+              missing=[x for x in course_links if x not in files]
+              assert not missing,(p.name,missing[:5])
+              link_checks+=len(course_links)
+              # Nearby-locality navigation is a separate section immediately after local-navigation.
+              if 'class="section nearby-localities"' in raw:
+                  nearby_checks+=1
+                  nearby_block=raw.split('<section class="section nearby-localities">',1)[1].split('</section>',1)[0]
+                  nearby_links=set(re.findall(r'href="/([^"]+\.html)"',nearby_block))
+                  missing_near=[x for x in nearby_links if x not in files and x not in {'courses.html','stations.html','englishpt.html'}]
+                  assert not missing_near,(p.name,missing_near[:5])
+          assert clean_pages==118427,(clean_pages,118427)
+          assert link_checks==118427*22,(link_checks,118427*22)
+          groups={}
+          for row in rows:
+              groups.setdefault(row['jurisdiction'],0)
+              groups[row['jurisdiction']]+=1
+          expected_nearby_pages=sum(23 for row in rows if groups[row['jurisdiction']]>1)
+          assert nearby_checks==expected_nearby_pages,(nearby_checks,expected_nearby_pages)
+
+          # Preserved Songhyeondong pages must not be dead ends either.
+          preserved=root/'dalseo-songhyeondong-adult-conv.html'
+          assert preserved.exists()
+          pr=preserved.read_text(encoding='utf-8')
+          assert 'preserved-region-navigation' in pr
+          song_links=set(re.findall(r'href="/(daegu-dalseo-songhyeondong-[^"]+\.html)"',pr))
+          assert len(song_links)>=23,len(song_links)
+          assert all(x in files for x in song_links),[x for x in song_links if x not in files][:5]
+
+          print('PASS_NAVIGATION_GRAPH',json.dumps({
+              'station_hubs':len(station_hubs),
+              'station_course_links':911*23,
+              'clean_locality_pages':clean_pages,
+              'same_locality_course_links':link_checks,
+              'pages_with_nearby_localities':nearby_checks,
+              'locality_selector_rows':len(rows),
+              'songhyeondong_links':len(song_links),
+          },ensure_ascii=False))
+          PY
+
+      - name: Check clean-render locality similarity
+        run: |
+          python3 scripts/stage9-clean-similarity-qa.py \
+            --root stage9-release \
+            --samples-per-intent 60 \
+            --output stage9-release/STAGE9_CLEAN_SIMILARITY_QA_V1.json
+
+      - name: Assert final production UX contract
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text(encoding='utf-8'))
+          assert q['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY', q
+          assert q['counts']['new_pages']==118427
+          assert q['counts']['html_total']==140391
+          assert q['counts']['sitemap_shards']==44
+          assert q['counts']['sitemap_urls']==21964
+          assert q['counts']['station_hubs']==911
+          assert q['counts']['station_course_pages']==20953
+          assert q['counts']['station_index_pages']==1
+          assert q['counts']['station_html_total']==21865
+          assert q['indexing']['noindex_pages']==118427
+          assert q['indexing']['indexable_pages']==21964
+          assert q['indexing']['robots_contract_failures']==0
+          assert q['indexing']['production_ui_failures']==0
+          assert q['indexing']['robots_txt_allows_crawl'] is True
+          assert q['source']['mass_renderer']=='stage9-clean-gold-v1'
+          css=Path('stage9-release/pilot.css').read_text(encoding='utf-8')
+          js=Path('stage9-release/pilot.js').read_text(encoding='utf-8')
+          for theme in ['theme-elem','theme-mid','theme-high','theme-univ','theme-job','theme-worker','theme-housewife','theme-toeic','theme-toeic-speaking','theme-opic','theme-ielts','theme-toefl','theme-duolingo']:
+              assert theme in css, theme
+          assert '.academy-choice' in css
+          for token in ['.simple-hero','.intro-grid','.snapshot','.trust-in','.mobile-sticky','.visual-break','.learning-visual','@media(max-width:760px)']:
+              assert token in css, token
+          assert '.visual-break{padding:14px 0 10px}' in css
+          assert '.hero-actions{grid-template-columns:1fr 1fr}' in css
+          assert 'data.set("form-name","englishpt-consultation")' in js
+          assert len(list(Path('stage9-release/assets/images').glob('*.svg'))) == 30
+          assert '실제 상담 전송은 비활성화' not in js
+          locality_file=Path('stage9-release/assets/locality-index.json')
+          assert locality_file.exists(), 'locality-index.json'
+          locality_rows=json.loads(locality_file.read_text(encoding='utf-8'))
+          assert len(locality_rows)==5149, len(locality_rows)
+          site_js=Path('stage9-release/assets/site.js').read_text(encoding='utf-8')
+          assert 'REGION_HASH_INTENTS' in site_js
+          assert '/assets/locality-index.json' in site_js
+          site_css=Path('stage9-release/assets/styles.css').read_text(encoding='utf-8')
+          assert '.region-finder-shell' in site_css
+          assert '.teacher-trust-grid' in site_css
+          assert '.station-hub-page .station-hero' in site_css
+          mass_css=Path('stage9-release/pilot.css').read_text(encoding='utf-8')
+          assert '.local-navigation' in mass_css
+          assert '.nearby-localities' in mass_css
+
+          home=Path('stage9-release/englishpt.html').read_text(encoding='utf-8')
+          core_pages=['englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html']
+          expected_region_options={
+              'englishpt.html':23,'courses.html':23,'english-conversation.html':8,
+              'exam-english.html':12,'student-english.html':3,
+          }
+          for core_name in core_pages:
+              core=(Path('stage9-release')/core_name).read_text(encoding='utf-8')
+              assert 'data-region-finder' in core, core_name
+              assert 'data-region-sido' in core and 'data-region-jurisdiction' in core and 'data-region-dong' in core, core_name
+              select=__import__('re').search(r'<select data-region-intent>(.*?)</select>',core,__import__('re').S)
+              assert select,core_name
+              values=[x for x in __import__('re').findall(r'<option value="([^"]*)"',select.group(1)) if x]
+              assert len(values)==expected_region_options[core_name],(core_name,len(values),expected_region_options[core_name])
+              assert len(set(values))==len(values),(core_name,'duplicate_region_intents')
+          assert '전체지역·과정 바로가기' in home
+          assert '과정 중심 탐색과 겹치지 않도록' in home
+          assert 'teacher-trust' in home
+          conv=Path('stage9-release/english-conversation.html').read_text(encoding='utf-8')
+          assert 'teacher-trust' in conv
+          assert '영어권 교포 선생님' in conv
+
+          dob_hub=Path('stage9-release/station-dobongsan.html').read_text(encoding='utf-8')
+          dob_links=__import__('re').findall(r'href="/(station-dobongsan-[^"]+\.html)"',dob_hub)
+          assert len(set(dob_links))==23, len(set(dob_links))
+          for target in set(dob_links):
+              assert (Path('stage9-release')/target).exists(), target
+          assert 'station-hub-page' in dob_hub
+
+          preserved_song=Path('stage9-release/dalseo-songhyeondong-adult-conv.html')
+          assert preserved_song.exists()
+          preserved_raw=preserved_song.read_text(encoding='utf-8')
+          assert 'preserved-region-navigation' in preserved_raw
+          assert 'data-region-finder' in preserved_raw
+          preserved_select=__import__('re').search(r'<select data-region-intent>(.*?)</select>',preserved_raw,__import__('re').S)
+          assert preserved_select
+          preserved_values=[x for x in __import__('re').findall(r'<option value="([^"]*)"',preserved_select.group(1)) if x]
+          assert len(preserved_values)==23,len(preserved_values)
+          assert len(set(preserved_values))==23
+          assert 'dalseo-songhyeondong-adult-tutor.html' in preserved_raw
+          assert '/englishpt.html#region' in preserved_raw
+          assert '/stations.html' in preserved_raw
+
+          sajik=next(iter(Path('stage9-release').glob('seoul-jongno-sajikdong-toeic.html')),None)
+          assert sajik is not None
+          sajik_raw=sajik.read_text(encoding='utf-8')
+          assert 'class="section related local-navigation"' in sajik_raw
+          assert '같은 지역 · 다른 과정' in sajik_raw
+          assert '다른 동네' in sajik_raw
+          assert '/courses.html' in sajik_raw and '/stations.html' in sajik_raw and '/englishpt.html#region' in sajik_raw
+
+          home=Path('stage9-release/englishpt.html').read_text(encoding='utf-8')
+          assert '<title>1:1 영어과외·영어회화·시험영어 | 잉글리시PT</title>' in home
+          assert '대구 달서구 송현동 · 1:1 맞춤 영어관리' not in home
+          assert '"areaServed":{"@type":"AdministrativeArea","name":"대구 달서구 송현동"}' not in home
+          home_form=home.split('<form id="leadForm"',1)[1].split('</form>',1)[0]
+          for field in ['name="name"','name="phone"','name="area"','name="message"','name="wantedClass"','name="consent"']:
+              assert field in home_form, field
+          assert 'name="purpose"' not in home_form
+          assert 'name="difficulty"' not in home_form
+          assert '문의내용' in home_form
+          assert '현재 어려운 부분, 목표하는 부분을 자유롭게 작성해주세요.' in home_form
+          assert 'value="송현동"' not in home_form
+          editorial_assets={
+              'toeic':'toeic-editorial.svg',
+              'toeic-speaking':'toeic-speaking-editorial.svg',
+              'opic':'opic-editorial.svg',
+              'ielts':'ielts-editorial.svg',
+              'duolingo':'duolingo-editorial.svg',
+              'toefl':'toefl-editorial.svg',
+              'english-conv-academy':'english-conv-editorial.svg',
+          }
+          for intent,asset in editorial_assets.items():
+              asset_path=Path('stage9-release/assets/images/representative')/asset
+              assert asset_path.exists(), asset
+              candidates=list(Path('stage9-release').glob(f'*-{intent}.html'))
+              if intent == 'english-conv-academy':
+                  candidates=[
+                      p for p in candidates
+                      if not p.name.endswith('-adult-english-conv-academy.html')
+                      and not p.name.endswith('-worker-english-conv-academy.html')
+                  ]
+              page=next(iter(candidates),None)
+              assert page is not None, intent
+              raw=page.read_text(encoding='utf-8')
+              assert f'/assets/images/representative/{asset}' in raw, (intent,asset,page.name)
+          home=Path('stage9-release/englishpt.html').read_text(encoding='utf-8')
+          assert '<title>1:1 영어과외·영어회화·시험영어 | 잉글리시PT</title>' in home
+          assert '<meta name="description" content="1:1 영어과외·영어회화부터 토익·토익스피킹·오픽·아이엘츠·토플까지. 현재 수준과 목표를 진단해 필요한 영역을 맞춤 훈련하는 잉글리시PT입니다.">' in home
+          assert '<meta property="og:title" content="1:1 영어과외·영어회화·시험영어 | 잉글리시PT">' in home
+          assert '"name":"1:1 영어과외·영어회화·시험영어 | 잉글리시PT"' in home
+          machine_phrases=[
+              '흐름 Band','시점 배분','직접 방식 방식','회수 회수','상기 횟수',
+              '근거를 찾을 수 되는지','이어지는 정체가 어디서 생기는지 검토합니다',
+              'production 미배포','실제 상담 전송은 비활성화'
+          ]
+          sample_pages=sorted(Path('stage9-release').glob('*.html'))[95::997]
+          checked=0
+          for p in sample_pages:
+              raw=p.read_text(encoding='utf-8')
+              if 'data-stage9-clean="true"' not in raw:
+                  continue
+              checked+=1
+              assert 'data-stage9-clean="true"' in raw, p.name
+              assert 'class="section mass-context"' in raw, p.name
+              assert 'class="site-header"' in raw, p.name
+              assert 'class="hero simple-hero"' in raw, p.name
+              assert 'class="snapshot"' in raw, p.name
+              assert 'class="trust"' in raw, p.name
+              assert 'class="learning-visual"' in raw, p.name
+              hero_i=raw.index('class="hero simple-hero"')
+              visual_i=raw.index('class="visual-break"')
+              intro_i=raw.index('class="section intro-detail"')
+              assert hero_i < visual_i < intro_i, (p.name,hero_i,visual_i,intro_i)
+              assert raw.count('class="visual-break"') == 1, p.name
+              cap_m=__import__('re').search(r'<figcaption>(.*?)</figcaption>',raw,__import__('re').S)
+              assert cap_m and len(__import__('html').unescape(__import__('re').sub(r'<[^>]+>','',cap_m.group(1))).strip()) <= 55, p.name
+              assert 'loading="eager"' in raw, p.name
+              assert 'name="name"' in raw, p.name
+              assert 'name="phone"' in raw, p.name
+              assert 'name="area"' in raw, p.name
+              assert 'name="message"' in raw, p.name
+              assert 'name="wantedClass"' in raw, p.name
+              assert 'name="consent"' in raw, p.name
+              assert 'name="purpose"' not in raw, p.name
+              assert 'name="difficulty"' not in raw, p.name
+              assert '문의내용' in raw, p.name
+              title=raw.split('<title>',1)[1].split('</title>',1)[0]
+              assert 'ENGLISH PT' not in title, (p.name,title)
+              assert ' | ' in title, (p.name,title)
+              assert all(x not in raw for x in machine_phrases), p.name
+              assert raw.count('href="/') >= 22, p.name
+          assert checked>=80,checked
+          print('PASS_STAGE9_FINAL_UX_PREFLIGHT')
+          PY
+
+      - name: Run beginner readability QA across full Stage 9 output
+        run: |
+          python3 scripts/qa-beginner-readability.py stage9-release \
+            --report STAGE9_BEGINNER_READABILITY_QA.json
+
+      - name: Run final SEO indexability QA across all public HTML
+        run: |
+          python3 - <<'PY'
+          import re, json, struct
+          from pathlib import Path
+
+          root=Path('stage9-release')
+          pages=sorted(p for p in root.glob('*.html') if p.name!='404.html')
+          assert len(pages)==140391,len(pages)
+
+          canonicals=[]
+          indexable=[]
+          noindex=[]
+          indexable_titles=[]
+          indexable_descriptions=[]
+          bad_domain=[]
+          for p in pages:
+              raw=p.read_text(encoding='utf-8',errors='ignore')
+              m=re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']',raw,re.I)
+              assert m,(p.name,'canonical_missing')
+              url=m.group(1)
+              if not url.startswith('https://englishpt.kr/'):
+                  bad_domain.append((p.name,url))
+              canonicals.append(url)
+
+              robots_meta=re.search(r'<meta name="robots" content="([^"]+)">',raw,re.I)
+              assert robots_meta,(p.name,'robots_meta_missing')
+              robots_tokens={x.strip().lower() for x in robots_meta.group(1).split(',') if x.strip()}
+              assert 'follow' in robots_tokens and 'nofollow' not in robots_tokens,(p.name,robots_tokens)
+              assert 'max-image-preview:large' in robots_tokens,(p.name,robots_tokens)
+              if 'noindex' in robots_tokens:
+                  noindex.append(p.name)
+                  assert 'index' not in robots_tokens,(p.name,robots_tokens)
+              else:
+                  assert 'index' in robots_tokens,(p.name,robots_tokens)
+                  indexable.append(p.name)
+                  title_m=re.search(r'<title>(.*?)</title>',raw,re.S|re.I)
+                  desc_m=re.search(r'<meta name="description" content="([^"]*)">',raw,re.I)
+                  assert title_m and desc_m,(p.name,'title_or_description_missing')
+                  title_text=__import__('html').unescape(re.sub(r'<[^>]+>','',title_m.group(1))).strip()
+                  desc_text=__import__('html').unescape(desc_m.group(1)).strip()
+                  assert len(title_text)<=40,(p.name,'title_too_long',len(title_text),title_text)
+                  assert len(desc_text)<=80,(p.name,'description_too_long',len(desc_text),desc_text)
+                  indexable_titles.append((p.name,title_text))
+                  indexable_descriptions.append((p.name,desc_text))
+                  for stale in ('판단라는 기준','답변 시작로','이유 확장로','재검증','병목'):
+                      assert stale not in raw,(p.name,'stale_copy',stale)
+
+              og=re.search(r'<meta property="og:image" content="([^"]+)">',raw,re.I)
+              tw=re.search(r'<meta name="twitter:image" content="([^"]+)">',raw,re.I)
+              image_src=re.search(r'<link rel="image_src" href="([^"]+)">',raw,re.I)
+              assert og and tw and image_src,(p.name,'image_meta_missing')
+              assert og.group(1)==tw.group(1)==image_src.group(1),(p.name,'image_meta_mismatch')
+              assert og.group(1).startswith('https://englishpt.kr/assets/images/'),(p.name,og.group(1))
+              assert og.group(1).endswith('.png'),(p.name,'og_image_not_png',og.group(1))
+              asset=root/og.group(1).split('https://englishpt.kr/',1)[1]
+              assert asset.exists() and asset.stat().st_size>5000,(p.name,'og_asset_missing',str(asset))
+              assert '"image":"'+og.group(1)+'"' in raw or '"image": "'+og.group(1)+'"' in raw,(p.name,'schema_image_missing')
+
+          assert len(indexable)==21964,len(indexable)
+          assert len(noindex)==118427,len(noindex)
+          assert len({x[1] for x in indexable_titles})==21964,'duplicate_indexable_titles'
+          assert len({x[1] for x in indexable_descriptions})==21964,'duplicate_indexable_descriptions'
+          assert not bad_domain,bad_domain[:20]
+          assert len(set(canonicals))==140391,(len(canonicals),len(set(canonicals)))
+
+          robots=(root/'robots.txt').read_text(encoding='utf-8')
+          assert 'Disallow: /' not in robots
+          assert 'Sitemap: https://englishpt.kr/sitemap-index.xml' in robots
+          assert 'User-agent: Googlebot' in robots
+          assert 'User-agent: Yeti' in robots
+
+          index=(root/'sitemap-index.xml').read_text(encoding='utf-8')
+          assert index.count('<sitemap><loc>')==44
+          assert 'https://englishpt.kr/sitemaps/sitemap-001.xml' in index
+          assert 'https://englishpt.kr/sitemaps/sitemap-044.xml' in index
+          sitemap_urls=set()
+          for shard in sorted((root/'sitemaps').glob('sitemap-*.xml')):
+              sitemap_urls.update(re.findall(r'<loc>(.*?)</loc>',shard.read_text(encoding='utf-8')))
+          assert len(sitemap_urls)==21964,len(sitemap_urls)
+          indexable_urls={
+              re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']([^"\']+)["\']', (root/name).read_text(encoding='utf-8'), re.I).group(1)
+              for name in indexable
+          }
+          assert sitemap_urls==indexable_urls,(len(sitemap_urls),len(indexable_urls))
+          assert not (root/'sitemap.xml').exists()
+
+          home=(root/'englishpt.html').read_text(encoding='utf-8')
+          assert '<meta name="robots" content="index,follow,max-image-preview:large">' in home
+          assert '<link rel="canonical" href="https://englishpt.kr/englishpt.html">' in home
+          for hub in ('courses.html','english-conversation.html','exam-english.html','student-english.html'):
+              raw=(root/hub).read_text(encoding='utf-8')
+              assert '<meta name="robots" content="index,follow,max-image-preview:large">' in raw,hub
+              assert f'<link rel="canonical" href="https://englishpt.kr/{hub}">' in raw,hub
+
+          stations=(root/'stations.html').read_text(encoding='utf-8')
+          dobong=(root/'station-dobongsan.html').read_text(encoding='utf-8')
+          dobong_toeic=(root/'station-dobongsan-toeic.html').read_text(encoding='utf-8')
+          assert '전국 37개 노선 · 911개 역' in stations
+          assert stations.count('class="station-index-link"')>=911
+          assert '<link rel="canonical" href="https://englishpt.kr/stations.html">' in stations
+          assert 'id="applyModal"' in stations
+          assert 'id="leadForm"' in stations
+          assert 'name="englishpt-consultation"' in stations
+          assert 'data-netlify="true"' in stations
+          assert '<link rel="canonical" href="https://englishpt.kr/station-dobongsan.html">' in dobong
+          assert dobong.count('href="/station-dobongsan-')==23
+          assert '1호선 · 7호선' in dobong
+          assert '도봉산역 전체 과정 보기' in dobong_toeic
+          assert '<link rel="canonical" href="https://englishpt.kr/station-dobongsan-toeic.html">' in dobong_toeic
+          assert '영어권 교포 선생님' in dobong
+          dobong_links=re.findall(r'href="(/station-dobongsan-[^"]+\.html)"',dobong)
+          assert len(dobong_links)==23,len(dobong_links)
+          for href in dobong_links:
+              assert (root/href.lstrip('/')).exists(),href
+
+          locality_index=root/'assets'/'locality-index.json'
+          assert locality_index.exists(),'locality-index.json missing'
+          locality_rows=json.loads(locality_index.read_text(encoding='utf-8'))
+          assert len(locality_rows)==5149,len(locality_rows)
+
+          for hub in ('englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html'):
+              raw=(root/hub).read_text(encoding='utf-8')
+              assert 'data-region-finder' in raw,hub
+              assert '지역별 과정 페이지 보기' in raw,hub
+              assert '영어권 교포 선생님' in raw,hub
+
+          local_samples=[
+              'daegu-dalseo-songhyeondong-toeic.html',
+              'seoul-jongno-sajikdong-toeic.html',
+              'busan-dongnae-sajikdong-english-conv-academy.html',
+          ]
+          for name in local_samples:
+              p=root/name
+              assert p.exists(),name
+              raw=p.read_text(encoding='utf-8')
+              assert '같은 지역 · 다른 과정' in raw,name
+              assert '다른 동네' in raw,name
+              assert '전체 과정 찾기' in raw,name
+              assert '911개 역으로 찾기' in raw,name
+              local_links=re.findall(r'href="(/[^"]+\.html)"',raw)
+              assert len(local_links)>=22,(name,len(local_links))
+              for href in local_links:
+                  if any(token in href for token in ('songhyeondong','sajikdong')):
+                      assert (root/href.lstrip('/')).exists(),(name,href)
+
+          expected_og={
+            'englishpt.html':'https://englishpt.kr/assets/images/og/englishpt-home-og.png',
+            'courses.html':'https://englishpt.kr/assets/images/og/englishpt-courses-og.png',
+            'english-conversation.html':'https://englishpt.kr/assets/images/og/englishpt-conversation-og.png',
+            'exam-english.html':'https://englishpt.kr/assets/images/og/englishpt-exam-og.png',
+            'student-english.html':'https://englishpt.kr/assets/images/og/englishpt-student-og.png',
+          }
+          for name,url in expected_og.items():
+              raw=(root/name).read_text(encoding='utf-8')
+              assert f'<meta property="og:image" content="{url}">' in raw,(name,url)
+              assert f'<meta name="twitter:image" content="{url}">' in raw,(name,url)
+
+          for name in expected_og.values():
+              asset=root/name.split('https://englishpt.kr/',1)[1]
+              data=asset.read_bytes()
+              assert data[:8]==b'\x89PNG\r\n\x1a\n',str(asset)
+              w,h=struct.unpack('>II',data[16:24])
+              assert (w,h)==(1200,630),(str(asset),w,h)
+
+
+          mass_sample=next(p for p in pages if p.name.startswith('seoul-jongno-sajikdong-') and 'station-' not in p.name)
+          mass_raw=mass_sample.read_text(encoding='utf-8')
+          assert '<meta name="robots" content="noindex,follow,max-image-preview:large">' in mass_raw,mass_sample.name
+          assert '<meta name="robots" content="index,follow,max-image-preview:large">' in stations
+          assert (root/'privacy'/'index.html').exists()
+          privacy=(root/'privacy'/'index.html').read_text(encoding='utf-8')
+          assert 'Netlify' in privacy and '상담 종료 후 3개월' in privacy and '국외' in privacy
+          assert (root/'404.html').exists()
+          page404=(root/'404.html').read_text(encoding='utf-8')
+          assert '송현동' not in page404 and 'noindex,follow' in page404
+          assert (root/'_headers').exists()
+          headers=(root/'_headers').read_text(encoding='utf-8')
+          for token in ('X-Content-Type-Options: nosniff','Referrer-Policy: strict-origin-when-cross-origin','X-Frame-Options: SAMEORIGIN','Permissions-Policy:'):
+              assert token in headers,token
+          assert (root/'assets'/'favicon.svg').exists()
+          js=(root/'assets'/'site.js').read_text(encoding='utf-8')
+          mass_js=(root/'pilot.js').read_text(encoding='utf-8')
+          for token in ('form-name','englishpt-consultation','submittedAt','consent','application/x-www-form-urlencoded'):
+              assert token in js,token
+              assert token in mass_js,token
+          for page_name in ('englishpt.html','courses.html','english-conversation.html','exam-english.html','student-english.html','stations.html'):
+              raw=(root/page_name).read_text(encoding='utf-8')
+              assert 'name="englishpt-consultation"' in raw,page_name
+              assert 'data-netlify="true"' in raw,page_name
+              assert 'data-netlify-honeypot="bot-field"' in raw,page_name
+              assert '<link rel="icon" href="/assets/favicon.svg"' in raw or '<link rel="icon" href="https://englishpt.kr/assets/favicon.svg"' in raw,page_name
+
+          print('PASS_STAGE9_FINAL_SEO_INDEXABILITY_AND_IMAGE_META_QA')
+          PY
+
+
+      - name: Package representative 23 final production pages
+        run: |
+          mkdir -p stage9-final-ux-samples
+          python3 - <<'PY'
+          import json, shutil
+          from pathlib import Path
+          q=json.loads(Path('stage7-source/stage7-preview/STAGE7_DEPLOY_PREVIEW_QA_V1.json').read_text(encoding='utf-8'))
+          out=Path('stage9-final-ux-samples')
+          pages=[]
+          for row in q['representative_13']['pages']:
+              name=row['canonical'].rsplit('/',1)[-1]
+              src=Path('stage9-release')/name
+              assert src.exists(), name
+              shutil.copy2(src,out/name)
+              pages.append(name)
+          academy_bases=['toeic','toeic-speaking','opic','ielts','duolingo','toefl']
+          for base in academy_bases:
+              source=next((x for x in pages if x.endswith(f'-{base}.html')),None)
+              assert source, base
+              academy=source[:-len(base+'.html')] + base + '-academy.html'
+              src=Path('stage9-release')/academy
+              assert src.exists(), academy
+              raw=src.read_text(encoding='utf-8')
+              assert 'class="section academy-choice"' in raw, academy
+              assert 'intent-academy' in raw, academy
+              shutil.copy2(src,out/academy)
+              pages.append(academy)
+          derived_specs=[
+              ('housewife-conv','english-conv-academy',True),
+              ('housewife-conv','adult-english-conv-academy',True),
+              ('biz-business-conv','worker-english-conv-academy',True),
+              ('housewife-conv','beginner-english-conv',False),
+          ]
+          for base,derived,is_academy in derived_specs:
+              source=next((x for x in pages if x.endswith(f'-{base}.html')),None)
+              assert source, base
+              name=source[:-len(base+'.html')] + derived + '.html'
+              src=Path('stage9-release')/name
+              assert src.exists(), name
+              raw=src.read_text(encoding='utf-8')
+              assert derived in name
+              if is_academy:
+                  assert 'class="section academy-choice"' in raw, name
+                  assert 'intent-academy' in raw, name
+              else:
+                  assert 'intent-audience' in raw, name
+              shutil.copy2(src,out/name)
+              pages.append(name)
+          assert len(pages)==23, len(pages)
+          current_intents=[
+              'elem-tutor','mid-conv','high-conv','univ-conv','jobseeker-conv','biz-business-conv','housewife-conv',
+              'toeic','toeic-speaking','opic','ielts','duolingo','toefl',
+              'toeic-academy','toeic-speaking-academy','opic-academy','ielts-academy','duolingo-academy','toefl-academy',
+              'english-conv-academy','adult-english-conv-academy','worker-english-conv-academy','beginner-english-conv'
+          ]
+          songhyeondong_current=[]
+          for intent in current_intents:
+              name=f'daegu-dalseo-songhyeondong-{intent}.html'
+              src=Path('stage9-release')/name
+              assert src.exists(),name
+              raw=src.read_text(encoding='utf-8')
+              assert 'local-navigation' in raw,name
+              shutil.copy2(src,out/name)
+              songhyeondong_current.append(name)
+          assert len(songhyeondong_current)==23
+          for preserved_name in ('dalseo-songhyeondong-adult-conv.html','dalseo-songhyeondong-1to1-toeic.html'):
+              preserved_src=Path('stage9-release')/preserved_name
+              assert preserved_src.exists(),preserved_name
+              preserved_raw=preserved_src.read_text(encoding='utf-8')
+              assert 'preserved-region-navigation' in preserved_raw,preserved_name
+              shutil.copy2(preserved_src,out/preserved_name)
+          shutil.copy2('stage9-release/pilot.css',out/'pilot.css')
+          shutil.copy2('stage9-release/pilot.js',out/'pilot.js')
+          links=''.join(f'<li><a href="{x}">{x}</a></li>' for x in pages)
+          (out/'index.html').write_text(
+              '<!doctype html><meta charset="utf-8"><title>ENGLISH PT Final UX Samples</title>'
+              '<h1>ENGLISH PT Final UX Samples</h1><ul>'+links+'</ul>',
+              encoding='utf-8'
+          )
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage9-final-ux-samples
+          path: |
+            stage9-final-ux-samples
+            STAGE9_BEGINNER_READABILITY_QA.json
+          retention-days: 30
+
+      - name: Publish final preflight commit status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok = '${{ job.status }}' === 'success';
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: ok ? 'success' : 'failure',
+              context: 'stage9/final-ux-preflight',
+              description: ok ? '140,391-page final preflight passed' : '140,391-page final preflight failed',
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });

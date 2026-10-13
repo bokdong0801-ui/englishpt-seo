@@ -1,0 +1,55 @@
+{
+  "case_id": "",
+  "status": "draft",
+  "page_targets": [],
+  "course": "",
+  "badge": "",
+  "anonymous_profile": "",
+  "learning_period": "",
+  "privacy_checked": false,
+  "usage_consent_checked": false,
+  "start": {
+    "headline": "",
+    "situation": "",
+    "goal": "",
+    "deadline": "",
+    "evidence_type": []
+  },
+  "train": {
+    "actions": [
+      "",
+      "",
+      ""
+    ],
+    "check_points": "",
+    "review_method": ""
+  },
+  "change": {
+    "summary": "",
+    "observed_changes": [
+      "",
+      "",
+      ""
+    ],
+    "goal_status": "",
+    "metric_before": null,
+    "metric_after": null,
+    "metric_label": "",
+    "measured_at": "",
+    "evidence_verified": false
+  },
+  "web_card": {
+    "title": "",
+    "start": "",
+    "train": "",
+    "change": "",
+    "highlight": "",
+    "cta_course": ""
+  },
+  "verification": {
+    "reviewer": "",
+    "verified_at": "",
+    "publish_approved": false,
+    "notes": ""
+  }
+}

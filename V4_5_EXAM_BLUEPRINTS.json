@@ -1,0 +1,250 @@
+{
+  "version": "4.5-exam-v1",
+  "status": "APPROVED_FOR_6_EXAM_PILOT_NOT_PRODUCTION",
+  "created_at": "2026-09-22",
+  "source_analysis": "EXAM_REFERENCE_ANALYSIS_V1.md",
+  "gold_standard": "V4_5_FULL_DEPTH_6_EXAM_GOLD_STANDARD.md",
+  "production_deploy": false,
+  "tos_policy": {
+    "standalone_blueprint": false,
+    "standalone_indexable_url": false,
+    "canonical_exam": "toeic-speaking",
+    "aliases": [
+      "토스",
+      "TOS",
+      "TOEIC Speaking"
+    ]
+  },
+  "blueprints": {
+    "toeic": {
+      "id": "v45-exam-toeic-bottleneck-v1",
+      "exam": "TOEIC",
+      "intent_slug": "toeic",
+      "theme": "theme-test",
+      "h1_template": "{dong_name} 토익과외",
+      "first_question": "LC와 RC를 계속 풀고 있는데, 정작 어느 파트와 시간 배분이 점수를 막는지는 알고 있나요?",
+      "diagnosis": [
+        "LC 처리",
+        "문법·어휘 근거",
+        "독해 근거",
+        "시간 배분",
+        "반복 오답 원인"
+      ],
+      "flow": [
+        "최근 점수·마감 확인",
+        "파트별 병목 분리",
+        "오답 원인 태깅",
+        "제한 시간 적용",
+        "새 세트 재검증"
+      ],
+      "decision_proof": [
+        "실제 병목 파트 설명",
+        "오답 근거 설명",
+        "시간 안에서 풀이 순서 유지",
+        "새 문제에 기준 적용",
+        "다음 세트 우선순위"
+      ],
+      "other_path": [
+        "toeic-speaking",
+        "opic",
+        "ielts",
+        "duolingo",
+        "toefl"
+      ]
+    },
+    "toeic_speaking": {
+      "id": "v45-exam-toeic-speaking-response-v1",
+      "exam": "TOEIC Speaking",
+      "intent_slug": "toeic-speaking",
+      "theme": "theme-test",
+      "aliases": [
+        "토스",
+        "TOS"
+      ],
+      "h1_template": "{dong_name} 토익스피킹과외",
+      "first_question": "답변 내용은 알고 있는데, 준비 시간이 끝나면 첫 문장을 바로 시작하고 제한 시간 안에 마무리할 수 있나요?",
+      "diagnosis": [
+        "질문 이해",
+        "첫 반응",
+        "답변 구조",
+        "발화 명료성",
+        "시간 관리",
+        "질문 변형 대응"
+      ],
+      "flow": [
+        "목표 Level·시험일",
+        "문항 요구 파악",
+        "첫 문장·핵심 답",
+        "이유·예시 확장",
+        "녹음 피드백",
+        "시간 제한·질문 변형 재답변"
+      ],
+      "decision_proof": [
+        "첫 반응",
+        "결론·이유 구조",
+        "시간 내 완결",
+        "녹음 반복오류",
+        "질문 변형 재구성"
+      ],
+      "other_path": [
+        "opic",
+        "toeic",
+        "worker-business"
+      ]
+    },
+    "opic": {
+      "id": "v45-exam-opic-story-recovery-v1",
+      "exam": "OPIc",
+      "intent_slug": "opic",
+      "theme": "theme-test",
+      "h1_template": "{dong_name} 오픽과외",
+      "first_question": "외운 답변은 있는데, 돌발 질문이나 표현이 조금 바뀌면 내 이야기로 다시 이어갈 수 있나요?",
+      "diagnosis": [
+        "경험 소재",
+        "첫 반응",
+        "답변 길이",
+        "구조·연결",
+        "돌발 대응",
+        "녹음 안정성"
+      ],
+      "flow": [
+        "목표 등급·시험일",
+        "실제 경험 소재",
+        "짧은 스토리 블록",
+        "질문 변형",
+        "돌발 회복",
+        "녹음 비교·재답변"
+      ],
+      "decision_proof": [
+        "경험 재사용",
+        "답변 길이 조절",
+        "돌발 회복",
+        "스크립트 없이 핵심 유지",
+        "녹음 반복오류 감소"
+      ],
+      "other_path": [
+        "toeic-speaking",
+        "toeic",
+        "worker-business"
+      ]
+    },
+    "ielts": {
+      "id": "v45-exam-ielts-four-skill-band-v1",
+      "exam": "IELTS",
+      "intent_slug": "ielts",
+      "theme": "theme-test",
+      "h1_template": "{dong_name} 아이엘츠과외",
+      "first_question": "Overall Band만 보고 있나요, 아니면 네 영역 중 어떤 영역이 목표 Band를 막는지 알고 있나요?",
+      "diagnosis": [
+        "Listening",
+        "Reading",
+        "Writing",
+        "Speaking",
+        "목표 Band와 영역별 차이",
+        "시험일·지원 마감"
+      ],
+      "flow": [
+        "지원 목적·시험 유형·마감",
+        "4영역 현재 수준",
+        "Band 병목 우선순위",
+        "Writing 첨삭·재작성 / Speaking 재답변",
+        "Reading·Listening 오답 근거",
+        "실전 조건 재평가"
+      ],
+      "decision_proof": [
+        "영역별 병목 설명",
+        "Writing 재작성",
+        "Speaking 새 질문 적용",
+        "Reading·Listening 근거 기록",
+        "시험일까지 비중 조정"
+      ],
+      "other_path": [
+        "toefl",
+        "duolingo",
+        "toeic"
+      ]
+    },
+    "duolingo": {
+      "id": "v45-exam-det-adaptive-output-v1",
+      "exam": "Duolingo English Test",
+      "intent_slug": "duolingo",
+      "theme": "theme-test",
+      "h1_template": "{dong_name} 듀오링고영어테스트",
+      "first_question": "DET 점수를 준비하기 전에, 지원 학교가 시험을 인정하는지와 어떤 영어 기능이 현재 결과를 막는지 확인했나요?",
+      "diagnosis": [
+        "지원기관 요구조건",
+        "Reading",
+        "Writing",
+        "Listening",
+        "Speaking",
+        "adaptive format",
+        "productive response"
+      ],
+      "flow": [
+        "지원기관·마감 확인",
+        "skill별 현재 수행",
+        "adaptive format 적응",
+        "Writing·Speaking 응답 확장",
+        "공식 practice 활용",
+        "새 practice 재점검"
+      ],
+      "decision_proof": [
+        "지원조건 직접 확인",
+        "skill별 병목",
+        "open response 완결성",
+        "형식 변화에도 핵심 유지",
+        "공식 practice 재점검"
+      ],
+      "other_path": [
+        "ielts",
+        "toefl"
+      ]
+    },
+    "toefl": {
+      "id": "v45-exam-toefl-integrated-academic-v1",
+      "exam": "TOEFL iBT",
+      "intent_slug": "toefl",
+      "theme": "theme-test",
+      "h1_template": "{dong_name} 토플과외",
+      "first_question": "Reading과 Listening은 이해하는데, 그 정보를 Speaking이나 Writing 답변으로 연결할 때 흔들리나요?",
+      "diagnosis": [
+        "Reading",
+        "Listening",
+        "메모·요약",
+        "Speaking",
+        "Writing",
+        "통합형 연결",
+        "시험일·목표 점수"
+      ],
+      "flow": [
+        "지원·시험일",
+        "Reading·Listening 핵심 추출",
+        "메모 구조",
+        "Speaking·Writing 답변 구성",
+        "통합형 적용",
+        "다른 자료 재적용"
+      ],
+      "decision_proof": [
+        "입력 핵심 요약",
+        "관계 중심 메모",
+        "Speaking·Writing 연결",
+        "다른 자료 재적용",
+        "실전 시간 재확인"
+      ],
+      "other_path": [
+        "ielts",
+        "duolingo"
+      ]
+    }
+  },
+  "safety": {
+    "no_score_gain_promise": true,
+    "no_time_to_result_promise": true,
+    "no_fabricated_reviews": true,
+    "official_info_must_be_reverified": true,
+    "pilot_noindex": true,
+    "live_lead_submission": false,
+    "main_merge": false,
+    "production_deploy": false
+  }
+}
