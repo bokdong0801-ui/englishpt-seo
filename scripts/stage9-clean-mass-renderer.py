@@ -2742,7 +2742,9 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         if pressure_found:
             problems.append("beginner_pressure_copy:"+",".join(pressure_found))
     min_visible = 4000 if exam_reader_pilot_enabled(base_exam_intent(intent)) else 5200
-    if not (min_visible <= len(visible) <= 16000):
+    # Hero V2 adds a substantive three-card first-step guide (roughly 250-400 chars).
+    # Preserve the existing minimum and modestly expand the maximum for that content.
+    if not (min_visible <= len(visible) <= 16500):
         problems.append(f"visible_chars:{len(visible)}")
     return raw,problems
 
