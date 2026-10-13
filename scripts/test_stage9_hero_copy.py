@@ -77,7 +77,7 @@ class TestAudienceHero(unittest.TestCase):
         old_render = HERO.render_hero
         try:
             HERO.render_hero = lambda *_args, **_kwargs: rendered.replace(
-                "쉬운 한 문장", "병목 확인을 위한 한 문장", 1
+                '<p class="hero-subline">', '<p class="hero-subline">병목 확인. ', 1
             )
             self.assertIn(
                 "pressure_term:병목",
