@@ -8,6 +8,7 @@ on:
       - '.github/workflows/stage9-hero-copy-smoke.yml'
       - 'scripts/stage9_hero_copy.py'
       - 'scripts/test_stage9_hero_copy.py'
+      - 'scripts/test_stage9_hero_integration.py'
       - 'scripts/stage9-clean-mass-renderer.py'
       - 'scripts/stage9-station-renderer.py'
       - 'englishpt.html'
@@ -39,6 +40,8 @@ jobs:
       - name: Verify audience copy, 23 intents, links and safety
         run: |
           python -m unittest discover -s scripts -p test_stage9_hero_copy.py -v
+      - name: Render nine real station×course samples
+        run: python scripts/test_stage9_hero_integration.py
       - name: Report safe smoke pass
         run: |
           echo 'PASS: Hero V2 static and deterministic samples.'
