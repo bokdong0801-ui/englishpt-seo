@@ -356,3 +356,73 @@ input,select,textarea,button{max-width:100%}
   .station-index-grid{grid-template-columns:1fr 1fr}
   .form-sheet{padding-left:14px;padding-right:14px}
 }
+
+
+/* Audience-led Hero V2: primary consultation / course path and compact guide. */
+.hero-choice-actions{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:12px;
+  margin-top:26px;
+}
+.hero-choice-actions .btn{max-width:100%;text-align:center;line-height:1.4}
+.hero-choice-actions .hero-secondary{
+  background:transparent;
+  color:var(--heroText);
+  border-color:color-mix(in srgb,var(--heroText) 50%,transparent);
+}
+.hero-entry-panel{
+  padding-top:54px;
+  padding-bottom:64px;
+}
+.hero-entry-panel .section-head{margin-bottom:24px}
+.hero-entry-panel .section-head h2{
+  font-size:clamp(26px,3.5vw,38px);
+  line-height:1.26;
+}
+.hero-entry-panel .route-cards{gap:12px}
+.hero-entry-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+.hero-entry-grid article{
+  min-width:0;
+  border:1px solid var(--line);
+  background:var(--paper);
+  border-radius:16px;
+  padding:18px 20px;
+}
+.hero-entry-grid h3{
+  font-size:18px;
+  margin:0 0 8px;
+  line-height:1.4;
+}
+.hero-entry-grid p{
+  font-size:14px;
+  color:var(--muted);
+  margin:0;
+  line-height:1.65;
+}
+.hero-entry-grid .route-cta{display:inline-block;margin-top:12px}
+@media(max-width:760px){
+  .hero-choice-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:9px;
+    margin-top:20px;
+  }
+  .hero-choice-actions .btn{
+    width:100%;
+    min-height:48px;
+    padding:12px 16px;
+    font-size:14px;
+  }
+  .hero-entry-panel{padding-top:34px;padding-bottom:40px}
+  .hero-entry-panel .section-head{gap:12px;margin-bottom:18px}
+  .hero-entry-grid{grid-template-columns:1fr;gap:8px}
+  .hero-entry-grid article{padding:15px 17px}
+  .hero-entry-grid h3{font-size:16px}
+  .hero-entry-grid p{font-size:13px}
+}
