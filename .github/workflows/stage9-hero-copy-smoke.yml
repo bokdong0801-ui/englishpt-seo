@@ -9,6 +9,7 @@ on:
       - 'scripts/stage9_hero_copy.py'
       - 'scripts/test_stage9_hero_copy.py'
       - 'scripts/stage9-clean-mass-renderer.py'
+      - 'scripts/stage9-station-renderer.py'
       - 'englishpt.html'
       - 'student-english.html'
       - 'english-conversation.html'
@@ -33,6 +34,7 @@ jobs:
         run: |
           python -m py_compile scripts/stage9_hero_copy.py
           python -m py_compile scripts/stage9-clean-mass-renderer.py
+          python -m py_compile scripts/stage9-station-renderer.py
           python -m py_compile scripts/build-stage9-production-release.py
       - name: Verify audience copy, 23 intents, links and safety
         run: |
