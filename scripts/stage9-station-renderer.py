@@ -284,9 +284,9 @@ def station_audience_path(station: dict) -> str:
     )
     return (
         '<section class="section soft hero-entry-panel" aria-label="고객 유형별 영어 과정">'
-        '<div class="wrap"><div class="section-head"><div class="eyebrow ink">과정 선택</div>'
+        '<div class="wrap"><div class="section-head"><div><div class="eyebrow ink">과정 선택</div>'
         '<h2>' + esc(name) + '에서 어떤 영어를 찾으세요?</h2></div>'
-        '<p class="lead">누구를 위한 영어인지 먼저 고르면 해당 과정의 상세 안내로 이어집니다.</p>'
+        '<p class="lead">누구를 위한 영어인지 먼저 고르면 해당 과정의 상세 안내로 이어집니다.</p></div>'
         '<div class="route-cards">' + links + '</div></div></section>'
     )
 
