@@ -66,6 +66,26 @@ class TestAudienceHero(unittest.TestCase):
         for word in ("훈련", "진단", "실전", "교정", "병목", "재점검", "재검증"):
             self.assertNotIn(word, text)
 
+    def test_byeongmokan_locality_is_not_a_jargon_violation(self):
+        loc = {"slug": "gyeonggi-anyang-manan-byeongmokandong",
+               "dong": "병목안동", "service": "왕초보영어회화"}
+        h1 = "병목안동 왕초보영어회화"
+        rendered = HERO.render_hero(loc, "beginner-english-conv", h1)
+        self.assertIn("병목안동", rendered)
+        self.assertEqual(HERO.audit_copy(loc, "beginner-english-conv", h1), [])
+        # Still reject standalone expert terminology: the guard is not disabled.
+        old_render = HERO.render_hero
+        try:
+            HERO.render_hero = lambda *_args, **_kwargs: rendered.replace(
+                "쉬운 한 문장", "병목 확인을 위한 한 문장", 1
+            )
+            self.assertIn(
+                "pressure_term:병목",
+                HERO.audit_copy(loc, "beginner-english-conv", h1)
+            )
+        finally:
+            HERO.render_hero = old_render
+
     def test_stable_and_different_for_neighboring_localities(self):
         for intent in INTENTS:
             seen = set()
