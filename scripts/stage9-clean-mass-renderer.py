@@ -13,6 +13,15 @@ from functools import lru_cache
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# Audience-led Hero copy is isolated from SEO titles, forms and Gold content.
+_HERO_SPEC = importlib.util.spec_from_file_location(
+    "stage9_hero_copy", ROOT / "scripts" / "stage9_hero_copy.py"
+)
+if _HERO_SPEC is None or _HERO_SPEC.loader is None:
+    raise RuntimeError("stage9_hero_copy module unavailable")
+HERO_COPY = importlib.util.module_from_spec(_HERO_SPEC)
+_HERO_SPEC.loader.exec_module(HERO_COPY)
 BASE_URL = "https://englishpt.kr"
 PHONE = "010-5006-8027"
 PHONE_HREF = "tel:+821050068027"
@@ -2559,18 +2568,20 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
         raw, count=1, flags=re.S,
     )
 
-    hero_html = (
-        '<section class="hero simple-hero"><div class="wrap simple-hero-inner">'
-        '<p class="eyebrow">ENGLISH PT · 1:1 맞춤 영어</p>'
-        f'<h1>{esc(h1)}</h1>'
-        f'<p class="hero-subline">{esc(HERO_STATEMENTS[intent])}</p>'
-        '<div class="hero-actions">'
-        '<a class="btn primary" href="#detail">내용 보기</a>'
-        '<a class="btn ghost" href="#consultation-preview">체험수업 신청</a>'
-        '</div></div></section>'
-        + (beginner_exam_guide(intent, loc) if family == "exam" else "")
+    hero_html = HERO_COPY.render_hero(loc, intent, h1)
+    if family == "exam":
+        hero_html += beginner_exam_guide(intent, loc)
+    raw, hero_count = re.subn(
+        r'<section class="hero">.*?</section>',
+        lambda _match: hero_html,
+        raw, count=1, flags=re.S,
     )
-    raw = re.sub(r'<section class="hero">.*?</section>', hero_html, raw, count=1, flags=re.S)
+    if hero_count != 1:
+        problems.append("audience_hero_not_found")
+    problems.extend(
+        "audience_hero:" + issue
+        for issue in HERO_COPY.audit_copy(loc, intent, h1)
+    )
 
     detail = re.search(
         r'<section id="detail" class="section"><div class="wrap narrow">(.*?)</div></section>',
