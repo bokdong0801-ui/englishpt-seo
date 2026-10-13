@@ -357,7 +357,11 @@ jobs:
                   visible=raw.split('</head>',1)[-1]
                   visible=re.sub(r'<script\b.*?</script>|<style\b.*?</style>|<[^>]+>',' ',visible,flags=re.S|re.I)
                   visible=html.unescape(visible)
-                  pressure_found=[x for x in pressure if x in visible]
+                  # Whole-term only: 병목안동 is a valid place name, not the word 병목.
+                  pressure_found=[
+                      x for x in pressure
+                      if re.search(r'(?<![가-힣A-Za-z0-9])' + re.escape(x) + r'(?![가-힣A-Za-z0-9])', visible)
+                  ]
                   if pressure_found: errors.append((n,'pressure-terms',pressure_found))
                   beginners+=1
               if len(errors)>=40: break
