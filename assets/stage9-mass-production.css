@@ -732,3 +732,9 @@ input,select,textarea,button{max-width:100%}
 .beginner-sample-line strong{font-size:15px;display:block;font-weight:750;line-height:1.55;overflow-wrap:break-word}
 .beginner-sample-line small{font-size:13px;display:block;color:var(--muted);line-height:1.6;margin-top:3px;word-break:keep-all}
 @media(max-width:520px){.beginner-sample{padding:14px}.beginner-sample h3{font-size:15px}.beginner-sample-line strong{font-size:14px}}
+
+/* V23.3 aftercare: accessible, concise, varied practice plan example */
+.manage-aftercare-example{margin-top:15px;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:#f7faf7}
+.manage-aftercare-example h4{margin:0 0 7px;font-size:14px;line-height:1.5;color:var(--ink)}
+.manage-aftercare-example p{margin:8px 0 0;line-height:1.75;font-size:13px;color:var(--muted);word-break:keep-all}
+@media(max-width:540px){.manage-aftercare-example{padding:12px}.manage-aftercare-example p{font-size:12.5px}}

@@ -2022,6 +2022,49 @@ def management_section(loc: dict, intent: str, family: str) -> str:
         aftercare_intro = "영어가 익숙해지는 속도와 생활 패턴에 맞춰 수업 후 복습도 조절합니다."
         homework = "숙제를 충분히 원한다면 배운 표현을 더 연습할 과제를 제안합니다."
         light = "부담을 줄이고 싶다면 짧은 문장 몇 개를 다시 말하는 것부터 시작합니다."
+    # V23.3: keep the shared after-class contract, but use genuinely useful
+    # different follow-up examples across localities. Avoid hundreds of pages
+    # with the same generic homework paragraphs; no fabricated local facts.
+    followup_scenarios = [
+        "일주일에 공부할 시간이 일정하지 않다면 긴 과제 대신 가능한 날에 짧게 다시 해볼 내용을 정합니다. 다음 수업에서는 과제를 몇 장 했는지보다 혼자 떠올릴 수 있었던 표현을 먼저 확인합니다.",
+        "기억이 잘 나지 않는 표현은 설명을 다시 읽기 전에 스스로 먼저 시도해봅니다. 어렵게 느낀 부분만 표시해 두면 다음 시간에 필요한 내용부터 골라서 연습할 수 있습니다.",
+        "처음부터 숙제를 많이 받기보다 이번 주에 가능한 분량을 먼저 이야기합니다. 익숙해지면 같은 문장을 다른 질문이나 상황에 써보고, 무리라고 느껴지면 다시 줄이는 방법도 있습니다.",
+        "바쁜 주에는 길게 앉아서 공부하는 대신 짧게 듣거나 말할 수 있는 표현부터 고릅니다. 다음 시간에는 막혔던 단어 하나보다 질문을 듣고 어떻게 답했는지 함께 살펴봅니다.",
+        "한 번 배운 내용을 바로 잊었다면 새 진도부터 늘리기보다 지난 수업에서 자주 사용한 표현을 다시 꺼내봅니다. 짧은 복습만으로도 어디에서 도움이 필요한지 알아볼 수 있습니다.",
+        "선생님이 숙제를 자주 확인해주기를 원한다면 어떤 부분을 기록할지 먼저 정합니다. 내용을 매번 길게 보내기보다는 어려웠던 질문과 다시 말해본 표현처럼 확인하기 쉬운 항목부터 정할 수 있습니다.",
+        "수업이 끝나자마자 혼자 해보면 어려울 수 있습니다. 그럴 때는 짧은 예시를 참고한 뒤 같은 내용을 자기 말로 바꿔보고, 다음 수업에서 예시 없이 가능한지 살펴봅니다.",
+        "말하기가 부담스럽다면 완성된 문장을 처음부터 길게 만들 필요는 없습니다. 가장 쉬운 대답 한 문장부터 시작하고 자신감이 붙으면 이유를 덧붙이는 식으로 과제를 바꿀 수 있습니다.",
+        "듣기가 어렵다면 모든 단어를 적으려고 하기보다 자주 들리는 짧은 질문을 골라봅니다. 집에서는 그 질문을 한두 번 듣고 떠오른 답을 말해보는 정도부터 시도할 수 있습니다.",
+        "다른 과목이나 일이 몰린 주에는 꼭 필요한 내용만 남겨도 됩니다. 이번 주에 포기하지 않고 해볼 작은 목표를 정하고, 다음 시간에 무엇이 수월했고 무엇이 어려웠는지 확인합니다.",
+        "과제를 많이 해도 같은 부분을 계속 틀린다면 분량만 늘리지 않습니다. 실수한 이유를 간단히 정리하고 비슷하지만 조금 다른 문제에서 다시 해보는 방법을 함께 생각해봅니다.",
+        "정해진 숙제량이 맞지 않는다면 더 많이 연습하고 싶은 부분과 가볍게 유지할 부분을 나눕니다. 수업 시간이 아닌 날에 실제로 가능한 복습을 기준으로 다음 계획을 조절합니다.",
+        "한 문장을 외웠는데 질문이 조금 바뀌면 멈추는 경우가 있습니다. 새로운 문장을 여러 개 외우기보다 이미 아는 표현의 단어만 바꿔 연습하고, 다음 수업에서 다시 사용해봅니다.",
+        "생활 속에서 영어를 써보고 싶다면 이번 주에 마주칠 만한 상황 하나를 골라봅니다. 문장이 생각나지 않으면 짧게 적어 두었다가 다음 수업에서 자연스러운 표현을 함께 찾아볼 수 있습니다.",
+        "복습할 때 어디까지 했는지 기록하는 것이 어렵다면 간단한 표시만 남겨도 됩니다. 혼자 해본 부분과 도움을 받았던 부분을 나누면 다음 시간에 먼저 확인할 내용이 분명해집니다.",
+        "당장 결과가 보이지 않더라도 매번 새 교재로 넘어갈 필요는 없습니다. 같은 뜻을 쉬운 문장으로 다시 설명하거나 질문을 바꿔 말하면서 할 수 있게 된 부분을 확인하는 방법도 있습니다.",
+    ]
+    scenario_seed = int(hashlib.sha256(
+        f'{loc["slug"]}|{intent}|v23-aftercare-realistic-scenario'.encode()
+    ).hexdigest()[:8], 16)
+    scenario_copy = followup_scenarios[scenario_seed % len(followup_scenarios)]
+    if family == "exam":
+        small_example = "이번 시험에서 자주 틀렸던 문제 한 개를 다시 풀고 이유를 말해보기"
+    elif any(k in intent for k in ("worker", "biz")):
+        small_example = "회의·전화·발표에서 사용할 한 문장을 골라 직접 말해보기"
+    elif any(k in intent for k in ("elem", "mid", "high", "school")):
+        small_example = "학교 영어에서 헷갈린 문장 하나를 읽고 뜻을 다시 설명해보기"
+    elif any(k in intent for k in ("univ", "jobseeker")):
+        small_example = "발표나 학교생활에서 필요한 질문 한 문장을 골라 답해보기"
+    else:
+        small_example = "인사와 자기소개처럼 쉬운 문장 하나를 다시 말해보기"
+    aftercare_example_html = (
+        '<div class="manage-aftercare-example">'
+        '<h4>생활에 맞게 조절하는 복습 예시</h4>'
+        f'<p>{esc(scenario_copy)}</p>'
+        f'<p>예를 들어 {esc(small_example)}부터 시작해볼 수 있어요. '
+        '실제로 할 수 있는 양과 확인 방법은 상담에서 정합니다.</p>'
+        '</div>'
+    )
     beginner_sample_html = ""
     if intent == "beginner-english-conv":
         # Beginner-friendly example, not a claim about a real learner.
@@ -2053,7 +2096,8 @@ def management_section(loc: dict, intent: str, family: str) -> str:
         f'<p>{esc(aftercare_intro)}</p><ul class="manage-focus">'
         f'<li>{esc(homework)}</li><li>{esc(light)}</li>'
         '<li>꾸준한 소통을 원한다면 질문을 확인하고 복습 내용을 점검할 방법과 주기를 상담에서 정합니다.</li>'
-        '</ul><p>과제 분량과 수업 외 소통 범위는 상담에서 함께 정합니다.</p></div>'
+        '</ul>' + aftercare_example_html +
+        '<p>과제 분량과 수업 외 소통 범위는 상담에서 함께 정합니다.</p></div>'
     )
     return (
         '<section class="section management">'

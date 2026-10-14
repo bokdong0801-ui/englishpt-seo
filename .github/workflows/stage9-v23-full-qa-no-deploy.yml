@@ -84,6 +84,15 @@ jobs:
         run: |
           python3 scripts/stage9-clean-similarity-qa.py             --root stage9-release             --samples-per-intent 60             --output stage9-release/STAGE9_CLEAN_SIMILARITY_QA_V1.json
 
+      - name: Preserve similarity report if content is too repetitive
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23-similarity-failure-diagnostic
+          path: stage9-release/STAGE9_CLEAN_SIMILARITY_QA_V1.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Beginner readability QA
         run: |
           python3 scripts/qa-beginner-readability.py stage9-release             --report STAGE9_BEGINNER_READABILITY_QA.json

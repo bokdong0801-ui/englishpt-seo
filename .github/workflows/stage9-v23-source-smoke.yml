@@ -97,6 +97,9 @@ jobs:
               family='exam' if intent in mod.EXAM_ORDER or intent in mod.ACADEMY_ORDER else 'service'
               content=mod.management_section(loc,intent,family)
               assert 'manage-aftercare' in content,intent
+              assert 'manage-aftercare-example' in content,intent
+              assert '생활에 맞게 조절하는 복습 예시' in content,intent
+              assert '실제로 할 수 있는 양과 확인 방법은 상담에서 정합니다' in content,intent
               assert '숙제' in content,intent
               if intent=='beginner-english-conv':
                   assert content.count('class="beginner-sample-line"')==2,content
@@ -110,6 +113,20 @@ jobs:
           qa=Path('scripts/qa-beginner-readability.py').read_text(encoding='utf-8')
           assert "target = 4 if hub_name" in qa
           assert "home_change_report_four_stages_missing" in qa
+          # Regression pair from GitHub run 38524289394: university pages
+          # must not share a verbatim aftercare paragraph.
+          pair=[
+              {'slug':'busan-jung-sinchangdong3ga','dong':'신창동3가','service':'대학생영어회화'},
+              {'slug':'seoul-eunpyeong-eungamje3dong','dong':'응암제3동','service':'대학생영어회화'},
+          ]
+          import re
+          texts=[]
+          for area in pair:
+              part=mod.management_section(area,'univ-conv','service')
+              block=re.search(r'<div class="manage-aftercare-example">(.*?)</div>',part,re.S)
+              assert block,area
+              texts.append(block.group(1))
+          assert texts[0]!=texts[1],'university aftercare scenarios must differ'
           print('PASS_V23_EASY_COPY_MANAGEMENT_23_INTENTS')
           PY
       - name: Save beginner-first source QA report
