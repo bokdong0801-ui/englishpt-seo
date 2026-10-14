@@ -1117,13 +1117,13 @@ def trim_gold_page(raw: str, seed: str, family: str) -> str:
         body=select_items(pr.group(2),r'<li>.*?</li>',3,"proof")
         raw=raw[:pr.start()]+pr.group(1)+body+pr.group(3)+raw[pr.end():]
 
-    # Feedback: two examples are enough to demonstrate the record format.
+    # Feedback: retain all four examples in source order on every screen.
     fb=re.search(
         r'(<p class="kicker">피드백 예시</p>.*?<div class="grid4">)(.*?)(</div>)',
         raw,re.S
     )
     if fb:
-        body=select_items(fb.group(2),r'<article class="card">.*?</article>',2,"feedback")
+        body=select_items(fb.group(2),r'<article class="card">.*?</article>',4,"feedback")
         raw=raw[:fb.start()]+fb.group(1)+body+fb.group(3)+raw[fb.end():]
 
     # Intent-specific deep guide: two cards from the audited Gold pool.
@@ -1984,12 +1984,12 @@ def management_section(loc: dict, intent: str, family: str) -> str:
     else:
         focus = MANAGEMENT_FOCUS[intent]
     intro_variants = [
-        ("수업만 하고 끝내지 않고, 다음 수업까지 이어서 관리합니다",
-         "진도를 많이 나가는 것보다 지금 필요한 내용을 정확히 연습하고, 수업 후에도 다시 써볼 수 있게 만드는 데 초점을 둡니다."),
-        ("매 수업의 결과가 다음 수업으로 이어지도록 관리합니다",
-         "그날 배운 내용을 그날로 끝내지 않고, 잘된 부분과 다시 볼 부분을 나눠 다음 수업의 시작점으로 연결합니다."),
-        ("배운 내용을 실제로 다시 써볼 수 있게 수업 전후를 연결합니다",
-         "한 번 설명하고 넘어가기보다 직접 해보고 피드백한 뒤, 다음 수업에서 다시 확인해 필요한 부분만 이어갑니다."),
+        ("수업이 끝난 뒤에도 나에게 맞는 복습 방법을 정합니다",
+         "진도를 서두르기보다 지금 필요한 내용을 연습하고 혼자 공부할 때 무엇을 할지 구체적으로 알려드립니다."),
+        ("배운 내용을 잊지 않도록 다음 시간에도 확인합니다",
+         "그날 잘된 부분과 더 연습할 내용을 간단히 정리하고 다음 수업에서 다시 살펴봅니다."),
+        ("수업에서 배운 영어, 혼자서도 말할 수 있도록 도와드립니다",
+         "수업 시간에 익힌 표현을 집에서도 짧게 연습하고, 다음 수업에서 기억나는지 함께 확인합니다."),
     ]
     digest = hashlib.sha256(f'{loc["slug"]}|{intent}|manage-copy-v1'.encode()).hexdigest()
     manage_h2, manage_p = intro_variants[int(digest[:8],16) % len(intro_variants)]
@@ -1997,7 +1997,7 @@ def management_section(loc: dict, intent: str, family: str) -> str:
         ("01","처음 상담","목표와 가장 가까운 일정, 최근 결과나 어려웠던 부분을 확인합니다."),
         ("02","수업 계획","한 번에 많은 내용을 잡기보다 먼저 바꿔야 할 한두 가지를 정합니다."),
         ("03","수업 시간","설명을 들은 뒤 직접 풀고, 말하고, 써보면서 바로 수정합니다."),
-        ("04","수업 후","오늘 잘된 부분과 다시 연습할 내용을 정리해 다음 수업과 연결합니다."),
+        ("04","수업 후","그날 익힌 내용을 정리하고 생활 패턴에 맞춰 숙제량을 함께 조절합니다."),
         ("05","다음 수업","지난 내용을 짧게 확인한 뒤 결과에 따라 분량과 순서를 다시 조정합니다."),
     ]
     step_html = ''.join(
@@ -2006,6 +2006,29 @@ def management_section(loc: dict, intent: str, family: str) -> str:
     )
     focus_html = ''.join(f'<li>{esc(x)}</li>' for x in focus)
     label = "시험 관리" if family == "exam" else "학습 관리"
+    if family == "exam":
+        aftercare_intro = "시험일까지 남은 기간과 오답 유형에 따라 복습 과제의 양을 조절합니다."
+        homework = "집중 복습을 원한다면 약한 파트의 추가 문제와 오답 과제를 충분히 제안합니다."
+        light = "시간이 부족하면 우선 확인할 문제와 짧은 복습만 남기도록 조절합니다."
+    elif any(k in intent for k in ("worker", "biz")):
+        aftercare_intro = "업무 일정에 따라 공부 가능한 시간이 달라지는 점을 고려합니다."
+        homework = "숙제가 필요하면 실제 업무에 사용할 문장과 말하기 과제를 제안합니다."
+        light = "바쁜 주에는 하루 몇 분씩 말해볼 표현부터 확인합니다."
+    elif any(k in intent for k in ("elem", "mid", "high", "school")):
+        aftercare_intro = "학년, 학교 일정, 공부 습관을 살펴 과제 분량을 조절합니다."
+        homework = "복습을 더 하고 싶다면 학교 진도에 맞춘 추가 과제를 제안합니다."
+        light = "숙제가 부담스럽다면 꼭 필요한 문장과 문제부터 천천히 확인합니다."
+    else:
+        aftercare_intro = "영어가 익숙해지는 속도와 생활 패턴에 맞춰 수업 후 복습도 조절합니다."
+        homework = "숙제를 충분히 원한다면 배운 표현을 더 연습할 과제를 제안합니다."
+        light = "부담을 줄이고 싶다면 짧은 문장 몇 개를 다시 말하는 것부터 시작합니다."
+    aftercare_html = (
+        '<div class="manage-aftercare"><h3>수업 후 관리도 내 생활에 맞게 조절합니다</h3>'
+        f'<p>{esc(aftercare_intro)}</p><ul class="manage-focus">'
+        f'<li>{esc(homework)}</li><li>{esc(light)}</li>'
+        '<li>꾸준한 소통을 원한다면 질문을 확인하고 복습 내용을 점검할 방법과 주기를 상담에서 정합니다.</li>'
+        '</ul><p>과제 분량과 수업 외 소통 범위는 상담에서 함께 정합니다.</p></div>'
+    )
     return (
         '<section class="section management">'
         '<div class="wrap manage-layout">'
@@ -2013,7 +2036,7 @@ def management_section(loc: dict, intent: str, family: str) -> str:
         f'<p class="kicker">{label}</p>'
         f'<h2>{esc(manage_h2)}</h2>'
         f'<p>{esc(manage_p)}</p>'
-        '<ul class="manage-focus">' + focus_html + '</ul>'
+        '<ul class="manage-focus">' + focus_html + '</ul>' + aftercare_html
         '</div>'
         '<div class="manage-steps">' + step_html + '</div>'
         '</div></section>'
