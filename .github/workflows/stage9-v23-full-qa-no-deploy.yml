@@ -6,6 +6,7 @@ on:
       - review/v23-aftercare-cta-20261014
     paths:
       - '.github/workflows/stage9-v23-full-qa-no-deploy.yml'
+      - 'scripts/qa-v23-browser-bootstrap.sh'
       - 'englishpt.html'
       - 'english-conversation.html'
       - 'scripts/qa-stage9-v23-cta-aftercare.py'
@@ -17,7 +18,27 @@ permissions:
   actions: read
 
 jobs:
+  # Fail fast on a broken Chrome setup before the expensive 140391-page build.
+  browser-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Chrome debugging ports 9237 and 9238
+        run: |
+          set -euo pipefail
+          source scripts/qa-v23-browser-bootstrap.sh
+          trap stop_v23_review_browser EXIT
+          start_v23_review_browser 8777 9237 . v23-preflight-ia
+          curl --max-time 3 -fsS http://127.0.0.1:9237/json/version | python3 -m json.tool >/dev/null
+          stop_v23_review_browser
+          sleep 2
+          start_v23_review_browser 8778 9238 . v23-preflight-responsive
+          curl --max-time 3 -fsS http://127.0.0.1:9238/json/version | python3 -m json.tool >/dev/null
+          echo PASS_V23_BROWSER_PREFLIGHT_9237_9238
+
   final-gate:
+    needs: browser-preflight
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
@@ -454,18 +475,27 @@ jobs:
           print('PASS_FULL_REVIEW_PACKAGE',len(pages),'SAJIK_TO_BUAM_OK',target.name,'LINKS',len(hrefs))
           PY
 
+      - name: Preserve already-PASS content and SEO reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23-content-qa-checkpoint
+          path: |
+            stage9-release/STAGE9_V23_CTA_AFTERCARE_QA.json
+            stage9-release/STAGE9_CLEAN_SIMILARITY_QA_V1.json
+            stage9-release/STAGE9_BEGINNER_READABILITY_QA.json
+            stage9-release/STAGE9_V23_EASY_COPY_FULL.json
+            stage9-release/STAGE9_COPY_QUALITY_QA.json
+            stage9-release/STAGE9_HERO_V2_FULL_QA.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Chromium desktop and mobile QA
         run: |
           set -euo pipefail
           python3 -m pip install --quiet pychrome
-          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
-          test -n "$CHROME"
-          python3 -m http.server 8777 --directory final-review >/tmp/final-review-http.log 2>&1 &
-          SERVER_PID=$!
-          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars             --remote-debugging-port=9237 --remote-allow-origins='*'             --user-data-dir=/tmp/final-ia-chrome about:blank >/tmp/final-ia-chrome.log 2>&1 &
-          CHROME_PID=$!
-          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
-          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:9237/json/version >/dev/null 2>&1 && break; sleep .5; done
+          source scripts/qa-v23-browser-bootstrap.sh
+          trap stop_v23_review_browser EXIT
+          start_v23_review_browser 8777 9237 final-review v23-ia
 
           python3 - <<'PY'
           import time,json
@@ -549,14 +579,9 @@ jobs:
           print('PASS_RESPONSIVE_STATIC_CONTRACT',len(pages))
           PY
 
-          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
-          test -n "$CHROME"
-          python3 -m http.server 8778 --directory final-review >/tmp/responsive-review-http.log 2>&1 &
-          SERVER_PID=$!
-          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars             --remote-debugging-port=9238 --remote-allow-origins='*'             --user-data-dir=/tmp/final-responsive-chrome about:blank >/tmp/final-responsive-chrome.log 2>&1 &
-          CHROME_PID=$!
-          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
-          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:9238/json/version >/dev/null 2>&1 && break; sleep .5; done
+          source scripts/qa-v23-browser-bootstrap.sh
+          trap stop_v23_review_browser EXIT
+          start_v23_review_browser 8778 9238 final-review v23-responsive
 
           python3 - <<'PY'
           import json,time
