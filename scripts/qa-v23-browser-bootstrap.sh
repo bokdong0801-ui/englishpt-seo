@@ -49,7 +49,7 @@ start_v23_review_browser() {
     tail -n 90 "$chrome_log" || true
     ps -eo pid,ppid,stat,rss,comm | grep -E 'chrome|chromium' | tail -n 25 || true
     kill "$V23_CHROME_PID" 2>/dev/null || true
-    rm -rf "$V23_BROWSER_PROFILE"
+    rm -rf "$V23_BROWSER_PROFILE" >/dev/null 2>&1 || true
     sleep 1
   done
   echo "::error::Chromium debugging endpoint $debug_port failed after 3 attempts"
@@ -60,7 +60,7 @@ start_v23_review_browser() {
 stop_v23_review_browser() {
   if [[ -n "$V23_CHROME_PID" ]]; then kill "$V23_CHROME_PID" 2>/dev/null || true; fi
   if [[ -n "$V23_SERVER_PID" ]]; then kill "$V23_SERVER_PID" 2>/dev/null || true; fi
-  if [[ -n "$V23_BROWSER_PROFILE" && -d "$V23_BROWSER_PROFILE" ]]; then rm -rf "$V23_BROWSER_PROFILE"; fi
+  if [[ -n "$V23_BROWSER_PROFILE" && -d "$V23_BROWSER_PROFILE" ]]; then rm -rf "$V23_BROWSER_PROFILE" >/dev/null 2>&1 || true; fi
   V23_CHROME_PID=""
   V23_SERVER_PID=""
   V23_BROWSER_PROFILE=""
