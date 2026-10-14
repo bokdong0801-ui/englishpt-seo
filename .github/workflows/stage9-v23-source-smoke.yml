@@ -39,8 +39,12 @@ jobs:
           builder = Path('scripts/build-stage9-production-release.py').read_text(encoding='utf-8')
           css = Path('assets/styles.css').read_text(encoding='utf-8')
           assert home.count('<article class="change-card">') == 4
-          assert '3~6개월' in home and '6~12개월' in home
-          assert '학습 변화 예시' in home
+          conv = Path('english-conversation.html').read_text(encoding='utf-8')
+          for page in (home, conv):
+              assert page.count('<article class="change-card">') == 4
+              assert '학습 과정 예시' in page
+              assert all(x in page for x in ('1~3개월','3~6개월','6~9개월','9~12개월'))
+              assert len(set(page.find(x) for x in ('1~3개월','3~6개월','6~9개월','9~12개월'))) == 4
           assert '4,"feedback"' in renderer
           assert '수업 전후를 연결합니다' not in renderer
           assert 'class="manage-aftercare"' in renderer
