@@ -1,0 +1,44 @@
+name: ENGLISH PT v23.1 Dialogue Mobile Browser QA (No Deploy)
+
+on:
+  push:
+    branches:
+      - review/v23-aftercare-cta-20261014
+    paths:
+      - '.github/workflows/stage9-v23-dialogue-browser-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  dialogue-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install browser driver
+        run: python -m pip install --quiet pychrome
+      - name: Render and inspect main and conversation change reports
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          python3 -m http.server 8987 --directory . >/tmp/v23-dialogue-http.log 2>&1 &
+          SERVER_PID=$!
+          "$CHROME" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --remote-debugging-port=9238 --remote-allow-origins='*' --user-data-dir=/tmp/englishpt-v23-dialogue-chrome about:blank >/tmp/v23-dialogue-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$SERVER_PID" "$CHROME_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 40); do curl -fsS http://127.0.0.1:9238/json/version >/dev/null 2>&1 && break; sleep .5; done
+          python3 scripts/qa-stage9-v23-dialogue-browser.py
+      - name: Preserve browser screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23-dialogue-mobile-browser-review
+          path: v23-dialogue-render-review/
+          if-no-files-found: warn
+          retention-days: 14
+          compression-level: 2
