@@ -2036,7 +2036,7 @@ def management_section(loc: dict, intent: str, family: str) -> str:
         f'<p class="kicker">{label}</p>'
         f'<h2>{esc(manage_h2)}</h2>'
         f'<p>{esc(manage_p)}</p>'
-        '<ul class="manage-focus">' + focus_html + '</ul>' + aftercare_html
+        '<ul class="manage-focus">' + focus_html + '</ul>' + aftercare_html +
         '</div>'
         '<div class="manage-steps">' + step_html + '</div>'
         '</div></section>'
