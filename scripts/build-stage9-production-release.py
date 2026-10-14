@@ -1078,7 +1078,7 @@ def main() -> None:
     else:
         shutil.copytree(privacy_src, out / "privacy", dirs_exist_ok=True)
 
-    def apply_sitewide_operational_markup(raw: str) -> str:
+    def apply_sitewide_operational_markup(raw: str, filename: str) -> str:
         asset_version = "20261012-9"
         raw = raw.replace("훈련", "연습")
         raw = raw.replace('href="pilot.css"', f'href="pilot.css?v={asset_version}"')
@@ -1150,11 +1150,60 @@ def main() -> None:
                                 raw = raw[:schema_m.start()] + rep + raw[schema_m.end():]
                         except Exception:
                             pass
+        # V23: add a readable after-class management explanation to pages
+        # that do not already receive the full management block from the renderer.
+        # This includes national hubs, station course pages and preserved guides.
+        # Navigation-only station index is intentionally excluded.
+        if (
+            filename not in {"stations.html", "404.html", "index.html"}
+            and 'class="manage-aftercare"' not in raw
+            and 'data-v23-aftercare="true"' not in raw
+            and "<main" in raw
+        ):
+            lower_name = filename.lower()
+            if any(word in lower_name for word in ("toeic", "ielts", "toefl", "opic", "duolingo", "exam-", "cert", "-tos")):
+                intro = "시험까지 남은 기간과 약한 영역을 보고 숙제량을 조절합니다."
+                homework = "문제를 더 풀고 싶은 분은 취약 유형과 오답을 집중 복습합니다."
+                light = "시간이 부족하면 꼭 확인할 문제와 짧은 오답 정리부터 시작합니다."
+            elif any(word in lower_name for word in ("worker", "-biz-", "business")):
+                intro = "업무가 바쁜 주와 여유 있는 주의 공부 시간을 다르게 잡을 수 있습니다."
+                homework = "공부량을 늘리고 싶다면 회의·발표·업무 표현을 과제로 더 연습합니다."
+                light = "일정이 빠듯하면 매일 짧게 말해볼 한두 문장부터 확인합니다."
+            elif any(word in lower_name for word in ("student", "-elem-", "-mid-", "-high-", "-school")):
+                intro = "학교 일정과 현재 공부 습관에 맞춰 과제와 복습 방법을 정합니다."
+                homework = "학습량을 늘리고 싶다면 학교 진도에 맞는 추가 연습을 제안합니다."
+                light = "숙제가 부담된다면 기본 문장과 중요한 문제부터 확인합니다."
+            else:
+                intro = "현재 수준과 생활 패턴에 맞춰 수업이 끝난 뒤의 복습도 조절합니다."
+                homework = "과제를 많이 원하면 수업에서 배운 표현을 충분히 다시 연습합니다."
+                light = "부담스럽다면 짧은 복습부터 시작하고 이해한 부분을 함께 확인합니다."
+            aftercare_markup = (
+                '<section class="section aftercare-summary" data-v23-aftercare="true">'
+                '<div class="wrap"><div class="section-head"><div>'
+                '<div class="eyebrow ink">수업 후 맞춤관리</div>'
+                '<h2>수업이 끝난 뒤에도 나에게 맞는 방법으로 공부해요.</h2>'
+                '</div><p class="lead">' + html.escape(intro) + '</p></div>'
+                '<div class="aftercare-choices">'
+                '<article class="aftercare-choice"><h3>숙제를 충분히 받고 싶다면</h3><p>'
+                + html.escape(homework) + '</p></article>'
+                '<article class="aftercare-choice"><h3>숙제가 부담스럽다면</h3><p>'
+                + html.escape(light) + '</p></article>'
+                '<article class="aftercare-choice"><h3>꾸준한 확인을 원한다면</h3>'
+                '<p>질문과 복습 내용을 어떤 주기로 확인할지는 상담에서 함께 정합니다.</p></article>'
+                '</div><p class="aftercare-disclaimer">'
+                '과제 분량과 수업 외 소통 범위는 상담을 통해 조정합니다.</p></div></section>'
+            )
+            if '<section class="final">' in raw:
+                raw = raw.replace('<section class="final">', aftercare_markup + '<section class="final">', 1)
+            elif 'id="consultation-preview"' in raw:
+                raw = raw.replace('<section id="consultation-preview"', aftercare_markup + '<section id="consultation-preview"', 1)
+            elif "</main>" in raw:
+                raw = raw.replace("</main>", aftercare_markup + "</main>", 1)
         return raw
 
     for page in sorted(out.glob("*.html")):
         page.write_text(
-            apply_sitewide_operational_markup(page.read_text(encoding="utf-8", errors="ignore")),
+            apply_sitewide_operational_markup(page.read_text(encoding="utf-8", errors="ignore"), page.name),
             encoding="utf-8",
         )
 
