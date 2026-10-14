@@ -67,11 +67,22 @@ def audit(root: Path, *, expected_total: int = 140391) -> dict:
                     marker = raw.find('data-v23-aftercare="true"')
                 if marker >= raw.find('<section class="final">'):
                     error(name, "aftercare_after_final_cta")
-        if name == "englishpt.html":
-            if not all(x in raw for x in ("3~6개월", "6~12개월", "특정 회원의 성과")):
-                error(name, "duration_examples_missing")
+        if name in {"englishpt.html", "english-conversation.html"}:
+            phases = ("1~3개월", "3~6개월", "6~9개월", "9~12개월")
+            if any(raw.count(x) < 1 for x in phases):
+                error(name, "four_duration_phases_missing")
+            positions = [raw.find(x, raw.find('class="change-grid')) for x in phases]
+            if any(x < 0 for x in positions) or positions != sorted(positions):
+                error(name, "duration_phase_order_wrong")
             if raw.count('<article class="change-card">') != 4:
-                error(name, "homepage_change_card_count")
+                error(name, "four_change_cards_expected")
+            if "학습 과정 예시" not in raw:
+                error(name, "illustrative_label_missing")
+            if "개인" not in raw or ("보장" not in raw and "달라지" not in raw):
+                error(name, "duration_disclaimer_missing")
+        if name == "englishpt.html":
+            if "/student-english.html" not in raw or "/exam-english.html" not in raw:
+                error(name, "other_audiences_links_missing")
         if name == "seoul-jongno-sajikdong-beginner-english-conv.html":
             m = re.search(
                 r'<p class="kicker">수업 기록 예시</p>.*?<div class="grid4">(.*?)</div>',
