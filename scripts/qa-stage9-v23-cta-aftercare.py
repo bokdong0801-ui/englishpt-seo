@@ -84,7 +84,7 @@ def audit(root: Path, *, expected_total: int = 140391) -> dict:
                 if count != 4:
                     error(name, f"record_count:{count}")
                 for i in range(1, 5):
-                    if not re.search(r"예시\\s*" + str(i), m.group(1)):
+                    if not re.search(r"예시\s*" + str(i), m.group(1)):
                         error(name, f"record_label_missing:{i}")
     report = {
         "status": "PASS_V23_CONTENT_CTA_SOURCE" if not errors else "FAIL_V23_CONTENT_CTA_SOURCE",
