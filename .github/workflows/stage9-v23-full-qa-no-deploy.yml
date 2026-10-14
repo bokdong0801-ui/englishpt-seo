@@ -6,6 +6,9 @@ on:
       - review/v23-aftercare-cta-20261014
     paths:
       - '.github/workflows/stage9-v23-full-qa-no-deploy.yml'
+      - 'englishpt.html'
+      - 'english-conversation.html'
+      - 'scripts/qa-stage9-v23-cta-aftercare.py'
 
 permissions:
   contents: read
