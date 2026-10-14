@@ -55,7 +55,24 @@ jobs:
           assert run.get('conclusion')=='success',run.get('conclusion')
           assert run.get('head_sha')==os.environ['V23_SOURCE_SHA']
           assert run.get('name')=='ENGLISH PT v23 Full 140391 QA (Review Source Only)'
-          print('PASS_APPROVED_V23_SOURCE_RUN',rid,run['head_sha'])
+          jobs_req=urllib.request.Request(
+              f'https://api.github.com/repos/{repo}/actions/runs/{rid}/jobs?per_page=100',
+              headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                       'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(jobs_req,timeout=40) as jobs_resp:
+              jobs=json.load(jobs_resp).get('jobs',[])
+          all_steps={step['name']:step.get('conclusion') for job in jobs
+                     for step in job.get('steps',[])}
+          critical=['Similarity QA','Beginner readability QA',
+                    'V23 beginner-first explanations, glossary and four-stage audit',
+                    'Copy repetition and bug QA','Full information architecture and SEO gate',
+                    'Hero V2 full-release content and pressure vocabulary QA',
+                    'Chromium desktop and mobile QA',
+                    'Responsive typography and viewport matrix QA',
+                    'Build downloadable sample and final release archives']
+          for name in critical:
+              assert all_steps.get(name)=='success',(name,all_steps.get(name))
+          print('PASS_APPROVED_V23_SOURCE_RUN_AND_NAMED_GATES',rid,run['head_sha'],len(critical))
           PY
 
       - name: Download existing full v23 artifact (no regeneration)
@@ -89,8 +106,8 @@ jobs:
           assert content['status']=='PASS_V23_CONTENT_CTA_SOURCE'
           assert content['counts']['examined']==140391
           assert content['counts']['record_examples']==4
-          read=json.loads(Path('stage9-release/STAGE9_BEGINNER_READABILITY_QA.json').read_text(encoding='utf-8'))
-          assert read['status']=='PASS_BEGINNER_READABILITY_QA'
+          # Readability QA report was not included in the downloadable artifact;
+          # its exact PASS step is verified above on the immutable GitHub run.
           easy=json.loads(Path('stage9-release/STAGE9_V23_EASY_COPY_FULL.json').read_text(encoding='utf-8'))
           assert easy['status']=='PASS_V23_EASY_COPY_FULL'
           sim=json.loads(Path('stage9-release/STAGE9_CLEAN_SIMILARITY_QA_V1.json').read_text(encoding='utf-8'))
