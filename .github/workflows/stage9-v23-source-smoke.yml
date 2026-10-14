@@ -10,6 +10,7 @@ on:
       - 'scripts/build-stage9-production-release.py'
       - 'scripts/qa-stage9-v23-cta-aftercare.py'
       - 'englishpt.html'
+      - 'english-conversation.html'
       - 'assets/styles.css'
 
 permissions:
@@ -46,6 +47,14 @@ jobs:
               assert all(x in page for x in ('1~3개월','3~6개월','6~9개월','9~12개월'))
               assert len(set(page.find(x) for x in ('1~3개월','3~6개월','6~9개월','9~12개월'))) == 4
           assert '4,"feedback"' in renderer
+          for page in (home, conv):
+              assert page.count('class="change-dialogue"') == 4
+              assert page.count('class="change-dialogue-tip"') == 4
+              assert page.count('class="change-dialogue-intro"') == 1
+              assert page.count('class="change-dialogue-english"') >= 8
+              assert page.count('class="change-dialogue-korean"') == page.count('class="change-dialogue-english"')
+              assert page.count('lang="en"') == page.count('class="change-dialogue-english"')
+          assert 'V23.1 period-by-period English dialogue examples' in css
           assert '수업 전후를 연결합니다' not in renderer
           assert 'class="manage-aftercare"' in renderer
           assert 'data-v23-aftercare="true"' in builder

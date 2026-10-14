@@ -78,6 +78,30 @@ def audit(root: Path, *, expected_total: int = 140391) -> dict:
                 error(name, "four_change_cards_expected")
             if "학습 과정 예시" not in raw:
                 error(name, "illustrative_label_missing")
+            # Four visible dialogue examples with Korean meanings; do not
+            # mistake fictional practice lines for student testimonials.
+            change = re.search(r'<section class="change-section(?: soft)?">(.*?)</section>', raw, flags=re.S)
+            cards = re.findall(r'<article class="change-card">(.*?)</article>', change.group(1), flags=re.S) if change else []
+            if len(cards) != 4:
+                error(name, "dialogue_cards_missing")
+            for phase, card in zip(phases, cards):
+                if phase not in card:
+                    error(name, "dialogue_phase_mismatch:" + phase)
+                if card.count('class="change-dialogue"') != 1:
+                    error(name, "dialogue_missing:" + phase)
+                turn_count = card.count('class="change-dialogue-line"')
+                if turn_count < 2:
+                    error(name, "dialogue_too_short:" + phase)
+                english = re.findall(r'<strong lang="en" class="change-dialogue-english">(.*?)</strong>', card, flags=re.S)
+                korean = re.findall(r'<span class="change-dialogue-korean">(.*?)</span>', card, flags=re.S)
+                if len(english) != turn_count or len(korean) != turn_count:
+                    error(name, "dialogue_translation_mismatch:" + phase)
+                if any(not line.strip() or len(line) > 135 for line in english + korean):
+                    error(name, "dialogue_overlong_or_blank:" + phase)
+                if 'class="change-dialogue-tip"' not in card:
+                    error(name, "dialogue_tip_missing:" + phase)
+            if 'class="change-dialogue-intro"' not in raw:
+                error(name, "dialogue_intro_missing")
             if "개인" not in raw or ("보장" not in raw and "달라지" not in raw):
                 error(name, "duration_disclaimer_missing")
         if name == "englishpt.html":

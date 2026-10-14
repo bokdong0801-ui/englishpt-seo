@@ -436,3 +436,20 @@ input,select,textarea,button{max-width:100%}
 .aftercare-summary .aftercare-disclaimer{font-size:12px;color:var(--muted);margin-top:16px}
 @media(min-width:901px){.change-grid-four{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.aftercare-choices{grid-template-columns:1fr}.aftercare-choice{padding:16px}}
+
+/* V23.1 period-by-period English dialogue examples: visible Korean meanings, mobile-first. */
+.change-dialogue-intro{margin:0 0 20px;color:var(--muted);font-size:14px;line-height:1.7}
+.change-dialogue{margin-top:18px;padding:15px 16px;background:color-mix(in srgb,var(--soft) 65%,var(--paper));border:1px solid var(--line);border-radius:15px;min-width:0}
+.change-dialogue-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:5px 12px;margin-bottom:14px}
+.change-dialogue-head strong{font-size:14px;line-height:1.5}
+.change-dialogue-head span{font-size:12px;line-height:1.5;color:var(--muted)}
+.change-dialogue-list{display:grid;gap:13px}
+.change-dialogue-line{display:grid;grid-template-columns:38px minmax(0,1fr);gap:10px;align-items:start;margin:0;min-width:0}
+.change-dialogue-role{display:inline-grid;place-items:center;min-height:26px;padding:3px 2px;border-radius:7px;background:var(--paper);border:1px solid var(--line);font-size:12px;font-weight:750;line-height:1.4}
+.change-dialogue-text{display:block;min-width:0}
+.change-dialogue-english{display:block;font-size:15px;line-height:1.55;overflow-wrap:break-word;word-break:normal}
+.change-dialogue-korean{display:block;margin-top:3px;font-size:13px;line-height:1.55;color:var(--muted);overflow-wrap:break-word;word-break:keep-all}
+.change-dialogue-tip{font-size:13px;line-height:1.65;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin:14px 0 0;word-break:keep-all}
+.change-dialogue-tip strong{color:inherit;font-weight:750}
+@media(max-width:760px){.change-dialogue-intro{font-size:13px;margin-bottom:14px}.change-dialogue{padding:13px 12px}.change-dialogue-head strong{font-size:13px}.change-dialogue-head span{font-size:11px}.change-dialogue-english{font-size:14px}.change-dialogue-korean{font-size:13px}.change-dialogue-tip{font-size:12.5px}}
+@media(max-width:360px){.change-dialogue{padding:12px 10px}.change-dialogue-line{grid-template-columns:34px minmax(0,1fr);gap:8px}}
