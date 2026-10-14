@@ -1,0 +1,51 @@
+name: ENGLISH PT V23 source smoke (review branch only)
+
+on:
+  push:
+    branches:
+      - review/v23-aftercare-cta-20261014
+    paths:
+      - '.github/workflows/stage9-v23-source-smoke.yml'
+      - 'scripts/stage9-clean-mass-renderer.py'
+      - 'scripts/build-stage9-production-release.py'
+      - 'scripts/qa-stage9-v23-cta-aftercare.py'
+      - 'englishpt.html'
+      - 'assets/styles.css'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile v23 source and read-only audit
+        run: |
+          python -m py_compile scripts/stage9-clean-mass-renderer.py
+          python -m py_compile scripts/build-stage9-production-release.py
+          python -m py_compile scripts/qa-stage9-v23-cta-aftercare.py
+          python -m py_compile scripts/stage9_hero_copy.py
+      - name: Source markup and count invariants
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          home = Path('englishpt.html').read_text(encoding='utf-8')
+          renderer = Path('scripts/stage9-clean-mass-renderer.py').read_text(encoding='utf-8')
+          builder = Path('scripts/build-stage9-production-release.py').read_text(encoding='utf-8')
+          css = Path('assets/styles.css').read_text(encoding='utf-8')
+          assert home.count('<article class="change-card">') == 4
+          assert '3~6개월' in home and '6~12개월' in home
+          assert '학습 변화 예시' in home
+          assert '4,"feedback"' in renderer
+          assert '수업 전후를 연결합니다' not in renderer
+          assert 'class="manage-aftercare"' in renderer
+          assert 'data-v23-aftercare="true"' in builder
+          assert 'apply_sitewide_operational_markup(page.read_text(encoding="utf-8", errors="ignore"), page.name)' in builder
+          assert '@media(max-width:900px){.aftercare-choices{grid-template-columns:1fr}' in css
+          print('PASS_V23_SOURCE_SMOKE_PRE_BUILD')
+          PY
