@@ -1081,6 +1081,21 @@ def main() -> None:
     def apply_sitewide_operational_markup(raw: str, filename: str) -> str:
         asset_version = "20261012-9"
         raw = raw.replace("훈련", "연습")
+        # Keep official test names and SEO metadata, but remove leftover
+        # unexplained jargon from the page body for first-time learners.
+        if "</head>" in raw:
+            head_part, body_part = raw.split("</head>", 1)
+            easy_phrases = {
+                "목표 Level": "목표 등급",
+                "최소 루틴": "짧은 복습 계획",
+                "기본 루틴": "기본 복습",
+                "처음부터 프리토킹을 길게 하기보다": "처음부터 영어로 길게 대화하기보다",
+                "처음부터 프리토킹을 길게 하지 않고": "처음부터 영어로 길게 대화하지 않고",
+                "프리토킹": "자유롭게 영어로 대화하기",
+            }
+            for difficult, plain in easy_phrases.items():
+                body_part = body_part.replace(difficult, plain)
+            raw = head_part + "</head>" + body_part
         raw = raw.replace('href="pilot.css"', f'href="pilot.css?v={asset_version}"')
         raw = raw.replace('src="pilot.js"', f'src="pilot.js?v={asset_version}"')
         raw = raw.replace('href="assets/styles.css"', f'href="assets/styles.css?v={asset_version}"')

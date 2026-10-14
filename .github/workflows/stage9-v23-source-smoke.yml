@@ -11,6 +11,12 @@ on:
       - 'scripts/qa-stage9-v23-cta-aftercare.py'
       - 'englishpt.html'
       - 'english-conversation.html'
+      - 'courses.html'
+      - 'student-english.html'
+      - 'exam-english.html'
+      - 'scripts/qa-beginner-readability.py'
+      - 'scripts/qa-stage9-v23-easy-copy-final.py'
+      - 'assets/stage9-mass-production.css'
       - 'assets/styles.css'
 
 permissions:
@@ -31,6 +37,8 @@ jobs:
           python -m py_compile scripts/build-stage9-production-release.py
           python -m py_compile scripts/qa-stage9-v23-cta-aftercare.py
           python -m py_compile scripts/stage9_hero_copy.py
+          python -m py_compile scripts/qa-beginner-readability.py
+          python -m py_compile scripts/qa-stage9-v23-easy-copy-final.py
       - name: Source markup and count invariants
         run: |
           python - <<'PY'
@@ -62,3 +70,45 @@ jobs:
           assert '@media(max-width:900px){.aftercare-choices{grid-template-columns:1fr}' in css
           print('PASS_V23_SOURCE_SMOKE_PRE_BUILD')
           PY
+
+      - name: Beginner-first hub and 23-intent management example audit
+        run: |
+          python scripts/qa-stage9-v23-easy-copy-final.py \
+            --root . --source-only --output STAGE9_V23_EASY_COPY_SOURCE.json
+          python - <<'PY'
+          import importlib.util
+          from pathlib import Path
+          path=Path('scripts/stage9-clean-mass-renderer.py').resolve()
+          spec=importlib.util.spec_from_file_location('mass_renderer_v23',path)
+          mod=importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          loc={'slug':'seoul-jongno-sajikdong','dong':'사직동','service':'왕초보영어회화'}
+          targets=mod.SERVICE_ORDER+mod.EXAM_ORDER+mod.ACADEMY_ORDER+mod.CONV_DERIVED_ORDER
+          assert len(targets)==23,len(targets)
+          for intent in targets:
+              family='exam' if intent in mod.EXAM_ORDER or intent in mod.ACADEMY_ORDER else 'service'
+              content=mod.management_section(loc,intent,family)
+              assert 'manage-aftercare' in content,intent
+              assert '숙제' in content,intent
+              if intent=='beginner-english-conv':
+                  assert content.count('class="beginner-sample-line"')==2,content
+                  assert content.count('lang="en"')==2,content
+                  assert content.count('<small>')==2,content
+                  assert '실제 회원의 성과가 아니라' in content,content
+              else:
+                  assert 'class="beginner-sample"' not in content,intent
+          styles=Path('assets/stage9-mass-production.css').read_text(encoding='utf-8')
+          assert '.beginner-sample-line' in styles
+          qa=Path('scripts/qa-beginner-readability.py').read_text(encoding='utf-8')
+          assert "target = 4 if hub_name" in qa
+          assert "home_change_report_four_stages_missing" in qa
+          print('PASS_V23_EASY_COPY_MANAGEMENT_23_INTENTS')
+          PY
+      - name: Save beginner-first source QA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23-beginner-easy-copy-source-qa
+          path: STAGE9_V23_EASY_COPY_SOURCE.json
+          if-no-files-found: warn
+          retention-days: 14

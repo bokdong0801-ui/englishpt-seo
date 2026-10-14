@@ -85,6 +85,11 @@ jobs:
       - name: Beginner readability QA
         run: |
           python3 scripts/qa-beginner-readability.py stage9-release             --report STAGE9_BEGINNER_READABILITY_QA.json
+      - name: V23 beginner-first explanations, glossary and four-stage audit
+        run: |
+          python3 scripts/qa-stage9-v23-easy-copy-final.py \
+            --root stage9-release \
+            --output stage9-release/STAGE9_V23_EASY_COPY_FULL.json
 
       - name: Copy repetition and bug QA
         run: |
@@ -771,6 +776,7 @@ jobs:
             stage9-release/STAGE9_CLEAN_SIMILARITY_QA_V1.json
             stage9-release/STAGE9_COPY_QUALITY_QA.json
             stage9-release/STAGE9_BEGINNER_READABILITY_QA.json
+            stage9-release/STAGE9_V23_EASY_COPY_FULL.json
             stage9-release/STAGE9_V23_CTA_AFTERCARE_QA.json
           compression-level: 0
           retention-days: 30

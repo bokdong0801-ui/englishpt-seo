@@ -721,3 +721,14 @@ input,select,textarea,button{max-width:100%}
   .hero-next-grid article{padding:12px 14px}
   .hero-next-grid p{font-size:12.5px}
 }
+
+/* V23.2 beginner example: Korean meaning directly below each English line. */
+.beginner-sample{margin-top:22px;padding:18px;border:1px solid var(--line);border-radius:17px;background:color-mix(in srgb,var(--soft) 65%,#fff)}
+.beginner-sample h3{font-size:17px;line-height:1.4;margin:0 0 7px}
+.beginner-sample>p{margin:5px 0 13px;color:var(--muted);font-size:12.5px;line-height:1.6}
+.beginner-sample-line{display:grid;grid-template-columns:42px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.beginner-sample-line>span{font-size:12px;font-weight:800;color:var(--accent);line-height:1.7}
+.beginner-sample-line>div{min-width:0}
+.beginner-sample-line strong{font-size:15px;display:block;font-weight:750;line-height:1.55;overflow-wrap:break-word}
+.beginner-sample-line small{font-size:13px;display:block;color:var(--muted);line-height:1.6;margin-top:3px;word-break:keep-all}
+@media(max-width:520px){.beginner-sample{padding:14px}.beginner-sample h3{font-size:15px}.beginner-sample-line strong{font-size:14px}}

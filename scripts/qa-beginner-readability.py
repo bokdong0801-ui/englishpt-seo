@@ -186,8 +186,10 @@ def main() -> int:
         for phrase in HOME_PRESSURE_FORBIDDEN:
             if contains_forbidden(text, phrase):
                 failures.append({"file":"englishpt.html","rule":"home_pressure_term","value":phrase})
-        if raw.count('class="change-card"') != 3 or '변화 리포트' not in raw or '사례 유형' not in raw:
-            failures.append({"file":"englishpt.html","rule":"home_change_report_missing_or_wrong_count","count":raw.count('class="change-card"')})
+        if raw.count('class="change-card"') != 4 or '변화 리포트' not in raw or '학습 과정 예시' not in raw:
+            failures.append({"file":"englishpt.html","rule":"home_change_report_missing_or_wrong_count","expected":4,"count":raw.count('class="change-card"')})
+        if not all(stage in raw for stage in ("1~3개월", "3~6개월", "6~9개월", "9~12개월")):
+            failures.append({"file":"englishpt.html","rule":"home_change_report_four_stages_missing"})
         if 'data-course="학습 변화 상담"' not in raw:
             failures.append({"file":"englishpt.html","rule":"home_change_report_cta_missing"})
 
@@ -219,11 +221,15 @@ def main() -> int:
             failures.append({"file":hub_name,"rule":"hub_index_follow_missing"})
         if f'https://englishpt.kr/{hub_name}' not in hub_raw:
             failures.append({"file":hub_name,"rule":"hub_canonical_missing"})
-        if hub_name in ("exam-english.html","english-conversation.html"):
-            if hub_raw.count('class="change-card"') != 3:
-                failures.append({"file":hub_name,"rule":"change_report_card_count","expected":3,"actual":hub_raw.count('class="change-card"')})
-            if '사례 유형' not in hub_raw:
-                failures.append({"file":hub_name,"rule":"change_report_example_disclosure_missing"})
+        if hub_name in ("exam-english.html", "english-conversation.html"):
+            target = 4 if hub_name == "english-conversation.html" else 3
+            if hub_raw.count('class="change-card"') != target:
+                failures.append({"file":hub_name,"rule":"change_report_card_count","expected":target,"actual":hub_raw.count('class="change-card"')})
+            required_label = "학습 과정 예시" if target == 4 else "사례 유형"
+            if required_label not in hub_raw:
+                failures.append({"file":hub_name,"rule":"change_report_example_disclosure_missing","expected":required_label})
+            if target == 4 and not all(stage in hub_raw for stage in ("1~3개월", "3~6개월", "6~9개월", "9~12개월")):
+                failures.append({"file":hub_name,"rule":"four_stage_course_progression_missing"})
 
         expected_ctas={"courses.html":0,"english-conversation.html":6,"exam-english.html":6,"student-english.html":4}[hub_name]
         if hub_raw.count('class="route-cta"') != expected_ctas:
@@ -274,6 +280,13 @@ def main() -> int:
         elif conv:
             counts["conversation_pages_checked"] += 1
             if p.name.endswith("-beginner-english-conv.html"):
+                if 'class="section management"' in raw and 'class="beginner-sample"' not in raw:
+                    failures.append({"file":p.name,"rule":"beginner_english_sample_missing"})
+                if 'class="beginner-sample"' in raw and (
+                    raw.count('class="beginner-sample-line"') != 2
+                    or 'lang="en"' not in raw
+                ):
+                    failures.append({"file":p.name,"rule":"beginner_english_sample_invalid"})
                 for phrase in BEGINNER_CONV_PRESSURE_FORBIDDEN:
                     if contains_forbidden(text, phrase):
                         failures.append({"file":p.name,"rule":"beginner_conversation_pressure_term","value":phrase})
