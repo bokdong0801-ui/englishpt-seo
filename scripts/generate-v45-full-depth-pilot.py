@@ -550,7 +550,16 @@ def feedback_examples(variation, original, cards):
     else:
         two = f"{josa(a,'을/를')} 익숙한 조건에서는 처리했다고 가정합니다. 다음에는 질문 순서와 준비 시간을 바꿔 다시 시도하고 같은 기준이 유지되면 실제 재사용 범위가 넓어진 것으로 기록합니다."
         three = f"{b}에서 힌트가 없을 때 다시 멈췄다고 가정합니다. 새 표현을 추가하기보다 어느 단서가 필요했는지 확인하고 그 단서를 한 단계 줄여 다음 수업에서 재검사합니다."
-    return [one, two, three]
+    # Each example is illustrative; this fourth record shows how homework
+    # and the next class may adapt to the learner's available time.
+    followup = {
+        "scene": f"{a}에서 했던 짧은 질문이나 문제를 조금 바꿔 다시 해보기. 혼자 어렵다면 선생님과 쉬운 문장부터 확인하고 복습할 분량을 함께 정하기.",
+        "deadline": f"가까운 일정에 필요한 {a} 내용을 짧게 다시 연습하기. 시간이 부족한 주에는 꼭 필요한 과제만 남기고 다음 시간에 기억나는지 확인하기.",
+        "error": f"{a}에서 다시 틀린 부분을 정답만 보지 않고 이유부터 확인하기. 다음 수업에서 비슷한 문제나 질문 하나를 바꿔 다시 해보기.",
+        "use": f"생활이나 학교에서 필요한 {a} 표현을 짧게 연습해보기. 바로 말하기 어렵다면 익숙한 한 문장부터 다시 시작하기.",
+        "reuse": f"{a}에서 배운 내용을 다른 질문이나 자료에 적용해보기. 잘된 부분은 줄이고 자주 멈추는 부분만 다음 숙제로 남기기.",
+    }[variation]
+    return [one, two, three, followup]
 
 def visible_text(raw: str) -> str:
     raw = re.sub(r"<script[\s\S]*?</script>", " ", raw, flags=re.I)

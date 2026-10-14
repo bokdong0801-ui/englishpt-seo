@@ -7,6 +7,8 @@ on:
     paths:
       - '.github/workflows/stage9-v23-source-smoke.yml'
       - 'scripts/stage9-clean-mass-renderer.py'
+      - 'scripts/generate-v45-full-depth-pilot.py'
+      - 'scripts/generate-v45-exam-pilot.py'
       - 'scripts/build-stage9-production-release.py'
       - 'scripts/qa-stage9-v23-cta-aftercare.py'
       - 'englishpt.html'
@@ -84,6 +86,12 @@ jobs:
           spec.loader.exec_module(mod)
           loc={'slug':'seoul-jongno-sajikdong','dong':'사직동','service':'왕초보영어회화'}
           targets=mod.SERVICE_ORDER+mod.EXAM_ORDER+mod.ACADEMY_ORDER+mod.CONV_DERIVED_ORDER
+          svc_gold, exam_gold = mod.gold_modules()
+          cards=[("짧은 질문 듣기","짧은 질문에 답하기"),("내 소개","자기소개 해보기"),("생활영어","일상에서 사용하기"),("복습","다시 말하기")]
+          sample_exam=next(iter(exam_gold.EXAMS.values()))
+          for variation in ("scene","deadline","error","use","reuse"):
+              assert len(svc_gold.feedback_examples(variation,"오늘 배운 내용을 다음 수업에서 다시 확인합니다.",cards))==4,variation
+              assert len(exam_gold.feedbacks(sample_exam,variation))==4,variation
           assert len(targets)==23,len(targets)
           for intent in targets:
               family='exam' if intent in mod.EXAM_ORDER or intent in mod.ACADEMY_ORDER else 'service'

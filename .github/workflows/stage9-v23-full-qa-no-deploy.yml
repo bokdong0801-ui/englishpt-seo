@@ -9,6 +9,8 @@ on:
       - 'englishpt.html'
       - 'english-conversation.html'
       - 'scripts/qa-stage9-v23-cta-aftercare.py'
+      - 'scripts/generate-v45-full-depth-pilot.py'
+      - 'scripts/generate-v45-exam-pilot.py'
 
 permissions:
   contents: read
