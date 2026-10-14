@@ -1,0 +1,375 @@
+name: ENGLISH PT v23 Draft Review Deploy (No Production)
+
+on:
+  push:
+    branches:
+      - review/v23-aftercare-cta-20261014
+    paths:
+      - '.github/workflows/stage9-v23-review-deploy-only.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v23-review-deploy-only
+  cancel-in-progress: false
+
+jobs:
+  review-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      REVIEW_SITE_ID: 803550a8-03af-4776-bc8a-bd0bae85f5c7
+      REVIEW_SITE_NAME: englishpt-final-ia-review-bokdong
+      V23_SOURCE_RUN: '38533196374'
+      V23_SOURCE_SHA: 0a572e1847100ef3291972b1b132865b91b4be6d
+      NETLIFY_CLI_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Require successful immutable Hero V2 source build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY']
+          rid=os.environ['V23_SOURCE_RUN']
+          req=urllib.request.Request(
+              f'https://api.github.com/repos/{repo}/actions/runs/{rid}',
+              headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                       'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(req,timeout=40) as resp: run=json.load(resp)
+          assert run.get('status')=='completed'
+          assert run.get('conclusion')=='success',run.get('conclusion')
+          assert run.get('head_sha')==os.environ['V23_SOURCE_SHA']
+          assert run.get('name')=='ENGLISH PT v23 Full 140391 QA (Review Source Only)'
+          print('PASS_APPROVED_V23_SOURCE_RUN',rid,run['head_sha'])
+          PY
+
+      - name: Download existing full v23 artifact (no regeneration)
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23-hero-v2-preproduction-files
+          run-id: 38533196374
+          path: v23-artifact
+          github-token: ${{ github.token }}
+
+      - name: Verify SHA256 and extract 140391 verified pages
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || sudo apt-get install -y -qq zstd
+          df -h .
+          cd v23-artifact
+          sha256sum -c ENGLISHPT_RELEASE_SHA256.txt
+          python3 - <<'PY'
+          import json,zipfile
+          from pathlib import Path
+          report=json.loads(Path('ENGLISHPT_DOWNLOADABLE_RELEASE_REPORT.json').read_text())
+          assert report['status']=='PASS_DOWNLOADABLE_RELEASE_PACKAGE'
+          assert report['html_total']==140391
+          with zipfile.ZipFile('englishpt-sample-preview-v23.zip') as z:
+              manifest=json.loads(z.read('englishpt-sample-preview/SAMPLE-MANIFEST.json'))
+              assert manifest['sample_count']==8
+              assert manifest['full_html_total']==140391
+          hero=json.loads(Path('stage9-release/STAGE9_HERO_V2_FULL_QA.json').read_text())
+          assert hero['status']=='PASS_HERO_V2_FULL_RELEASE_QA'
+          content=json.loads(Path('stage9-release/STAGE9_V23_CTA_AFTERCARE_QA.json').read_text(encoding='utf-8'))
+          assert content['status']=='PASS_V23_CONTENT_CTA_SOURCE'
+          assert content['counts']['examined']==140391
+          assert content['counts']['record_examples']==4
+          read=json.loads(Path('stage9-release/STAGE9_BEGINNER_READABILITY_QA.json').read_text(encoding='utf-8'))
+          assert read['status']=='PASS_BEGINNER_READABILITY_QA'
+          easy=json.loads(Path('stage9-release/STAGE9_V23_EASY_COPY_FULL.json').read_text(encoding='utf-8'))
+          assert easy['status']=='PASS_V23_EASY_COPY_FULL'
+          sim=json.loads(Path('stage9-release/STAGE9_CLEAN_SIMILARITY_QA_V1.json').read_text(encoding='utf-8'))
+          assert sim['status']=='PASS'
+          assert sim['max_cosine']<0.94
+          assert sim['max_jaccard5']<0.65
+          assert hero['html_total']==140391
+          for key in ('missing_local_assets','missing_local_html','html_structure_failures','visible_body_image_pages'):
+              assert hero[key]==0,(key,hero[key])
+          release=json.loads(Path('stage9-release/STAGE9_PRODUCTION_RELEASE_QA_V1.json').read_text())
+          assert release['status']=='PASS_STAGE9_RELEASE_ASSEMBLED_READY_TO_DEPLOY'
+          assert release['indexing']['production_ui_failures']==0
+          print('PASS_V23_ARTIFACT_SHA256_AND_ALL_REQUIRED_QA')
+          PY
+          cd ..
+          mkdir -p final-review
+          tar --zstd -xf v23-artifact/englishpt-final-release-140391-v23.tar.zst -C final-review
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('final-review')
+          pages=[p for p in root.glob('*.html') if p.name not in {'index.html','404.html'}]
+          assert len(pages)==140391,len(pages)
+          assert (root/'index.html').exists()
+          assert (root/'404.html').exists()
+          assert (root/'assets/site.js').exists()
+          assert (root/'assets/styles.css').exists()
+          assert 'noindex' in (root/'_headers').read_text(encoding='utf-8')
+          for name in ['englishpt.html','courses.html','english-conversation.html',
+                       'exam-english.html','student-english.html','stations.html',
+                       'seoul-jongno-sajikdong-beginner-english-conv.html',
+                       'seoul-jongno-sajikdong-toeic.html',
+                       'seoul-jongno-sajikdong-ielts.html',
+                       'dalseo-songhyeondong.html','station-gangnam.html',
+                       'station-amsayeoksagongwon.html',
+                       'seoul-jongno-sajikdong-worker-english-conv-academy.html']:
+              assert (root/name).exists(),name
+          print('PASS_EXTRACTED_DRAFT_REVIEW',len(pages))
+          PY
+          df -h .
+
+      - name: Confirm Review-only Netlify site identity
+        run: |
+          set -euo pipefail
+          test -n "$NETLIFY_AUTH_TOKEN"
+          python3 - <<'PY'
+          import json,os,urllib.request
+          sid=os.environ['REVIEW_SITE_ID']
+          request=urllib.request.Request(
+              'https://api.netlify.com/api/v1/sites/'+sid,
+              headers={'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN']})
+          with urllib.request.urlopen(request,timeout=40) as resp: site=json.load(resp)
+          assert site.get('id')==sid
+          assert site.get('name')==os.environ['REVIEW_SITE_NAME'],site.get('name')
+          url=(site.get('ssl_url') or site.get('url') or '').lower()
+          assert 'englishpt-final-ia-review-bokdong.netlify.app' in url,url
+          assert 'englishpt.kr' not in url
+          assert (site.get('custom_domain') or '').lower() not in {'englishpt.kr','www.englishpt.kr'}
+          print('PASS_NETLIFY_ISOLATED_REVIEW_SITE',sid,url)
+          PY
+
+      - name: Install Netlify CLI
+        run: npm install --global netlify-cli@latest
+
+      - name: Upload v23 as a DRAFT review deploy (never Production)
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: |
+          set -euo pipefail
+          # DO NOT add --prod / --prod-if-unlocked or switch to the Production site.
+          netlify deploy \
+            --dir=final-review \
+            --site="$REVIEW_SITE_ID" \
+            --auth="$NETLIFY_AUTH_TOKEN" \
+            --message="ENGLISH PT v23 Hero V2 full QA PASS; isolated draft preview" \
+            --json > /tmp/v23-draft-result.json
+          python3 - <<'PY'
+          import json,os
+          from urllib.parse import urlparse
+          result=json.load(open('/tmp/v23-draft-result.json',encoding='utf-8'))
+          url=result.get('deploy_url') or ''
+          parsed=urlparse(url)
+          hostname=parsed.hostname or ''
+          suffix='--'+os.environ['REVIEW_SITE_NAME']+'.netlify.app'
+          assert parsed.scheme=='https',result
+          assert hostname.endswith(suffix),('Not a draft preview URL',hostname)
+          assert 'englishpt.kr' not in url
+          deploy_id=result.get('deploy_id') or result.get('id')
+          assert deploy_id,'Netlify deploy ID missing'
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('REVIEW_DEPLOY_URL='+url.rstrip('/')+'\n')
+              f.write('REVIEW_DEPLOY_ID='+str(deploy_id)+'\n')
+          print('PASS_V23_DRAFT_DEPLOY_URL',url)
+          print('PASS_V23_DRAFT_DEPLOY_ID',deploy_id)
+          PY
+
+      - name: Check live 8-page Hero V2 and consultation navigation (no form submissions)
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,re,time,urllib.request
+          from pathlib import Path
+          base=os.environ['REVIEW_DEPLOY_URL'].rstrip('/')
+          root=Path('final-review')
+          samples=[
+            'englishpt.html',
+            'seoul-jongno-sajikdong-beginner-english-conv.html',
+            'seoul-jongno-sajikdong-toeic.html',
+            'seoul-jongno-sajikdong-ielts.html',
+            'dalseo-songhyeondong.html',
+            'station-gangnam.html',
+            'station-amsayeoksagongwon.html',
+            'seoul-jongno-sajikdong-worker-english-conv-academy.html',
+          ]
+          must=['index.html','courses.html','english-conversation.html',
+                'exam-english.html','student-english.html','stations.html',*samples]
+          pages=sorted(p.name for p in root.glob('*.html') if p.name not in {'404.html','index.html'})
+          spread=[pages[i] for i in range(0,len(pages),max(1,len(pages)//30))][:30]
+          targets=list(dict.fromkeys(must+spread))
+          checked=[];failures=[]
+          for name in targets:
+              for attempt in range(4):
+                  try:
+                      request=urllib.request.Request(base+'/'+name,headers={'User-Agent':'ENGLISH-PT-v23-Review-QA'})
+                      with urllib.request.urlopen(request,timeout=40) as resp:
+                          assert resp.status==200,(name,resp.status)
+                          html=resp.read().decode('utf-8',errors='replace')
+                      assert '<h1' in html,(name,'H1 missing')
+                      if name in samples:
+                          if name.startswith('seoul-jongno-sajikdong-'):
+                              assert 'data-hero-copy="audience-v2"' in html,(name,'not v23 Hero')
+                              assert 'href="#consultation-preview"' in html,(name,'CTA missing')
+                              assert 'id="consultation-preview"' in html,(name,'form anchor missing')
+                          if name=='englishpt.html':
+                              assert 'id="audience-path"' in html
+                              assert '지금 내 수준에 맞게 시작하세요.' in html
+                          if name.startswith('station-'):
+                              assert 'hero-entry-panel' in html,(name,'station audience cards missing')
+                      checked.append({'name':name,'http':200,'chars':len(html)})
+                      break
+                  except Exception as exc:
+                      if attempt==3:failures.append({'name':name,'error':str(exc)})
+                      else:time.sleep((attempt+1)*5)
+          assert not failures,failures[:12]
+          report={
+              'status':'PASS_V23_DRAFT_HTTP_REVIEW',
+              'source_run':os.environ['V23_SOURCE_RUN'],
+              'source_sha':os.environ['V23_SOURCE_SHA'],
+              'draft_review_url':base,
+              'netlify_deploy_id':os.environ['REVIEW_DEPLOY_ID'],
+              'production_affected':False,
+              'real_form_submit_tested':False,
+              'http_pages_checked':len(checked),
+              'representative_urls':{name:base+'/'+name for name in samples},
+              'checks':checked,
+          }
+          Path('ENGLISHPT_V23_DRAFT_REVIEW_REPORT.json').write_text(
+              json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('PASS_V23_DRAFT_HTTP_REVIEW',len(checked),base)
+          print('V23_REPRESENTATIVE_URLS',json.dumps(report['representative_urls'],ensure_ascii=False))
+          PY
+
+      - name: Verify real Draft Preview in Chromium (390px and 1440px, no submit)
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet pychrome
+          CHROME="$(command -v google-chrome || command -v google-chrome-stable || command -v chromium || command -v chromium-browser || true)"
+          test -n "$CHROME"
+          BROWSER_PROFILE="$(mktemp -d /tmp/englishpt-v23-live-review-XXXXXX)"
+          "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-background-networking --disable-extensions --no-first-run \
+            --remote-debugging-port=9240 --remote-allow-origins='*' --user-data-dir="$BROWSER_PROFILE" about:blank \
+            >/tmp/englishpt-v23-live-chrome.log 2>&1 &
+          CHROME_PID=$!
+          trap 'kill "$CHROME_PID" 2>/dev/null || true; rm -rf "$BROWSER_PROFILE" >/dev/null 2>&1 || true' EXIT
+          READY=0
+          for i in $(seq 1 90); do
+            if curl --max-time 2 -fsS http://127.0.0.1:9240/json/version >/dev/null 2>&1; then READY=1; break; fi
+            if ! kill -0 "$CHROME_PID" 2>/dev/null; then break; fi
+            sleep .5
+          done
+          if [ "$READY" != 1 ]; then
+            tail -n 100 /tmp/englishpt-v23-live-chrome.log || true
+            echo "::error::Live Draft Review Chromium browser failed to start"
+            exit 1
+          fi
+          python3 - <<'PY'
+          import base64,json,os,time
+          from pathlib import Path
+          import pychrome
+          root=Path('V23_LIVE_REVIEW_SCREENSHOTS')
+          root.mkdir(parents=True,exist_ok=True)
+          base=os.environ['REVIEW_DEPLOY_URL'].rstrip('/')
+          pages=[
+            'englishpt.html',
+            'seoul-jongno-sajikdong-beginner-english-conv.html',
+            'seoul-jongno-sajikdong-toeic.html',
+            'seoul-jongno-sajikdong-ielts.html',
+            'dalseo-songhyeondong.html',
+            'station-gangnam.html',
+            'station-amsayeoksagongwon.html',
+            'seoul-jongno-sajikdong-worker-english-conv-academy.html',
+          ]
+          browser=pychrome.Browser(url='http://127.0.0.1:9240')
+          tab=browser.new_tab()
+          tab.start()
+          tab.Page.enable()
+          tab.Runtime.enable()
+          rows=[]
+          failures=[]
+          try:
+            for width,mobile in [(390,True),(1440,False)]:
+              tab.call_method('Emulation.setDeviceMetricsOverride',
+                width=width,height=900,deviceScaleFactor=1,mobile=mobile,
+                screenWidth=width,screenHeight=900,dontSetVisibleSize=False)
+              for name in pages:
+                tab.Page.navigate(url=base+'/'+name)
+                time.sleep(1.0)
+                probe=r'''(()=>{
+                  const bodyText=document.body?.innerText||'';
+                  const h1=document.querySelector('h1');
+                  const modal=document.getElementById('applyModal');
+                  const btn=document.querySelector('[data-open-form]');
+                  const anchor=document.querySelector('a[href="#consultation-preview"]');
+                  const target=document.getElementById('consultation-preview');
+                  const loadedStyles=[...document.styleSheets].some(s=>!!s.href);
+                  let ctaResult='missing';
+                  if(btn&&modal){
+                    btn.click();
+                    ctaResult=modal.classList.contains('open')&&modal.getAttribute('aria-hidden')==='false'?'modal-opens':'modal-failed';
+                    document.querySelector('[data-close-form]')?.click();
+                  }else if(anchor&&target) {
+                    ctaResult='anchor-resolves';
+                  } else if(btn&&target) {
+                    ctaResult='form-target-resolves';
+                  }
+                  return {
+                    href:location.href,ready:document.readyState,
+                    width:innerWidth,sw:document.documentElement.scrollWidth,
+                    h1:h1?.innerText||'',bodyChars:bodyText.length,
+                    styles:loadedStyles,cta:ctaResult,
+                    timeline:document.querySelectorAll('.change-section .change-card').length,
+                    aftercare:!!document.querySelector('.manage-aftercare,.aftercare-summary'),
+                    feedback:document.querySelectorAll('.feedback .card').length
+                  };
+                })()'''
+                m=tab.Runtime.evaluate(expression=probe,returnByValue=True)['result']['value']
+                issues=[]
+                if m['width']!=width or m['sw']>width+3:issues.append('viewport_overflow')
+                if not m['styles']:issues.append('stylesheet_unavailable')
+                if not m['h1'] or m['bodyChars']<300:issues.append('page_content_missing')
+                if m['cta']=='missing' or m['cta']=='modal-failed':issues.append('cta_unavailable')
+                if name=='englishpt.html' and m['timeline']!=4:issues.append('four_timeline_cards_missing')
+                if name=='seoul-jongno-sajikdong-beginner-english-conv.html' and not m['aftercare']:issues.append('beginner_aftercare_missing')
+                tab.Page.captureScreenshot(format='png',captureBeyondViewport=False)
+                snapshot=tab.Page.captureScreenshot(format='png',captureBeyondViewport=False)
+                (root/(name[:-5]+'-'+str(width)+'.png')).write_bytes(base64.b64decode(snapshot['data']))
+                rows.append({'page':name,'width':width,'observed':m,'issues':issues,'status':'PASS' if not issues else 'FAIL'})
+                failures.extend([{'page':name,'width':width,'reason':e} for e in issues])
+          finally:
+            tab.stop();browser.close_tab(tab)
+          report={'status':'PASS_V23_LIVE_DRAFT_CHROMIUM' if not failures else 'FAIL_V23_LIVE_DRAFT_CHROMIUM',
+                  'draft_review_url':base,'tested_pages':len(pages),'viewports':[390,1440],
+                  'checks':len(rows),'form_submissions':'NOT_PERFORMED',
+                  'production_deployed':False,'failures':failures,'rows':rows}
+          Path('ENGLISHPT_V23_LIVE_DRAFT_VISUAL_QA.json').write_text(
+            json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(report['status'],len(rows),'screenshots',len(list(root.glob('*.png'))))
+          if failures:
+            print('LIVE_DRAFT_VISUAL_ISSUES',json.dumps(failures[:20],ensure_ascii=False))
+            raise SystemExit(1)
+          PY
+
+      - name: Upload review verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23-review-deploy-report
+          path: |
+            ENGLISHPT_V23_DRAFT_REVIEW_REPORT.json
+            ENGLISHPT_V23_LIVE_DRAFT_VISUAL_QA.json
+            V23_LIVE_REVIEW_SCREENSHOTS/
+          retention-days: 30
+          if-no-files-found: warn
