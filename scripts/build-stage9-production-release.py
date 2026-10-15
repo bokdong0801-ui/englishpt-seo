@@ -1253,6 +1253,29 @@ def main() -> None:
 
     search_image_report = apply_search_image_metadata(out, failures)
 
+    # Hard gate, not a cosmetic sample: check every generated page's
+    # Open Graph/Twitter/schema URL and the actual PNG IHDR geometry.
+    # This is read-only and must pass before packaging any release.
+    og_audit = ROOT / "scripts" / "qa_v234_og_all_pages.py"
+    if not og_audit.is_file():
+        failures.append("og_all_pages_audit_script_missing")
+    else:
+        og_out = out / "STAGE9_OG_LANDSCAPE_ALL_PAGES_QA.json"
+        og_proc = subprocess.run(
+            ["python3", str(og_audit), "--root", str(out),
+             "--expected", "140391", "--report", str(og_out)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+        if og_proc.returncode != 0:
+            failures.append({
+                "og_all_pages_audit_failed": og_proc.returncode,
+                "stdout": og_proc.stdout[-1800:],
+                "stderr": og_proc.stderr[-1200:],
+                "report": str(og_out),
+            })
+        else:
+            print("PASS_STAGE9_OG_ALL_PAGES_AUDIT", str(og_out))
+
     # Sitewide render-integrity contract. A production page is considered
     # "broken" if its core local assets or local HTML targets are missing,
     # if the document structure is incomplete, or if any visible body image
