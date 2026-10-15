@@ -1,0 +1,40 @@
+name: ENGLISH PT v23.4 OG Landscape Sample Gate (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v23-og-landscape-sample-gate.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: englishpt-v234-og-landscape-sample-gate
+  cancel-in-progress: false
+
+jobs:
+  og-no-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify Open Graph landscape generator syntax and 13 representative pages
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --quiet pillow
+          python3 -m py_compile scripts/stage9-square-search-thumbnails.py scripts/build-stage9-production-release.py scripts/test_v234_og_landscape.py
+          python3 scripts/test_v234_og_landscape.py
+      - name: Upload 1200x630 preview, center-square crop proof, and JSON QA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v234-og-landscape-sample-preflight
+          path: og-landscape-preview-artifact/
+          retention-days: 30
+          if-no-files-found: error
