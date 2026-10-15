@@ -1467,47 +1467,64 @@ def intent_label(intent: str) -> str:
 
 
 def related_course_groups(loc: dict, current_intent: str) -> str:
+    # All locality pages use the same six-student-card structure.
+    # The 23-intent release has a local elementary tutoring page, but NO
+    # mid-tutor/high-tutor locality detail pages; never rename a conversation
+    # page to tutoring or construct a nonexistent locality tutor URL.
     groups = [
-        ("학생 영어", ["elem-tutor","mid-conv","high-conv"]),
+        ("학생 영어", ["elem-tutor", "mid-conv", "high-conv"]),
         ("회화·목적별 영어", [
-            "english-conv-academy","adult-english-conv-academy",
-            "worker-english-conv-academy","beginner-english-conv",
-            "univ-conv","jobseeker-conv","biz-business-conv","housewife-conv",
+            "english-conv-academy", "adult-english-conv-academy",
+            "worker-english-conv-academy", "beginner-english-conv",
+            "univ-conv", "jobseeker-conv", "biz-business-conv", "housewife-conv",
         ]),
-        ("시험 영어", ["toeic","toeic-speaking","opic","ielts","toefl","duolingo"]),
+        ("시험 영어", ["toeic", "toeic-speaking", "opic", "ielts", "toefl", "duolingo"]),
         ("학원형 비교", [
-            "toeic-academy","toeic-speaking-academy","opic-academy",
-            "ielts-academy","toefl-academy","duolingo-academy",
+            "toeic-academy", "toeic-speaking-academy", "opic-academy",
+            "ielts-academy", "toefl-academy", "duolingo-academy",
         ]),
     ]
     blocks = []
     for title, intents in groups:
         links = []
-        for intent in intents:
-            if intent == current_intent:
-                continue
-            label = intent_label(intent)
-            local_label = f'{loc["dong"]} {label}'
-            links.append(
-                f'<a href="/{esc(loc["slug"])}-{intent}.html">'
-                f'<span>{esc(local_label)}</span><b>→</b></a>'
-            )
-        # Three student combinations are not generated as separate locality
-        # URLs in this frozen 23-intent build. Link to REAL student-hub anchors
-        # instead of constructing dead local paths.
         if title == "학생 영어":
+            elementary_url = (
+                "/student-english.html#elementary-tutor" if current_intent == "elem-tutor"
+                else f'/{esc(loc["slug"])}-elem-tutor.html'
+            )
+            tutors = (
+                ("초등학생영어과외", elementary_url),
+                ("중학생영어과외", "/student-english.html#middle-tutor"),
+                ("고등학생영어과외", "/student-english.html#high-tutor"),
+            )
+            for service_name, href in tutors:
+                label = f'{loc["dong"]} {service_name}'
+                links.append(
+                    f'<a class="related-course-tutor" href="{href}">'
+                    f'<span>{esc(label)}</span><b>→</b></a>'
+                )
             for service_name, grade_anchor in (
                 ("초등학생영어회화", "elementary"),
-                ("중학생영어과외", "middle"),
-                ("고등학생영어과외", "high"),
+                ("중학생영어회화", "middle"),
+                ("고등학생영어회화", "high"),
             ):
                 label = f'{loc["dong"]} {service_name}'
                 links.append(
                     f'<a class="related-course-fallback" href="/student-english.html#{grade_anchor}" '
-                    'title="지역 상세페이지 대신 학년별 학생영어 안내로 이동">'
+                    'title="지역별 회화 상세페이지와 별도로 학년별 학생영어 안내로 이동">'
                     f'<span>{esc(label)} '
                     '<small>학년별 수업 안내 · 지역 상세페이지 준비 전</small></span>'
                     '<b>안내 →</b></a>'
+                )
+        else:
+            for intent in intents:
+                if intent == current_intent:
+                    continue
+                label = intent_label(intent)
+                local_label = f'{loc["dong"]} {label}'
+                links.append(
+                    f'<a href="/{esc(loc["slug"])}-{intent}.html">'
+                    f'<span>{esc(local_label)}</span><b>→</b></a>'
                 )
         if links:
             blocks.append(
