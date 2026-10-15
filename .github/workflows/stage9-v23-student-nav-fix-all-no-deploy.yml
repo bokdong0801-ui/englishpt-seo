@@ -157,6 +157,9 @@ jobs:
               ):
                 if len(errors)<200:errors.append([page.name,'wrong elementary tutor href',href.group(1)])
             if checked%25000==0:print('NAV_FINAL_AUDIT_PROGRESS',checked,groups,flush=True)
+          pilot=root/'pilot.css'
+          if not pilot.exists() or 'v23.4 student-navigation CTA mobile no-wrap' not in pilot.read_text(encoding='utf-8'):
+            errors.append(['(all)','mobile CTA stylesheet overlay missing'])
           if len(pages)!=140393:errors.append(['(all)','html_count',len(pages)])
           if groups!=original['student_groups_found']:errors.append(['(all)','coverage_mismatch',groups])
           if og!=len(pages):errors.append(['(all)','OG preservation mismatch',og])
