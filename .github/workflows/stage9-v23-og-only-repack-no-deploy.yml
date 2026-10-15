@@ -1,0 +1,140 @@
+name: ENGLISH PT v23.4 OG-Only 140391 Repack (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v23-og-only-repack-no-deploy.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v234-og-only-repack-no-deploy
+  cancel-in-progress: false
+
+jobs:
+  og-only-repack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    env:
+      SOURCE_RUN: '38689660290'
+      SOURCE_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize guaranteed JSON diagnostic
+        run: |
+          mkdir -p og-only-report
+          printf '{"status":"STARTED","source_run":"38689660290","source_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f","netlify_deployed":false,"production_deployed":false}\n' > og-only-report/EXECUTION_STATUS.json
+      - name: Validate approved immutable v23.4 source run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY']
+          req=urllib.request.Request(
+            f'https://api.github.com/repos/{repo}/actions/runs/{os.environ["SOURCE_RUN"]}',
+            headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                     'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(req,timeout=40) as res: run=json.load(res)
+          assert run['status']=='completed' and run['conclusion']=='success'
+          assert run['head_sha']==os.environ['SOURCE_SHA']
+          assert run['name']=='ENGLISH PT v23 Full 140391 QA (Review Source Only)'
+          print('PASS_V234_OG_SOURCE_RUN_SHA',run['id'],run['head_sha'])
+          PY
+      - name: Download v23.4 approved release once (no regeneration)
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23-hero-v2-preproduction-files
+          run-id: 38689660290
+          path: v23-source
+          github-token: ${{ github.token }}
+      - name: Verify approved release archive SHA256 and extract
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || sudo apt-get install -y -qq zstd
+          (cd v23-source && sha256sum -c ENGLISHPT_RELEASE_SHA256.txt)
+          mkdir -p og-only-release
+          tar --zstd -xf v23-source/englishpt-final-release-140391-v23.tar.zst -C og-only-release
+          test -f og-only-release/assets/search-thumbnail-manifest.json
+          test -f og-only-release/seoul-jongno-sajikdong-worker-english-conv-academy.html
+          rm -rf v23-source
+          df -h .
+          echo PASS_V234_EXTRACTED_APPROVED_140391_RELEASE
+      - name: Generate OG-only landscape patch and audit ALL 140391 pages
+        id: patch
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --quiet pillow
+          python3 -m py_compile scripts/v23_4_og_only_patch.py scripts/qa_v234_og_all_pages.py scripts/stage9-square-search-thumbnails.py scripts/build-stage9-production-release.py
+          python3 scripts/v23_4_og_only_patch.py --root og-only-release --report-dir og-only-report
+      - name: Archive and checksum approved OG-only no-deploy release
+        id: pack
+        if: steps.patch.outcome == 'success'
+        run: |
+          set -euo pipefail
+          test -f og-only-report/STAGE9_OG_LANDSCAPE_ALL_PAGES_QA.json
+          mkdir -p og-only-package
+          tar -I 'zstd -T0 -3' -cf og-only-package/englishpt-v23-4-og-landscape-140391-no-deploy.tar.zst -C og-only-release .
+          (cd og-only-package && sha256sum englishpt-v23-4-og-landscape-140391-no-deploy.tar.zst > SHA256.txt)
+          df -h .
+          echo PASS_V234_OG_ONLY_ARCHIVE_SHA256
+      - name: Always summarize source identity, page audit and changes
+        if: always()
+        env:
+          PATCH_STATUS: ${{ steps.patch.outcome }}
+          PACK_STATUS: ${{ steps.pack.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path('og-only-report')
+          q=p/'OG_ONLY_REPACK_REPORT.json'
+          r=json.loads(q.read_text(encoding='utf-8')) if q.exists() else {}
+          result={
+            'status':'PASS_V234_OG_ONLY_REPACK_READY_FOR_REVIEW' if os.environ['PATCH_STATUS']=='success' and os.environ['PACK_STATUS']=='success' and r.get('body_unchanged') and r.get('og_error_count')==0 else 'HOLD_V234_OG_ONLY_REPACK',
+            'source_run':'38689660290',
+            'source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+            'patch_step':os.environ['PATCH_STATUS'],
+            'package_step':os.environ['PACK_STATUS'],
+            'pages_checked':r.get('og_pages_checked'),
+            'og_errors':r.get('og_error_count'),
+            'body_unchanged':r.get('body_unchanged'),
+            'netlify_deployed':False,
+            'production_deployed':False,
+            'form_submissions':False,
+            'production_approval':'HOLD'
+          }
+          (p/'EXECUTION_STATUS.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as summary:
+            summary.write('## '+result['status']+'\n\n')
+            summary.write('Source run 38689660290; SHA a18b8901ecda7d37f65e35b15f03d579ec63c70f.\n\n')
+            summary.write('Pages audited: '+str(result['pages_checked'])+'; OG errors: '+str(result['og_errors'])+'; body unchanged: '+str(result['body_unchanged'])+'\n\n')
+            summary.write('No Netlify uploads, no Production deploy, no consultation form submission.\n')
+          print(result['status'],flush=True)
+          PY
+      - name: Upload reports even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v234-og-only-140391-audit-report
+          path: og-only-report/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload patched release archive if ALL pages pass (NO DEPLOY)
+        if: steps.patch.outcome == 'success' && steps.pack.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v234-og-landscape-140391-ready-NO-DEPLOY
+          path: og-only-package/
+          retention-days: 21
+          if-no-files-found: error
