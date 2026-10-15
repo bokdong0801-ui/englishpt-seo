@@ -80,9 +80,9 @@ jobs:
         run: |
           set -euo pipefail
           if ! command -v zstd >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y -qq zstd; fi
-          sha256sum -c og-report-source/OG_RELEASE_SHA256.txt
+          (cd og-source && sha256sum -c ../og-report-source/OG_RELEASE_SHA256.txt)
           mkdir -p staged-site
-          tar --zstd -xf englishpt-v23-4-og-safe-140391-REVIEW-ONLY.tar.zst -C staged-site
+          tar --zstd -xf og-source/englishpt-v23-4-og-safe-140391-REVIEW-ONLY.tar.zst -C staged-site
           test -f staged-site/student-english.html
           test -f staged-site/assets/styles.css
           test -f staged-site/_headers
