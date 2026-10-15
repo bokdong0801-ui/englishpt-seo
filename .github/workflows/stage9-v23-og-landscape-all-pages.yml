@@ -1,0 +1,174 @@
+name: ENGLISH PT v23.4 OG Landscape All Pages Build (No Deploy)
+
+on:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v23-og-landscape-all-pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v23-4-og-all-pages-no-deploy
+  cancel-in-progress: false
+
+jobs:
+  og-safe-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    env:
+      SOURCE_RUN: '38689660290'
+      SOURCE_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize report even if subsequent stages fail
+        run: |
+          mkdir -p og-report
+          printf '{"status":"STARTED","source_run":"38689660290","source_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f","deployed":false}\n' > og-report/OG_EXECUTION.json
+      - name: Verify source run and SHA
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,urllib.request
+          url='https://api.github.com/repos/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['SOURCE_RUN']
+          req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN']})
+          with urllib.request.urlopen(req,timeout=45) as f: d=json.load(f)
+          assert d['conclusion']=='success' and d['status']=='completed'
+          assert d['head_sha']==os.environ['SOURCE_SHA']
+          print('PASS_V23_4_SOURCE_SHA',d['head_sha'])
+          PY
+      - name: Download original immutable 140391-page artifact
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23-hero-v2-preproduction-files
+          run-id: 38689660290
+          path: source-artifact
+          github-token: ${{ github.token }}
+      - name: SHA256 verify and extract pages
+        id: extract
+        run: |
+          set -euo pipefail
+          if ! command -v zstd >/dev/null; then sudo apt-get update -qq && sudo apt-get install -qq -y zstd; fi
+          (cd source-artifact && sha256sum -c ENGLISHPT_RELEASE_SHA256.txt)
+          mkdir -p staged-site
+          tar --zstd -xf source-artifact/englishpt-final-release-140391-v23.tar.zst -C staged-site
+          test -f staged-site/student-english.html
+          test -f staged-site/_headers
+          echo PASS_OG_SOURCE_EXTRACTION
+      - name: Install Korean fonts and Pillow
+        id: fonts
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet Pillow==11.3.0
+          echo PASS_OG_KOREAN_FONT_RENDERER
+      - name: Generate square-safe landscape OG artwork and update every HTML
+        id: og
+        run: |
+          set -euo pipefail
+          python3 scripts/v23_4_og_landscape_all_pages.py --root staged-site \
+            --expected 140391 --report og-report/OG_V23_4_ALL_PAGES_REPORT.json
+      - name: Verify all HTML metadata and PNG byte dimensions
+        id: verify
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,re,sys
+          from pathlib import Path
+          from PIL import Image
+          root=Path('staged-site');report={}
+          pages=list(root.glob('*.html'))
+          count=0;issues=[];image_paths=set()
+          for p in pages:
+            html=p.read_text(encoding='utf-8',errors='replace')
+            tags=re.findall(r'<meta\b[^>]*>',html,re.I)
+            def attr(tag,key):
+              m=re.search(r'\b'+key+r'\s*=\s*["\x27]([^"\x27]*)["\x27]',tag,re.I)
+              return m.group(1) if m else None
+            og=[attr(t,'content') for t in tags if attr(t,'property')=='og:image']
+            twitter=[attr(t,'content') for t in tags if attr(t,'name')=='twitter:image']
+            wc=[attr(t,'content') for t in tags if attr(t,'property')=='og:image:width']
+            hc=[attr(t,'content') for t in tags if attr(t,'property')=='og:image:height']
+            if len(og)!=1 or len(twitter)!=1 or og!=twitter or wc!=['1200'] or hc!=['630']:
+              if len(issues)<200:issues.append({'page':p.name,'reason':'missing_or_duplicate_metadata'})
+              continue
+            url=og[0]
+            if not url.startswith('https://englishpt.kr/assets/images/og-pages/') or not url.endswith('.png'):
+              if len(issues)<200:issues.append({'page':p.name,'reason':'bad_og_url','url':url})
+              continue
+            image_paths.add(url.rsplit('/',1)[-1]);count+=1
+          for name in image_paths:
+            img=root/'assets/images/og-pages'/name
+            if not img.exists():
+              issues.append({'image':name,'reason':'missing_png'})
+            elif Image.open(img).size!=(1200,630):
+              issues.append({'image':name,'reason':'wrong_dimensions'})
+          status='PASS_V23_4_OG_FULL_SITE_QA' if not issues and len(pages)==140393 and count==140393 else 'FAIL_V23_4_OG_FULL_SITE_QA'
+          report={'status':status,'html_total':len(pages),'correct_meta':count,
+                  'unique_images':len(image_paths),'errors_count':len(issues),'errors':issues,
+                  'production_deployed':False}
+          Path('og-report/OG_V23_4_FINAL_QA.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print(status,count,len(image_paths),len(issues),flush=True)
+          if status.startswith('FAIL'):raise SystemExit(1)
+          PY
+      - name: Package updated site for review only
+        id: package
+        run: |
+          set -euo pipefail
+          tar -I 'zstd -T0 -3' -cf englishpt-v23-4-og-safe-140391-REVIEW-ONLY.tar.zst -C staged-site .
+          sha256sum englishpt-v23-4-og-safe-140391-REVIEW-ONLY.tar.zst > og-report/OG_RELEASE_SHA256.txt
+          ls -lh englishpt-v23-4-og-safe-140391-REVIEW-ONLY.tar.zst
+          echo PASS_V23_4_OG_REVIEW_PACKAGE_CREATED
+      - name: Always publish status report
+        if: always()
+        env:
+          SOURCE_RESULT: ${{ steps.source.outcome }}
+          DOWNLOAD_RESULT: ${{ steps.download.outcome }}
+          EXTRACT_RESULT: ${{ steps.extract.outcome }}
+          FONTS_RESULT: ${{ steps.fonts.outcome }}
+          OG_RESULT: ${{ steps.og.outcome }}
+          VERIFY_RESULT: ${{ steps.verify.outcome }}
+          PACKAGE_RESULT: ${{ steps.package.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path('og-report');p.mkdir(exist_ok=True)
+          keys=('SOURCE','DOWNLOAD','EXTRACT','FONTS','OG','VERIFY','PACKAGE')
+          stages={k:os.environ.get(k+'_RESULT','unknown') for k in keys}
+          ok=all(s=='success' for s in stages.values())
+          status='PASS_V23_4_OG_PACKAGE_REVIEW_ONLY' if ok else 'HOLD_V23_4_OG_PACKAGE_REVIEW_ONLY'
+          obj={'status':status,'source_run':'38689660290','source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f','stages':stages,'site_redeployed':False,'production_deployed':False}
+          (p/'OG_EXECUTION.json').write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+            f.write(f"### OG all-page review build: {status}\n\n")
+            f.write(f"Stages: {stages}\n\nNo Netlify deploy. No Production changes. No form submissions.\n")
+          print(status,stages)
+          PY
+      - name: Upload QA JSON reports even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23-4-og-full-qa-reports
+          path: og-report/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload staged full site only if all checks pass
+        if: steps.package.outcome == 'success' && steps.verify.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23-4-og-square-safe-full-site-REVIEW-ONLY
+          path: englishpt-v23-4-og-safe-140391-REVIEW-ONLY.tar.zst
+          retention-days: 30
+          if-no-files-found: error
