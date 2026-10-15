@@ -136,6 +136,27 @@ def main():
         if not required.issubset(hub_anchors):
             raise ValueError("student hub lacks needed grade tutoring/conversation anchors")
 
+        # Prevent "안내 →" wrapping across two lines at mobile width.
+        # The immutable OG package has its own root pilot.css; update the
+        # staged copy without touching the live Draft or Production site.
+        css_rule = (
+            "\\n/* v23.4 student-navigation CTA mobile no-wrap */\\n"
+            ".related-course-links a span{flex:1 1 auto;min-width:0}\\n"
+            ".related-course-links a b{flex:0 0 auto;white-space:nowrap;"
+            "word-break:keep-all;overflow-wrap:normal}\\n"
+        )
+        pilot_css = root / "pilot.css"
+        if not pilot_css.is_file():
+            raise ValueError("staged release lacks pilot.css required by locality pages")
+        css_updated = 0
+        for css_path in (pilot_css, root / "assets/stage9-mass-production.css"):
+            if css_path.is_file():
+                contents = css_path.read_text(encoding="utf-8")
+                if "v23.4 student-navigation CTA mobile no-wrap" not in contents:
+                    css_path.write_text(contents + css_rule, encoding="utf-8")
+                    css_updated += 1
+        report["css_files_updated"] = css_updated
+
         for index,p in enumerate(pages):
             try:
                 original = p.read_text(encoding="utf-8")
