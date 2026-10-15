@@ -4,7 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: [review/v23-aftercare-cta-20261014]
-    paths: ['.github/workflows/stage9-v23-og-landscape-sample-gate.yml']
+    paths:
+      - '.github/workflows/stage9-v23-og-landscape-sample-gate.yml'
+      - 'scripts/test_v234_og_landscape.py'
+      - 'scripts/qa_v234_og_all_pages.py'
 
 permissions:
   contents: read
@@ -28,7 +31,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq fonts-noto-cjk
           python3 -m pip install --quiet pillow
-          python3 -m py_compile scripts/stage9-square-search-thumbnails.py scripts/build-stage9-production-release.py scripts/test_v234_og_landscape.py
+          python3 -m py_compile scripts/stage9-square-search-thumbnails.py scripts/build-stage9-production-release.py scripts/test_v234_og_landscape.py scripts/qa_v234_og_all_pages.py
           python3 scripts/test_v234_og_landscape.py
       - name: Upload 1200x630 preview, center-square crop proof, and JSON QA report
         if: always()
