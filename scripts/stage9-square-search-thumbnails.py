@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Generate 1200x1200 Korean Naver/OG search thumbnails for ENGLISH PT.
+"""Generate 1200x630 crop-safe Korean Open Graph social previews for ENGLISH PT.
 
 Stage contract
 - 29 master designs: 1 main + 5 hubs + 23 course intents.
@@ -204,41 +204,99 @@ def icon(draw: ImageDraw.ImageDraw, key: str, accent: str, soft: str) -> None:
         draw.ellipse((980,475,1000,495), fill=accent)
 
 def draw_thumb(path: Path, key: str, title: str, subtitle: str, chips: list[str]) -> None:
+    """Render a genuine 1200x630 landscape OG image, with a center-square safe area.
+
+    Some social platforms crop landscape cards into a centered square. Every
+    semantic element stays inside x=300..900; side artwork is decorative only.
+    No resize/crop of a square poster and no cut-off of the page H1.
+    """
+    width, height = 1200, 630
+    safe_left, safe_right = 306, 894
     bg, ink, accent, soft = MASTER[key][3]
-    im = Image.new("RGB", (SIZE,SIZE), bg)
+    im = Image.new("RGB", (width, height), bg)
     d = ImageDraw.Draw(im)
-    # Soft corner shapes.
-    d.ellipse((915,-115,1280,250), fill=soft)
-    d.ellipse((-160,930,260,1350), fill=soft)
 
-    brand_font = _font("bold", 38)
-    sub_font = _font("bold", 40)
-    chip_font = _font("bold", 28)
-    d.text((82,78), BRAND, font=brand_font, fill=accent)
+    # Balanced side decoration: none of it contains important text.
+    d.ellipse((-165, -145, 295, 315), fill=soft)
+    d.ellipse((950, 310, 1360, 720), fill=soft)
+    d.rounded_rectangle((100, 240, 220, 378), radius=22, outline=accent, width=9)
+    d.line((132, 288, 188, 288), fill=accent, width=8)
+    d.line((132, 320, 178, 320), fill=accent, width=8)
+    d.ellipse((978, 178, 1080, 280), outline=accent, width=12)
+    d.ellipse((1014, 214, 1044, 244), fill=accent)
+    d.rounded_rectangle((970, 335, 1100, 354), radius=8, fill=accent)
+    d.rounded_rectangle((970, 372, 1062, 391), radius=8, fill=accent)
 
-    title_font = fit_font(title, 940, 92, 58)
-    lines = wrap_lines(d, title, title_font, 900, 2)
-    y = 175
-    for line in lines:
-        d.text((82,y), line, font=title_font, fill=ink)
-        y += int(title_font.size * 1.18)
+    def centered(text: str, y: int, font, color: str) -> None:
+        box = d.textbbox((0, 0), text, font=font)
+        text_width = box[2] - box[0]
+        d.text(((width - text_width) // 2, y), text, font=font, fill=color)
 
-    d.text((82,y+18), subtitle, font=sub_font, fill=ink)
-    icon(d, key, accent, soft)
+    def split_to_width(text: str, font, max_width: int) -> list[str]:
+        lines = []
+        current = ""
+        # Character-level fallback means long Korean place names never spill
+        # beyond the safe width, even when they contain no spaces.
+        for character in text:
+            candidate = (current + character).lstrip()
+            if d.textbbox((0, 0), candidate, font=font)[2] <= max_width:
+                current = candidate
+            else:
+                if current:
+                    lines.append(current.rstrip())
+                current = character.strip()
+        if current:
+            lines.append(current.rstrip())
+        return lines or [""]
 
-    # Keyword chips.
-    x,yc = 82,1010
-    for chip in chips:
-        box = d.textbbox((0,0), chip, font=chip_font)
-        w = (box[2]-box[0]) + 54
-        if x + w > 1118:
+    brand_font = _font("bold", 30)
+    centered("ENGLISH PT  |  잉글리시PT", 78, brand_font, accent)
+    d.line((safe_left + 50, 132, safe_right - 50, 132), fill=accent, width=3)
+
+    max_title_width = 530
+    title_font = _font("bold", 26)
+    title_lines = split_to_width(title, title_font, max_title_width)
+    for font_size in range(70, 23, -2):
+        possible_font = _font("bold", font_size)
+        possible_lines = split_to_width(title, possible_font, max_title_width)
+        if len(possible_lines) <= 4 and len(possible_lines) * int(font_size * 1.20) <= 236:
+            title_font, title_lines = possible_font, possible_lines
             break
-        d.rounded_rectangle((x,yc,x+w,yc+72), 36, fill="#FFFFFF")
-        d.text((x+27,yc+16), chip, font=chip_font, fill=accent)
-        x += w + 16
+    if len(title_lines) > 4:
+        raise ValueError(f"OG H1 too long for safe design: {title[:120]!r}")
+    line_step = int(title_font.size * 1.20)
+    text_top = 172 + max(0, (220 - len(title_lines) * line_step) // 2)
+    for i, line in enumerate(title_lines):
+        centered(line, text_top + i * line_step, title_font, ink)
 
+    subtitle_font = _font("regular", 28)
+    for font_size in range(28, 17, -2):
+        candidate = _font("regular", font_size)
+        if d.textbbox((0, 0), subtitle, font=candidate)[2] <= max_title_width:
+            subtitle_font = candidate
+            break
+    centered(subtitle, 434, subtitle_font, ink)
+
+    # Chips fit in the same central 630px square without relying on edge text.
+    chip_font = _font("bold", 21)
+    visible = []
+    total = 0
+    for label in chips:
+        text_width = d.textbbox((0, 0), label, font=chip_font)[2]
+        chip_width = text_width + 26
+        if total + chip_width + (12 if visible else 0) > 550:
+            break
+        visible.append((label, chip_width))
+        total += chip_width + (12 if len(visible) > 1 else 0)
+    x = (width - total) // 2
+    for label, chip_width in visible:
+        d.rounded_rectangle((x, 516, x + chip_width, 557), radius=20, fill="#FFFFFF")
+        d.text((x + 13, 522), label, font=chip_font, fill=accent)
+        x += chip_width + 12
+
+    # Central crop-safe elements occupy x=306..894, all within [285..915].
     path.parent.mkdir(parents=True, exist_ok=True)
-    im.save(path, "PNG", optimize=False, compress_level=2)
+    im.save(path, "PNG", optimize=False, compress_level=4)
 
 def build(root: Path, force_specific: bool = False) -> dict:
     master_dir = root / "assets" / "images" / "og-master"
@@ -276,6 +334,9 @@ def build(root: Path, force_specific: bool = False) -> dict:
             "indexable": specific,
             "image": rel,
             "absolute_image": BASE_URL + rel,
+            "width": 1200,
+            "height": 630,
+            "safe_crop": "center-square",
         }
 
     (root / "assets" / "search-thumbnail-manifest.json").write_text(
@@ -291,14 +352,14 @@ def main() -> int:
     ap.add_argument(
         "--force-specific",
         action="store_true",
-        help="Generate a page-specific square image for every HTML page (Preview QA only).",
+        help="Generate a page-specific landscape image for every HTML page (Preview QA only).",
     )
     args = ap.parse_args()
     root = Path(args.root)
     if not root.exists():
         raise SystemExit(f"missing root: {root}")
     counts = build(root, force_specific=args.force_specific)
-    print("PASS_STAGE9_SQUARE_SEARCH_THUMBNAILS", json.dumps(counts, ensure_ascii=False))
+    print("PASS_STAGE9_LANDSCAPE_CROP_SAFE_OG", json.dumps(counts, ensure_ascii=False))
     return 0
 
 if __name__ == "__main__":
