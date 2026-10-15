@@ -42,10 +42,11 @@ def main():
     try:
         for name, title in SAMPLES.items():
             canonical = "https://englishpt.kr/" + name
+            robots = "noindex,follow" if name == "stations.html" else "index,follow"
             raw = (
                 '<!doctype html><html lang="ko"><head><meta charset="utf-8">'
                 f'<title>{title}</title><meta name="description" content="영어 과정 안내">'
-                ('<meta name="robots" content="noindex,follow">' if name=="stations.html" else '<meta name="robots" content="index,follow">')
+                f'<meta name="robots" content="{robots}">'
                 f'<meta property="og:url" content="{canonical}">'
                 '<script type="application/ld+json">'
                 + json.dumps({"@context":"https://schema.org",
