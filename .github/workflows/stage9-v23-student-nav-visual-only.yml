@@ -1,0 +1,125 @@
+name: ENGLISH PT v23.4 Student Navigation Screenshot QA (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v23-student-nav-visual-only.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download verified corrected sample artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23-4-student-nav-corrected-QA
+          run-id: 38769448956
+          path: verified-source
+          github-token: ${{ github.token }}
+      - name: Check immutable PASS report and extract small HTML sample
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import zipfile,json
+          from pathlib import Path
+          report=json.loads(Path('verified-source/RUN_STATUS.json').read_text())
+          assert report['status']=='PASS_V23_4_STUDENT_NAV_ALL_REVIEW_ONLY'
+          assert report['source_sha']=='a18b8901ecda7d37f65e35b15f03d579ec63c70f'
+          assert report['audit_failures']==0
+          with zipfile.ZipFile('verified-source/ENGLISHPT_V23_4_STUDENT_NAV_SAMPLES.zip') as z:
+            z.extractall('sample-site')
+          assert Path('sample-site/seoul-jongno-sajikdong-worker-english-conv-academy.html').exists()
+          print('PASS_APPROVED_CORRECTED_SAMPLE_SOURCE',report['groups_modified'])
+          PY
+      - name: Install Chrome Hangul fonts and Playwright
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+      - name: Capture corrected student card at 390px and 1440px
+        id: visual
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,shutil,threading,traceback,sys
+          from pathlib import Path
+          from http.server import ThreadingHTTPServer,SimpleHTTPRequestHandler
+          from playwright.sync_api import sync_playwright
+          folder=Path('sample-site').resolve()
+          output=Path('student-nav-screenshots');output.mkdir(exist_ok=True)
+          class Handler(SimpleHTTPRequestHandler):
+            def __init__(self,*a,**kw): super().__init__(*a,directory=str(folder),**kw)
+            def log_message(self,*a): pass
+          server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+          threading.Thread(target=server.serve_forever,daemon=True).start()
+          url=f'http://127.0.0.1:{server.server_port}/seoul-jongno-sajikdong-worker-english-conv-academy.html'
+          results=[];errors=[]
+          expected=['사직동 초등학생영어과외','사직동 중학생영어과외','사직동 고등학생영어과외',
+                    '사직동 초등학생영어회화','사직동 중학생영어회화','사직동 고등학생영어회화']
+          try:
+            with sync_playwright() as p:
+              chrome=shutil.which('google-chrome') or shutil.which('google-chrome-stable') or shutil.which('chromium')
+              options={'headless':True,'args':['--no-sandbox','--disable-dev-shm-usage']}
+              if chrome:options['executable_path']=chrome
+              browser=p.chromium.launch(**options)
+              for width in (390,1440):
+                page=browser.new_page(viewport={'width':width,'height':900},device_scale_factor=1)
+                try:
+                  response=page.goto(url,wait_until='domcontentloaded',timeout=45000)
+                  assert response is not None and response.status==200
+                  page.evaluate('() => document.fonts.ready')
+                  locator=page.locator('article.related-group').filter(
+                    has=page.locator('h3',has_text='학생 영어')).first
+                  assert locator.count()==1
+                  cards=locator.locator('a')
+                  assert cards.count()==6,cards.count()
+                  for i,ex in enumerate(expected):
+                    text=' '.join(cards.nth(i).locator('span').first.inner_text().split())
+                    assert text.startswith(ex),(i,text,ex)
+                  dims=locator.evaluate('e=>({width:e.clientWidth,scrollWidth:e.scrollWidth})')
+                  if dims['scrollWidth']>dims['width']+3:
+                    errors.append({'width':width,'reason':'student_cards_horizontal_overflow','dims':dims})
+                  dest=output/('sajikdong-student-six-links-'+str(width)+'.png')
+                  locator.screenshot(path=str(dest),timeout=30000,animations='disabled')
+                  results.append({'width':width,'html_200':True,'student_cards':cards.count(),
+                                  'labels':expected,'dimensions':dims,'screenshot':str(dest)})
+                  print('PASS_STUDENT_CARDS_VISUAL',width,str(dest),flush=True)
+                except Exception as exc:
+                  errors.append({'width':width,'reason':str(exc)[:800]})
+                finally:page.close()
+              browser.close()
+          except Exception as exc:
+            errors.append({'reason':'browser_error','details':traceback.format_exc()[-1200:]})
+          finally:server.shutdown()
+          status='PASS_V23_4_STUDENT_NAV_VISUAL' if not errors and len(results)==2 else 'FAIL_V23_4_STUDENT_NAV_VISUAL'
+          report={'status':status,'source_run':38769448956,'widths':[390,1440],
+                  'checks':results,'errors':errors,'no_deploy':True,'no_form_submit':True}
+          (output/'VISUAL_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(status,'errors',len(errors),flush=True)
+          if errors:
+            for error in errors:print('::error::'+json.dumps(error,ensure_ascii=False),flush=True)
+            sys.exit(1)
+          PY
+      - name: Upload visual QA images and report even on error
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23-4-student-nav-corrected-visual-390-1440
+          path: student-nav-screenshots/
+          retention-days: 30
+          if-no-files-found: warn
