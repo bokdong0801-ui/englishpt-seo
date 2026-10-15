@@ -39,6 +39,16 @@ jobs:
           with zipfile.ZipFile('verified-source/ENGLISHPT_V23_4_STUDENT_NAV_SAMPLES.zip') as z:
             z.extractall('sample-site')
           assert Path('sample-site/seoul-jongno-sajikdong-worker-english-conv-academy.html').exists()
+          # Read the unchanged, immutable v23.4 CSS from its previous Draft;
+          # the small sample ZIP intentionally omits 140391 release assets.
+          import urllib.request
+          css_url='https://6ad07fd3b9f7987dddeb8b3f--englishpt-final-ia-review-bokdong.netlify.app/pilot.css?v=20261012-9'
+          with urllib.request.urlopen(urllib.request.Request(css_url,headers={'User-Agent':'ENGLISHPT-visual-QA'}),timeout=40) as response:
+            assert response.status==200
+            css=response.read().decode('utf-8')
+          assert len(css)>5000 and 'related-course-links' in css,('wrong original stylesheet',len(css))
+          Path('sample-site/pilot.css').write_text(css,encoding='utf-8')
+          print('PASS_REAL_V23_4_STYLESHEET',len(css))
           print('PASS_APPROVED_CORRECTED_SAMPLE_SOURCE',report['groups_modified'])
           PY
       - name: Install Chrome Hangul fonts and Playwright
@@ -94,6 +104,10 @@ jobs:
                   dims=locator.evaluate('e=>({width:e.clientWidth,scrollWidth:e.scrollWidth})')
                   if dims['scrollWidth']>dims['width']+3:
                     errors.append({'width':width,'reason':'student_cards_horizontal_overflow','dims':dims})
+                  first_style=cards.first.evaluate(
+                    "e=>({border:getComputedStyle(e).borderTopWidth,bg:getComputedStyle(e).backgroundColor})")
+                  if first_style['border']=='0px':
+                    errors.append({'width':width,'reason':'student_card_styles_not_applied','computed':first_style})
                   dest=output/('sajikdong-student-six-links-'+str(width)+'.png')
                   locator.screenshot(path=str(dest),timeout=30000,animations='disabled')
                   results.append({'width':width,'html_200':True,'student_cards':cards.count(),
