@@ -1,0 +1,146 @@
+name: ENGLISH PT v23.4 Existing Draft HTTP + Chromium (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v23-existing-draft-live-verify-only.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v23-4-existing-draft-http-chromium
+  cancel-in-progress: false
+
+jobs:
+  existing-draft-live-only:
+    name: Check existing Draft HTTP and Chromium 390 / 1440
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      V23_SOURCE_RUN: '38689660290'
+      V23_SOURCE_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
+      ORIGINAL_DRAFT_RUN: '38698215142'
+      ORIGINAL_DRAFT_DEPLOY_ID: 6ad07fd3b9f7987dddeb8b3f
+      REVIEW_DEPLOY_URL: https://6ad07fd3b9f7987dddeb8b3f--englishpt-final-ia-review-bokdong.netlify.app
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize always-uploaded error report
+        run: |
+          mkdir -p draft-review-report
+          printf '{"status":"STARTED","live_draft_url":"https://6ad07fd3b9f7987dddeb8b3f--englishpt-final-ia-review-bokdong.netlify.app","source_run":"38689660290","source_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f","netlify_deploy":false,"production_deploy":false,"form_submit":false}\n' > draft-review-report/EXECUTION_STATUS.json
+      - name: Verify immutable v23.4 source and original Draft deploy run
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY']
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'}
+          def fetch(path):
+            with urllib.request.urlopen(urllib.request.Request(
+              'https://api.github.com/repos/'+repo+path,headers=headers),timeout=45) as r:
+              return json.load(r)
+          source=fetch('/actions/runs/'+os.environ['V23_SOURCE_RUN'])
+          assert source['status']=='completed' and source['conclusion']=='success'
+          assert source['head_sha']==os.environ['V23_SOURCE_SHA']
+          assert source['name']=='ENGLISH PT v23 Full 140391 QA (Review Source Only)'
+          draft=fetch('/actions/runs/'+os.environ['ORIGINAL_DRAFT_RUN'])
+          assert draft['head_branch']=='review/v23-aftercare-cta-20261014'
+          jobs=fetch('/actions/runs/'+os.environ['ORIGINAL_DRAFT_RUN']+'/jobs?per_page=100')['jobs']
+          steps={s['name']:s.get('conclusion') for j in jobs for s in j.get('steps',[])}
+          assert steps.get('Upload v23 as a DRAFT review deploy (never Production)')=='success'
+          assert os.environ['ORIGINAL_DRAFT_DEPLOY_ID'] in os.environ['REVIEW_DEPLOY_URL']
+          assert os.environ['REVIEW_DEPLOY_URL'].startswith('https://')
+          assert 'englishpt.kr' not in os.environ['REVIEW_DEPLOY_URL']
+          print('PASS_SOURCE_AND_EXISTING_DRAFT_GUARD',source['head_sha'],os.environ['REVIEW_DEPLOY_URL'])
+          PY
+      - name: Check 14 live HTTP pages and six Sajikdong student choices (no form submission)
+        id: http
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 scripts/v23_4_existing_draft_live_verify.py --phase http
+      - name: Install browser automation (no deploy CLI)
+        id: browser_install
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+          echo PASS_BROWSER_AUTOMATION_READY
+      - name: Chromium live mobile 390px and desktop 1440px
+        id: chromium
+        if: steps.browser_install.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 scripts/v23_4_existing_draft_live_verify.py --phase chromium
+      - name: Final combined report and PASS or HOLD decision
+        id: gate
+        if: always()
+        env:
+          SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          HTTP_OUTCOME: ${{ steps.http.outcome }}
+          BROWSER_INSTALL_OUTCOME: ${{ steps.browser_install.outcome }}
+          CHROMIUM_OUTCOME: ${{ steps.chromium.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path('draft-review-report');root.mkdir(exist_ok=True)
+          prefix='ENGLISHPT_V23_4_EXISTING_DRAFT_'
+          def read(name):
+            p=root/(prefix+name+'.json')
+            return json.loads(p.read_text(encoding='utf-8')) if p.exists() else {}
+          http=read('HTTP');chrome=read('CHROMIUM')
+          phases={k:os.environ.get(k+'_OUTCOME','unknown') for k in ('SOURCE','HTTP','BROWSER_INSTALL','CHROMIUM')}
+          ok=(all(v=='success' for v in phases.values()) and
+              http.get('status')=='PASS_V23_DRAFT_HTTP_REVIEW' and
+              chrome.get('status')=='PASS_V23_LIVE_DRAFT_CHROMIUM')
+          report={'version':'v23.4',
+            'status':'PASS_V23_4_EXISTING_DRAFT_HTTP_CHROMIUM' if ok else 'HOLD_V23_4_EXISTING_DRAFT_HTTP_CHROMIUM',
+            'source_run':'38689660290','source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+            'prior_all_student_link_run':'38739410995','prior_all_student_link_status':'PASS_V23_ALL_STUDENT_LINKS',
+            'draft_review_url':'https://6ad07fd3b9f7987dddeb8b3f--englishpt-final-ia-review-bokdong.netlify.app',
+            'netlify_deploy_id':'6ad07fd3b9f7987dddeb8b3f','stages':phases,
+            'http':{'status':http.get('status','NOT_RUN'),'checked_pages':http.get('pages_passed'),
+                    'student_choices':http.get('student_choices_checked'),'failures':http.get('failures',[])},
+            'chromium':{'status':chrome.get('status','NOT_RUN'),'checks':len(chrome.get('checks',[])),
+                       'screenshots_saved':chrome.get('screenshots_saved'),'failures':chrome.get('failures',[])},
+            'production_deployed':False,'draft_deployed':False,'real_form_submissions':False,
+            'limitations':['Representative HTTP and Chromium pages only; not 140391 live requests.',
+                           'No live form submissions tested.']}
+          p=root/(prefix+'FINAL_REPORT.json')
+          p.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+            f.write('## ENGLISH PT v23.4 Existing Draft: '+report['status']+'\n\n')
+            f.write('Existing Draft: '+report['draft_review_url']+'\n\n')
+            f.write('HTTP: '+str(report['http'])[:1200]+'\n\nChromium: '+str(report['chromium'])[:1200]+'\n\n')
+            f.write('Source SHA: '+report['source_sha']+'. No Netlify upload and no form submission.\n')
+          print(report['status'],json.dumps(phases),flush=True)
+          print('V23_4_EXISTING_DRAFT_REPORT',str(p),flush=True)
+          if not ok:
+            print('::error::Final v23.4 existing Draft verification HOLD; review uploaded failure report.')
+            raise SystemExit(1)
+          print('PASS_V23_DRAFT_HTTP_REVIEW',len(http.get('checks',[])))
+          print('PASS_V23_LIVE_DRAFT_CHROMIUM',len(chrome.get('checks',[])))
+          PY
+      - name: Upload combined verification report, failure JSON, and browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23-4-existing-draft-http-chromium-report
+          path: draft-review-report/
+          retention-days: 30
+          if-no-files-found: error
