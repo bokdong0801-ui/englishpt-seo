@@ -8,6 +8,7 @@ on:
       - '.github/workflows/stage9-v23-og-landscape-sample-gate.yml'
       - 'scripts/test_v234_og_landscape.py'
       - 'scripts/qa_v234_og_all_pages.py'
+      - 'scripts/stage9-square-search-thumbnails.py'
 
 permissions:
   contents: read
