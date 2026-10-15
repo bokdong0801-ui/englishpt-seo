@@ -1,11 +1,7 @@
 name: ENGLISH PT v23.4 Draft Review Deploy (No Production)
 
 on:
-  push:
-    branches:
-      - review/v23-aftercare-cta-20261014
-    paths:
-      - '.github/workflows/stage9-v23-review-deploy-only.yml'
+  workflow_dispatch:  # Manual only: never auto-upload a 140391-page Draft on workflow edits
 
 permissions:
   contents: read
@@ -148,6 +144,64 @@ jobs:
           PY
           df -h .
 
+      - name: Preflight all 140391 HTML student navigation links (fail fast)
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,re,sys
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import urlsplit,unquote
+          root=Path('final-review')
+          failures=[]; samples=[]; checked=0; links_checked=0; student_pages=0
+          class Links(HTMLParser):
+              def __init__(self):
+                  super().__init__(convert_charrefs=True);self.hrefs=[];self.ids=set()
+              def handle_starttag(self,tag,attrs):
+                  d=dict(attrs)
+                  if d.get('id'):self.ids.add(d['id'])
+                  if tag=='a' and 'href' in d:self.hrefs.append(d['href'])
+          pages=sorted(root.glob('*.html'))
+          try:
+              for p in pages:
+                  checked+=1
+                  html=p.read_text(encoding='utf-8',errors='replace')
+                  parser=Links();parser.feed(html)
+                  relevant=('student-english' in html or '학생영어' in html or '초등학생영어' in html or '중학생영어' in html or '고등학생영어' in html)
+                  if relevant:student_pages+=1
+                  for href in parser.hrefs:
+                      u=urlsplit(href)
+                      if u.scheme or u.netloc or href.startswith(('mailto:','tel:','javascript:')):continue
+                      target=unquote(u.path)
+                      is_student=('student-english' in target or any(x in target for x in ('elementary','middle','high')) and ('student' in target or 'english' in target))
+                      if not is_student:continue
+                      links_checked+=1
+                      if not target:dest=p
+                      elif target.startswith('/'):dest=root/target.lstrip('/')
+                      else:dest=p.parent/target
+                      if dest.is_dir():dest=dest/'index.html'
+                      if not dest.is_file():
+                          failures.append({'file':p.name,'href':href,'reason':'missing_target'})
+                      elif u.fragment:
+                          # Only verify anchors when the target is a student hub; other routes may use JS anchors.
+                          if dest.name=='student-english.html':
+                              t=dest.read_text(encoding='utf-8',errors='replace')
+                              if not re.search(r'\bid\s*=\s*["\x27]'+re.escape(unquote(u.fragment))+r'["\x27]',t):
+                                  failures.append({'file':p.name,'href':href,'reason':'missing_student_hub_anchor'})
+                      if len(samples)<30:samples.append({'file':p.name,'href':href})
+                  if len(failures)>=1000:break
+          except Exception as exc:
+              failures.append({'file':str(p),'reason':'scan_exception','error':repr(exc)})
+          status='PASS' if not failures and checked==len(pages) and checked>=140393 else 'FAIL'
+          report={'status':status,'source_run':'38689660290','source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f','html_scanned':checked,'html_expected_min':140393,'student_relevant_pages':student_pages,'student_links_checked':links_checked,'failures_count':len(failures),'failures':failures,'samples':samples,'note':'Static local links only; live browser navigation checked separately'}
+          Path('ENGLISHPT_V23_ALL_STUDENT_LINKS_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          with open('GITHUB_STEP_SUMMARY','a') if False else open(__import__('os').environ['GITHUB_STEP_SUMMARY'],'a') as out:
+              out.write(f"### All-page student link QA: {status}\nHTML scanned: {checked}; student links: {links_checked}; failures: {len(failures)}\n")
+          print('V23_ALL_STUDENT_LINKS_'+status,checked,links_checked,len(failures),flush=True)
+          for failure in failures[:20]:print('::error::'+json.dumps(failure,ensure_ascii=False),flush=True)
+          if status!='PASS':sys.exit(1)
+          PY
+
       - name: Confirm Review-only Netlify site identity
         run: |
           set -euo pipefail
@@ -267,10 +321,9 @@ jobs:
                   except Exception as exc:
                       if attempt==3:failures.append({'name':name,'error':str(exc)})
                       else:time.sleep((attempt+1)*5)
-          assert not failures,failures[:12]
           report={
               'release_version':'v23.4',
-              'status':'PASS_V23_DRAFT_HTTP_REVIEW',
+              'status':'PASS_V23_DRAFT_HTTP_REVIEW' if not failures else 'FAIL_V23_DRAFT_HTTP_REVIEW',
               'source_run':os.environ['V23_SOURCE_RUN'],
               'source_sha':os.environ['V23_SOURCE_SHA'],
               'draft_review_url':base,
@@ -280,10 +333,14 @@ jobs:
               'http_pages_checked':len(checked),
               'representative_urls':{name:base+'/'+name for name in samples},
               'checks':checked,
+              'failures':failures,
           }
           Path('ENGLISHPT_V23_DRAFT_REVIEW_REPORT.json').write_text(
               json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-          print('PASS_V23_DRAFT_HTTP_REVIEW',len(checked),base)
+          print(report['status'],len(checked),base)
+          if failures:
+              for failure in failures[:20]: print('::error::'+json.dumps(failure,ensure_ascii=False))
+              raise SystemExit(1)
           print('V23_REPRESENTATIVE_URLS',json.dumps(report['representative_urls'],ensure_ascii=False))
           PY
 
@@ -404,8 +461,9 @@ jobs:
         with:
           name: englishpt-v23-4-review-deploy-report
           path: |
+            ENGLISHPT_V23_ALL_STUDENT_LINKS_QA.json
             ENGLISHPT_V23_DRAFT_REVIEW_REPORT.json
             ENGLISHPT_V23_LIVE_DRAFT_VISUAL_QA.json
             V23_LIVE_REVIEW_SCREENSHOTS/
           retention-days: 30
-          if-no-files-found: warn
+          if-no-files-found: error
