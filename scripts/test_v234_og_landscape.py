@@ -45,7 +45,7 @@ def main():
             raw = (
                 '<!doctype html><html lang="ko"><head><meta charset="utf-8">'
                 f'<title>{title}</title><meta name="description" content="영어 과정 안내">'
-                '<meta name="robots" content="index,follow">'
+                ('<meta name="robots" content="noindex,follow">' if name=="stations.html" else '<meta name="robots" content="index,follow">')
                 f'<meta property="og:url" content="{canonical}">'
                 '<script type="application/ld+json">'
                 + json.dumps({"@context":"https://schema.org",
@@ -87,6 +87,10 @@ def main():
             report["pages"].append({"page":name,"status":"PASS" if passed else "FAIL","image":image})
             if not passed:
                 report["issues"].append({"page":name,"checks":checks})
+        full_audit = load("stage9_og_audit", ROOT / "scripts/qa_v234_og_all_pages.py")
+        all_page_ok = full_audit.scan(test_root,len(SAMPLES),out / "OG_ALL_PAGE_SAMPLE_AUDIT.json")
+        if not all_page_ok:
+            report["issues"].append("all-page metadata/asset audit failed on synthetic preview")
         report["status"] = "PASS_V23_4_OG_LANDSCAPE_SAMPLE" if not report["issues"] and generator_result["masters"]==29 and metadata["missing_assets"]==0 else "FAIL_V23_4_OG_LANDSCAPE_SAMPLE"
         (out / "OG_LANDSCAPE_TEST_REPORT.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
         print(report["status"],"pages",report["tested_pages"],"masters",report["master_designs"],"issues",len(report["issues"]),flush=True)
