@@ -145,7 +145,7 @@ jobs:
           assert report['indexing']['production_ui_failures']==0
 
           search=report['counts']['search_image_metadata']
-          assert search['square_size']=='1200x1200',search
+          assert search['landscape_size']=='1200x630',search
           assert search['missing_assets']==0,search
           assert search['manifest_missing']==0,search
           assert search['schema_failures']==0,search
@@ -202,7 +202,7 @@ jobs:
               image_path=root/m.group(1).lstrip('/')
               assert image_path.exists(),(name,image_path)
               with Image.open(image_path) as im:
-                  assert im.size==(1200,1200),(name,im.size)
+                  assert im.size==(1200,630),(name,im.size)
 
           # Floating phone/trial conversion controls + FAQ depth on detailed course pages.
           conversion_samples={
