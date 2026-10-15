@@ -140,10 +140,10 @@ def main():
         # The immutable OG package has its own root pilot.css; update the
         # staged copy without touching the live Draft or Production site.
         css_rule = (
-            "\\n/* v23.4 student-navigation CTA mobile no-wrap */\\n"
-            ".related-course-links a span{flex:1 1 auto;min-width:0}\\n"
+            "\n/* v23.4 student-navigation CTA mobile no-wrap */\n"
+            ".related-course-links a span{flex:1 1 auto;min-width:0}\n"
             ".related-course-links a b{flex:0 0 auto;white-space:nowrap;"
-            "word-break:keep-all;overflow-wrap:normal}\\n"
+            "word-break:keep-all;overflow-wrap:normal}\n"
         )
         pilot_css = root / "pilot.css"
         if not pilot_css.is_file():
