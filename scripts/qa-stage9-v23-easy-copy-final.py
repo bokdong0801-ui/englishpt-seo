@@ -18,6 +18,7 @@ HUBS = ("englishpt.html", "courses.html", "student-english.html",
         "english-conversation.html", "exam-english.html")
 FOUR_PHASES = ("1~3개월", "3~6개월", "6~9개월", "9~12개월")
 HARD_BLOCKERS = (
+    "연습 방법도",
     "최소 루틴", "목표 Level", "프리토킹", "과정 중심 탐색과 겹치지 않도록",
 )
 WARNING_WORDS = ("피드백", "레벨", "교정", "실전", "첨삭", "오답")

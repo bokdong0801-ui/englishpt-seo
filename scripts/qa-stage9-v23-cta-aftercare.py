@@ -107,6 +107,18 @@ def audit(root: Path, *, expected_total: int = 140391) -> dict:
         if name == "englishpt.html":
             if "/student-english.html" not in raw or "/exam-english.html" not in raw:
                 error(name, "other_audiences_links_missing")
+        if "연습 방법도" in raw.split("</head>", 1)[-1]:
+            error(name, "outdated_practice_method_copy")
+        if name == "seoul-jongno-sajikdong-worker-english-conv-academy.html":
+            for label in ("사직동 초등학생영어과외", "사직동 초등학생영어회화",
+                          "사직동 중학생영어회화", "사직동 중학생영어과외",
+                          "사직동 고등학생영어회화", "사직동 고등학생영어과외"):
+                if label not in raw:
+                    error(name, "related_student_choice_missing:" + label)
+            for phrase in ("수업 하루 전까지", "수업 외 시간에도", "수업 횟수는 어떻게 정해지나요?",
+                           "레벨테스트", "주 2~5회"):
+                if phrase not in raw:
+                    error(name, "worker_faq_missing:" + phrase)
         if name == "seoul-jongno-sajikdong-beginner-english-conv.html":
             m = re.search(
                 r'<p class="kicker">수업 기록 예시</p>.*?<div class="grid4">(.*?)</div>',

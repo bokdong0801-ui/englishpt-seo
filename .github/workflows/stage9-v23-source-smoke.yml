@@ -68,6 +68,9 @@ jobs:
           assert '수업 전후를 연결합니다' not in renderer
           assert 'class="manage-aftercare"' in renderer
           assert 'data-v23-aftercare="true"' in builder
+          assert '"연습 방법도": "공부 방법도"' in builder
+          assert '"연습 방법": "공부 방법"' in builder
+          assert '왜 어려운지 알면 공부 방법도 달라집니다' in renderer
           assert 'apply_sitewide_operational_markup(page.read_text(encoding="utf-8", errors="ignore"), page.name)' in builder
           assert '@media(max-width:900px){.aftercare-choices{grid-template-columns:1fr}' in css
           print('PASS_V23_SOURCE_SMOKE_PRE_BUILD')
@@ -127,6 +130,29 @@ jobs:
               assert block,area
               texts.append(block.group(1))
           assert texts[0]!=texts[1],'university aftercare scenarios must differ'
+          hub = Path('student-english.html').read_text(encoding='utf-8')
+          links_html = mod.related_course_groups(
+              {'slug':'seoul-jongno-sajikdong','dong':'사직동'}, 'worker-english-conv-academy'
+          )
+          for intent in ('elem-tutor','mid-conv','high-conv'):
+              assert f'/seoul-jongno-sajikdong-{intent}.html' in links_html,intent
+          for title, anchor in (
+              ('초등학생영어회화','elementary'),
+              ('중학생영어과외','middle'),
+              ('고등학생영어과외','high'),
+          ):
+              assert ('사직동 '+title) in links_html,title
+              assert ('href="/student-english.html#'+anchor+'"') in links_html,title
+              assert ('id="'+anchor+'"') in hub,anchor
+          for missing in ('elem-conv','mid-tutor','high-tutor'):
+              assert f'/seoul-jongno-sajikdong-{missing}.html' not in links_html
+          faq = dict(mod.FAQ_CURATED['worker-english-conv-academy'])
+          assert len(faq)==5
+          assert '하루 전까지' in faq['업무 일정 때문에 결석하면 보강이 가능한가요?']
+          assert '수업 외 시간' in faq['개인 피드백은 어느 정도 받을 수 있나요?']
+          assert '레벨테스트' in faq['수업 횟수는 어떻게 정해지나요?']
+          assert '주 2~5회' in faq['수업 횟수는 어떻게 정해지나요?']
+          print('PASS_V23_WORKER_FAQ_AND_STUDENT_DISCOVERY')
           print('PASS_V23_EASY_COPY_MANAGEMENT_23_INTENTS')
           PY
       - name: Save beginner-first source QA report

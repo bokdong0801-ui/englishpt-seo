@@ -658,6 +658,16 @@ def preserved_region_finder() -> str:
         f'<a href="/daegu-dalseo-songhyeondong-{intent}.html">송현동 {label}</a>'
         for intent,label in options
     )
+    # Do not invent three missing regional HTML documents.
+    same_area_links += "".join(
+        f'<a href="/student-english.html#{grade}" title="학년별 수업 안내로 이동">'
+        f'송현동 {service} (학생영어 안내)</a>'
+        for service, grade in (
+            ("초등학생영어회화", "elementary"),
+            ("중학생영어과외", "middle"),
+            ("고등학생영어과외", "high"),
+        )
+    )
     return (
         '<section class="section soft region-navigation preserved-region-navigation">'
         '<div class="wrap"><div class="section-head"><div><div class="eyebrow ink">송현동에서 이어보기</div>'
@@ -1092,6 +1102,8 @@ def main() -> None:
                 "처음부터 프리토킹을 길게 하기보다": "처음부터 영어로 길게 대화하기보다",
                 "처음부터 프리토킹을 길게 하지 않고": "처음부터 영어로 길게 대화하지 않고",
                 "프리토킹": "자유롭게 영어로 대화하기",
+                "연습 방법도": "공부 방법도",
+                "연습 방법": "공부 방법",
             }
             for difficult, plain in easy_phrases.items():
                 body_part = body_part.replace(difficult, plain)
