@@ -358,7 +358,7 @@ def apply_search_image_metadata(out: Path, failures: list) -> dict:
                 1,
             )
 
-        # Remove stale image hints before inserting the canonical square-image set.
+        # Remove stale image hints before inserting the canonical crop-safe 1200x630 OG set.
         raw = re.sub(r'<meta property="og:image(?::[^"]+)?" content="[^"]*">', '', raw, flags=re.I)
         raw = re.sub(r'<meta name="twitter:(?:card|image)" content="[^"]*">', '', raw, flags=re.I)
         raw = re.sub(r'<link rel="image_src" href="[^"]*">', '', raw, flags=re.I)
@@ -375,11 +375,12 @@ def apply_search_image_metadata(out: Path, failures: list) -> dict:
             f'<meta property="og:image" content="{html.escape(image_url, quote=True)}">'
             f'<meta property="og:image:secure_url" content="{html.escape(image_url, quote=True)}">'
             '<meta property="og:image:width" content="1200">'
-            '<meta property="og:image:height" content="1200">'
+            '<meta property="og:image:height" content="630">'
             '<meta property="og:image:type" content="image/png">'
             f'<meta property="og:image:alt" content="{html.escape(image_alt, quote=True)}">'
             '<meta name="twitter:card" content="summary_large_image">'
             f'<meta name="twitter:image" content="{html.escape(image_url, quote=True)}">'
+            f'<meta name="twitter:image:alt" content="{html.escape(image_alt, quote=True)}">'
             f'<link rel="image_src" href="{html.escape(image_url, quote=True)}">'
         )
         marker = re.search(r'<meta property="og:url" content="[^"]*">', raw, re.I)
@@ -417,7 +418,8 @@ def apply_search_image_metadata(out: Path, failures: list) -> dict:
         "schema_failures": len(schema_failures),
         "body_visuals_removed": body_visuals_removed,
         "body_search_thumbnail_policy": "metadata_only",
-        "square_size": "1200x1200",
+        "landscape_size": "1200x630",
+        "crop_safe_area": "center 630x630",
     }
 
 
