@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: [review/v23-aftercare-cta-20261014]
-    paths: ['.github/workflows/stage9-v23-existing-draft-live-verify-only.yml']
+    paths:
+      - '.github/workflows/stage9-v23-existing-draft-live-verify-only.yml'
+      - 'scripts/v23_4_existing_draft_live_verify.py'
 
 permissions:
   contents: read
