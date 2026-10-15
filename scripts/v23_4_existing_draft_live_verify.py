@@ -148,8 +148,8 @@ def run_http():
                             continue
                         dest_url = validate_same_draft(urljoin(url, href))
                         route = urlsplit(dest_url)
-                        if not route.path.endswith(".html"):
-                            record_error(report, name, "unexpected_choice_route", href)
+                        if not route.path or route.path == "/":
+                            record_error(report, name, "empty_student_choice_route", href)
                             continue
                         if dest_url not in cache:
                             try:
@@ -160,7 +160,7 @@ def run_http():
                                 target_parser.feed(target_html)
                                 if not target_parser.has_h1:
                                     raise ValueError("destination H1 missing")
-                                if route.fragment and route.path.endswith("/student-english.html"):
+                                if route.fragment and route.path.rstrip("/").rsplit("/", 1)[-1] in ("student-english", "student-english.html"):
                                     if unquote(route.fragment) not in target_parser.ids:
                                         raise ValueError("destination anchor missing: " + route.fragment)
                                 cache[dest_url] = True
@@ -257,20 +257,20 @@ def run_chromium():
                                 if values["docReady"] == "loading":
                                     issues.append("document_not_ready")
                                 # Navigate to the intended consultation section or open its modal; never press submit.
-                                if values["modalButton"] and values["modalExists"]:
-                                    page.locator("[data-open-form]").first.click(timeout=6000)
+                                visible_cta = page.locator("[data-open-form]:visible")
+                                if values["modalExists"] and visible_cta.count() > 0:
+                                    visible_cta.first.click(timeout=6000)
                                     opened = page.locator("#applyModal").evaluate(
                                         "(e) => e.classList.contains('open') && e.getAttribute('aria-hidden') !== 'true'")
                                     if not opened:
                                         issues.append("consultation_modal_did_not_open")
-                                    page.keyboard.press("Escape")
-                                    close = page.locator("[data-close-form]")
-                                    if close.count() > 0:
-                                        close.first.click(timeout=4000, force=True)
+                                    # Reload for clean screenshot; never touch a submit control.
+                                    page.goto(url, wait_until="domcontentloaded", timeout=45000)
+                                    page.wait_for_timeout(350)
                                 elif values["consultationAnchor"] and values["consultationTarget"]:
                                     pass
                                 else:
-                                    issues.append("consultation_navigation_missing")
+                                    issues.append("visible_consultation_navigation_missing")
                                 if name == "englishpt.html" and values["timeline"] != 4:
                                     issues.append("four_timeline_cards_missing")
                                 if name == "seoul-jongno-sajikdong-beginner-english-conv.html" and not values["aftercare"]:
