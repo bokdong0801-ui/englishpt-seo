@@ -1,4 +1,4 @@
-name: ENGLISH PT v23 Draft Review Deploy (No Production)
+name: ENGLISH PT v23.4 Draft Review Deploy (No Production)
 
 on:
   push:
@@ -23,8 +23,8 @@ jobs:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
       REVIEW_SITE_ID: 803550a8-03af-4776-bc8a-bd0bae85f5c7
       REVIEW_SITE_NAME: englishpt-final-ia-review-bokdong
-      V23_SOURCE_RUN: '38533196374'
-      V23_SOURCE_SHA: 0a572e1847100ef3291972b1b132865b91b4be6d
+      V23_SOURCE_RUN: '38689660290'
+      V23_SOURCE_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
       NETLIFY_CLI_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
@@ -75,11 +75,11 @@ jobs:
           print('PASS_APPROVED_V23_SOURCE_RUN_AND_NAMED_GATES',rid,run['head_sha'],len(critical))
           PY
 
-      - name: Download existing full v23 artifact (no regeneration)
+      - name: Download immutable v23.4 full QA artifact (no regeneration)
         uses: actions/download-artifact@v4
         with:
           name: englishpt-v23-hero-v2-preproduction-files
-          run-id: 38533196374
+          run-id: 38689660290
           path: v23-artifact
           github-token: ${{ github.token }}
 
@@ -181,7 +181,7 @@ jobs:
             --dir=final-review \
             --site="$REVIEW_SITE_ID" \
             --auth="$NETLIFY_AUTH_TOKEN" \
-            --message="ENGLISH PT v23 Hero V2 full QA PASS; isolated draft preview" \
+            --message="ENGLISH PT v23.4 QA a18b890 PASS; isolated Draft Review only" \
             --json > /tmp/v23-draft-result.json
           python3 - <<'PY'
           import json,os
@@ -240,6 +240,23 @@ jobs:
                               assert 'data-hero-copy="audience-v2"' in html,(name,'not v23 Hero')
                               assert 'href="#consultation-preview"' in html,(name,'CTA missing')
                               assert 'id="consultation-preview"' in html,(name,'form anchor missing')
+                          if name=='seoul-jongno-sajikdong-worker-english-conv-academy.html':
+                              # v23.4 FAQs and six student choices, including
+                              # existing student hub anchors (never fake local URLs).
+                              for phrase in ('사직동 초등학생영어과외',
+                                             '사직동 초등학생영어회화',
+                                             '사직동 중학생영어회화',
+                                             '사직동 중학생영어과외',
+                                             '사직동 고등학생영어회화',
+                                             '사직동 고등학생영어과외',
+                                             '수업 하루 전까지',
+                                             '수업 외 시간에도',
+                                             '수업 횟수는 어떻게 정해지나요?',
+                                             '레벨테스트','주 2~5회'):
+                                  assert phrase in html,(name,'v23.4 copy missing',phrase)
+                              for grade in ('elementary','middle','high'):
+                                  assert f'href="/student-english.html#{grade}"' in html,(name,'student hub fallback missing',grade)
+                              assert '연습 방법도' not in html.split('</head>',1)[-1],(name,'obsolete wording')
                           if name=='englishpt.html':
                               assert 'id="audience-path"' in html
                               assert '지금 내 수준에 맞게 시작하세요.' in html
@@ -252,6 +269,7 @@ jobs:
                       else:time.sleep((attempt+1)*5)
           assert not failures,failures[:12]
           report={
+              'release_version':'v23.4',
               'status':'PASS_V23_DRAFT_HTTP_REVIEW',
               'source_run':os.environ['V23_SOURCE_RUN'],
               'source_sha':os.environ['V23_SOURCE_SHA'],
@@ -367,7 +385,8 @@ jobs:
                 failures.extend([{'page':name,'width':width,'reason':e} for e in issues])
           finally:
             tab.stop();browser.close_tab(tab)
-          report={'status':'PASS_V23_LIVE_DRAFT_CHROMIUM' if not failures else 'FAIL_V23_LIVE_DRAFT_CHROMIUM',
+          report={'release_version':'v23.4',
+                  'status':'PASS_V23_LIVE_DRAFT_CHROMIUM' if not failures else 'FAIL_V23_LIVE_DRAFT_CHROMIUM',
                   'draft_review_url':base,'tested_pages':len(pages),'viewports':[390,1440],
                   'checks':len(rows),'form_submissions':'NOT_PERFORMED',
                   'production_deployed':False,'failures':failures,'rows':rows}
@@ -383,7 +402,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: englishpt-v23-review-deploy-report
+          name: englishpt-v23-4-review-deploy-report
           path: |
             ENGLISHPT_V23_DRAFT_REVIEW_REPORT.json
             ENGLISHPT_V23_LIVE_DRAFT_VISUAL_QA.json
