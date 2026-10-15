@@ -23,7 +23,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: englishpt-v23-4-student-nav-corrected-QA
-          run-id: 38769448956
+          run-id: 38771578401
           path: verified-source
           github-token: ${{ github.token }}
       - name: Check immutable PASS report and extract small HTML sample
@@ -47,6 +47,11 @@ jobs:
             assert response.status==200
             css=response.read().decode('utf-8')
           assert len(css)>5000 and 'related-course-links' in css,('wrong original stylesheet',len(css))
+          # Apply the same mobile arrow no-wrap overlay included in the
+          # corrected full-site preview artifact.
+          css+='\\n/* v23.4 student-navigation CTA mobile no-wrap */\\n'
+          css+='.related-course-links a span{flex:1 1 auto;min-width:0}\\n'
+          css+='.related-course-links a b{flex:0 0 auto;white-space:nowrap;word-break:keep-all;overflow-wrap:normal}\\n'
           Path('sample-site/pilot.css').write_text(css,encoding='utf-8')
           print('PASS_REAL_V23_4_STYLESHEET',len(css))
           print('PASS_APPROVED_CORRECTED_SAMPLE_SOURCE',report['groups_modified'])
@@ -108,6 +113,9 @@ jobs:
                     "e=>({border:getComputedStyle(e).borderTopWidth,bg:getComputedStyle(e).backgroundColor})")
                   if first_style['border']=='0px':
                     errors.append({'width':width,'reason':'student_card_styles_not_applied','computed':first_style})
+                  guide_wrap=cards.nth(3).locator('b').evaluate('e=>getComputedStyle(e).whiteSpace')
+                  if guide_wrap!='nowrap':
+                    errors.append({'width':width,'reason':'student_guide_cta_must_not_wrap','whiteSpace':guide_wrap})
                   dest=output/('sajikdong-student-six-links-'+str(width)+'.png')
                   locator.screenshot(path=str(dest),timeout=30000,animations='disabled')
                   results.append({'width':width,'html_200':True,'student_cards':cards.count(),
