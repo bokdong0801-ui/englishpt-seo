@@ -1,0 +1,115 @@
+name: ENGLISH PT v23.4 All Student Links Preflight (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v23-student-links-preflight-only.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v23-student-links-preflight
+  cancel-in-progress: false
+
+jobs:
+  link-preflight-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SOURCE_RUN: '38689660290'
+      SOURCE_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize error report
+        run: |
+          mkdir -p preflight-reports
+          printf '{"status":"STARTED","source_run":"38689660290","source_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f","netlify_deployed":false,"production_deployed":false,"form_submitted":false}\n' > preflight-reports/EXECUTION_STATUS.json
+      - name: Verify immutable v23.4 source identity
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY']; rid=os.environ['SOURCE_RUN']
+          request=urllib.request.Request(
+             f'https://api.github.com/repos/{repo}/actions/runs/{rid}',
+             headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          with urllib.request.urlopen(request,timeout=40) as response: run=json.load(response)
+          assert run['status']=='completed' and run['conclusion']=='success',run.get('conclusion')
+          assert run['head_sha']==os.environ['SOURCE_SHA'],run.get('head_sha')
+          assert run['name']=='ENGLISH PT v23 Full 140391 QA (Review Source Only)',run.get('name')
+          print('PASS_V23_4_IMMUTABLE_SOURCE',rid,run['head_sha'])
+          PY
+      - name: Download immutable preproduction artifact
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23-hero-v2-preproduction-files
+          run-id: 38689660290
+          path: v23-source
+          github-token: ${{ github.token }}
+      - name: Validate SHA256 and extract all generated HTML
+        id: extract
+        run: |
+          set -euo pipefail
+          if ! command -v zstd >/dev/null; then sudo apt-get update -qq && sudo apt-get install -qq -y zstd; fi
+          (cd v23-source && sha256sum -c ENGLISHPT_RELEASE_SHA256.txt)
+          mkdir -p extracted-html
+          tar --zstd -xf v23-source/englishpt-final-release-140391-v23.tar.zst -C extracted-html
+          test -f extracted-html/student-english.html
+          test -f extracted-html/seoul-jongno-sajikdong-worker-english-conv-academy.html
+          echo PASS_SOURCE_SHA256_AND_EXTRACTION
+      - name: Scan all 140391 HTML pages and student links (no network requests)
+        id: scan
+        run: |
+          set -euo pipefail
+          python3 scripts/v23_student_links_preflight.py \
+            --root extracted-html --expected 140391 \
+            --source-run "$SOURCE_RUN" --source-sha "$SOURCE_SHA" \
+            --json preflight-reports/ENGLISHPT_V23_ALL_STUDENT_LINKS_QA.json \
+            --csv preflight-reports/ENGLISHPT_V23_STUDENT_LINK_ISSUES.csv
+      - name: Always write final summary
+        if: always()
+        env:
+          SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
+          EXTRACT_OUTCOME: ${{ steps.extract.outcome }}
+          SCAN_OUTCOME: ${{ steps.scan.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path('preflight-reports');p.mkdir(exist_ok=True)
+          stages={x:os.environ.get(x+'_OUTCOME','unknown') for x in ('SOURCE','DOWNLOAD','EXTRACT','SCAN')}
+          details_file=p/'ENGLISHPT_V23_ALL_STUDENT_LINKS_QA.json'
+          details=json.loads(details_file.read_text(encoding='utf-8')) if details_file.exists() else {}
+          success=all(v=='success' for v in stages.values()) and details.get('status')=='PASS_V23_ALL_STUDENT_LINKS'
+          report={'status':'PASS_V23_STUDENT_PREFLIGHT' if success else 'FAIL_V23_STUDENT_PREFLIGHT',
+                  'source_run':'38689660290','source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+                  'stages':stages,'student_link_report_status':details.get('status','NOT_CREATED'),
+                  'pages_scanned':details.get('pages_scanned'), 'student_links_checked':details.get('student_links_checked'),
+                  'failures':details.get('failures'),'warnings':details.get('warnings'),
+                  'netlify_deployed':False,'production_deployed':False,'form_submitted':False}
+          (p/'EXECUTION_STATUS.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+              f.write(f"### {report['status']}\n\nSource Run 38689660290; SHA a18b8901ecda7d37f65e35b15f03d579ec63c70f\n\n")
+              f.write(f"Stages: {stages}\n\nPages: {report['pages_scanned']}; student links: {report['student_links_checked']}; errors: {report['failures']}; warnings: {report['warnings']}.\n\n")
+              f.write('Netlify deploy: none. Production deploy: none. Form submissions: none. See JSON and CSV artifacts.\n')
+          print(report['status'],stages)
+          PY
+      - name: Upload JSON and CSV reports even when scan fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23-4-all-student-links-preflight-report
+          path: preflight-reports/
+          retention-days: 30
+          if-no-files-found: error
