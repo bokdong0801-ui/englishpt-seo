@@ -233,13 +233,41 @@ def draw_thumb(path: Path, key: str, title: str, subtitle: str, chips: list[str]
         d.text(((width - text_width) // 2, y), text, font=font, fill=color)
 
     def split_to_width(text: str, font, max_width: int) -> list[str]:
-        lines = []
-        current = ""
-        # Character-level fallback means long Korean place names never spill
-        # beyond the safe width, even when they contain no spaces.
+        """Prefer balanced whole-word lines; split Korean characters only if necessary."""
+        from functools import lru_cache
+        words = text.split()
+        measure = lambda value: d.textbbox((0, 0), value, font=font)[2]
+        if words and all(measure(w) <= max_width for w in words):
+            @lru_cache(maxsize=None)
+            def balanced(start):
+                if start == len(words):
+                    return (0, ())
+                best = None
+                for end in range(start + 1, len(words) + 1):
+                    line = " ".join(words[start:end])
+                    width = measure(line)
+                    if width > max_width:
+                        break
+                    future = balanced(end)
+                    if future is None:
+                        continue
+                    lines = (line,) + future[1]
+                    if len(lines) > 4:
+                        continue
+                    # Penalty discourages stranded last words and ragged lines.
+                    cost = (max_width - width) ** 2 + 10000 + future[0]
+                    if best is None or cost < best[0]:
+                        best = (cost, lines)
+                return best
+            answer = balanced(0)
+            if answer:
+                return list(answer[1])
+
+        # Fallback for a single long unspaced place/course word.
+        lines, current = [], ""
         for character in text:
             candidate = (current + character).lstrip()
-            if d.textbbox((0, 0), candidate, font=font)[2] <= max_width:
+            if measure(candidate) <= max_width:
                 current = candidate
             else:
                 if current:
@@ -247,6 +275,10 @@ def draw_thumb(path: Path, key: str, title: str, subtitle: str, chips: list[str]
                 current = character.strip()
         if current:
             lines.append(current.rstrip())
+        # Prevent a lone Korean syllable on the final line where feasible.
+        if len(lines) > 1 and len(lines[-1]) == 1 and len(lines[-2]) > 1:
+            lines[-1] = lines[-2][-1] + lines[-1]
+            lines[-2] = lines[-2][:-1]
         return lines or [""]
 
     brand_font = _font("bold", 30)
