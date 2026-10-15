@@ -76,6 +76,13 @@ jobs:
         continue-on-error: true
         run: |
           set -euo pipefail
+          # GitHub's Ubuntu Chromium has no reliable Korean glyph fallback by default.
+          # Prevent misleading PASS screenshots that render Hangul as tofu squares.
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk fontconfig
+          fc-cache -f >/dev/null
+          fc-list :lang=ko family | grep -q .
+          echo "PASS_CHROMIUM_KOREAN_FONT_FALLBACK $(fc-match -f '%{family}\n' ':lang=ko' | head -n 1)"
           python3 -m pip install --quiet playwright==1.55.0
           if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
             python3 -m playwright install --with-deps chromium
