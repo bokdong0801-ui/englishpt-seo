@@ -49,9 +49,9 @@ jobs:
           assert len(css)>5000 and 'related-course-links' in css,('wrong original stylesheet',len(css))
           # Apply the same mobile arrow no-wrap overlay included in the
           # corrected full-site preview artifact.
-          css+='\\n/* v23.4 student-navigation CTA mobile no-wrap */\\n'
-          css+='.related-course-links a span{flex:1 1 auto;min-width:0}\\n'
-          css+='.related-course-links a b{flex:0 0 auto;white-space:nowrap;word-break:keep-all;overflow-wrap:normal}\\n'
+          css+='\n/* v23.4 student-navigation CTA mobile no-wrap */\n'
+          css+='.related-course-links a span{flex:1 1 auto;min-width:0}\n'
+          css+='.related-course-links a b{flex:0 0 auto;white-space:nowrap;word-break:keep-all;overflow-wrap:normal}\n'
           Path('sample-site/pilot.css').write_text(css,encoding='utf-8')
           print('PASS_REAL_V23_4_STYLESHEET',len(css))
           print('PASS_APPROVED_CORRECTED_SAMPLE_SOURCE',report['groups_modified'])
