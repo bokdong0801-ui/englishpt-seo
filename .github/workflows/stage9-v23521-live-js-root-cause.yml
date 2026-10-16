@@ -1,0 +1,48 @@
+name: ENGLISH PT v23.5.2.1 LIVE JS Submit Override Root Cause (READ ONLY)
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23.5.2.1-parent-copy-polish-20261016]
+    paths: ['.github/workflows/stage9-v23521-live-js-root-cause.yml']
+permissions:
+  contents: read
+jobs:
+  inspect-actual-served-js:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: GET only actual deployed pilot.js and locate form state mutations
+        run: |
+          set -euo pipefail
+          mkdir -p js-report
+          python3 - <<'PY'
+          import urllib.request,json,re,hashlib
+          from pathlib import Path
+          root='https://6ad22244efa528796be5b050--englishpt-final-ia-review-bokdong.netlify.app'
+          uri=root+'/pilot.js?v=20261012-9'
+          req=urllib.request.Request(uri,headers={'User-Agent':'EnglishPT-static-JS-audit-GET-only'})
+          with urllib.request.urlopen(req,timeout=60) as r:
+            code=r.read().decode('utf8','replace')
+            status=r.status
+          assert status==200 and len(code)>200
+          Path('js-report/pilot-v23521-current-deployed.js').write_text(code,encoding='utf8')
+          patterns=['submit-lead','requestType','leadRequestType','leadSubject','체험수업 신청','영어과외 상담 신청',
+            'form.querySelector','querySelector(\\'form','data-trial-cta','submit.textContent','textContent']
+          contexts=[]
+          for pattern in patterns:
+            matches=list(re.finditer(re.escape(pattern),code,re.I))
+            for m in matches[:15]:
+              contexts.append({'pattern':pattern,'offset':m.start(),
+                'excerpt':code[max(0,m.start()-260):min(len(code),m.end()+320)]})
+            print('JS_PATTERN_COUNT',pattern,len(matches),flush=True)
+          out={'status':'PASS_LIVE_JS_FETCHED_FOR_DIAGNOSIS','http_status':status,
+            'bytes':len(code),'sha256':hashlib.sha256(code.encode()).hexdigest(),
+            'contexts':contexts,'production_deployed':False,'forms_submitted':False}
+          Path('js-report/LIVE_JS_MUTATION_CONTEXT.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('PASS_LIVE_JS_DOWNLOAD_AND_MUTATION_SOURCE_CONTEXT',len(contexts),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-real-deployed-pilot-js-and-runtime-form-mutation-rootcause
+          path: js-report/
+          retention-days: 14
