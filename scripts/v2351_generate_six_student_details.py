@@ -125,6 +125,7 @@ DETAIL=re.compile(r'<section class="section intro-detail" id="detail">.*?</secti
 CONSULT=re.compile(r'<section\b(?=[^>]*\bid="consultation-preview")(?=[^>]*class="[^"]*consult)[^>]*>.*?</section>',re.S)
 RELATED=re.compile(r'<section class="section related local-navigation">.*?</section>',re.S)
 NEARBY=re.compile(r'<section class="section nearby-localities">.*?</section>',re.S)
+NEARBY_A=re.compile(r'<a\\b[^>]*>.*?</a>',re.S)
 TRUST=re.compile(r'<div class="trust">.*?</div></div>',re.S)
 MARKER=re.compile(r'<meta\b[^>]*>',re.I)
 CANONICAL=re.compile(r'<link rel="canonical" href="[^"]+">')
@@ -223,6 +224,30 @@ def grade_blocks(loc,c):
        '<p>일정·과목·방식은 상담에서 함께 확인할 수 있으며, 신청만으로 수업이 확정되지는 않습니다.</p>'
        '</div></section>'
     )
+
+
+def filter_nonexistent_nearby(s, valid_filenames):
+    """Hide broken links to locality pages that are not part of this release."""
+    removed=[0]
+    removed_sections=[0]
+    def section_replace(m):
+        content=m.group(0)
+        def link_replace(a):
+            href_match=re.search(r'\bhref="([^"]+)"',a.group(0))
+            if not href_match:return a.group(0)
+            u=urlsplit(href_match.group(1))
+            if u.scheme or u.netloc or not u.path.startswith("/") or not u.path.endswith(".html"):
+                return a.group(0)
+            if u.path.lstrip("/") not in valid_filenames:
+                removed[0]+=1
+                return ""
+            return a.group(0)
+        cleaned=NEARBY_A.sub(link_replace,content)
+        if not NEARBY_A.search(cleaned):
+            removed_sections[0]+=1
+            return ""
+        return cleaned
+    return NEARBY.sub(section_replace,s),removed[0],removed_sections[0]
 
 def make_page(template,slug,dong,course):
     spec=SPECS[course]
@@ -346,6 +371,7 @@ def main():
        "final_generated_expected":expected_final,"new_pages_created":0,
        "elementary_tutor_rewritten":0,"regional_pages_nav_updated":0,
        "nav_links_checked":0,"new_page_labels":dict(Counter()),"naeidong_slugs":[],
+       "nearby_dead_links_removed":0,"empty_nearby_sections_removed":0,
        "errors":[],"error_count":0,"source_run":38689660290,
        "source_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f",
        "v235_source_run":38843408620,"production_deployed":False,
@@ -391,6 +417,8 @@ def main():
                 # Fail quickly; an incomplete locality release must never be packaged.
                 raise
         # Patch ALL 23 original locality intentions + all 3 newly-created intentions.
+        # Links to nonexistent nearby locality pages are pruned, never left as 404s.
+        valid_filenames={p.name for p in root.glob("*.html")}
         for i,(slug,dong) in enumerate(slugs.items()):
             nav=nav_html(slug,dong)
             for intent in ALL_LOCAL_INTENTS:
@@ -400,6 +428,10 @@ def main():
                     raise ValueError("missing expected locality intent: "+page.name)
                 original=page.read_text(encoding="utf-8")
                 updated,n=NAV_RE.subn(lambda m:m.group(1)+nav+m.group(3),original)
+                if not args.pilot:
+                    updated,dead,empty=filter_nonexistent_nearby(updated,valid_filenames)
+                    result["nearby_dead_links_removed"]+=dead
+                    result["empty_nearby_sections_removed"]+=empty
                 if n==1:
                     if updated!=original:page.write_text(updated,encoding="utf-8")
                     result["regional_pages_nav_updated"]+=1
