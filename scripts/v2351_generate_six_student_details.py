@@ -125,7 +125,7 @@ DETAIL=re.compile(r'<section class="section intro-detail" id="detail">.*?</secti
 CONSULT=re.compile(r'<section\b(?=[^>]*\bid="consultation-preview")(?=[^>]*class="[^"]*consult)[^>]*>.*?</section>',re.S)
 RELATED=re.compile(r'<section class="section related local-navigation">.*?</section>',re.S)
 NEARBY=re.compile(r'<section class="section nearby-localities">.*?</section>',re.S)
-NEARBY_A=re.compile(r'<a\\b[^>]*>.*?</a>',re.S)
+NEARBY_A=re.compile(r'<a\b[^>]*>.*?</a>',re.S)
 TRUST=re.compile(r'<div class="trust">.*?</div></div>',re.S)
 MARKER=re.compile(r'<meta\b[^>]*>',re.I)
 CANONICAL=re.compile(r'<link rel="canonical" href="[^"]+">')
