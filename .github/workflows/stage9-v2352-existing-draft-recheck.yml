@@ -5,6 +5,7 @@ on:
     branches: [review/v23.5.2-tutor-content-20261016]
     paths:
       - '.github/workflows/stage9-v2352-existing-draft-recheck.yml'
+      - 'scripts/v2352_live_draft_tutor_visual_qa.py'
 permissions:
   contents: read
 concurrency:
