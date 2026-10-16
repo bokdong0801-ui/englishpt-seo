@@ -1,0 +1,289 @@
+name: ENGLISH PT v23.5.2 New Tutor-Enhanced Unique Draft + Mobile PC CTA (Never Prod)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23.5.2-tutor-content-20261016]
+    paths: ['.github/workflows/stage9-v2352-unique-draft-and-live-tutor-qa.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v2352-unique-tutor-review
+  cancel-in-progress: false
+
+jobs:
+  publish-isolated-review:
+    name: Upload immutable 158571-page Draft and test two regions x six routes, no forms submitted
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      REVIEW_SITE_ID: 803550a8-03af-4776-bc8a-bd0bae85f5c7
+      REVIEW_SITE_NAME: englishpt-final-ia-review-bokdong
+      OG_ALIAS_NAME: v2352-tutor-review-20261016
+      SOURCE_RUN: '38878640560'
+      ORIGINAL_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
+      NETLIFY_CLI_TELEMETRY_DISABLED: '1'
+      NODE_OPTIONS: --max-old-space-size=6144
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Create always-available status JSON
+        run: |
+          mkdir -p v2352-live-report
+          printf '{"status":"STARTED","source_run":38878640560,"original_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f","production_deployed":false,"form_submissions":false}\n' > v2352-live-report/V2352_DRAFT_EXECUTION.json
+      - name: Confirm source PASS and distinct Netlify Review-only site
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -n "$NETLIFY_AUTH_TOKEN"
+          python3 - <<'PY'
+          import json,os,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY']
+          def get(url,token):
+            with urllib.request.urlopen(urllib.request.Request(url,headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}),timeout=45) as r:
+              return json.load(r)
+          source=get(f'https://api.github.com/repos/{repo}/actions/runs/{os.environ["SOURCE_RUN"]}',os.environ['GH_TOKEN'])
+          assert source['status']=='completed' and source['conclusion']=='success',source.get('conclusion')
+          artifacts=get(f'https://api.github.com/repos/{repo}/actions/runs/{os.environ["SOURCE_RUN"]}/artifacts?per_page=100',os.environ['GH_TOKEN'])['artifacts']
+          needed={'englishpt-v2352-tutor-enriched-158571-REVIEW-ONLY','englishpt-v2352-tutor-full-qa-reports-and-examples'}
+          assert needed.issubset({a['name'] for a in artifacts if not a['expired']})
+          orig=get(f'https://api.github.com/repos/{repo}/actions/runs/38689660290',os.environ['GH_TOKEN'])
+          assert orig['status']=='completed' and orig['conclusion']=='success'
+          assert orig['head_sha']==os.environ['ORIGINAL_SHA']
+          site=get('https://api.netlify.com/api/v1/sites/'+os.environ['REVIEW_SITE_ID'],os.environ['NETLIFY_AUTH_TOKEN'])
+          assert site['name']==os.environ['REVIEW_SITE_NAME']
+          assert site['id']==os.environ['REVIEW_SITE_ID']
+          assert 'englishpt-final-ia-review-bokdong.netlify.app' in (site.get('ssl_url') or site.get('url') or '')
+          assert (site.get('custom_domain') or '').lower() not in ('englishpt.kr','www.englishpt.kr')
+          alias='https://'+os.environ['OG_ALIAS_NAME']+'--'+os.environ['REVIEW_SITE_NAME']+'.netlify.app'
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('OG_ALIAS_URL='+alias+'\n')
+          print('PASS_V2352_IMMUTABLE_SOURCE_AND_ISOLATED_DRAFT_ID',orig['head_sha'],source['id'],alias)
+          PY
+      - name: Download all 158571 generated pages from frozen QA PASS artifact
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2352-tutor-enriched-158571-REVIEW-ONLY
+          run-id: 38878640560
+          path: frozen-v2352
+          github-token: ${{ github.token }}
+      - name: Download independent 158571-page QA report and SHA256
+        id: qa
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2352-tutor-full-qa-reports-and-examples
+          run-id: 38878640560
+          path: frozen-qa-v2352
+          github-token: ${{ github.token }}
+      - name: Verify 158571 frozen source SHA, 18180 tutoring edits, and preserved SEO before uploading
+        id: preflight
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          (cd frozen-v2352 && sha256sum -c ../frozen-qa-v2352/V2352_REVIEW_RELEASE_SHA256.txt)
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('frozen-qa-v2352')
+          report=json.loads((root/'V2352_FINAL_EXECUTION.json').read_text('utf8'))
+          build=json.loads((root/'V2352_TUTOR_FULL_BUILD.json').read_text('utf8'))
+          audit=json.loads((root/'V2352_INDEPENDENT_CONTENT_QA.json').read_text('utf8'))
+          seo=json.loads((root/'V2352_PRESERVED_158571_SEO_SITEMAP_QA.json').read_text('utf8'))
+          sha=(root/'V2352_REVIEW_RELEASE_SHA256.txt').read_text().split()[0]
+          assert sha=='eb02e2dc9007572445d7e92f942d85a35f48f599c274c3daeca6f33853985c8f',sha
+          assert report['status']=='PASS_V2352_TUTOR_CONTENT_ALL_158571_REVIEW_QA'
+          assert build['status']=='PASS_V2352_TUTOR_PAGES_ONLY_RENDERED' and build['tutor_pages_updated']==18180
+          assert audit['status']=='PASS_V2352_ALL_TUTOR_CONTENT_AND_NON_TUTOR_IMMUTABILITY_QA' and audit['error_count']==0
+          assert seo['status']=='PASS_V2351_INDEXING_SITEMAP_FULL_QA'
+          assert (seo['generated_total'],seo['indexable_count'],seo['noindex_count'],seo['sitemap_unique_urls'])==(158571,21964,136607,21964)
+          assert seo['errors_count']==0
+          print('PASS_V2352_SOURCE_SHA_AND_158571_SEO_QA',sha,flush=True)
+          PY
+          mkdir -p review-site
+          tar --zstd -xf frozen-v2352/ENGLISHPT_v23.5.2_TUTOR_ENRICHED_158571_REVIEW_ONLY.tar.zst -C review-site
+          test -f review-site/pilot.css
+          test -f review-site/assets/styles.css
+          test -f review-site/robots.txt
+          grep -iq 'X-Robots-Tag: noindex' review-site/_headers
+          for slug in gyeongnam-milyang-naeidong seoul-jongno-sajikdong; do
+            for mode in elem-tutor mid-tutor high-tutor; do
+              test -f "review-site/$slug-$mode.html"
+              grep -q 'data-v2352-section="parent"' "review-site/$slug-$mode.html"
+            done
+          done
+          echo PASS_V2352_SAFE_DRAFT_EXTRACTED
+      - name: Point only share-image meta tags at unique Review alias; validate every page
+        id: og
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,re
+          from pathlib import Path
+          root=Path('review-site')
+          src='https://englishpt.kr/assets/images/og-pages/'
+          alias=os.environ['OG_ALIAS_URL']+'/assets/images/og-pages/'
+          files=sorted(root.glob('*.html'))
+          assert len(files)==158573,(len(files),'Unexpected HTML count')
+          used=set();count=0
+          pat=re.compile(r'<meta\b[^>]*>',re.I)
+          for i,p in enumerate(files):
+            old=p.read_text(encoding='utf8')
+            matched=[0]
+            def fix(m):
+              tag=m.group(0)
+              if any(s in tag for s in ('property="og:image"','property="og:image:secure_url"','name="twitter:image"')):
+                if src not in tag:raise ValueError('OG source missing: '+p.name)
+                matched[0]+=1
+                return tag.replace(src,alias)
+              return tag
+            new=pat.sub(fix,old)
+            if matched[0]!=3:raise ValueError('Unexpected OG meta count: '+p.name+' '+str(matched[0]))
+            m=re.search(r'<meta property="og:image" content="'+re.escape(alias)+r'([^"]+\.png)"',new)
+            if not m:raise ValueError('OG PNG not grounded: '+p.name)
+            used.add(m.group(1))
+            if new.count('rel="canonical"')!=old.count('rel="canonical"'):
+              raise ValueError('Canonical unexpectedly changed: '+p.name)
+            p.write_text(new,encoding='utf8')
+            count+=matched[0]
+            if (i+1)%40000==0:print('V2352_DRAFT_OG_PROGRESS',i+1,len(files),flush=True)
+          inventory={p.name for p in (root/'assets/images/og-pages').glob('*.png')}
+          if not used.issubset(inventory):raise ValueError('Missing OG files: '+str(used-inventory))
+          if len(used)<26:raise ValueError('Fewer than 26 referenced original OG designs')
+          report={'status':'PASS_V2352_DRAFT_OG_PREPARATION','html_updated':len(files),
+            'meta_urls_rewritten':count,'used_images':len(used),'images_available':len(inventory),
+            'draft_og_alias':os.environ['OG_ALIAS_URL'],'canonical_changed':False,
+            'production_deployed':False}
+          Path('v2352-live-report/V2352_DRAFT_OG_PREP.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print(report['status'],len(files),len(used),flush=True)
+          PY
+      - name: Install Chromium and Korean fonts BEFORE Netlify upload
+        id: chrome
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+          python3 -m py_compile scripts/v2352_predeploy_local_tutor_qa.py scripts/v2352_live_draft_tutor_visual_qa.py
+      - name: Verify 6 tutor pages at 320 390 430 1440 and both consultation CTAs BEFORE uploading
+        id: local_qa
+        run: |
+          set -euo pipefail
+          python3 scripts/v2352_predeploy_local_tutor_qa.py
+      - name: Install isolated Draft Netlify CLI
+        run: npm install --global netlify-cli@latest
+      - name: Deploy v23.5.2 to isolated Netlify alias only - NEVER Production
+        id: deploy
+        run: |
+          set -euo pipefail
+          # DO NOT set --prod or --prod-if-unlocked.
+          netlify deploy --dir=review-site \
+            --site="$REVIEW_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" \
+            --alias="$OG_ALIAS_NAME" --no-build \
+            --message="ENGLISH PT v23.5.2 18180 tutor page enhancements within 158571 total QA PASS Draft only" \
+            --json > /tmp/v2351-draft-netlify.json
+          python3 - <<'PY'
+          import json,os
+          from urllib.parse import urlsplit
+          data=json.load(open('/tmp/v2351-draft-netlify.json',encoding='utf8'))
+          id=str(data.get('deploy_id') or data.get('id') or '')
+          candidate=data.get('deploy_url') or ''
+          assert id and len(id)>10
+          derived='https://'+id+'--'+os.environ['REVIEW_SITE_NAME']+'.netlify.app'
+          acceptable=(urlsplit(derived).hostname,urlsplit(os.environ['OG_ALIAS_URL']).hostname)
+          assert urlsplit(candidate).hostname in acceptable,(candidate,acceptable)
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+            f.write('REVIEW_DEPLOY_URL='+derived+'\n')
+            f.write('REVIEW_DEPLOY_ID='+id+'\n')
+          report={'status':'PASS_V2352_ISOLATED_DRAFT_DEPLOY','unique_url':derived,
+              'og_alias':os.environ['OG_ALIAS_URL'],'deploy_id':id,'cli_deploy_url':candidate,
+              'source_run':38878640560,'production_deployed':False}
+          with open('v2352-live-report/V2352_DRAFT_DEPLOY.json','w') as f:
+            json.dump(report,f,ensure_ascii=False,indent=2)
+          print('PASS_V2352_DRAFT_DEPLOY_URL',derived,flush=True)
+          print('PASS_V2352_DRAFT_OG_ALIAS',os.environ['OG_ALIAS_URL'],flush=True)
+          PY
+      - name: Real HTTP 6 tutor pages with updated sections, SEO and 29 current OG images
+        id: http
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 scripts/v2352_live_draft_tutor_visual_qa.py http
+      - name: Real Chromium tutor sections + Hero and parent CTA at mobile 320 390 430 and PC 1440
+        id: browser
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 scripts/v2352_live_draft_tutor_visual_qa.py browser
+      - name: Always record final immutable Draft URL and truthful Q1 Q2 PASS or HOLD
+        id: final
+        if: always()
+        env:
+          SOURCE: ${{ steps.source.outcome }}
+          DOWNLOAD: ${{ steps.download.outcome }}
+          QA: ${{ steps.qa.outcome }}
+          PREFLIGHT: ${{ steps.preflight.outcome }}
+          OG: ${{ steps.og.outcome }}
+          CHROME: ${{ steps.chrome.outcome }}
+          LOCAL_QA: ${{ steps.local_qa.outcome }}
+          DEPLOY: ${{ steps.deploy.outcome }}
+          HTTP: ${{ steps.http.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path('v2352-live-report');root.mkdir(exist_ok=True)
+          def read(name):
+            p=root/name
+            return json.loads(p.read_text('utf8')) if p.exists() else {}
+          deploy=read('V2352_DRAFT_DEPLOY.json')
+          http=read('V2352_LIVE_HTTP_QA.json')
+          browser=read('V2352_LIVE_BROWSER_QA.json')
+          stages={k:os.environ.get(k,'unknown') for k in ('SOURCE','DOWNLOAD','QA','PREFLIGHT','OG','CHROME','LOCAL_QA','DEPLOY','HTTP','BROWSER')}
+          good=all(v=='success' for v in stages.values()) and http.get('status')=='PASS_V2352_LIVE_HTTP_CONTENT_CTA_SEO_OG' and browser.get('status')=='PASS_V2352_LIVE_TUTOR_RESPONSIVE_CTA'
+          outcome={'status':'PASS_V2352_NEW_DRAFT_TUTOR_UI_CTA_QA' if good else 'HOLD_V2352_NEW_DRAFT_TUTOR_UI_CTA_QA',
+            'draft_url':deploy.get('unique_url'),'source_run':38878640560,
+            'source_sha256':'eb02e2dc9007572445d7e92f942d85a35f48f599c274c3daeca6f33853985c8f',
+            'generated_pages_offline':158571,'improved_tutor_pages_offline':18180,
+            'live_http_pages':len(http.get('page_checks',[])),
+            'live_og_1200x630':http.get('og_checked',0),
+            'browser_viewport_checks':browser.get('actual_page_combinations',0),
+            'content_layout_checks':browser.get('section_layout_checks',0),
+            'consultation_cta_clicks':browser.get('cta_click_checks',0),
+            'forms_reached':browser.get('consultation_form_reached',0),
+            'regional_student_links':browser.get('student_navigation_checks',0),
+            'http_errors':http.get('errors',[]),'browser_errors':browser.get('errors',[]),
+            'stages':stages,'production_deployed':False,'form_submitted':False}
+          (root/'V2352_FINAL_DRAFT_QA.json').write_text(json.dumps(outcome,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+            f.write('## '+outcome['status']+'\n\n')
+            f.write('New unique Draft: '+str(outcome['draft_url'])+'\n\n')
+            f.write('Mobile/PC '+str(outcome['browser_viewport_checks'])+'; CTA '+str(outcome['forms_reached'])+'; OG '+str(outcome['live_og_1200x630'])+'\n\n')
+            f.write('Production NOT deployed. Consultation forms NOT submitted.\n')
+          print(outcome['status'],stages,flush=True)
+          if outcome['draft_url']:print('V2352_UNIQUE_DRAFT_URL',outcome['draft_url'],flush=True)
+          PY
+      - name: Upload diagnostic JSON reports and screenshot evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2352-unique-draft-mobile-pc-tutor-cta-final-QA
+          path: v2352-live-report/
+          retention-days: 30
+          if-no-files-found: error
