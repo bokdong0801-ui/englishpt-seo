@@ -9,8 +9,8 @@ from urllib.parse import urlsplit,urljoin,unquote
 from playwright.sync_api import sync_playwright
 
 HOST="englishpt-final-ia-review-bokdong.netlify.app"
-URL=os.environ.get("V2352_UNIQUE_DRAFT_URL","").rstrip("/")
-ALIAS=os.environ.get("V2352_DRAFT_OG_ALIAS","").rstrip("/")
+URL=(os.environ.get("V2352_UNIQUE_DRAFT_URL") or os.environ.get("REVIEW_DEPLOY_URL") or "").rstrip("/")
+ALIAS=(os.environ.get("V2352_DRAFT_OG_ALIAS") or os.environ.get("OG_ALIAS_URL") or "").rstrip("/")
 OUT=Path("v2352-live-report");OUT.mkdir(parents=True,exist_ok=True)
 SCREEN=OUT/"screenshots";SCREEN.mkdir(parents=True,exist_ok=True)
 COURSES={"elem-tutor":"초등학생영어과외","mid-tutor":"중학생영어과외","high-tutor":"고등학생영어과외"}
