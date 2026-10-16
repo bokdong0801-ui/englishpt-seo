@@ -325,11 +325,22 @@ def main():
     args=ap.parse_args()
     root=args.root.resolve()
     page_count=len(list(root.glob("*.html")))
-    local_pages=sorted(root.glob("*-elem-tutor.html"))
+    elem_candidates=sorted(root.glob("*-elem-tutor.html"))
+    # One or more hub/station pages may share the suffix but do NOT belong
+    # to the 6060 full (23-intent) locality clusters.
+    local_pages=[
+        p for p in elem_candidates
+        if (root/(p.name[:-len("-elem-tutor.html")]+"-worker-english-conv-academy.html")).is_file()
+        and (root/(p.name[:-len("-elem-tutor.html")]+"-mid-conv.html")).is_file()
+        and (root/(p.name[:-len("-elem-tutor.html")]+"-high-conv.html")).is_file()
+    ]
+    excluded_elem_tutor=[p.name for p in elem_candidates if p not in set(local_pages)]
     expected_final=args.expected_source+args.expected_locations*3
     result={"status":"STARTED","source_expected":args.expected_source,
        "source_generated_count":page_count-2,"location_expected":args.expected_locations,
-       "location_detected":len(local_pages),"new_expected":args.expected_locations*3,
+       "location_detected":len(local_pages),
+       "excluded_non_locality_elem_tutor":excluded_elem_tutor,
+       "new_expected":args.expected_locations*3,
        "final_generated_expected":expected_final,"new_pages_created":0,
        "elementary_tutor_rewritten":0,"regional_pages_nav_updated":0,
        "nav_links_checked":0,"new_page_labels":dict(Counter()),"naeidong_slugs":[],
