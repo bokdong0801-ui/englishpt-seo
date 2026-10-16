@@ -1,0 +1,286 @@
+name: ENGLISH PT v23.5.1 Six Student Courses FINAL Draft Preview (Never Production)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v2351-six-student-review-draft.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v2351-six-student-review-draft
+  cancel-in-progress: false
+
+jobs:
+  publish-isolated-review:
+    name: Upload immutable 158571-page Draft and test two regions x six routes, no forms submitted
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      REVIEW_SITE_ID: 803550a8-03af-4776-bc8a-bd0bae85f5c7
+      REVIEW_SITE_NAME: englishpt-final-ia-review-bokdong
+      OG_ALIAS_NAME: v2351-six-student-20261016
+      SOURCE_RUN: '38864767374'
+      ORIGINAL_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
+      NETLIFY_CLI_TELEMETRY_DISABLED: '1'
+      NODE_OPTIONS: --max-old-space-size=6144
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Create always-available status JSON
+        run: |
+          mkdir -p v2351-review-reports
+          printf '{"status":"STARTED","source_run":38864767374,"original_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f","production_deployed":false,"form_submissions":false}\n' > v2351-review-reports/V2351_DRAFT_EXECUTION.json
+      - name: Confirm source PASS and distinct Netlify Review-only site
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -n "$NETLIFY_AUTH_TOKEN"
+          python3 - <<'PY'
+          import json,os,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY']
+          def get(url,token):
+            with urllib.request.urlopen(urllib.request.Request(url,headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}),timeout=45) as r:
+              return json.load(r)
+          source=get(f'https://api.github.com/repos/{repo}/actions/runs/{os.environ["SOURCE_RUN"]}',os.environ['GH_TOKEN'])
+          assert source['status']=='completed' and source['conclusion']=='success',source.get('conclusion')
+          artifacts=get(f'https://api.github.com/repos/{repo}/actions/runs/{os.environ["SOURCE_RUN"]}/artifacts?per_page=100',os.environ['GH_TOKEN'])['artifacts']
+          needed={'englishpt-v2351-full-site-158571-REVIEW-ONLY','englishpt-v2351-all-158571-student-qa-and-naeidong-previews'}
+          assert needed.issubset({a['name'] for a in artifacts if not a['expired']})
+          orig=get(f'https://api.github.com/repos/{repo}/actions/runs/38689660290',os.environ['GH_TOKEN'])
+          assert orig['status']=='completed' and orig['conclusion']=='success'
+          assert orig['head_sha']==os.environ['ORIGINAL_SHA']
+          site=get('https://api.netlify.com/api/v1/sites/'+os.environ['REVIEW_SITE_ID'],os.environ['NETLIFY_AUTH_TOKEN'])
+          assert site['name']==os.environ['REVIEW_SITE_NAME']
+          assert site['id']==os.environ['REVIEW_SITE_ID']
+          assert 'englishpt-final-ia-review-bokdong.netlify.app' in (site.get('ssl_url') or site.get('url') or '')
+          assert (site.get('custom_domain') or '').lower() not in ('englishpt.kr','www.englishpt.kr')
+          alias='https://'+os.environ['OG_ALIAS_NAME']+'--'+os.environ['REVIEW_SITE_NAME']+'.netlify.app'
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('OG_ALIAS_URL='+alias+'\n')
+          print('PASS_V2351_IMMUTABLE_SOURCE_AND_ISOLATED_DRAFT_ID',orig['head_sha'],source['id'],alias)
+          PY
+      - name: Download all 158571 generated pages from frozen QA PASS artifact
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-full-site-158571-REVIEW-ONLY
+          run-id: 38864767374
+          path: frozen-v2351
+          github-token: ${{ github.token }}
+      - name: Download independent 158571-page QA report and SHA256
+        id: qa
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-all-158571-student-qa-and-naeidong-previews
+          run-id: 38864767374
+          path: frozen-qa
+          github-token: ${{ github.token }}
+      - name: Confirm SHA256, noindex Draft policy and source QA before any Netlify upload
+        id: preflight
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          (cd frozen-v2351 && sha256sum -c ../frozen-qa/V2351_RELEASE_SHA256.txt)
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('frozen-qa')
+          reports=[json.loads((root/x).read_text(encoding='utf-8')) for x in
+               ('V2351_EXECUTION.json','V2351_SIX_COURSE_BUILD.json',
+                'V2351_ALL_158571_STUDENT_NAV_SEMANTIC_QA.json','V2351_NAEIDONG_BROWSER.json')]
+          status=[r.get('status') for r in reports]
+          assert status==['PASS_V2351_ALL_158571_STUDENT_SIX_DRAFT_READY',
+             'PASS_ALL_LOCAL_STUDENT_SIX_DETAILS',
+             'PASS_V2351_ALL_158571_STUDENT_NAV_SEMANTIC_QA',
+             'PASS_V2351_NAEIDONG_SIX_REAL_COURSE_CHROMIUM'],status
+          assert reports[1]['new_pages_created']==18180 and reports[1]['final_generated_found']==158571
+          assert reports[2]['student_links_checked']==945360 and reports[2]['errors_count']==0
+          assert reports[3]['screen_checks']>=12 and not reports[3]['errors']
+          print('PASS_V2351_FULL_SITE_INPUT_QA',status)
+          PY
+          mkdir -p review-site
+          tar --zstd -xf frozen-v2351/englishpt-v2351-student-six-158571-REVIEW-ONLY.tar.zst -C review-site
+          test -f review-site/robots.txt
+          test -f review-site/pilot.css
+          test -f review-site/_headers
+          test -f review-site/gyeongnam-milyang-naeidong-mid-tutor.html
+          test -f review-site/gyeongnam-milyang-naeidong-elem-conv.html
+          grep -qi noindex review-site/_headers
+          echo PASS_V2351_SAFE_DRAFT_SOURCE_EXTRACTION
+      - name: Point only share-image meta tags at unique Review alias; validate every page
+        id: og
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,re
+          from pathlib import Path
+          root=Path('review-site')
+          src='https://englishpt.kr/assets/images/og-pages/'
+          alias=os.environ['OG_ALIAS_URL']+'/assets/images/og-pages/'
+          files=sorted(root.glob('*.html'))
+          assert len(files)==158573,(len(files),'Unexpected HTML count')
+          used=set();count=0
+          pat=re.compile(r'<meta\b[^>]*>',re.I)
+          for i,p in enumerate(files):
+            old=p.read_text(encoding='utf8')
+            matched=[0]
+            def fix(m):
+              tag=m.group(0)
+              if any(s in tag for s in ('property="og:image"','property="og:image:secure_url"','name="twitter:image"')):
+                if src not in tag:raise ValueError('OG source missing: '+p.name)
+                matched[0]+=1
+                return tag.replace(src,alias)
+              return tag
+            new=pat.sub(fix,old)
+            if matched[0]!=3:raise ValueError('Unexpected OG meta count: '+p.name+' '+str(matched[0]))
+            m=re.search(r'<meta property="og:image" content="'+re.escape(alias)+r'([^"]+\.png)"',new)
+            if not m:raise ValueError('OG PNG not grounded: '+p.name)
+            used.add(m.group(1))
+            if new.count('rel="canonical"')!=old.count('rel="canonical"'):
+              raise ValueError('Canonical unexpectedly changed: '+p.name)
+            p.write_text(new,encoding='utf8')
+            count+=matched[0]
+            if (i+1)%40000==0:print('V2351_DRAFT_OG_PROGRESS',i+1,len(files),flush=True)
+          inventory={p.name for p in (root/'assets/images/og-pages').glob('*.png')}
+          if not used.issubset(inventory):raise ValueError('Missing OG files: '+str(used-inventory))
+          if len(used)<26:raise ValueError('Fewer than 26 referenced original OG designs')
+          report={'status':'PASS_V2351_DRAFT_OG_PREPARATION','html_updated':len(files),
+            'meta_urls_rewritten':count,'used_images':len(used),'images_available':len(inventory),
+            'draft_og_alias':os.environ['OG_ALIAS_URL'],'canonical_changed':False,
+            'production_deployed':False}
+          Path('v2351-review-reports/V2351_DRAFT_OG_PREP.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print(report['status'],len(files),len(used),flush=True)
+          PY
+      - name: Install isolated Draft Netlify CLI
+        run: npm install --global netlify-cli@latest
+      - name: Deploy v23.5.1 to isolated Netlify alias only - NEVER Production
+        id: deploy
+        run: |
+          set -euo pipefail
+          # DO NOT set --prod or --prod-if-unlocked.
+          netlify deploy --dir=review-site \
+            --site="$REVIEW_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" \
+            --alias="$OG_ALIAS_NAME" --no-build \
+            --message="ENGLISH PT v23.5.1 six real student detail routes 158571 QA PASS Draft only" \
+            --json > /tmp/v2351-draft-netlify.json
+          python3 - <<'PY'
+          import json,os
+          from urllib.parse import urlsplit
+          data=json.load(open('/tmp/v2351-draft-netlify.json',encoding='utf8'))
+          id=str(data.get('deploy_id') or data.get('id') or '')
+          candidate=data.get('deploy_url') or ''
+          assert id and len(id)>10
+          derived='https://'+id+'--'+os.environ['REVIEW_SITE_NAME']+'.netlify.app'
+          acceptable=(urlsplit(derived).hostname,urlsplit(os.environ['OG_ALIAS_URL']).hostname)
+          assert urlsplit(candidate).hostname in acceptable,(candidate,acceptable)
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+            f.write('REVIEW_DEPLOY_URL='+derived+'\n')
+            f.write('REVIEW_DEPLOY_ID='+id+'\n')
+          report={'status':'PASS_V2351_ISOLATED_DRAFT_DEPLOY','unique_url':derived,
+              'og_alias':os.environ['OG_ALIAS_URL'],'deploy_id':id,'cli_deploy_url':candidate,
+              'source_run':38864767374,'production_deployed':False}
+          with open('v2351-review-reports/V2351_DRAFT_DEPLOY.json','w') as f:
+            json.dump(report,f,ensure_ascii=False,indent=2)
+          print('PASS_V2351_DRAFT_DEPLOY_URL',derived,flush=True)
+          print('PASS_V2351_DRAFT_OG_ALIAS',os.environ['OG_ALIAS_URL'],flush=True)
+          PY
+      - name: Verify v23.5.1 live HTTP, SEO, OG 29 PNGs and all 6 detail routes
+        id: http
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 scripts/v2351_draft_live_qa.py http
+      - name: Install Chromium and Korean fonts for Draft browser QA
+        id: browser_install
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+      - name: Actually click every student link on mobile 390 and PC 1440, never submit
+        id: browser
+        continue-on-error: true
+        if: steps.browser_install.outcome == 'success'
+        run: |
+          set -euo pipefail
+          python3 scripts/v2351_draft_live_qa.py chromium
+      - name: Always write final GO/HOLD summary with reports
+        id: final
+        if: always()
+        env:
+          SOURCE: ${{ steps.source.outcome }}
+          DOWNLOAD: ${{ steps.download.outcome }}
+          QA: ${{ steps.qa.outcome }}
+          PREFLIGHT: ${{ steps.preflight.outcome }}
+          OG: ${{ steps.og.outcome }}
+          DEPLOY: ${{ steps.deploy.outcome }}
+          HTTP: ${{ steps.http.outcome }}
+          BROWSER_INSTALL: ${{ steps.browser_install.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path('v2351-review-reports');root.mkdir(exist_ok=True)
+          def read(name):
+            p=root/name
+            return json.loads(p.read_text(encoding='utf8')) if p.exists() else {}
+          stages={k:os.environ.get(k,'unknown') for k in
+              ('SOURCE','DOWNLOAD','QA','PREFLIGHT','OG','DEPLOY','HTTP','BROWSER_INSTALL','BROWSER')}
+          deploy=read('V2351_DRAFT_DEPLOY.json')
+          http=read('V2351_DRAFT_HTTP_SEO_OG.json')
+          chromium=read('V2351_DRAFT_CHROMIUM.json')
+          ok=all(v=='success' for v in stages.values()) and (
+            http.get('status')=='PASS_V2351_DRAFT_HTTP_SEO_OG') and (
+            chromium.get('status')=='PASS_V2351_DRAFT_MOBILE_PC_CLICKS')
+          report={'status':'PASS_V2351_DRAFT_SIX_STUDENT_FINAL_QA' if ok else 'HOLD_V2351_DRAFT_SIX_STUDENT_FINAL_QA',
+            'production_verdict':'HOLD',
+            'source_run':38864767374,'source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+            'generated_pages':158571,'localities':6060,
+            'independently_verified_student_links':945360,
+            'unique_draft_url':deploy.get('unique_url'),
+            'draft_og_alias':deploy.get('og_alias'),
+            'http_checks':len(http.get('checks',[])),'http_errors':http.get('errors',[]),
+            'og_png_verified':http.get('og_images_verified',0),
+            'chromium_click_checks':len(chromium.get('checks',[])),
+            'chromium_errors':chromium.get('errors',[]),
+            'stages':stages,'production_deployed':False,'form_submitted':False,
+            'limitations':['All 158571 pages checked offline; live representative 2 areas x 6 student links at 390,1440',
+                           'Form arrival only, actual submission intentionally not tested',
+                           'Indexing status of locality pages requires separate SEO approval before Production.']}
+          (root/'V2351_FINAL_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as f:
+            f.write('## v23.5.1 '+report['status']+'\n\n')
+            f.write('Unique Draft: '+str(report['unique_draft_url'])+'\n\n')
+            f.write('Stages: '+str(stages)+'\n\n')
+            f.write('HTTP: '+str(report['http_checks'])+' | OG images: '+str(report['og_png_verified'])+' | Browser clicks: '+str(report['chromium_click_checks'])+'\n\n')
+            f.write('Production HOLD. No form submission.\n')
+          print(report['status'],stages,flush=True)
+          if not ok:raise SystemExit(1)
+          print('PASS_V2351_FINAL_REVIEW_DRAFT',report['unique_draft_url'],flush=True)
+          PY
+      - name: Upload diagnostic JSON reports and screenshot evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2351-six-student-live-draft-final-QA
+          path: v2351-review-reports/
+          retention-days: 30
+          if-no-files-found: error
