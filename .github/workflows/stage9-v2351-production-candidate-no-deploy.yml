@@ -1,0 +1,218 @@
+name: ENGLISH PT v23.5.1 FINAL Production Candidate Gate (NO DEPLOY)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v2351-production-candidate-no-deploy.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v2351-production-candidate-final-no-deploy
+  cancel-in-progress: false
+
+jobs:
+  gated-production-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      SOURCE_RUN: '38868768031'
+      INTEGRATED_LIVE_QA_RUN: '38869423163'
+      BASE_SOURCE_RUN: '38689660290'
+      BASE_SOURCE_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize permanent HOLD diagnostic by default
+        run: |
+          mkdir -p production-final-reports
+          printf '{"status":"HOLD_NOT_YET_VERIFIED","source_seo_run":38868768031,"integrated_live_run":38869423163,"production_deployed":false,"form_submitted":false}\n' > production-final-reports/V2351_PRODUCTION_CANDIDATE_STATUS.json
+      - name: Wait for real v23.5.1 integrated student exam adult live QA PASS
+        id: live
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import urllib.request,json,os,time
+          repo=os.environ['GITHUB_REPOSITORY']
+          token=os.environ['GH_TOKEN']
+          def get(id):
+            with urllib.request.urlopen(urllib.request.Request(
+                f'https://api.github.com/repos/{repo}/actions/runs/{id}',
+                headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}),timeout=50) as r:
+                return json.load(r)
+          deadline=time.monotonic()+185*60
+          while time.monotonic()<deadline:
+            qa=get(os.environ['INTEGRATED_LIVE_QA_RUN'])
+            if qa['status']=='completed':
+              if qa.get('conclusion')!='success':
+                raise RuntimeError('Integrated QA not PASS: '+str(qa.get('conclusion'))+'; Production candidate must remain HOLD')
+              break
+            print('PRODUCTION_CANDIDATE_GATE_WAITING_FOR_Q3',qa['status'],flush=True)
+            time.sleep(60)
+          else:raise TimeoutError('Integrated QA unfinished at deadline: HOLD')
+          source=get(os.environ['SOURCE_RUN'])
+          orig=get(os.environ['BASE_SOURCE_RUN'])
+          assert source['status']=='completed' and source['conclusion']=='success'
+          assert orig['conclusion']=='success' and orig['head_sha']==os.environ['BASE_SOURCE_SHA']
+          assert qa['head_branch']=='review/v23-aftercare-cta-20261014'
+          print('PASS_V2351_Q3_AND_Q2_SOURCE_GATE',qa['id'],source['id'],orig['head_sha'],flush=True)
+          PY
+      - name: Download integrated final browser QA report for independent status verification
+        id: live_report
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-final-integrated-student-exam-adult-live-qa
+          run-id: 38869423163
+          path: q3-report
+          github-token: ${{ github.token }}
+      - name: Verify Q3 source URL, 36 live pages, 72 viewport combinations and no submissions
+        id: q3
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path('q3-report/V2351_INTEGRATED_EXECUTION.json')
+          data=json.loads(path.read_text(encoding='utf8'))
+          assert data['status']=='PASS_V2351_INTEGRATED_STUDENT_EXAM_ADULT_LIVE_QA',data['status']
+          assert data['audience_pages_checked']==36 and data['responsive_http']==36
+          assert data['viewport_combinations']==72 and data['forms_reached_without_submission']==72
+          assert not data['errors'] and data['form_submitted'] is False
+          assert data['seo_policy_corrected_run']==38868768031
+          assert data['unique_preview_url'] and 'englishpt-final-ia-review-bokdong.netlify.app' in data['unique_preview_url']
+          print('PASS_Q3_36_URLS_72_VIEWPORTS_72_FORMS_NO_SUBMISSIONS',data['unique_preview_url'],flush=True)
+          Path('production-final-reports/Q3_LIVE_PREVIEW_REFERENCE.json').write_text(
+            json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          PY
+      - name: Download immutable SEO corrected full v23.5.1 pages
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-SEO-corrected-158571-full-site-DRAFT-ONLY
+          run-id: 38868768031
+          path: seo-source
+          github-token: ${{ github.token }}
+      - name: Download SEO source audit, checksum, and approved candidate Production headers
+        id: seo_report
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-indexing-corrected-full-sitemap-report-and-overlay
+          run-id: 38868768031
+          path: seo-reports
+          github-token: ${{ github.token }}
+      - name: Verify source SHA256, the 21964+136607 approved SEO policy and Q2 index/noindex QA
+        id: qa
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          (cd seo-source && sha256sum -c ../seo-reports/V2351_SEO_CORRECTED_RELEASE_SHA256.txt)
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          d=Path('seo-reports')
+          x=json.loads((d/'V2351_SEO_RELEASE_STATUS.json').read_text(encoding='utf8'))
+          q=json.loads((d/'V2351_SEO_FULL_FINAL_QA.json').read_text(encoding='utf8'))
+          h=json.loads((d/'V2351_HEADERS_POLICY_QA.json').read_text(encoding='utf8'))
+          assert x['status']=='PASS_V2351_SEO_POLICY_CORRECTED_DRAFT_READY'
+          assert q['status']=='PASS_V2351_INDEXING_SITEMAP_FULL_QA'
+          assert q['generated_total']==158571 and q['indexable_count']==21964 and q['noindex_count']==136607
+          assert q['sitemap_unique_urls']==21964 and q['errors_count']==0
+          assert x['orphan_noindex_fixed']==2733
+          assert h['status']=='PASS_SEPARATE_DRAFT_AND_PRODUCTION_HEADERS'
+          assert not h['production_candidate_applied_to_site'] and not h['production_deployed']
+          print('PASS_Q2_SEO_158571_ROBOTS_AND_21964_SITEMAP',flush=True)
+          PY
+          mkdir -p final-prod-site
+          tar --zstd -xf seo-source/englishpt-v2351-SEO-CORRECTED-158571-DRAFT-ONLY.tar.zst -C final-prod-site
+          test -f final-prod-site/sitemap-index.xml
+          test -f final-prod-site/_headers
+          test -f final-prod-site/gyeongnam-milyang-naeidong-mid-tutor.html
+      - name: Convert only Draft response headers and independently audit all generated HTML and assets
+        id: promote_headers
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v2351_production_release_gate.py
+          python3 scripts/v2351_production_release_gate.py \
+            --root=final-prod-site \
+            --headers-candidate=seo-reports/PRODUCTION_HEADERS_CANDIDATE.txt \
+            --report=production-final-reports/V2351_PRODUCTION_FULL_PAGE_AUDIT.json
+      - name: Build one immutable Production-READY tar.zst, NO deployment
+        id: package
+        run: |
+          set -euo pipefail
+          tar -I 'zstd -T0 -3' -cf ENGLISHPT_v23.5.1_PRODUCTION_READY_158571.tar.zst -C final-prod-site .
+          sha256sum ENGLISHPT_v23.5.1_PRODUCTION_READY_158571.tar.zst > production-final-reports/V2351_PRODUCTION_RELEASE_SHA256.txt
+          test -s ENGLISHPT_v23.5.1_PRODUCTION_READY_158571.tar.zst
+          echo PASS_V2351_ONE_PRODUCTION_READY_RELEASE_ARCHIVE_NO_DEPLOY
+      - name: Always record strict final GO/HOLD and provenance
+        if: always()
+        env:
+          LIVE: ${{ steps.live.outcome }}
+          LIVE_REPORT: ${{ steps.live_report.outcome }}
+          Q3: ${{ steps.q3.outcome }}
+          DOWNLOAD: ${{ steps.download.outcome }}
+          SEO_REPORT: ${{ steps.seo_report.outcome }}
+          QA: ${{ steps.qa.outcome }}
+          HEADERS: ${{ steps.promote_headers.outcome }}
+          PACKAGE: ${{ steps.package.outcome }}
+        run: |
+          python3 - <<'PY'
+          import os,json
+          from pathlib import Path
+          root=Path('production-final-reports')
+          p=root/'V2351_PRODUCTION_FULL_PAGE_AUDIT.json'
+          q=json.loads(p.read_text(encoding='utf8')) if p.exists() else {}
+          stages={k:os.environ.get(k,'unknown') for k in ('LIVE','LIVE_REPORT','Q3','DOWNLOAD','SEO_REPORT','QA','HEADERS','PACKAGE')}
+          success=all(x=='success' for x in stages.values()) and q.get('status')=='PASS_V2351_PRODUCTION_RELEASE_GATED_AND_AUDITED'
+          final={'status':'PASS_V2351_PRODUCTION_READY_ARCHIVE_FINAL' if success else 'HOLD_V2351_PRODUCTION_CANDIDATE',
+                 'generated_pages':q.get('generated_count'),
+                 'indexable':q.get('indexable'),'noindex':q.get('noindex'),
+                 'sitemap_urls':21964,
+                 'og_meta_assets_validated':q.get('og_meta_ok'),
+                 'unique_preview_run':38869423163,
+                 'all_page_seo_run':38868768031,
+                 'student_six_base_run':38864767374,
+                 'original_source_run':38689660290,
+                 'original_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+                 'production_safe_headers':q.get('production_global_noindex_removed',False),
+                 'archive_file':'ENGLISHPT_v23.5.1_PRODUCTION_READY_158571.tar.zst' if success else None,
+                 'stages':stages,'production_deployed':False,
+                 'form_submitted':False,
+                 'caveats':['Actual Production deployment requires explicit user approval',
+                            'Netlify upload and post-release monitoring not performed',
+                            'Form submission and email alerts cannot be validated without a real test']}
+          (root/'V2351_PRODUCTION_CANDIDATE_STATUS.json').write_text(
+                json.dumps(final,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as f:
+            f.write('## '+final['status']+'\n\n')
+            f.write('Q3 live run 38869423163; SEO full run 38868768031; source a18b8901ecda7d37f65e35b15f03d579ec63c70f\n\n')
+            f.write('Generated '+str(final['generated_pages'])+' | index '+str(final['indexable'])+
+                    ' | noindex '+str(final['noindex'])+' | sitemap 21964\n\n')
+            f.write('Stages: '+str(stages)+'\n\n')
+            f.write('Production was NOT deployed. No consultation forms were submitted.\n')
+          print(final['status'],stages,flush=True)
+          PY
+      - name: Always upload final traceable Q3/Q2 Production gate QA status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2351-production-gate-full-report
+          path: production-final-reports/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload single complete Production-READY archive only on full PASS
+        if: steps.package.outcome == 'success' && steps.promote_headers.outcome == 'success' && steps.q3.outcome == 'success' && steps.qa.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2351-PRODUCTION-READY-158571-NOT-DEPLOYED
+          path: ENGLISHPT_v23.5.1_PRODUCTION_READY_158571.tar.zst
+          retention-days: 30
+          if-no-files-found: error
