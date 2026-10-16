@@ -21,6 +21,7 @@ LINK=re.compile(r'\bhref="([^"]+)"')
 HEADLINE=re.compile(r'<h1\b[^>]*>(.*?)</h1>',re.I|re.S)
 CANONICAL=re.compile(r'<link rel="canonical" href="([^"]+)">')
 OG_IMAGE=re.compile(r'<meta property="og:image" content="([^"]+)">')
+ROBOTS_RE=re.compile(r'<meta name="robots" content="([^"]+)">')
 SUBJECT=re.compile(r'<input\b[^>]*name="wantedClass"[^>]*value="([^"]*)"')
 CONTENT_REQUIRED={
  "elem-tutor":("학교 영어","읽기","문장"),
@@ -56,14 +57,17 @@ def main():
             "page_categories":dict(Counter()),"form_fields_checked":0,
             "canonical_checked":0,"og_metadata_checked":0,
             "nearby_same_course_links_checked":0,"errors_count":0,
-            "error_samples":[],"noindex_status":"preserved (not promoted to index)",
+            "error_samples":[],"error_reason_counts":{},
+            "robots_status":"preserved individually from each existing locality",
             "source_run":38689660290,
             "source_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f",
             "production_deployed":False,"draft_deployed":False,"form_submitted":False}
     errors=[]
     counts=Counter()
+    reason_counts=Counter()
     def fail(page,reason,detail=""):
         report["errors_count"]+=1
+        reason_counts[reason]+=1
         if len(errors)<100:errors.append({"file":page,"reason":reason,"detail":str(detail)[:240]})
     try:
         files=list(root.glob("*.html"))
@@ -73,6 +77,7 @@ def main():
         paths={p.name for p in files}
         # Build a map of exact regional slugs to the display name in elementary tutor H1.
         dong={}
+        prior_robots={}
         for p in regions:
             text=p.read_text(encoding="utf-8")
             h=HEADLINE.search(text)
@@ -85,6 +90,9 @@ def main():
                 continue
             slug=p.name[:-len("-elem-tutor.html")]
             dong[slug]=full[:-len("초등학생영어과외")].strip()
+            rm=ROBOTS_RE.search(text)
+            if not rm:fail(p.name,"prior_robots_meta_missing")
+            else:prior_robots[slug]=rm.group(1)
         # Audit all actual student nav components in ALL 158573 HTML files.
         for index,p in enumerate(files):
             try:
@@ -163,8 +171,10 @@ def main():
                 if not all('name="'+item+'"' in t for item in
                            ("name","phone","area","consent","form-name")):
                     fail(file.name,"missing_consultation_form_input")
-                if '<meta name="robots" content="noindex,follow' not in t:
-                    fail(file.name,"changed_indexing_status")
+                rm=ROBOTS_RE.search(t)
+                if not rm or rm.group(1)!=prior_robots.get(slug):
+                    fail(file.name,"changed_indexing_status",
+                         f"{rm.group(1) if rm else '-'} vs {prior_robots.get(slug)}")
                 if 'data-v235-hero-wrap=' not in t:
                     fail(file.name,"adaptive_mobile_H1_missing")
                 # Four rewritten/new pages have fully specialized course content.
@@ -208,6 +218,7 @@ def main():
         fail("(runner)","audit_crashed",traceback.format_exc()[-1200:])
     finally:
         report["error_samples"]=errors
+        report["error_reason_counts"]=dict(reason_counts)
         report["status"]="PASS_V2351_ALL_158571_STUDENT_NAV_SEMANTIC_QA" if report["errors_count"]==0 else "FAIL_V2351_ALL_158571_STUDENT_NAV_SEMANTIC_QA"
         args.report.parent.mkdir(parents=True,exist_ok=True)
         args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
