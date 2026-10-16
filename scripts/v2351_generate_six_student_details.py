@@ -249,8 +249,9 @@ def make_page(template,slug,dong,course):
       '<article><strong>수업 방식</strong><p>학생에게 맞는 수업 시간과 복습 방법을 함께 정합니다.</p></article>'
       '</div></div></section>')
     related=extract_one(RELATED,main,"related section")
-    nearby=extract_one(NEARBY,main,"nearby section")
-    if course!="elem-tutor":
+    nearby_match=NEARBY.search(main)
+    nearby=nearby_match.group(0) if nearby_match else ""
+    if course!="elem-tutor" and nearby:
         # "Same course in other neighbourhoods" must follow the NEW grade/course.
         # Otherwise a new middle tutor page misleadingly opens elementary tutoring.
         nearby=re.sub(r'(href="/[^"]+)-elem-tutor\.html(")',
