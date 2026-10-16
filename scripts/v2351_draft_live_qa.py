@@ -13,6 +13,12 @@ ALIAS=os.environ.get("OG_ALIAS_URL","").rstrip("/")
 REPORT=Path("v2351-review-reports")
 REPORT.mkdir(exist_ok=True,parents=True)
 MODES=("elem-tutor","mid-tutor","high-tutor","elem-conv","mid-conv","high-conv")
+OG_NAMES=("beginner","toeic","ielts","toefl","opic","tos","duolingo",
+          "elementary","middle","high","student","worker","college","jobseeker",
+          "housewife","stations","region","academy","tutor","conversation",
+          "exam","courses","englishpt","reading","writing","international",
+          "phone","video","general")
+
 TITLES=("초등학생영어과외","중학생영어과외","고등학생영어과외","초등학생영어회화","중학생영어회화","고등학생영어회화")
 SLUGS=("gyeongnam-milyang-naeidong","seoul-jongno-sajikdong")
 UA={"User-Agent":"ENGLISH-PT-v2351-read-only-QA"}
@@ -79,7 +85,12 @@ def stage_http():
                     d["checks"].append({"page":name,"http":200,"og":og.group(1),"noindex":True})
                     print("LIVE_V2351_HTTP_PASS",name,flush=True)
                 except Exception as exc:error(d,name,exc)
-        images=sorted((Path("review-site")/"assets/images/og-pages").glob("*.png"))
+        # Thousands of historical square PNGs are stored here.
+        # Inspect only 29 current 1200x630 OG templates.
+        images=[Path("review-site")/"assets/images/og-pages"/(name+".png") for name in OG_NAMES]
+        for image in images:
+            if not image.is_file():error(d,image.name,"missing OG template")
+
         for p in images:
             try:
                 code,content,headers,landed=fetch(ALIAS+"/assets/images/og-pages/"+p.name)
@@ -88,7 +99,7 @@ def stage_http():
                 w,h=struct.unpack(">II",content[16:24])
                 if (w,h)!=(1200,630):raise ValueError("wrong OG dimensions")
             except Exception as exc:error(d,p.name,exc)
-        if len(images)<29:error(d,"OG inventory","Expected minimum 29 existing 1200x630 OG templates")
+        if len(images)!=29:error(d,"OG inventory","Expected exactly 29 current OG templates")
         d["og_images_verified"]=len(images)
         d["status"]="PASS_V2351_DRAFT_HTTP_SEO_OG" if not d["errors"] and len(d["checks"])==14 else "FAIL_V2351_DRAFT_HTTP_SEO_OG"
     except Exception as exc:
