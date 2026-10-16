@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: [review/v23-aftercare-cta-20261014]
-    paths: ['.github/workflows/stage9-v2351-production-candidate-no-deploy.yml']
+    paths:
+      - '.github/workflows/stage9-v2351-production-candidate-no-deploy.yml'
+      - 'scripts/v2351_production_release_gate.py'
 
 permissions:
   contents: read
