@@ -65,9 +65,9 @@ def classify(markup, filename):
     if filename.startswith('station-'):
         first_line = BR.split(markup, maxsplit=1)[0]
         station_word = max((len(w) for w in TOKEN.findall(html.unescape(TAG.sub('',first_line)))),default=0)
-    if longest >= 13 or total >= 26 or station_word >= 13:
+    if longest >= 13 or total >= 26 or station_word >= 11:
         mode = 'xlong'
-    elif longest >= 9 or total >= 18 or station_word >= 9:
+    elif longest >= 9 or total >= 18 or station_word >= 7:
         mode = 'long'
     else:
         mode = 'regular'
