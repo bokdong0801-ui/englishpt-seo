@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 240
     env:
       SOURCE_RUN: '38868768031'
-      INTEGRATED_LIVE_QA_RUN: '38869423163'
+      INTEGRATED_LIVE_QA_RUN: '38874037405'
       BASE_SOURCE_RUN: '38689660290'
       BASE_SOURCE_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
       PYTHONUNBUFFERED: '1'
@@ -32,7 +32,7 @@ jobs:
       - name: Initialize permanent HOLD diagnostic by default
         run: |
           mkdir -p production-final-reports
-          printf '{"status":"HOLD_NOT_YET_VERIFIED","source_seo_run":38868768031,"integrated_live_run":38869423163,"production_deployed":false,"form_submitted":false}\n' > production-final-reports/V2351_PRODUCTION_CANDIDATE_STATUS.json
+          printf '{"status":"HOLD_NOT_YET_VERIFIED","source_seo_run":38868768031,"integrated_live_run":38874037405,"production_deployed":false,"form_submitted":false}\n' > production-final-reports/V2351_PRODUCTION_CANDIDATE_STATUS.json
       - name: Wait for real v23.5.1 integrated student exam adult live QA PASS
         id: live
         env:
@@ -70,7 +70,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: englishpt-v2351-final-integrated-student-exam-adult-live-qa
-          run-id: 38869423163
+          run-id: 38874037405
           path: q3-report
           github-token: ${{ github.token }}
       - name: Verify Q3 source URL, 36 live pages, 72 viewport combinations and no submissions
@@ -152,6 +152,53 @@ jobs:
           sha256sum ENGLISHPT_v23.5.1_PRODUCTION_READY_158571.tar.zst > production-final-reports/V2351_PRODUCTION_RELEASE_SHA256.txt
           test -s ENGLISHPT_v23.5.1_PRODUCTION_READY_158571.tar.zst
           echo PASS_V2351_ONE_PRODUCTION_READY_RELEASE_ARCHIVE_NO_DEPLOY
+      - name: Prepare deployment approval checklist without publishing
+        if: steps.package.outcome == 'success'
+        run: |
+          cat > production-final-reports/V2351_PRODUCTION_APPROVAL_CHECKLIST.md <<'EOF'
+          # ENGLISH PT v23.5.1 — Production deployment approval checklist
+
+          ## Immutable release files
+          - Release archive: ENGLISHPT_v23.5.1_PRODUCTION_READY_158571.tar.zst
+          - Compare locally calculated SHA256 against V2351_PRODUCTION_RELEASE_SHA256.txt before deploying.
+          - Exact source: run 38868768031 SEO-corrected, 38864767374 student routes, v23.4 source run 38689660290 / SHA a18b8901ecda7d37f65e35b15f03d579ec63c70f.
+          - Integrated v23.5.1 Draft QA: run 38874037405. Check its entire PASS report and screenshots.
+          - Keep Production deploy locked until explicit approval. This workflow NEVER deploys.
+
+          ## Content and SEO policy
+          - 158,571 generated pages + site technical HTML files.
+          - Exactly 21,964 HTML pages eligible for indexing; 136,607 have noindex.
+          - sitemap-index.xml contains 21,964 approved URLs without duplicates or noindex entries.
+          - Existing 2,733 station-related orphan pages corrected to noindex.
+          - Canonical URLs point to https://englishpt.kr/*.html and are self-referential.
+          - All OG images use englishpt.kr and resolve to bundled image files.
+          - Deploy the Production _headers file in the archive, NOT the Draft global X-Robots-Tag: noindex header.
+
+          ## Pre-deployment safety
+          - [ ] Final SHA256 matches release checksum text.
+          - [ ] Keep an accessible backup of current Production deploy for rollback.
+          - [ ] Check Netlify credits/bandwidth/limits and domain + TLS mapping before publishing.
+          - [ ] Confirm form backend and notification settings, without submitting any real test during this QA.
+          - [ ] Confirm final source directory matches packaged root; do not mix in older v23.4/v23.5 Draft artifacts.
+          - [ ] Obtain explicit production deploy approval.
+
+          ## Post-deployment checks before announcing GO
+          - [ ] GET https://englishpt.kr/ and 8–12 representative student/exam/adult/station URLs; HTTP 200 and no incorrect redirects.
+          - [ ] Inspect mobile 390px and desktop 1440px for horizontal overflow and consultation CTA routing.
+          - [ ] Confirm Production HTTP response does NOT include a global X-Robots-Tag: noindex.
+          - [ ] Inspect index/noindex HTML meta on both eligible and excluded sample pages.
+          - [ ] Verify https://englishpt.kr/robots.txt permits crawling and references sitemap-index.xml.
+          - [ ] Verify all sitemap XML shards exist and submitted sitemap URL count matches 21,964.
+          - [ ] Confirm canonical, OpenGraph/Twitter preview image and its 1200x630 size on representative pages.
+          - [ ] Check Google Search Console & Naver Search Advisor sitemap submissions after Production checks pass.
+          - [ ] Review Netlify Forms notification flow in a separate explicitly approved controlled test.
+          - [ ] Preserve rollback path until production monitoring remains stable.
+
+          ## Known limitations
+          The preview browser QA blocks real form POST; it does not verify confirmation emails.
+          Passing offline SEO QA does not mean pages are indexed in Google or Naver.
+          EOF
+          echo PASS_V2351_PRODUCTION_APPROVAL_CHECKLIST_PREPARED
       - name: Always record strict final GO/HOLD and provenance
         if: always()
         env:
@@ -177,7 +224,7 @@ jobs:
                  'indexable':q.get('indexable'),'noindex':q.get('noindex'),
                  'sitemap_urls':21964,
                  'og_meta_assets_validated':q.get('og_meta_ok'),
-                 'unique_preview_run':38869423163,
+                 'unique_preview_run':38874037405,
                  'all_page_seo_run':38868768031,
                  'student_six_base_run':38864767374,
                  'original_source_run':38689660290,
@@ -193,7 +240,7 @@ jobs:
                 json.dumps(final,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as f:
             f.write('## '+final['status']+'\n\n')
-            f.write('Q3 live run 38869423163; SEO full run 38868768031; source a18b8901ecda7d37f65e35b15f03d579ec63c70f\n\n')
+            f.write('Q3 live run 38874037405; SEO full run 38868768031; source a18b8901ecda7d37f65e35b15f03d579ec63c70f\n\n')
             f.write('Generated '+str(final['generated_pages'])+' | index '+str(final['indexable'])+
                     ' | noindex '+str(final['noindex'])+' | sitemap 21964\n\n')
             f.write('Stages: '+str(stages)+'\n\n')
