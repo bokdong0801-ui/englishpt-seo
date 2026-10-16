@@ -242,7 +242,7 @@ jobs:
           import struct
           for png in sorted(expected_png):
             header=(root/'assets/images/og-pages'/png).open('rb').read(24)
-            if len(header)!=24 or header[:8]!=b'\\x89PNG\\r\\n\\x1a\\n':
+            if len(header)!=24 or header[:8]!=bytes.fromhex('89504e470d0a1a0a'):
               raise ValueError('Bad PNG signature for '+png)
             if struct.unpack('>II',header[16:24])!=(1200,630):
               raise ValueError('OG not 1200x630: '+png)
