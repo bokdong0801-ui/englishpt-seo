@@ -6,6 +6,7 @@ on:
     branches: [review/v23-aftercare-cta-20261014]
     paths:
       - '.github/workflows/stage9-v2351-audience-integrated-final-qa.yml'
+      - 'scripts/v2351_integrated_live_final_qa.py'
 
 permissions:
   contents: read
