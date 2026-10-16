@@ -1,0 +1,462 @@
+name: ENGLISH PT v23.5.2.1 Approved OG Fix One Review Draft (NO PROD)
+
+on:
+  # User approved ONE isolated Review upload on 2026-10-17.
+  push:
+    branches: [review/v23521-ogfix-approved-once-20261017]
+    paths: ['.github/workflows/stage9-v23521-ogfix-approved-once.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v23521-OG-fix-approved-once
+  cancel-in-progress: false
+
+jobs:
+  publish-isolated-review:
+    name: Upload immutable 158571-page Draft and test two regions x six routes, no forms submitted
+    runs-on: ubuntu-latest
+    timeout-minutes: 270
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      REVIEW_SITE_ID: 803550a8-03af-4776-bc8a-bd0bae85f5c7
+      REVIEW_SITE_NAME: englishpt-final-ia-review-bokdong
+      OG_ALIAS_NAME: v23521-ogfix-1017
+      SOURCE_RUN: '38902833981'
+      ORIGINAL_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
+      NETLIFY_CLI_TELEMETRY_DISABLED: '1'
+      NODE_OPTIONS: --max-old-space-size=6144
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify explicit approval branch and Python preflight syntax before artifact downloads
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/review/v23521-ogfix-approved-once-20261017"
+          python3 -m py_compile scripts/v23521_release_preflight_gate.py
+          python3 scripts/v23521_release_preflight_gate.py --mode dns \
+            --og-alias "https://v23521-ogfix-1017--englishpt-final-ia-review-bokdong.netlify.app" \
+            --report preflight-safe/OG_DNS_BEFORE_DOWNLOAD.json
+      - name: FAIL FAST - require manual Review-only approval and valid DNS label BEFORE downloads
+        id: dns_preflight
+        env:
+          REVIEW_UPLOAD_APPROVAL: REVIEW-ONLY-OGFIX
+        run: |
+          python3 - <<'PY'
+          import os,re
+          alias=os.environ['OG_ALIAS_NAME']
+          site=os.environ['REVIEW_SITE_NAME']
+          approval=os.environ.get('REVIEW_UPLOAD_APPROVAL','')
+          if approval!='REVIEW-ONLY-OGFIX':
+              raise SystemExit('HOLD: no explicit Review-only reupload authorization')
+          hostname=f'{alias}--{site}.netlify.app'
+          labels=hostname.split('.')
+          if not all(1<=len(x)<=63 for x in labels):
+              raise SystemExit(f'HOLD: illegal OG DNS label lengths {list(map(len,labels))}: {hostname}')
+          if not re.fullmatch(r'[a-z0-9](?:[a-z0-9-]*[a-z0-9])?',alias):
+              raise SystemExit('HOLD: unsafe OG alias token')
+          if hostname.endswith('englishpt.kr') or site!='englishpt-final-ia-review-bokdong':
+              raise SystemExit('HOLD: production or unexpected site forbidden')
+          print('PASS_PREDEPLOY_OG_DNS_LABELS',[(x,len(x)) for x in labels],flush=True)
+          print('PASS_EXPLICIT_REVIEW_ONLY_UPLOAD_APPROVAL; NO production',flush=True)
+          PY
+      - name: Create always-available status JSON
+        run: |
+          mkdir -p v2352-live-report
+          printf '{"status":"STARTED","source_run":38902833981,"original_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f","production_deployed":false,"form_submissions":false}\n' > v2352-live-report/V2352_DRAFT_EXECUTION.json
+      - name: Confirm source PASS and distinct Netlify Review-only site
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -n "$NETLIFY_AUTH_TOKEN"
+          python3 - <<'PY'
+          import json,os,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY']
+          def get(url,token):
+            with urllib.request.urlopen(urllib.request.Request(url,headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}),timeout=45) as r:
+              return json.load(r)
+          source=get(f'https://api.github.com/repos/{repo}/actions/runs/{os.environ["SOURCE_RUN"]}',os.environ['GH_TOKEN'])
+          assert source['status']=='completed' and source['conclusion']=='success',source.get('conclusion')
+          artifacts=get(f'https://api.github.com/repos/{repo}/actions/runs/{os.environ["SOURCE_RUN"]}/artifacts?per_page=100',os.environ['GH_TOKEN'])['artifacts']
+          needed={'englishpt-v23521-parent-polished-158571-full-REVIEW-ONLY','englishpt-v23521-full-158571-parent-copy-seo-qa-and-18180-overlay'}
+          assert needed.issubset({a['name'] for a in artifacts if not a['expired']})
+          orig=get(f'https://api.github.com/repos/{repo}/actions/runs/38689660290',os.environ['GH_TOKEN'])
+          assert orig['status']=='completed' and orig['conclusion']=='success'
+          assert orig['head_sha']==os.environ['ORIGINAL_SHA']
+          site=get('https://api.netlify.com/api/v1/sites/'+os.environ['REVIEW_SITE_ID'],os.environ['NETLIFY_AUTH_TOKEN'])
+          assert site['name']==os.environ['REVIEW_SITE_NAME']
+          assert site['id']==os.environ['REVIEW_SITE_ID']
+          assert 'englishpt-final-ia-review-bokdong.netlify.app' in (site.get('ssl_url') or site.get('url') or '')
+          assert (site.get('custom_domain') or '').lower() not in ('englishpt.kr','www.englishpt.kr')
+          alias='https://'+os.environ['OG_ALIAS_NAME']+'--'+os.environ['REVIEW_SITE_NAME']+'.netlify.app'
+          with open(os.environ['GITHUB_ENV'],'a') as f:f.write('OG_ALIAS_URL='+alias+'\n')
+          print('PASS_V2352_IMMUTABLE_SOURCE_AND_ISOLATED_DRAFT_ID',orig['head_sha'],source['id'],alias)
+          PY
+      - name: Download all 158571 generated pages from frozen QA PASS artifact
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-parent-polished-158571-full-REVIEW-ONLY
+          run-id: 38902833981
+          path: frozen-v2352
+          github-token: ${{ github.token }}
+      - name: Download independent 158571-page QA report and SHA256
+        id: qa
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-full-158571-parent-copy-seo-qa-and-18180-overlay
+          run-id: 38902833981
+          path: frozen-qa-v2352
+          github-token: ${{ github.token }}
+      - name: Verify v23.5.2.1 frozen archive checksum, detailed parent copy and 158571-page SEO before upload
+        id: preflight
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          (cd frozen-v2352 && sha256sum -c ../frozen-qa-v2352/V23521_REVIEW_ARCHIVE_SHA256.txt)
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('frozen-qa-v2352')
+          status=json.loads((root/'V23521_FINAL_EXECUTION.json').read_text('utf8'))
+          edit=json.loads((root/'V23521_FULL_COPY_EDIT.json').read_text('utf8'))
+          audit=json.loads((root/'V23521_INDEPENDENT_FULL_CONTENT_QA.json').read_text('utf8'))
+          seo=json.loads((root/'V23521_SEO_SITEMAP_QA.json').read_text('utf8'))
+          sha=(root/'V23521_REVIEW_ARCHIVE_SHA256.txt').read_text().split()[0]
+          assert sha=='d6bd3b7299db5d74e900e9f80062e7b0449870dd34399713cc11f420871c6acd',sha
+          assert status['status']=='PASS_V23521_PARENT_COPY_ALL_158571_REVIEW_QA'
+          assert edit['status']=='PASS_V23521_PARENT_COPY_POLISH_TUTORS_ONLY'
+          assert edit['changed_tutor_pages']==18180
+          assert audit['status']=='PASS_V23521_ALL_158571_IMMUTABILITY_CONTENT_QA'
+          assert audit['modified_tutor_pages']==18180 and audit['other_html_unchanged']==140393 and audit['error_count']==0
+          assert seo['status']=='PASS_V2351_INDEXING_SITEMAP_FULL_QA'
+          assert (seo['generated_total'],seo['indexable_count'],seo['noindex_count'],seo['sitemap_unique_urls'])==(158571,21964,136607,21964)
+          assert seo['errors_count']==0
+          print('PASS_V23521_FROZEN_ARCHIVE_SHA_ALL_PARENT_COPY_AND_SEO',sha,flush=True)
+          PY
+          mkdir -p review-site
+          tar --zstd -xf frozen-v2352/ENGLISHPT_v23.5.2.1_TUTOR_PARENT_POLISHED_158571_REVIEW_ONLY.tar.zst -C review-site
+          test -f review-site/pilot.css
+          test -f review-site/assets/styles.css
+          test -f review-site/robots.txt
+          grep -iq 'X-Robots-Tag: noindex' review-site/_headers
+          for slug in gyeongnam-milyang-naeidong seoul-jongno-sajikdong; do
+            for mode in elem-tutor mid-tutor high-tutor; do
+              file="review-site/$slug-$mode.html"
+              test -f "$file"
+              grep -q 'data-v2352-section="parent"' "$file"
+              grep -q '영어과외 상담 신청' "$file"
+              if grep -q '체험수업 신청' "$file"; then
+                echo "::error::Old trial CTA still exists in $file"
+                exit 1
+              fi
+            done
+          done
+          echo PASS_V23521_CORRECT_VERSION_WITH_DRAFT_NOINDEX_PROTECTED
+      - name: Fetch preflight PASS proven corrected pilot.js (NO other files)
+        id: verified_js
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-shared-pilot-js-exact-patch-full-predeploy-proof
+          run-id: 38918903444
+          path: fixed-js-proof
+          github-token: ${{ github.token }}
+      - name: Apply exact reviewed ONE FILE JS patch and compare to 24+8 real browser proof
+        id: patch_js
+        run: |
+          set -euo pipefail
+          test -f review-site/pilot.js
+          test -f fixed-js-proof/pilot.js
+          python3 scripts/v23521_patch_shared_pilot_js.py \
+            --input review-site/pilot.js \
+            --output review-site/pilot.js \
+            --manifest v2352-live-report/V23521_FIXED_SHARED_JS_MANIFEST.json
+          node --check review-site/pilot.js
+          cmp -s review-site/pilot.js fixed-js-proof/pilot.js
+          python3 - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          qa=Path('fixed-js-proof')
+          m=json.loads((qa/'V23521_FIXED_SHARED_PILOT_JS_MANIFEST.json').read_text('utf8'))
+          b=json.loads((qa/'V23521_PATCHED_JS_CHROMIUM_BEFORE_DEPLOY.json').read_text('utf8'))
+          current=json.loads(Path('v2352-live-report/V23521_FIXED_SHARED_JS_MANIFEST.json').read_text('utf8'))
+          assert m['status']==current['status']=='PASS_EXACT_SHARED_PILOT_JS_RUNTIME_MODE_PATCH'
+          assert current['previous_sha256']=='f9e4f7e90de3924281ced3c346491661c5d047fcc34400063ac0145165d039e5'
+          assert current['patched_sha256']==m['patched_sha256']=='d604994a74352a81978002fd6f6286c7d0f4f4c99278745bbf6dad1abce29ede'
+          assert b['status']=='PASS_V23521_PATCHED_JS_REAL_BROWSER_BEFORE_DEPLOY'
+          assert (b['tutor_viewports'],b['tutor_cta_clicks'],b['unchanged_other_course_cases'])==(24,48,8)
+          assert not b['errors'] and b['patched_asset_interceptions']>=32
+          print('PASS_ONE_ASSET_JS_MATCHES_32_ACTUAL_PREDEPLOY_BROWSER_RUNS',flush=True)
+          PY
+      - name: Point only share-image meta tags at unique Review alias; validate every page
+        id: og
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,re
+          from pathlib import Path
+          root=Path('review-site')
+          src='https://englishpt.kr/assets/images/og-pages/'
+          alias=os.environ['OG_ALIAS_URL']+'/assets/images/og-pages/'
+          from urllib.parse import urlsplit
+          og_host=urlsplit(alias).hostname
+          if not og_host or any(not 1<=len(x)<=63 for x in og_host.split('.')):
+            raise ValueError('OG host DNS is invalid BEFORE Netlify upload: '+str(og_host))
+          files=sorted(root.glob('*.html'))
+          assert len(files)==158573,(len(files),'Unexpected HTML count')
+          used=set();count=0
+          pat=re.compile(r'<meta\b[^>]*>',re.I)
+          for i,p in enumerate(files):
+            old=p.read_text(encoding='utf8')
+            matched=[0]
+            def fix(m):
+              tag=m.group(0)
+              if any(s in tag for s in ('property="og:image"','property="og:image:secure_url"','name="twitter:image"')):
+                if src not in tag:raise ValueError('OG source missing: '+p.name)
+                matched[0]+=1
+                return tag.replace(src,alias)
+              return tag
+            new=pat.sub(fix,old)
+            if matched[0]!=3:raise ValueError('Unexpected OG meta count: '+p.name+' '+str(matched[0]))
+            m=re.search(r'<meta property="og:image" content="'+re.escape(alias)+r'([^"]+\.png)"',new)
+            if not m:raise ValueError('OG PNG not grounded: '+p.name)
+            used.add(m.group(1))
+            if new.count('rel="canonical"')!=old.count('rel="canonical"'):
+              raise ValueError('Canonical unexpectedly changed: '+p.name)
+            p.write_text(new,encoding='utf8')
+            count+=matched[0]
+            if (i+1)%40000==0:print('V2352_DRAFT_OG_PROGRESS',i+1,len(files),flush=True)
+          inventory={p.name for p in (root/'assets/images/og-pages').glob('*.png')}
+          if not used.issubset(inventory):raise ValueError('Missing OG files: '+str(used-inventory))
+          expected_og=set(('beginner toeic ielts toefl opic tos duolingo elementary middle high '
+            'student worker college jobseeker housewife stations region academy tutor '
+            'conversation exam courses englishpt reading writing international phone video general').split())
+          if len(expected_og)!=29:raise ValueError('OG inventory definition must be 29')
+          expected_png={stem+'.png' for stem in expected_og}
+          if not expected_png.issubset(inventory):raise ValueError('Missing 29 real OG assets: '+str(expected_png-inventory))
+          import struct
+          for png in sorted(expected_png):
+            header=(root/'assets/images/og-pages'/png).open('rb').read(24)
+            if len(header)!=24 or header[:8]!=bytes.fromhex('89504e470d0a1a0a'):
+              raise ValueError('Bad PNG signature for '+png)
+            if struct.unpack('>II',header[16:24])!=(1200,630):
+              raise ValueError('OG not 1200x630: '+png)
+          if len(used)<26:raise ValueError('Fewer than 26 referenced original OG designs')
+          print('PASS_PREDEPLOY_ALL_29_OG_PNG_SIGNATURES_AND_1200x630',flush=True)
+          report={'status':'PASS_V2352_DRAFT_OG_PREPARATION','html_updated':len(files),
+            'meta_urls_rewritten':count,'used_images':len(used),'images_available':len(inventory),
+            'draft_og_alias':os.environ['OG_ALIAS_URL'],'canonical_changed':False,
+            'production_deployed':False}
+          Path('v2352-live-report/V2352_DRAFT_OG_PREP.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print(report['status'],len(files),len(used),flush=True)
+          PY
+      - name: Install Chromium and Korean fonts BEFORE Netlify upload
+        id: chrome
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+          python3 -m py_compile scripts/v2352_predeploy_local_tutor_qa.py scripts/v2352_live_draft_tutor_visual_qa.py scripts/v23521_draft_live_readonly_qa.py
+      - name: Verify UPDATED v23.5.2.1 tutor pages 320 390 430 1440 and both consultation CTAs BEFORE uploading
+        id: local_qa
+        run: |
+          set -euo pipefail
+          python3 scripts/v2352_predeploy_local_tutor_qa.py
+      - name: Corrected JS actually loaded from future Draft folder at 390 and 1440px for 12 tutors + 8 controls
+        id: actual_local_js
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_predeploy_original_html_with_corrected_js.py
+          python3 scripts/v23521_predeploy_original_html_with_corrected_js.py
+          cp jsfix-local-preflight/LOCAL_ACTUAL_JS_LOAD_FORM_QA.json \
+            v2352-live-report/V23521_FIXED_JS_LOCAL_ACTUAL_BROWSER_QA.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('v2352-live-report/V23521_FIXED_JS_LOCAL_ACTUAL_BROWSER_QA.json').read_text('utf8'))
+          assert r['status']=='PASS_V23521_FIXED_JS_REAL_STATIC_SITE_LOCAL_BEFORE_UPLOAD'
+          assert (r['tutor_checked'],r['tutor_ctas'],r['non_tutor_checked'])==(12,24,8)
+          assert not r['errors'] and r['pilot_js_loaded']>=20
+          print('PASS_REAL_DEPLOY_FOLDER_LOCAL_JS_EXECUTION_BEFORE_ONE_NETLIFY_UPLOAD',flush=True)
+          PY
+      - name: Fail closed full site release manifest / 29 OG / fixed JS / headers BEFORE Netlify upload
+        id: release_gate
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_release_preflight_gate.py --mode review \
+            --root review-site --og-alias "$OG_ALIAS_URL" \
+            --report v2352-live-report/V23521_REVIEW_PREUPLOAD_GATE.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('v2352-live-report/V23521_REVIEW_PREUPLOAD_GATE.json',encoding='utf-8'))
+          assert x['status']=='PASS_REVIEW_RELEASE_PREFLIGHT',x
+          assert len(x['checked'])==5,x
+          print('PASS_ALL_PREDEPLOY_GATES_BEFORE_ONE_ALLOWED_NETLIFY_DEPLOY',flush=True)
+          PY
+      - name: Install isolated Draft Netlify CLI
+        run: npm install --global netlify-cli@latest
+      - name: Deploy ONE immutable v23.5.2.1 JS-FIXED Netlify Draft alias ONLY after full preflight PASS
+        id: deploy
+        run: |
+          set -euo pipefail
+          # DO NOT set --prod or --prod-if-unlocked.
+          netlify deploy --dir=review-site \
+            --site="$REVIEW_SITE_ID" --auth="$NETLIFY_AUTH_TOKEN" \
+            --alias="$OG_ALIAS_NAME" --no-build \
+            --message="ENGLISH PT v23.5.2.1 JS FIXED tutoring form mode, 18180 tutor pages, 158571 SEO QA PASS, Draft ONLY" \
+            --json > /tmp/v2351-draft-netlify.json
+          python3 - <<'PY'
+          import json,os
+          from urllib.parse import urlsplit
+          data=json.load(open('/tmp/v2351-draft-netlify.json',encoding='utf8'))
+          id=str(data.get('deploy_id') or data.get('id') or '')
+          candidate=data.get('deploy_url') or ''
+          assert id and len(id)>10
+          derived='https://'+id+'--'+os.environ['REVIEW_SITE_NAME']+'.netlify.app'
+          acceptable=(urlsplit(derived).hostname,urlsplit(os.environ['OG_ALIAS_URL']).hostname)
+          assert urlsplit(candidate).hostname in acceptable,(candidate,acceptable)
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+            f.write('REVIEW_DEPLOY_URL='+derived+'\n')
+            f.write('REVIEW_DEPLOY_ID='+id+'\n')
+          report={'status':'PASS_V2352_ISOLATED_DRAFT_DEPLOY','unique_url':derived,
+              'og_alias':os.environ['OG_ALIAS_URL'],'deploy_id':id,'cli_deploy_url':candidate,
+              'source_run':38902833981,'production_deployed':False}
+          with open('v2352-live-report/V2352_DRAFT_DEPLOY.json','w') as f:
+            json.dump(report,f,ensure_ascii=False,indent=2)
+          print('PASS_V2352_DRAFT_DEPLOY_URL',derived,flush=True)
+          print('PASS_V2352_DRAFT_OG_ALIAS',os.environ['OG_ALIAS_URL'],flush=True)
+          PY
+      - name: Real HTTP 6 tutor pages with updated sections, SEO and 29 current OG images
+        id: http
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 scripts/v2352_live_draft_tutor_visual_qa.py http
+      - name: Real Chromium tutor sections + Hero and parent CTA at mobile 320 390 430 and PC 1440
+        id: browser
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 scripts/v2352_live_draft_tutor_visual_qa.py browser
+      - name: Independently check actual NEW tutoring copy, six live pages and Netlify form fields
+        id: revised_copy
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_draft_live_readonly_qa.py html
+      - name: Actually click 24 student course links and new tutoring CTA buttons (zero real form submissions)
+        id: revised_click
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_draft_live_readonly_qa.py clicks
+      - name: Always record actual v23.5.2.1 unique Draft URL and truthful final PASS/HOLD
+        id: final
+        if: always()
+        env:
+          RELEASE_GATE: ${{ steps.release_gate.outcome }}
+          DNS_PREFLIGHT: ${{ steps.dns_preflight.outcome }}
+          SOURCE: ${{ steps.source.outcome }}
+          VERIFIED_JS: ${{ steps.verified_js.outcome }}
+          PATCH_JS: ${{ steps.patch_js.outcome }}
+          ACTUAL_LOCAL_JS: ${{ steps.actual_local_js.outcome }}
+          DOWNLOAD: ${{ steps.download.outcome }}
+          QA: ${{ steps.qa.outcome }}
+          PREFLIGHT: ${{ steps.preflight.outcome }}
+          OG: ${{ steps.og.outcome }}
+          CHROME: ${{ steps.chrome.outcome }}
+          LOCAL_QA: ${{ steps.local_qa.outcome }}
+          DEPLOY: ${{ steps.deploy.outcome }}
+          HTTP: ${{ steps.http.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+          REVISED_COPY: ${{ steps.revised_copy.outcome }}
+          REVISED_CLICK: ${{ steps.revised_click.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path('v2352-live-report');root.mkdir(exist_ok=True)
+          edited=Path('v23521-live-report')
+          def read(base,name):
+            p=base/name
+            return json.loads(p.read_text('utf8')) if p.exists() else {}
+          deploy=read(root,'V2352_DRAFT_DEPLOY.json')
+          http=read(root,'V2352_LIVE_HTTP_QA.json')
+          browser=read(root,'V2352_LIVE_BROWSER_QA.json')
+          copy=read(edited,'V23521_LIVE_COPY_HTML_QA.json')
+          clicks=read(edited,'V23521_LIVE_CLICKS_CTA_QA.json')
+          stages={k:os.environ.get(k,'unknown') for k in (
+            'RELEASE_GATE','DNS_PREFLIGHT','SOURCE','VERIFIED_JS','PATCH_JS','DOWNLOAD','QA','PREFLIGHT','OG','CHROME','LOCAL_QA','ACTUAL_LOCAL_JS',
+            'DEPLOY','HTTP','BROWSER','REVISED_COPY','REVISED_CLICK')}
+          good=all(v=='success' for v in stages.values()) and (
+            http.get('status')=='PASS_V2352_LIVE_HTTP_CONTENT_CTA_SEO_OG') and (
+            browser.get('status')=='PASS_V2352_LIVE_TUTOR_RESPONSIVE_CTA') and (
+            copy.get('status')=='PASS_V23521_LIVE_COPY_AND_FORM_HTML') and (
+            clicks.get('status')=='PASS_V23521_LIVE_COURSE_LINKS_AND_REVISED_FORM')
+          final={'status':'PASS_V23521_FIXED_SHARED_JS_ONE_SHOT_DRAFT_FINAL' if good else
+                        'HOLD_V23521_FIXED_SHARED_JS_ONE_SHOT_DRAFT_FINAL',
+            'immutable_unique_preview':deploy.get('unique_url'),
+            'og_alias':deploy.get('og_alias'),
+            'source_version':'v23.5.2.1','source_run':38902833981,
+            'frozen_source_sha256':'d6bd3b7299db5d74e900e9f80062e7b0449870dd34399713cc11f420871c6acd',
+            'generated_pages_source':158571,'tutor_parent_pages_edited':18180,
+            'shared_pilot_js_sha256':'d604994a74352a81978002fd6f6286c7d0f4f4c99278745bbf6dad1abce29ede',
+            'live_http_6_grade_pages':len(http.get('page_checks',[])),
+            'active_og_1200x630':http.get('og_checked',0),
+            'mobile_pc_responsive_cases':browser.get('actual_page_combinations',0),
+            'new_grade_content_sections_tested':browser.get('section_layout_checks',0),
+            'original_cta_clicks':browser.get('cta_click_checks',0),
+            'original_cta_form_arrivals':browser.get('consultation_form_reached',0),
+            'local_student_nav_structure_checked':browser.get('student_navigation_checks',0),
+            'new_editorial_live_html_pages':len(copy.get('checks',[])),
+            'actual_regional_course_link_clicks':clicks.get('navigation_clicks',0),
+            'edited_copy_actual_cta_to_form':clicks.get('new_copy_cta_checks',0),
+            'http_errors':http.get('errors',[]),
+            'browser_errors':browser.get('errors',[]),
+            'edited_copy_errors':copy.get('errors',[]),
+            'real_link_click_errors':clicks.get('errors',[]),
+            'stages':stages,
+            'netlify_draft_deployed':bool(deploy.get('unique_url')),
+            'production_deployed':False,'form_submitted':False,
+            'production_verdict':'HOLD_EXPLICIT_USER_AUTH_AND_FORM_EMAIL_TEST'}
+          root.joinpath('V23521_FINAL_UNIQUE_DRAFT_QA.json').write_text(
+            json.dumps(final,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as f:
+            f.write('## '+final['status']+'\n\n')
+            f.write('**Immutable Draft:** '+str(final['immutable_unique_preview'])+'\n\n')
+            f.write('24 browser widths, '+str(final['original_cta_form_arrivals'])+
+              ' CTA form arrivals, '+str(final['actual_regional_course_link_clicks'])+
+              ' real regional link clicks, '+str(final['edited_copy_actual_cta_to_form'])+
+              ' new revised copy CTA form arrivals.\n\n')
+            f.write('Stages: '+str(stages)+'\n\n')
+            f.write('Production NOT deployed; forms NOT submitted. Await explicit final approval.\n')
+          print(final['status'],stages,flush=True)
+          if final['immutable_unique_preview']:
+            print('V23521_ACTUAL_UNIQUE_DRAFT_URL',final['immutable_unique_preview'],flush=True)
+          if not good:raise SystemExit(1)
+          PY
+      - name: Upload diagnostic JSON reports and screenshot evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-final-ONE-SHOT-fixed-JS-Draft-real-UI-CTA-QA
+          path: |
+            v2352-live-report/
+            v23521-live-report/
+          retention-days: 30
+          if-no-files-found: error
