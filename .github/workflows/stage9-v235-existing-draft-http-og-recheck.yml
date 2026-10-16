@@ -6,6 +6,7 @@ on:
     branches: [review/v23-aftercare-cta-20261014]
     paths:
       - '.github/workflows/stage9-v235-existing-draft-http-og-recheck.yml'
+      - 'scripts/v235_existing_draft_http_recheck_only.py'
 
 permissions:
   contents: read
