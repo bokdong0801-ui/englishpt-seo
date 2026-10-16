@@ -1,11 +1,13 @@
 name: ENGLISH PT v23.5.2.1 FIXED Shared JS Draft - ONE SHOT Preflight and Live QA (NO PROD)
 
 on:
+  # Manual only: changing validation code must NEVER trigger an expensive Netlify upload.
   workflow_dispatch:
-  push:
-    branches: [review/v23.5.2.1-parent-copy-polish-20261016]
-    paths:
-      - '.github/workflows/stage9-v23521-fixed-js-one-shot-unique-draft.yml'
+    inputs:
+      review_upload_approval:
+        description: 'Type REVIEW-ONLY-OGFIX to authorize one NEW review Draft, never Production'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -24,7 +26,7 @@ jobs:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
       REVIEW_SITE_ID: 803550a8-03af-4776-bc8a-bd0bae85f5c7
       REVIEW_SITE_NAME: englishpt-final-ia-review-bokdong
-      OG_ALIAS_NAME: v23521-runtimefix-final-20261016
+      OG_ALIAS_NAME: v23521-ogfix-1017
       SOURCE_RUN: '38902833981'
       ORIGINAL_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
       NETLIFY_CLI_TELEMETRY_DISABLED: '1'
@@ -38,6 +40,29 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: FAIL FAST - require manual Review-only approval and valid DNS label BEFORE downloads
+        id: dns_preflight
+        env:
+          REVIEW_UPLOAD_APPROVAL: ${{ inputs.review_upload_approval }}
+        run: |
+          python3 - <<'PY'
+          import os,re
+          alias=os.environ['OG_ALIAS_NAME']
+          site=os.environ['REVIEW_SITE_NAME']
+          approval=os.environ.get('REVIEW_UPLOAD_APPROVAL','')
+          if approval!='REVIEW-ONLY-OGFIX':
+              raise SystemExit('HOLD: no explicit Review-only reupload authorization')
+          hostname=f'{alias}--{site}.netlify.app'
+          labels=hostname.split('.')
+          if not all(1<=len(x)<=63 for x in labels):
+              raise SystemExit(f'HOLD: illegal OG DNS label lengths {list(map(len,labels))}: {hostname}')
+          if not re.fullmatch(r'[a-z0-9](?:[a-z0-9-]*[a-z0-9])?',alias):
+              raise SystemExit('HOLD: unsafe OG alias token')
+          if hostname.endswith('englishpt.kr') or site!='englishpt-final-ia-review-bokdong':
+              raise SystemExit('HOLD: production or unexpected site forbidden')
+          print('PASS_PREDEPLOY_OG_DNS_LABELS',[(x,len(x)) for x in labels],flush=True)
+          print('PASS_EXPLICIT_REVIEW_ONLY_UPLOAD_APPROVAL; NO production',flush=True)
+          PY
       - name: Create always-available status JSON
         run: |
           mkdir -p v2352-live-report
@@ -178,6 +203,10 @@ jobs:
           root=Path('review-site')
           src='https://englishpt.kr/assets/images/og-pages/'
           alias=os.environ['OG_ALIAS_URL']+'/assets/images/og-pages/'
+          from urllib.parse import urlsplit
+          og_host=urlsplit(alias).hostname
+          if not og_host or any(not 1<=len(x)<=63 for x in og_host.split('.')):
+            raise ValueError('OG host DNS is invalid BEFORE Netlify upload: '+str(og_host))
           files=sorted(root.glob('*.html'))
           assert len(files)==158573,(len(files),'Unexpected HTML count')
           used=set();count=0
@@ -307,6 +336,7 @@ jobs:
         id: final
         if: always()
         env:
+          DNS_PREFLIGHT: ${{ steps.dns_preflight.outcome }}
           SOURCE: ${{ steps.source.outcome }}
           VERIFIED_JS: ${{ steps.verified_js.outcome }}
           PATCH_JS: ${{ steps.patch_js.outcome }}
@@ -337,7 +367,7 @@ jobs:
           copy=read(edited,'V23521_LIVE_COPY_HTML_QA.json')
           clicks=read(edited,'V23521_LIVE_CLICKS_CTA_QA.json')
           stages={k:os.environ.get(k,'unknown') for k in (
-            'SOURCE','VERIFIED_JS','PATCH_JS','DOWNLOAD','QA','PREFLIGHT','OG','CHROME','LOCAL_QA','ACTUAL_LOCAL_JS',
+            'DNS_PREFLIGHT','SOURCE','VERIFIED_JS','PATCH_JS','DOWNLOAD','QA','PREFLIGHT','OG','CHROME','LOCAL_QA','ACTUAL_LOCAL_JS',
             'DEPLOY','HTTP','BROWSER','REVISED_COPY','REVISED_CLICK')}
           good=all(v=='success' for v in stages.values()) and (
             http.get('status')=='PASS_V2352_LIVE_HTTP_CONTENT_CTA_SEO_OG') and (
