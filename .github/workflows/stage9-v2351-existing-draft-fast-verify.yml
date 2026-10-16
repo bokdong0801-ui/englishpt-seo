@@ -1,0 +1,184 @@
+name: ENGLISH PT v23.5.1 Existing Draft FAST Six-Course Verification (No Redeploy)
+
+on:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v2351-existing-draft-fast-verify.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v2351-fast-existing-draft-verify
+  cancel-in-progress: false
+
+jobs:
+  verify-only:
+    name: Wait for unique immutable Draft and verify all six student routes (no upload)
+    runs-on: ubuntu-latest
+    timeout-minutes: 230
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_REVIEW_SITE_ID: 803550a8-03af-4776-bc8a-bd0bae85f5c7
+      NETLIFY_REVIEW_NAME: englishpt-final-ia-review-bokdong
+      DRAFT_ALIAS: v2351-six-student-20261016
+      SOURCE_DRAFT_RUN: '38865617005'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize report
+        run: |
+          mkdir -p v2351-review-reports
+          printf '{"status":"STARTED","source_draft_run":38865617005,"deployment":false,"production_deployed":false,"form_submitted":false}\n' > v2351-review-reports/V2351_EXISTING_DRAFT_FAST_EXECUTION.json
+      - name: Wait until immutable Draft upload step succeeds and find its unique Netlify deploy ID
+        id: find_draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -n "$NETLIFY_AUTH_TOKEN"
+          python3 - <<'PY'
+          import json,os,time,urllib.request
+          from datetime import datetime
+          from urllib.parse import urlsplit
+          repo=os.environ['GITHUB_REPOSITORY']
+          run_id=os.environ['SOURCE_DRAFT_RUN']
+          gh=os.environ['GH_TOKEN']
+          def get(url,token):
+            with urllib.request.urlopen(urllib.request.Request(url,
+              headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}),timeout=50) as res:
+              return json.load(res)
+          base='https://api.github.com/repos/'+repo
+          deadline=time.monotonic()+110*60
+          source=None
+          while time.monotonic()<deadline:
+            source=get(f'{base}/actions/runs/{run_id}',gh)
+            jobs=get(f'{base}/actions/runs/{run_id}/jobs?per_page=100',gh)['jobs']
+            steps={s['name']:s.get('conclusion') for j in jobs for s in j.get('steps',[])}
+            deploy=steps.get('Deploy v23.5.1 to isolated Netlify alias only - NEVER Production')
+            print('WAIT_DRAFT_DEPLOY_STAGE',source['status'],deploy,flush=True)
+            if deploy=='success':break
+            if source['status']=='completed' or deploy in ('failure','cancelled','skipped'):
+              raise RuntimeError('Source Draft deploy failed before upload completed: '+str(deploy))
+            time.sleep(45)
+          else:
+            raise TimeoutError('Immutable Draft upload did not finish before wait deadline')
+          assert source['head_branch']=='review/v23-aftercare-cta-20261014'
+          started=datetime.fromisoformat(source['run_started_at'].replace('Z','+00:00'))
+          deployments=get('https://api.netlify.com/api/v1/sites/'+os.environ['NETLIFY_REVIEW_SITE_ID']+'/deploys?per_page=30',os.environ['NETLIFY_AUTH_TOKEN'])
+          valid=[]
+          for d in deployments:
+            try:
+              created=datetime.fromisoformat(d['created_at'].replace('Z','+00:00'))
+              if created<started:continue
+              if d.get('site_id')!=os.environ['NETLIFY_REVIEW_SITE_ID']:continue
+              if d.get('state') not in ('ready','current'):continue
+              alias=str(d.get('alias') or '')
+              u=str(d.get('deploy_url') or '')
+              if alias==os.environ['DRAFT_ALIAS'] or os.environ['DRAFT_ALIAS']+'--' in u:
+                valid.append(d)
+            except Exception as exc:print('IGNORED_UNRELATED_DEPLOY',str(exc)[:100])
+          if not valid:
+            raise RuntimeError('No ready Netlify deploy uniquely matching this v23.5.1 alias and run start')
+          selected=max(valid,key=lambda d:d['created_at'])
+          id=str(selected['id'])
+          alias_url='https://'+os.environ['DRAFT_ALIAS']+'--'+os.environ['NETLIFY_REVIEW_NAME']+'.netlify.app'
+          unique_url='https://'+id+'--'+os.environ['NETLIFY_REVIEW_NAME']+'.netlify.app'
+          assert urlsplit(unique_url).hostname!=urlsplit(alias_url).hostname
+          for url in (unique_url,alias_url):
+            assert urlsplit(url).hostname.endswith('--englishpt-final-ia-review-bokdong.netlify.app')
+            assert 'englishpt.kr' not in url
+          with open(os.environ['GITHUB_ENV'],'a') as env:
+            env.write('REVIEW_DEPLOY_URL='+unique_url+'\n')
+            env.write('OG_ALIAS_URL='+alias_url+'\n')
+          report={'status':'PASS_V2351_EXISTING_DRAFT_ID','unique_url':unique_url,'alias':alias_url,
+                  'netlify_id':id,'source_run':int(run_id),'created_at':selected['created_at'],
+                  'production_deployed':False}
+          with open('v2351-review-reports/V2351_DRAFT_FOUND.json','w') as f:
+            json.dump(report,f,indent=2)
+          print('PASS_V2351_EXISTING_DRAFT_URL',unique_url,flush=True)
+          PY
+      - name: Verify local student page routes, OG metadata and 29 active PNGs by HTTP
+        id: http
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 scripts/v2351_draft_live_qa.py http
+      - name: Install browser with Korean fonts
+        id: browser_install
+        continue-on-error: true
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+      - name: Click all six actual routes on mobile and desktop without submitting forms
+        id: chromium
+        if: steps.browser_install.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 scripts/v2351_draft_live_qa.py chromium
+      - name: Always combine verification results and distinguish Draft GO from Production HOLD
+        if: always()
+        env:
+          FOUND: ${{ steps.find_draft.outcome }}
+          HTTP: ${{ steps.http.outcome }}
+          BROWSER_INSTALL: ${{ steps.browser_install.outcome }}
+          CHROMIUM: ${{ steps.chromium.outcome }}
+        run: |
+          python3 - <<'PY'
+          import os,json
+          from pathlib import Path
+          root=Path('v2351-review-reports')
+          def read(name):
+            p=root/name
+            return json.loads(p.read_text(encoding='utf8')) if p.exists() else {}
+          stages={key:os.environ.get(key,'unknown') for key in ('FOUND','HTTP','BROWSER_INSTALL','CHROMIUM')}
+          found=read('V2351_DRAFT_FOUND.json')
+          http=read('V2351_DRAFT_HTTP_SEO_OG.json')
+          chromium=read('V2351_DRAFT_CHROMIUM.json')
+          ok=all(x=='success' for x in stages.values()) and \
+            http.get('status')=='PASS_V2351_DRAFT_HTTP_SEO_OG' and \
+            chromium.get('status')=='PASS_V2351_DRAFT_MOBILE_PC_CLICKS'
+          result={'status':'PASS_V2351_EXISTING_DRAFT_FAST_QA' if ok else 'HOLD_V2351_EXISTING_DRAFT_FAST_QA',
+            'draft_url':found.get('unique_url'),'og_alias':found.get('alias'),
+            'source_run':38864767374,'base_source_run':38689660290,
+            'base_source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+            'all_pages_qa_run':38864767374,'all_pages_generated':158571,
+            'six_route_links_verified_offline':945360,
+            'http_checks':len(http.get('checks',[])),'http_errors':http.get('errors',[]),
+            'og_png_verified':http.get('og_images_verified',0),
+            'mobile_pc_clicks':len(chromium.get('checks',[])),'browser_errors':chromium.get('errors',[]),
+            'stages':stages,'production_deployed':False,'form_submitted':False}
+          (root/'V2351_EXISTING_DRAFT_FAST_EXECUTION.json').write_text(
+            json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as f:
+            f.write(f"## ENGLISH PT v23.5.1 {result['status']}\n\n")
+            f.write('Unique Draft: '+str(result['draft_url'])+'\n\n')
+            f.write('Stages: '+str(stages)+'\n\n')
+            f.write('14 HTTP routes: '+str(result['http_checks'])+'; 29 OG images: '+str(result['og_png_verified'])+
+              '; 24 browser clicks: '+str(result['mobile_pc_clicks'])+'\n\n')
+            f.write('Production HOLD. No real form submissions. No re-upload.\n')
+          print(result['status'],stages,flush=True)
+          if not ok:
+            print('::error::Existing Draft preproduction QA HOLD; see JSON report')
+            raise SystemExit(1)
+          print('PASS_V2351_ALL_SIX_STUDENT_LINKS_LIVE',result['draft_url'],flush=True)
+          PY
+      - name: Always upload final reports, screenshots and errors
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2351-existing-draft-fast-six-course-final-QA
+          path: v2351-review-reports/
+          retention-days: 30
+          if-no-files-found: error
