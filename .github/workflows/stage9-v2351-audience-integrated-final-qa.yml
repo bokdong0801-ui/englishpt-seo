@@ -1,0 +1,181 @@
+name: ENGLISH PT v23.5.1 FINAL Integrated Preview QA - Student Exam Adult (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths:
+      - '.github/workflows/stage9-v2351-audience-integrated-final-qa.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v2351-final-integrated-preview-qa
+  cancel-in-progress: false
+
+jobs:
+  integrated-live:
+    name: Wait for corrected SEO PASS, then QA students exams adults on immutable Preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 230
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      REVIEW_SITE_ID: 803550a8-03af-4776-bc8a-bd0bae85f5c7
+      REVIEW_SITE_NAME: englishpt-final-ia-review-bokdong
+      PREVIEW_ALIAS_NAME: v2351-six-student-20261016
+      SOURCE_PREVIEW_RUN: '38865617005'
+      SOURCE_SEO_RUN: '38868423373'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize always-saved final report
+        run: |
+          mkdir -p v2351-audience-final
+          printf '{"status":"STARTED","source_site_run":38865617005,"source_seo_audit_run":38868423373,"production_deployed":false,"form_submitted":false}\n' > v2351-audience-final/V2351_INTEGRATED_EXECUTION.json
+      - name: Wait for SEO policy repair full PASS, and identify ready unique Draft by Netlify ID
+        id: guard
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN"
+          test -n "$NETLIFY_AUTH_TOKEN"
+          python3 - <<'PY'
+          import json,os,time,urllib.request
+          from datetime import datetime
+          from urllib.parse import urlsplit
+          repo=os.environ['GITHUB_REPOSITORY'];gh=os.environ['GH_TOKEN']
+          site=os.environ['REVIEW_SITE_ID'];netlify=os.environ['NETLIFY_AUTH_TOKEN']
+          def get(url,token):
+            req=urllib.request.Request(url,headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'})
+            with urllib.request.urlopen(req,timeout=45) as res:return json.load(res)
+          base=f'https://api.github.com/repos/{repo}/actions/runs/'
+          deadline=time.monotonic()+180*60
+          while time.monotonic()<deadline:
+            seo=get(base+os.environ['SOURCE_SEO_RUN'],gh)
+            if seo['status']=='completed':
+              if seo.get('conclusion')!='success':
+                raise RuntimeError('Q2 SEO corrected 158571 page QA failed; do not proceed to final Q3: '+str(seo.get('conclusion')))
+              break
+            print('WAIT_Q2_SEO_CORRECTED_FULL_PASS',seo['status'],flush=True)
+            time.sleep(50)
+          else:raise TimeoutError('Q2 corrected SEO full run did not finish in time')
+          source=get(base+os.environ['SOURCE_PREVIEW_RUN'],gh)
+          started=datetime.fromisoformat(source['run_started_at'].replace('Z','+00:00'))
+          deadline=time.monotonic()+45*60
+          while time.monotonic()<deadline:
+            jobs=get(base+os.environ['SOURCE_PREVIEW_RUN']+'/jobs?per_page=100',gh)['jobs']
+            steps={s['name']:s.get('conclusion') for j in jobs for s in j.get('steps',[])}
+            stage=steps.get('Deploy v23.5.1 to isolated Netlify alias only - NEVER Production')
+            if stage=='success':break
+            if source['status']=='completed' or stage in ('failure','cancelled','skipped'):
+              raise RuntimeError('No successful isolated v23.5.1 Draft upload: '+str(stage))
+            time.sleep(45)
+            source=get(base+os.environ['SOURCE_PREVIEW_RUN'],gh)
+          else:raise TimeoutError('Netlify Draft upload is not complete')
+          deployment=get('https://api.netlify.com/api/v1/sites/'+site,netlify)
+          assert deployment['id']==site and deployment['name']==os.environ['REVIEW_SITE_NAME']
+          assert (deployment.get('custom_domain') or '').lower() not in ('englishpt.kr','www.englishpt.kr')
+          choices=get('https://api.netlify.com/api/v1/sites/'+site+'/deploys?per_page=50',netlify)
+          alias=os.environ['PREVIEW_ALIAS_NAME']
+          matching=[]
+          for d in choices:
+            try:
+              stamp=datetime.fromisoformat(d['created_at'].replace('Z','+00:00'))
+              if stamp<started or d.get('site_id')!=site or d.get('state') not in ('ready','current'):
+                continue
+              if d.get('alias')==alias or alias+'--' in str(d.get('deploy_url') or ''):
+                matching.append(d)
+            except Exception:pass
+          if not matching:raise RuntimeError('Unique ready Netlify Draft alias not found after matching source upload')
+          record=max(matching,key=lambda v:v['created_at'])
+          deploy_id=str(record['id'])
+          unique='https://'+deploy_id+'--'+os.environ['REVIEW_SITE_NAME']+'.netlify.app'
+          alias_url='https://'+alias+'--'+os.environ['REVIEW_SITE_NAME']+'.netlify.app'
+          for u in (unique,alias_url):
+            x=urlsplit(u)
+            assert x.scheme=='https' and x.hostname.endswith('--englishpt-final-ia-review-bokdong.netlify.app')
+            assert 'englishpt.kr' not in u
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+            f.write('REVIEW_DEPLOY_URL='+unique+'\n')
+            f.write('OG_ALIAS_URL='+alias_url+'\n')
+          report={'status':'PASS_Q2_SEO_AND_UNIQUE_DRAFT_GUARD','original_source_run':38689660290,
+                  'original_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+                  'seo_full_policy_run':int(os.environ['SOURCE_SEO_RUN']),
+                  'source_draft_run':int(os.environ['SOURCE_PREVIEW_RUN']),
+                  'unique_preview_url':unique,'og_alias':alias_url,'netlify_deploy_id':deploy_id,
+                  'production_deployed':False}
+          with open('v2351-audience-final/V2351_INTEGRATED_SOURCE_GUARD.json','w') as f:
+            json.dump(report,f,ensure_ascii=False,indent=2)
+          print('PASS_Q3_UNIQUE_PREVIEW_URL',unique,flush=True)
+          PY
+      - name: Install Korean fonts, Chromium and live HTTP request library
+        id: install
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0 requests==2.32.5
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+          python3 -m py_compile scripts/v2351_integrated_live_final_qa.py
+      - name: Check 36 audience pages, 72 viewport tests and consultation flows; never submit
+        id: qa
+        run: |
+          set -euo pipefail
+          python3 scripts/v2351_integrated_live_final_qa.py \
+            --draft="$REVIEW_DEPLOY_URL" --og-alias="$OG_ALIAS_URL" \
+            --report-dir=v2351-audience-final
+      - name: Always record PASS or HOLD with SEO and live UX outcome
+        if: always()
+        env:
+          GUARD: ${{ steps.guard.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          QA: ${{ steps.qa.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path('v2351-audience-final')
+          def read(name):
+            p=root/name
+            return json.loads(p.read_text(encoding='utf8')) if p.exists() else {}
+          source=read('V2351_INTEGRATED_SOURCE_GUARD.json')
+          live=read('V2351_AUDIENCE_FINAL_QA.json')
+          stages={k:os.environ.get(k,'unknown') for k in ('GUARD','INSTALL','QA')}
+          good=all(v=='success' for v in stages.values()) and live.get('status')=='PASS_V2351_AUDIENCE_FINAL_LIVE_QA'
+          obj={'status':'PASS_V2351_INTEGRATED_STUDENT_EXAM_ADULT_LIVE_QA' if good else 'HOLD_V2351_INTEGRATED_STUDENT_EXAM_ADULT_LIVE_QA',
+               'source_run':38864767374,'source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+               'seo_policy_corrected_run':38868423373,
+               'unique_preview_url':source.get('unique_preview_url'),
+               'audience_pages_checked':live.get('tested_pages'),
+               'responsive_http':live.get('http_checked'),
+               'viewport_combinations':live.get('browser_checked'),
+               'forms_reached_without_submission':live.get('consultation_forms_reached'),
+               'student_course_links_checked':live.get('student_course_labels_checked'),
+               'errors':live.get('errors',[]),'stages':stages,'production_deployed':False,
+               'form_submitted':False,'production_verdict':'HOLD_UNTIL_LIVE_AND_SEARCH_REGISTRATION_GATES'}
+          (root/'V2351_INTEGRATED_EXECUTION.json').write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as f:
+            f.write('## '+obj['status']+'\n\n')
+            f.write('Unique Preview: '+str(obj['unique_preview_url'])+'\n\n')
+            f.write('Audience URLs '+str(obj['audience_pages_checked'])+' | HTTP '+str(obj['responsive_http'])+
+                    ' | Mobile/PC '+str(obj['viewport_combinations'])+
+                    ' | Forms '+str(obj['forms_reached_without_submission'])+'\n\n')
+            f.write('Production HOLD. No changes to englishpt.kr; no actual consultation submissions.\n')
+          print(obj['status'],stages,flush=True)
+          PY
+      - name: Always upload 36-page HTML and 72-mobile-desktop QA reports with screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2351-final-integrated-student-exam-adult-live-qa
+          path: v2351-audience-final/
+          retention-days: 30
+          if-no-files-found: error
