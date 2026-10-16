@@ -136,10 +136,24 @@ def run():
                     group=re.search(r'<article class="related-group"><h3>학생 영어</h3><div class="related-course-links">(.*?)</div></article>',doc,re.S)
                     if not group:raise ValueError("student six links absent")
                     slug=name[:-(len(expect["mode"])+6)]
+                    # Netlify Pretty URLs may serve links without ".html".
+                    # Accept only the exact locality-and-course target, with or
+                    # without that suffix. No generic student hub fallbacks.
                     for mode,(label2,_) in STUDENT.items():
-                        target="/"+slug+"-"+mode+".html"
-                        if ('href="'+target+'"') not in group.group(1):
-                            raise ValueError("missing exact student local route "+target)
+                        target="/"+slug+"-"+mode
+                        anchors=re.findall(r'<a\b[^>]*>.*?</a>',group.group(1),re.S|re.I)
+                        found=False
+                        for anchor in anchors:
+                            href_match=re.search(r'\bhref=["\x27]([^"\x27]+)["\x27]',anchor)
+                            if not href_match:continue
+                            href=href_match.group(1).strip()
+                            if href not in (target,target+".html"):continue
+                            label_plain=re.sub(r'<[^>]*>',"",anchor)
+                            if label2 not in label_plain:
+                                raise ValueError("student local route category label mismatch "+href)
+                            found=True
+                            break
+                        if not found:raise ValueError("missing exact student local route "+target)
                         result["student_course_labels_checked"]+=1
                 if category in ("exam","adult"):
                     if expect["label"] not in doc:
