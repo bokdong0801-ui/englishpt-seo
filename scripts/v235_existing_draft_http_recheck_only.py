@@ -199,7 +199,7 @@ def main():
         assert deploy["status"] == "PASS_V235_DRAFT_DEPLOY_URL"
         assert deploy["id"] == "6ad1988e906a5d8e1bb920c9"
         assert old_final["source_sha"] == EXPECTED_SOURCE_SHA
-        assert old_final["all_page_v235_hero_og_qa_run"] == 38843408620
+        assert str(old_final["all_page_v235_hero_og_qa_run"]) == "38843408620"
         draft = guard_draft(deploy["url"].rstrip("/"))
         alias = guard_draft(deploy["alias"].rstrip("/"))
         assert draft != alias
