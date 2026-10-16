@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: [review/v23-aftercare-cta-20261014]
-    paths: ['.github/workflows/stage9-v235-ui-og-square-review-only.yml']
+    paths:
+      - '.github/workflows/stage9-v235-ui-og-square-review-only.yml'
+      - 'scripts/v235_final_ui_og_square_qa.py'
 
 permissions:
   contents: read
