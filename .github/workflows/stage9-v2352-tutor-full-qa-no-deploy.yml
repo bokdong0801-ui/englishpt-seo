@@ -1,0 +1,283 @@
+name: ENGLISH PT v23.5.2 FINAL Tutor Content Full 158571 QA (Review Only)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23.5.2-tutor-content-20261016]
+    paths:
+      - '.github/workflows/stage9-v2352-tutor-full-qa-no-deploy.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v2352-tutor-content-full-review-no-deploy
+  cancel-in-progress: false
+
+jobs:
+  tutor-content-full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      ORIGINAL_SOURCE_RUN: '38689660290'
+      ORIGINAL_SOURCE_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
+      SEO_FROZEN_SOURCE_RUN: '38868768031'
+      V2352_PILOT_RUN: '38877978765'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize guaranteed HOLD status
+        run: |
+          mkdir -p v2352-full-reports
+          printf '{"status":"STARTED","version":"v23.5.2","expected_modified_tutor_pages":18180,"expected_unchanged_pages":140391,"production_deployed":false,"netlify_deployed":false,"form_submitted":false}\n' > v2352-full-reports/V2352_FINAL_EXECUTION.json
+      - name: Require validated pilot and immutable source provenance
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY']
+          tok=os.environ['GH_TOKEN']
+          def get(run):
+            req=urllib.request.Request('https://api.github.com/repos/'+repo+'/actions/runs/'+run,
+                  headers={'Authorization':'Bearer '+tok,'Accept':'application/vnd.github+json'})
+            with urllib.request.urlopen(req,timeout=45) as r:return json.load(r)
+          original=get(os.environ['ORIGINAL_SOURCE_RUN'])
+          assert original['conclusion']=='success' and original['head_sha']==os.environ['ORIGINAL_SOURCE_SHA']
+          pilot=get(os.environ['V2352_PILOT_RUN'])
+          assert pilot['conclusion']=='success' and pilot['status']=='completed'
+          frozen=get(os.environ['SEO_FROZEN_SOURCE_RUN'])
+          assert frozen['conclusion']=='success' and frozen['status']=='completed'
+          print('PASS_V2352_SOURCE_AND_PILOT',original['head_sha'],pilot['id'],frozen['id'],flush=True)
+          PY
+      - name: Download immutable v23.5.1 SEO-corrected 158571-page source
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-SEO-corrected-158571-full-site-DRAFT-ONLY
+          run-id: 38868768031
+          path: source-v2351
+          github-token: ${{ github.token }}
+      - name: Download immutable SEO QA JSON and SHA256
+        id: seo_report
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-indexing-corrected-full-sitemap-report-and-overlay
+          run-id: 38868768031
+          path: original-seo-qa
+          github-token: ${{ github.token }}
+      - name: Download 21-page pilot content review report and screenshots
+        id: pilot
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2352-tutor-content-pilot-qa
+          run-id: 38877978765
+          path: pilot-reference
+          github-token: ${{ github.token }}
+      - name: Verify input SHA256, correct SEO policy, pilot and unpack full source
+        id: extract
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          (cd source-v2351 && sha256sum -c ../original-seo-qa/V2351_SEO_CORRECTED_RELEASE_SHA256.txt)
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('original-seo-qa/V2351_SEO_RELEASE_STATUS.json').read_text(encoding='utf8'))
+          b=json.loads(Path('original-seo-qa/V2351_SEO_FULL_FINAL_QA.json').read_text(encoding='utf8'))
+          c=json.loads(Path('pilot-reference/V2352_EXECUTION.json').read_text(encoding='utf8'))
+          assert a['status']=='PASS_V2351_SEO_POLICY_CORRECTED_DRAFT_READY'
+          assert b['status']=='PASS_V2351_INDEXING_SITEMAP_FULL_QA'
+          assert b['generated_total']==158571 and b['indexable_count']==21964 and b['noindex_count']==136607
+          assert b['sitemap_unique_urls']==21964 and b['errors_count']==0
+          assert c['status']=='PASS_V2352_PILOT_READY_FOR_FULL_QA'
+          print('PASS_V2352_FROZEN_SEO_SOURCE_SHA_QA_PILOT',flush=True)
+          PY
+          mkdir -p v2352-site
+          tar --zstd -xf source-v2351/englishpt-v2351-SEO-CORRECTED-158571-DRAFT-ONLY.tar.zst -C v2352-site
+          test -f v2352-site/pilot.css
+          test -f v2352-site/assets/styles.css
+          test -f v2352-site/gyeongnam-milyang-naeidong-elem-tutor.html
+      - name: Hash every non-tutor HTML before any modification
+        id: baseline
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path('v2352-site')
+          first=sorted(root.glob('*-elem-tutor.html'))
+          locality=[p.name[:-len('-elem-tutor.html')] for p in first
+            if (root/(p.name[:-len('-elem-tutor.html')]+'-worker-english-conv-academy.html')).is_file()
+            and (root/(p.name[:-len('-elem-tutor.html')]+'-mid-conv.html')).is_file()
+            and (root/(p.name[:-len('-elem-tutor.html')]+'-high-conv.html')).is_file()]
+          assert len(locality)==6060,len(locality)
+          tutor={slug+'-'+course+'.html' for slug in locality for course in ('elem-tutor','mid-tutor','high-tutor')}
+          assert len(tutor)==18180
+          h=hashlib.sha256();n=0;all_html=sorted(root.glob('*.html'))
+          assert len(all_html)==158573
+          for p in all_html:
+            if p.name in tutor:continue
+            h.update(p.name.encode()+b'\0'+hashlib.sha256(p.read_bytes()).digest())
+            n+=1
+          assert n==140393
+          obj={'unchanged_html_expected':n,'tutor_pages_expected':len(tutor),
+               'non_tutor_aggregate_sha256':h.hexdigest()}
+          Path('v2352-full-reports/V2352_BASELINE_UNCHANGED_HTML.json').write_text(
+            json.dumps(obj,indent=2)+'\n',encoding='utf8')
+          print('PASS_V2352_NON_TUTOR_BASELINE',n,h.hexdigest(),flush=True)
+          PY
+      - name: Enrich 6060 regions x 3 tutoring pages only
+        id: build
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v2352_enrich_tutor_only.py
+          python3 scripts/v2352_enrich_tutor_only.py \
+            --root v2352-site --expected-regions 6060 --expected-generated 158571 \
+            --report v2352-full-reports/V2352_TUTOR_FULL_BUILD.json \
+            --samples v2352-full-reports/updated-tutor-samples
+      - name: Independently QA new tutor sections, all FAQ, forms, SEO and untouched 140393 HTML
+        id: auditor
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from collections import Counter
+          import hashlib,json,re,sys
+          root=Path('v2352-site')
+          check_dir=Path('v2352-full-reports')
+          before=json.loads((check_dir/'V2352_BASELINE_UNCHANGED_HTML.json').read_text(encoding='utf8'))
+          rendered=json.loads((check_dir/'V2352_TUTOR_FULL_BUILD.json').read_text(encoding='utf8'))
+          errors=[];counts=Counter();generated=sorted(root.glob('*.html'))
+          tutor=set()
+          for p in root.glob('*-elem-tutor.html'):
+            slug=p.name[:-len('-elem-tutor.html')]
+            if (root/(slug+'-worker-english-conv-academy.html')).is_file() and (
+                 root/(slug+'-mid-conv.html')).is_file() and (root/(slug+'-high-conv.html')).is_file():
+              tutor.update(slug+'-'+mode+'.html' for mode in ('elem-tutor','mid-tutor','high-tutor'))
+          unchanged=hashlib.sha256()
+          for i,p in enumerate(generated):
+            if p.name not in tutor:
+              unchanged.update(p.name.encode()+b'\0'+hashlib.sha256(p.read_bytes()).digest())
+              counts['non_tutor_unchanged']+=1
+              continue
+            s=p.read_text(encoding='utf8')
+            counts['tutor_checked']+=1
+            for section in ('levels','lesson','errors','timeline','parent'):
+              if s.count('data-v2352-section="'+section+'"')!=1:
+                if len(errors)<100:errors.append([p.name,'missing_or_duplicate_'+section])
+            if s.count('class="faq-item"')!=6:
+              if len(errors)<100:errors.append([p.name,'faq_not_6'])
+            if s.count('class="related-course-tutor"')!=3 or s.count('class="related-course-conversation"')!=3:
+              if len(errors)<100:errors.append([p.name,'student_navigation_not_6'])
+            if s.count('id="consultation-preview"')!=1 or 'name="consent"' not in s:
+              if len(errors)<100:errors.append([p.name,'consultation_form_preservation'])
+            if s.count('<meta property="og:image"')!=1 or s.count('<link rel="canonical"')!=1:
+              if len(errors)<100:errors.append([p.name,'SEO_OG_canonical_preservation'])
+            r=re.search(r'<meta name="robots" content="([^"]+)"',s)
+            if not r or 'noindex' not in r.group(1):
+              if len(errors)<100:errors.append([p.name,'tutor_noindex_policy_changed'])
+            counts['faq_total']+=s.count('class="faq-item"')
+            counts['new_sections']+=s.count('data-v2352-tutor-content="parent-guide-v1"')
+            if (i+1)%40000==0:
+              print('V2352_INDEPENDENT_AUDIT_PROGRESS',i+1,flush=True)
+          if counts['tutor_checked']!=18180:errors.append(['(all)','tutor_not_18180',counts['tutor_checked']])
+          if counts['non_tutor_unchanged']!=140393:errors.append(['(all)','non_tutor_count',counts['non_tutor_unchanged']])
+          if unchanged.hexdigest()!=before['non_tutor_aggregate_sha256']:
+            errors.append(['(all)','non_tutor_html_modified'])
+          if counts['new_sections']!=90900:errors.append(['(all)','v2352_sections_count',counts['new_sections']])
+          if counts['faq_total']!=109080:errors.append(['(all)','six_faq_per_tutor_count',counts['faq_total']])
+          if rendered['tutor_pages_updated']!=18180 or rendered['faq_entries_added']!=54540:
+            errors.append(['(all)','renderer_actual_counts',rendered['tutor_pages_updated']])
+          for file in ('pilot.css','assets/styles.css'):
+            if (root/file).read_text(encoding='utf8').count('/* ENGLISH PT v23.5.2 TUTOR EXTRA CONTEXT — SCOPE ONLY */')!=1:
+              errors.append([file,'missing_css_or_duplication'])
+          report={'status':'PASS_V2352_ALL_TUTOR_CONTENT_AND_NON_TUTOR_IMMUTABILITY_QA' if not errors else 'FAIL_V2352_ALL_TUTOR_CONTENT_AND_NON_TUTOR_IMMUTABILITY_QA',
+            'counts':dict(counts),'unchanged_digest':unchanged.hexdigest(),'error_count':len(errors),'errors':errors,
+            'production_deployed':False,'form_submitted':False}
+          (check_dir/'V2352_INDEPENDENT_CONTENT_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print(report['status'],dict(counts),'errors',len(errors),flush=True)
+          if errors:sys.exit(1)
+          PY
+      - name: Re-audit all 158571 SEO robots sitemap and canonicals unchanged
+        id: seo
+        run: |
+          set -euo pipefail
+          python3 scripts/v2351_indexing_sitemap_full_qa.py \
+            --root v2352-site \
+            --report v2352-full-reports/V2352_PRESERVED_158571_SEO_SITEMAP_QA.json
+      - name: Package v23.5.2 full REVIEW ONLY source and SHA256
+        id: package
+        run: |
+          set -euo pipefail
+          tar -I 'zstd -T0 -3' -cf ENGLISHPT_v23.5.2_TUTOR_ENRICHED_158571_REVIEW_ONLY.tar.zst -C v2352-site .
+          sha256sum ENGLISHPT_v23.5.2_TUTOR_ENRICHED_158571_REVIEW_ONLY.tar.zst > v2352-full-reports/V2352_REVIEW_RELEASE_SHA256.txt
+          test -s ENGLISHPT_v23.5.2_TUTOR_ENRICHED_158571_REVIEW_ONLY.tar.zst
+          echo PASS_V2352_FULL_ARCHIVE_CREATION_NO_DEPLOY
+      - name: Always record final QA stage status and provenance
+        if: always()
+        env:
+          SOURCE: ${{ steps.source.outcome }}
+          DOWNLOAD: ${{ steps.download.outcome }}
+          SEO_REPORT: ${{ steps.seo_report.outcome }}
+          PILOT: ${{ steps.pilot.outcome }}
+          EXTRACT: ${{ steps.extract.outcome }}
+          BASELINE: ${{ steps.baseline.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          AUDITOR: ${{ steps.auditor.outcome }}
+          SEO: ${{ steps.seo.outcome }}
+          PACKAGE: ${{ steps.package.outcome }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os,json
+          out=Path('v2352-full-reports')
+          def read(n):
+            p=out/n
+            return json.loads(p.read_text(encoding='utf8')) if p.exists() else {}
+          stages={k:os.environ.get(k,'unknown') for k in (
+            'SOURCE','DOWNLOAD','SEO_REPORT','PILOT','EXTRACT','BASELINE','BUILD','AUDITOR','SEO','PACKAGE')}
+          audit=read('V2352_INDEPENDENT_CONTENT_QA.json')
+          seo=read('V2352_PRESERVED_158571_SEO_SITEMAP_QA.json')
+          ok=all(s=='success' for s in stages.values()) and (
+             audit.get('status')=='PASS_V2352_ALL_TUTOR_CONTENT_AND_NON_TUTOR_IMMUTABILITY_QA') and (
+             seo.get('status')=='PASS_V2351_INDEXING_SITEMAP_FULL_QA')
+          r={'status':'PASS_V2352_TUTOR_CONTENT_ALL_158571_REVIEW_QA' if ok else 'HOLD_V2352_TUTOR_CONTENT_ALL_158571_REVIEW_QA',
+            'version':'v23.5.2','source_v2351_immutable_run':38868768031,
+            'source_v234_run':38689660290,'source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+            'localities':6060,'tutor_modified_expected':18180,'non_tutor_unchanged_expected':140391,
+            'generated_total':158571,'indexable':seo.get('indexable_count'),'noindex':seo.get('noindex_count'),
+            'sitemap_urls':seo.get('sitemap_unique_urls'),
+            'content_check':audit.get('status'),
+            'stages':stages,'production_verdict':'HOLD_NO_PRODUCTION_DEPLOYMENT',
+            'netlify_deployed':False,'production_deployed':False,'form_submitted':False}
+          (out/'V2352_FINAL_EXECUTION.json').write_text(json.dumps(r,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as f:
+            f.write('## v23.5.2 '+r['status']+'\n\n')
+            f.write('18,180 tutor page content enrichments; 140,391 other generated pages unchanged; 158,571 SEO audited.\n\n')
+            f.write('Production HOLD. No Netlify deployment. No actual consultation submission.\n\n')
+            f.write('Stages: '+str(stages))
+          print(r['status'],stages,flush=True)
+          PY
+      - name: Always upload full QA reports and real improved HTML samples
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2352-tutor-full-qa-reports-and-examples
+          path: v2352-full-reports/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload complete 158571-page v23.5.2 REVIEW archive only on QA PASS
+        if: steps.build.outcome == 'success' && steps.auditor.outcome == 'success' && steps.seo.outcome == 'success' && steps.package.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2352-tutor-enriched-158571-REVIEW-ONLY
+          path: ENGLISHPT_v23.5.2_TUTOR_ENRICHED_158571_REVIEW_ONLY.tar.zst
+          retention-days: 30
+          if-no-files-found: error
