@@ -1,0 +1,117 @@
+name: ENGLISH PT v23.5.2.1 Parent Copy 3 Tutor Pilot QA (NO DEPLOY)
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23.5.2.1-parent-copy-polish-20261016]
+    paths:
+      - '.github/workflows/stage9-v23521-copy-pilot-qa.yml'
+      - 'scripts/v23521_polish_tutor_pages.py'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: englishpt-v23521-copy-pilot-qa
+  cancel-in-progress: true
+jobs:
+  polish-one-area:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch original immutable v23.5.2 real tutor HTML from full QA artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2352-tutor-full-qa-reports-and-examples
+          run-id: 38878640560
+          path: pilot-original
+          github-token: ${{ github.token }}
+      - name: Prepare sample pages, saved baseline and css with no site modifications
+        run: |
+          set -euo pipefail
+          mkdir -p pilot-site/assets pilot-reports
+          cp pilot.css pilot-site/pilot.css
+          cp assets/styles.css pilot-site/assets/styles.css
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          src=Path('pilot-original/updated-tutor-samples')
+          dst=Path('pilot-site')
+          srcs=sorted(src.glob('busan-buk-deokcheondong-*-tutor.html'))
+          assert len(srcs)==3, [p.name for p in srcs]
+          digests={}
+          for f in srcs:
+            (dst/f.name).write_bytes(f.read_bytes())
+            digests[f.name]=hashlib.sha256(f.read_bytes()).hexdigest()
+          Path('pilot-reports/BEFORE_SHA.json').write_text(json.dumps(digests,indent=2),encoding='utf8')
+          print('PASS_V23521_THREE_ACTUAL_TUTOR_SAMPLES_READY')
+          PY
+      - name: Polish elementary, middle, high detailed tutoring FAQ and CTAs (not Netlify)
+        id: polish
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_polish_tutor_pages.py
+          python3 scripts/v23521_polish_tutor_pages.py \
+            --root pilot-site --pilot --expected-regions 1 \
+            --overlay-dir pilot-reports/updated-example-pages \
+            --report pilot-reports/V23521_PARENT_EDITORIAL_PILOT.json
+      - name: Independently validate 3 modified tutor pages and technical preservation
+        id: auditor
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re,json
+          from pathlib import Path
+          root=Path('pilot-site')
+          got=json.loads(Path('pilot-reports/V23521_PARENT_EDITORIAL_PILOT.json').read_text('utf8'))
+          assert got['status']=='PASS_V23521_PARENT_COPY_POLISH_TUTORS_ONLY'
+          assert got['changed_tutor_pages']==3 and got['old_sections_removed']==6
+          assert got['disclaimers_deduplicated']==3
+          assert got['consultation_text_and_classification_aligned']==15
+          assert got['faq_questions_refined']==2
+          for mode in ('elem','mid','high'):
+            p=root/('busan-buk-deokcheondong-'+mode+'-tutor.html')
+            s=p.read_text('utf8')
+            assert s.count('data-v2352-tutor-content="parent-guide-v1"')==5
+            assert s.count('class="faq-item"')==6
+            assert 'class="section mass-context"' not in s
+            assert '수업에서 확인하는 예시' not in s
+            assert s.count('class="v2352-note"')==1
+            assert '체험수업 신청' not in s
+            assert 'value="ENGLISH PT 영어과외 상담 신청"' in s
+            assert 'id="leadRequestType" name="requestType" value="영어과외 상담 신청"' in s
+            assert 'data-netlify="true"' in s
+            assert s.count('href="#consultation-preview"')>=3
+            assert s.count('class="related-course-tutor"')==3
+            assert s.count('class="related-course-conversation"')==3
+          print('PASS_V23521_PILOT_3_TUTORS_3_SUBJECTS_NAV_AND_FORM_STRUCTURE')
+          PY
+      - name: Always report PASS/HOLD
+        if: always()
+        env:
+          POLISH: ${{ steps.polish.outcome }}
+          AUDITOR: ${{ steps.auditor.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          path=Path('pilot-reports/V23521_PILOT_FINAL.json')
+          stages={k:os.environ[k] for k in ('POLISH','AUDITOR')}
+          passed=all(v=='success' for v in stages.values())
+          obj={'status':'PASS_V23521_3_TUTOR_PARENT_COPY_PILOT' if passed else 'HOLD_V23521_3_TUTOR_PARENT_COPY_PILOT',
+               'stages':stages,'production_deployed':False,'netlify_deployed':False,'form_submitted':False}
+          path.write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+            f.write('## '+obj['status']+'\n\n'+str(stages)+'\n\nNo Netlify/Production deploy.\n')
+          print(obj['status'])
+          PY
+      - name: Upload before SHA, 3 rewritten HTML, pilot QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-3-real-tutor-copy-polish-pilot
+          path: pilot-reports/
+          retention-days: 30
+          if-no-files-found: error
