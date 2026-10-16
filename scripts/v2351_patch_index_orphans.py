@@ -71,7 +71,9 @@ def main():
         if len(targets)!=2733:raise ValueError("expected 2733 mismatched pages, got "+str(len(targets)))
         station=[p for p,_,_ in targets if p.name.startswith("station-") and p.name.endswith(BAD_SUFFIXES)]
         other=[p for p,_,_ in targets if p.name.startswith("dalseo-songhyeondong-") and p.name.endswith(BAD_SUFFIXES)]
-        if len(station)!=2730 or len(other)!=3:
+        # Verified in actual full HTML: all 2733 off-sitemap indexables are
+        # station variants. The three Songhyeondong suffix pages already have noindex.
+        if len(station)!=2733 or len(other)!=0:
             raise ValueError(f"Unexpected target identities station={len(station)} other={len(other)}")
         for p,doc,m in targets:
             original_title=re.search(r'<title>(.*?)</title>',doc,re.S)
