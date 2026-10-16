@@ -57,8 +57,26 @@ def html_phase():
     if 'name="englishpt-consultation" method="POST" data-netlify="true"' not in content:
      raise ValueError('Netlify consultation form missing')
     if 'name="consent"' not in content:raise ValueError('consent field missing')
-    if content.count('class="related-course-tutor"')!=3 or content.count('class="related-course-conversation"')!=3:
-     raise ValueError('Six regional course links not preserved')
+    # CDN-served HTML can serialize attributes differently from frozen source.
+    # HTMLParser also accepts unquoted / single-quoted / reordered attrs.
+    from html.parser import HTMLParser
+    class CardLinks(HTMLParser):
+     def __init__(self):
+      super().__init__(convert_charrefs=True)
+      self.links=[]
+     def handle_starttag(self,tag,attrs):
+      if tag!='a':return
+      a=dict(attrs);classes=set((a.get('class') or '').split())
+      for candidate in ('related-course-tutor','related-course-conversation'):
+       if candidate in classes:self.links.append((candidate,a.get('href') or ''))
+    cards=CardLinks();cards.feed(content)
+    modes=('elem-tutor','mid-tutor','high-tutor','elem-conv','mid-conv','high-conv')
+    if len(cards.links)!=6:
+     raise ValueError('Expected six parsed regional course anchors, got '+str(cards.links))
+    for intended in modes:
+     path='/'+slug+'-'+intended
+     if not any(h.rstrip('/') in (path,path+'.html') for _,h in cards.links):
+      raise ValueError('Missing course link: '+path)
     if mode=='elem-tutor' and '학교 영어가 어렵다면 읽기·문법 중 무엇부터 살펴봐야 하나요?' not in content:
      raise ValueError('elementary parent FAQ improvement missing')
     if mode=='high-tutor' and '고2에서 고3으로 올라가기 전 무엇을 먼저 점검해야 하나요?' not in content:
@@ -122,37 +140,46 @@ def clicks_phase():
        except Exception as e:
         r['errors'].append({'slug':slug,'width':width,'course':mode,'error':repr(e)})
         print('::error::V23521_NAV_CLICK '+repr(e),flush=True)
-     for mode,label in GRADES.items():
-      name=slug+'-'+mode+'.html'
-      try:
-       rr=page.goto(BASE+'/'+name,wait_until='domcontentloaded',timeout=60000)
-       if not rr or rr.status!=200:raise ValueError('tutor destination not HTTP 200')
-       hero=page.locator('.hero-actions a[href="#consultation-preview"]').first
-       new=page.locator('a.v2352-small-cta[href="#consultation-preview"]')
-       if hero.count()!=1 or new.count()!=1:raise ValueError('CTA missing')
-       for selector,button in (('hero',hero),('parent',new)):
-        button.scroll_into_view_if_needed()
-        button.click(timeout=12000)
-        form=page.locator('#consultation-preview form')
-        if form.count()!=1:raise ValueError('form missing after CTA')
-        if '영어과외 상담 신청' not in page.locator('#consultation-preview').inner_text():
-         raise ValueError('visible revised copy missing from form')
-        p=shots/(name[:-5]+'-'+str(width)+'-'+selector+'.png')
-        form.scroll_into_view_if_needed()
-        page.screenshot(path=str(p),full_page=False,timeout=21000)
-        r['screenshot_count']+=1
-        r['clicks'].append({'slug':slug,'width':width,'course':mode,'cta':selector,'form_reached':True})
-       print('V23521_LIVE_REVISED_FORM_CTA_PASS',width,slug,mode,flush=True)
-      except Exception as e:
-       r['errors'].append({'slug':slug,'width':width,'course':mode,'form_cta_error':repr(e)})
-       print('::error::V23521_FORM_CTA '+repr(e),flush=True)
+      for mode,label in GRADES.items():
+       name=slug+'-'+mode+'.html'
+       try:
+        rr=page.goto(BASE+'/'+name,wait_until='domcontentloaded',timeout=60000)
+        if not rr or rr.status!=200:raise ValueError('tutor destination not HTTP 200')
+        hero=page.locator('.hero-actions a[href="#consultation-preview"]').first
+        new=page.locator('a.v2352-small-cta[href="#consultation-preview"]')
+        if hero.count()!=1 or new.count()!=1:raise ValueError('CTA missing')
+        for selector,button in (('hero',hero),('parent',new)):
+         button.scroll_into_view_if_needed()
+         button.click(timeout=12000)
+         form=page.locator('#consultation-preview form')
+         if form.count()!=1:raise ValueError('form missing after CTA')
+         # Input[type=hidden].value does NOT appear in innerText.
+         # The revised wording is visible on the actual submit button.
+         submit=form.locator('button[type="submit"]').first
+         if submit.count()!=1 or '영어과외 상담 신청' not in submit.inner_text():
+          raise ValueError('visible submit button has wrong tutoring copy')
+         request_type=form.locator('input[name="requestType"]').first
+         if request_type.count()!=1 or request_type.input_value()!='영어과외 상담 신청':
+          raise ValueError('hidden requestType does not match revised tutoring copy')
+         subject=form.locator('input[name="subject"]').first
+         if subject.count()!=1 or '영어과외 상담 신청' not in subject.input_value():
+          raise ValueError('hidden subject is inconsistent with submit label')
+         p=shots/(name[:-5]+'-'+str(width)+'-'+selector+'.png')
+         form.scroll_into_view_if_needed()
+         page.screenshot(path=str(p),full_page=False,timeout=21000)
+         r['screenshot_count']+=1
+         r['clicks'].append({'slug':slug,'width':width,'course':mode,'cta':selector,'form_reached':True})
+        print('V23521_LIVE_REVISED_FORM_CTA_PASS',width,slug,mode,flush=True)
+       except Exception as e:
+        r['errors'].append({'slug':slug,'width':width,'course':mode,'form_cta_error':repr(e)})
+        print('::error::V23521_FORM_CTA '+repr(e),flush=True)
     finally:ctx.close()
   finally:browser.close()
  nav=[x for x in r['clicks'] if 'landed' in x]
  ctas=[x for x in r['clicks'] if x.get('form_reached')]
  r['navigation_clicks']=len(nav)
  r['new_copy_cta_checks']=len(ctas)
- r['status']='PASS_V23521_LIVE_COURSE_LINKS_AND_REVISED_FORM' if not r['errors'] and len(nav)==24 and len(ctas)==12 else 'HOLD_V23521_LIVE_COURSE_LINKS_AND_REVISED_FORM'
+ r['status']='PASS_V23521_LIVE_COURSE_LINKS_AND_REVISED_FORM' if not r['errors'] and len(nav)==24 and len(ctas)==24 else 'HOLD_V23521_LIVE_COURSE_LINKS_AND_REVISED_FORM'
  emit('V23521_LIVE_CLICKS_CTA_QA.json',r)
  return r['status'].startswith('PASS')
 if __name__=='__main__':
