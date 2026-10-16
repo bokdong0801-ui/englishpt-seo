@@ -28,9 +28,17 @@ def report(name,data):
     (REPORT/name).write_text(json.dumps(data,ensure_ascii=False,indent=2)+"\n",encoding="utf8")
     print("REPORT",name,data.get("status"),flush=True)
 def fetch(url):
-    req=urllib.request.Request(url,headers=UA)
-    with urllib.request.urlopen(req,timeout=45) as r:
-        return r.status,r.read(),dict(r.headers),r.url
+    import time
+    last=None
+    for attempt in range(3):
+        try:
+            req=urllib.request.Request(url,headers=UA)
+            with urllib.request.urlopen(req,timeout=45) as r:
+                return r.status,r.read(),dict(r.headers),r.url
+        except Exception as exc:
+            last=exc
+            if attempt<2:time.sleep(2+2*attempt)
+    raise last
 def error(data,where,reason):
     data["errors"].append({"where":where,"reason":str(reason)[:400]})
     print("::error::"+where+" "+str(reason)[:300],flush=True)
