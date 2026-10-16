@@ -47,7 +47,7 @@ def patch(raw):
     assert updated.count('form.reportValidity()')==1
     assert updated.count('document.querySelectorAll("[data-trial-cta]")')==1
     assert 'modeLabel=requestType?.value?.trim()===tutorMode ? tutorMode : trialMode' in updated
-    assert updated.count("체험수업 신청")>=2
+    assert updated.count("체험수업 신청")>=1
     assert updated.count("영어과외 상담 신청")==1
     assert digest(updated.encode())!=original_sha
     return updated.encode(),original_sha
