@@ -233,7 +233,21 @@ jobs:
             if (i+1)%40000==0:print('V2352_DRAFT_OG_PROGRESS',i+1,len(files),flush=True)
           inventory={p.name for p in (root/'assets/images/og-pages').glob('*.png')}
           if not used.issubset(inventory):raise ValueError('Missing OG files: '+str(used-inventory))
+          expected_og=set(('beginner toeic ielts toefl opic tos duolingo elementary middle high '
+            'student worker college jobseeker housewife stations region academy tutor '
+            'conversation exam courses englishpt reading writing international phone video general').split())
+          if len(expected_og)!=29:raise ValueError('OG inventory definition must be 29')
+          expected_png={stem+'.png' for stem in expected_og}
+          if not expected_png.issubset(inventory):raise ValueError('Missing 29 real OG assets: '+str(expected_png-inventory))
+          import struct
+          for png in sorted(expected_png):
+            header=(root/'assets/images/og-pages'/png).open('rb').read(24)
+            if len(header)!=24 or header[:8]!=b'\\x89PNG\\r\\n\\x1a\\n':
+              raise ValueError('Bad PNG signature for '+png)
+            if struct.unpack('>II',header[16:24])!=(1200,630):
+              raise ValueError('OG not 1200x630: '+png)
           if len(used)<26:raise ValueError('Fewer than 26 referenced original OG designs')
+          print('PASS_PREDEPLOY_ALL_29_OG_PNG_SIGNATURES_AND_1200x630',flush=True)
           report={'status':'PASS_V2352_DRAFT_OG_PREPARATION','html_updated':len(files),
             'meta_urls_rewritten':count,'used_images':len(used),'images_available':len(inventory),
             'draft_og_alias':os.environ['OG_ALIAS_URL'],'canonical_changed':False,
