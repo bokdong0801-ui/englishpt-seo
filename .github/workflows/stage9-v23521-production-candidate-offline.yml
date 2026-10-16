@@ -1,0 +1,195 @@
+name: ENGLISH PT v23.5.2.1 OFFLINE Production Candidate (Never Deploy)
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23.5.2.1-parent-copy-polish-20261016]
+    paths: ['.github/workflows/stage9-v23521-production-candidate-offline.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: englishpt-v23521-offline-production-candidate
+  cancel-in-progress: false
+jobs:
+  package-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 220
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: '38902833981'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Start with HOLD until all checks pass
+        run: |
+          mkdir -p candidate-reports
+          echo '{"status":"HOLD_PENDING_QA","production_deployed":false,"form_submitted":false}' > candidate-reports/FINAL_STATUS.json
+      - name: Require all frozen source and v23.5.2 live QA runs completed with success
+        id: guard
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY'];token=os.environ['GH_TOKEN']
+          for id in (38689660290,38878640560,38902524612,38901964204,38902833981):
+            req=urllib.request.Request(f'https://api.github.com/repos/{repo}/actions/runs/{id}',headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'})
+            with urllib.request.urlopen(req,timeout=50) as r:d=json.load(r)
+            assert d['status']=='completed' and d['conclusion']=='success',(id,d['conclusion'])
+            if id==38689660290:assert d['head_sha']=='a18b8901ecda7d37f65e35b15f03d579ec63c70f'
+          print('PASS_V23521_SOURCE_PROVENANCE_AND_PRIOR_LIVE_QA',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-parent-polished-158571-full-REVIEW-ONLY
+          run-id: 38902833981
+          path: source
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-full-158571-parent-copy-seo-qa-and-18180-overlay
+          run-id: 38902833981
+          path: source-report
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-indexing-corrected-full-sitemap-report-and-overlay
+          run-id: 38868768031
+          path: production-policy
+          github-token: ${{ github.token }}
+      - name: Verify archive checksum, 18180 copy changes, unchanged 140393 and sitemap 21964
+        id: unpack
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          (cd source && sha256sum -c ../source-report/V23521_REVIEW_ARCHIVE_SHA256.txt)
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('source-report')
+          x=json.loads((root/'V23521_FINAL_EXECUTION.json').read_text('utf8'))
+          seo=json.loads((root/'V23521_SEO_SITEMAP_QA.json').read_text('utf8'))
+          qa=json.loads((root/'V23521_INDEPENDENT_FULL_CONTENT_QA.json').read_text('utf8'))
+          assert x['status']=='PASS_V23521_PARENT_COPY_ALL_158571_REVIEW_QA'
+          assert x['changed_tutor_pages']==18180 and x['unchanged_html']==140393
+          assert seo['status']=='PASS_V2351_INDEXING_SITEMAP_FULL_QA' and seo['errors_count']==0
+          assert (seo['generated_total'],seo['indexable_count'],seo['noindex_count'],seo['sitemap_unique_urls'])==(158571,21964,136607,21964)
+          assert qa['status']=='PASS_V23521_ALL_158571_IMMUTABILITY_CONTENT_QA' and qa['error_count']==0
+          assert Path('production-policy/PRODUCTION_HEADERS_CANDIDATE.txt').is_file()
+          print('PASS_V23521_FROZEN_SHA_SEO_AND_TUTOR_PRESERVATION',flush=True)
+          PY
+          mkdir -p candidate-site
+          tar --zstd -xf source/ENGLISHPT_v23.5.2.1_TUTOR_PARENT_POLISHED_158571_REVIEW_ONLY.tar.zst -C candidate-site
+          grep -qi 'X-Robots-Tag: noindex' candidate-site/_headers
+      - name: Install Chromium and Korean fonts for the updated copy before Production packaging
+        id: install
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+      - name: Chromium 6 updated tutor pages at 320 390 430 1440 + both consultation CTAs
+        id: browser
+        run: |
+          set -euo pipefail
+          ln -s candidate-site review-site
+          python3 scripts/v2352_predeploy_local_tutor_qa.py
+          cp v2352-live-report/V2352_PREDEPLOY_LOCAL_4_WIDTH_QA.json candidate-reports/V23521_LOCAL_24_RESPONSIVE_CTA_QA.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('candidate-reports/V23521_LOCAL_24_RESPONSIVE_CTA_QA.json').read_text('utf8'))
+          assert d['status']=='PASS_V2352_LOCAL_6_PAGES_4_VIEWPORTS' and len(d['checks'])==24
+          for mode in ('elem','mid','high'):
+            html=Path('candidate-site/gyeongnam-milyang-naeidong-'+mode+'-tutor.html').read_text('utf8')
+            assert '영어과외 상담 신청' in html and '체험수업 신청' not in html
+            assert 'name="englishpt-consultation" method="POST" data-netlify="true"' in html
+          print('PASS_V23521_NEW_COPY_24_CHROMIUM_JOURNEYS_NO_SUBMISSIONS')
+          PY
+      - name: Strip Draft global noindex in candidate only; check all HTML title/canonical/OG/robots
+        id: headgate
+        run: |
+          set -euo pipefail
+          python3 scripts/v2351_production_release_gate.py \
+            --root candidate-site \
+            --headers-candidate production-policy/PRODUCTION_HEADERS_CANDIDATE.txt \
+            --report candidate-reports/V23521_FULL_PRODUCTION_HEADER_AND_HTML_QA.json
+      - name: Package final 158571 Production-ready candidate and SHA256 without uploading to Netlify
+        id: archive
+        run: |
+          set -euo pipefail
+          tar -I 'zstd -T0 -3' -cf ENGLISHPT_v23.5.2.1_PRODUCTION_READY_NOT_DEPLOYED.tar.zst -C candidate-site .
+          sha256sum ENGLISHPT_v23.5.2.1_PRODUCTION_READY_NOT_DEPLOYED.tar.zst > candidate-reports/V23521_PRODUCTION_SHA256.txt
+          test -s ENGLISHPT_v23.5.2.1_PRODUCTION_READY_NOT_DEPLOYED.tar.zst
+      - name: Record release approval checklist
+        id: checklist
+        run: |
+          cat > candidate-reports/PRODUCTION_APPROVAL_CHECKLIST.md <<'EOF'
+          # ENGLISH PT v23.5.2.1 Release Approval Checklist
+          **Technical package only; NOT deployed to Netlify or englishpt.kr.**
+
+          - [x] Parent copy revised in 18,180 tutoring pages; other 140,393 HTML unchanged.
+          - [x] Canonical/OG/title/robots full QA: 158,571 generated pages.
+          - [x] Indexable 21,964; noindex 136,607; sitemap 21,964.
+          - [x] Draft global noindex header removed only from offline Production candidate.
+          - [x] Local-browser 320/390/430/1440 representative tutoring CTA routes, no real submissions.
+          - [ ] **Before public deploy**: inspect the revised v23.5.2.1 copy in a newly isolated Draft (existing v23.5.2 Draft does not have this copy edit).
+          - [ ] Confirm new hidden requestType/subject values are supported by Netlify email workflow (a real submission was not made in QA).
+          - [ ] Verify Production backup/rollback and Netlify upload capacity.
+          - [ ] Explicit user Production deploy authorization required.
+          - [ ] After authorized deploy: monitor HTTP, 404, lead submission/email, headers and Google/Naver sitemap.
+          EOF
+      - name: Always record final QA and safety verdict
+        if: always()
+        env:
+          GUARD: ${{ steps.guard.outcome }}
+          UNPACK: ${{ steps.unpack.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+          HEADGATE: ${{ steps.headgate.outcome }}
+          ARCHIVE: ${{ steps.archive.outcome }}
+          CHECKLIST: ${{ steps.checklist.outcome }}
+        run: |
+          python3 - <<'PY'
+          import os,json
+          from pathlib import Path
+          root=Path('candidate-reports')
+          p=root/'V23521_FULL_PRODUCTION_HEADER_AND_HTML_QA.json'
+          qa=json.loads(p.read_text('utf8')) if p.exists() else {}
+          steps={k:os.environ.get(k,'unknown') for k in ('GUARD','UNPACK','INSTALL','BROWSER','HEADGATE','ARCHIVE','CHECKLIST')}
+          ok=all(v=='success' for v in steps.values()) and qa.get('status')=='PASS_V2351_PRODUCTION_RELEASE_GATED_AND_AUDITED'
+          final={'status':'PASS_V23521_OFFLINE_CANDIDATE_PREVIEW_REQUIRED' if ok else 'HOLD_V23521_OFFLINE_CANDIDATE',
+            'production_status':'HOLD_AWAITING_NEW_PREVIEW_AND_USER_APPROVAL',
+            'pages':qa.get('generated_count'),'indexable':qa.get('indexable'),'noindex':qa.get('noindex'),
+            'og_files':qa.get('og_meta_ok'),'canonical':qa.get('canonical_match'),
+            'source_v23521_run':38902833981,
+            'archive':'ENGLISHPT_v23.5.2.1_PRODUCTION_READY_NOT_DEPLOYED.tar.zst' if ok else None,
+            'stages':steps,'production_deployed':False,'netlify_deployed':False,'form_submitted':False}
+          (root/'FINAL_STATUS.json').write_text(json.dumps(final,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+            f.write('## '+final['status']+'\n\n')
+            f.write('Offline candidate passes, but revised Preview and explicit Production approval are still required.\n\n')
+            f.write('Stages: '+str(steps)+'\n\nNo Netlify upload or consultation submission.\n')
+          print(final['status'],flush=True)
+          PY
+      - name: Always upload SHA256, Release Checklist and all QA JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-offline-production-candidate-sha-qa-checklist
+          path: candidate-reports/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload full Production candidate ONLY if all checks PASS (NOT DEPLOYED)
+        if: steps.browser.outcome == 'success' && steps.headgate.outcome == 'success' && steps.archive.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-PRODUCTION-CANDIDATE-158571-NOT-DEPLOYED
+          path: ENGLISHPT_v23.5.2.1_PRODUCTION_READY_NOT_DEPLOYED.tar.zst
+          retention-days: 30
+          if-no-files-found: error
