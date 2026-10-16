@@ -4,7 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: [review/v23.5.2-tutor-content-20261016]
-    paths: ['.github/workflows/stage9-v2352-unique-draft-and-live-tutor-qa.yml']
+    paths:
+      - '.github/workflows/stage9-v2352-unique-draft-and-live-tutor-qa.yml'
+      - 'scripts/v2352_predeploy_local_tutor_qa.py'
+      - 'scripts/v2352_live_draft_tutor_visual_qa.py'
 
 permissions:
   contents: read
