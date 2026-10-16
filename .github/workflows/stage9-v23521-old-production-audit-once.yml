@@ -18,7 +18,7 @@ jobs:
           run-id: 38903769454
           path: old-production
           github-token: ${{ github.token }}
-      - name: Read actual old package: archive hash JS content Production OG and headers, no deployments
+      - name: Read actual old package JS, Production OG and headers without deploying
         run: |
           set -euo pipefail
           command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
@@ -56,7 +56,7 @@ jobs:
           assert x['global_draft_noindex_absent'] and x['og_png_valid'],x
           x['status']='PASS_ARCHIVE_AUDIT_CONFIRMED_OLD_JS_AND_VALID_PRODUCTION_OG'
           Path('production-audit/V23521_OLD_PRODUCTION_CANDIDATE_AUDIT.json').write_text(
-             json.dumps(x,ensure_ascii=False,indent=2)+'\\n',encoding='utf8')
+             json.dumps(x,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
           print(x['status'],x,flush=True)
           PY
       - name: Preserve actual old archive diagnosis
