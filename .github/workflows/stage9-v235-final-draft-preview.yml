@@ -158,13 +158,21 @@ jobs:
           count=0
           for i,p in enumerate(files):
             html=p.read_text(encoding='utf-8')
-            n=html.count(src)
-            if n!=3:raise ValueError('Expected exactly 3 share-image tags: '+p.name+' '+str(n))
-            patched=html.replace(src,alias)
+            n=[0]
+            def update_meta(match):
+              tag=match.group(0)
+              allowed=('property="og:image"','property="og:image:secure_url"','name="twitter:image"')
+              if any(t in tag for t in allowed):
+                if src not in tag:raise ValueError('Share image tag without expected source: '+p.name)
+                n[0]+=1
+                return tag.replace(src,alias)
+              return tag
+            patched=re.sub(r'<meta\\b[^>]*>',update_meta,html,flags=re.I)
+            if n[0]!=3:raise ValueError('Expected 3 OG/Twitter image meta tags: '+p.name+' '+str(n[0]))
             if patched.count('rel="canonical"')!=html.count('rel="canonical"'):
               raise ValueError('Canonical changed: '+p.name)
             p.write_text(patched,encoding='utf-8')
-            count+=n
+            count+=n[0]
             if (i+1)%30000==0:print('V235_DRAFT_OG_ALIAS_PROGRESS',i+1,flush=True)
           images=list((root/'assets/images/og-pages').glob('*.png'))
           if len(images)!=29:raise ValueError('OG image templates !=29')
