@@ -139,7 +139,7 @@ jobs:
               og+=1
             elif len(err)<50:err.append([p.name,'OG metadata lost'])
             if 'rel="canonical"' in t:canonical+=1
-            if '<h3>학생 영어</h3>' in t:
+            if '<article class="related-group"><h3>학생 영어</h3>' in t:
               student+=1
               if t.count('class="related-course-tutor"')!=3 or t.count('class="related-course-fallback"')!=3:
                 if len(err)<50:err.append([p.name,'student card mapping changed'])
