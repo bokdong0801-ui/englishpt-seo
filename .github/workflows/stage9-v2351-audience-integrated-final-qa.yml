@@ -27,7 +27,7 @@ jobs:
       REVIEW_SITE_NAME: englishpt-final-ia-review-bokdong
       PREVIEW_ALIAS_NAME: v2351-six-student-20261016
       SOURCE_PREVIEW_RUN: '38865617005'
-      SOURCE_SEO_RUN: '38868423373'
+      SOURCE_SEO_RUN: '38868768031'
       PYTHONUNBUFFERED: '1'
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
       - name: Initialize always-saved final report
         run: |
           mkdir -p v2351-audience-final
-          printf '{"status":"STARTED","source_site_run":38865617005,"source_seo_audit_run":38868423373,"production_deployed":false,"form_submitted":false}\n' > v2351-audience-final/V2351_INTEGRATED_EXECUTION.json
+          printf '{"status":"STARTED","source_site_run":38865617005,"source_seo_audit_run":38868768031,"production_deployed":false,"form_submitted":false}\n' > v2351-audience-final/V2351_INTEGRATED_EXECUTION.json
       - name: Wait for SEO policy repair full PASS, and identify ready unique Draft by Netlify ID
         id: guard
         run: |
@@ -152,7 +152,7 @@ jobs:
           good=all(v=='success' for v in stages.values()) and live.get('status')=='PASS_V2351_AUDIENCE_FINAL_LIVE_QA'
           obj={'status':'PASS_V2351_INTEGRATED_STUDENT_EXAM_ADULT_LIVE_QA' if good else 'HOLD_V2351_INTEGRATED_STUDENT_EXAM_ADULT_LIVE_QA',
                'source_run':38864767374,'source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
-               'seo_policy_corrected_run':38868423373,
+               'seo_policy_corrected_run':38868768031,
                'unique_preview_url':source.get('unique_preview_url'),
                'audience_pages_checked':live.get('tested_pages'),
                'responsive_http':live.get('http_checked'),
