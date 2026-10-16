@@ -1,0 +1,137 @@
+name: ENGLISH PT v23.5 Existing Draft HTTP + OG Repair QA (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths:
+      - '.github/workflows/stage9-v235-existing-draft-http-og-recheck.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v235-existing-draft-http-og-no-deploy
+  cancel-in-progress: false
+
+jobs:
+  draft-only-qa:
+    name: Existing immutable v23.5 Draft only (36+ HTTP, 29 OG, student 6)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Initialize always-uploaded report
+        run: |
+          set -euo pipefail
+          mkdir -p draft-recheck-report
+          printf '{"status":"STARTED","original_draft_run":38845014645,"netlify_upload":false,"production_deployed":false,"form_submitted":false}\n' > draft-recheck-report/RUN_STATUS.json
+          python3 -m py_compile scripts/v235_existing_draft_http_recheck_only.py
+          echo PASS_EXISTING_DRAFT_QA_SCRIPT_COMPILE
+
+      - name: Verify original v23.5 Draft was really uploaded and Chromium was completed
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY']
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                   'Accept':'application/vnd.github+json'}
+          def api(path):
+              req=urllib.request.Request(
+                  'https://api.github.com/repos/'+repo+path,headers=headers)
+              with urllib.request.urlopen(req,timeout=40) as f:return json.load(f)
+          orig=api('/actions/runs/38689660290')
+          assert orig['status']=='completed' and orig['conclusion']=='success'
+          assert orig['head_sha']=='a18b8901ecda7d37f65e35b15f03d579ec63c70f'
+          source=api('/actions/runs/38843408620')
+          assert source['conclusion']=='success'
+          draft=api('/actions/runs/38845014645')
+          assert draft['status']=='completed' and draft['conclusion']=='failure'
+          jobs=api('/actions/runs/38845014645/jobs?per_page=100')['jobs']
+          stages={s['name']:s.get('conclusion') for j in jobs for s in j.get('steps',[])}
+          for key in (
+            'Verify immutable 140391-page source and v23.5 all-steps PASS',
+            'Publish isolated unique v23.5 Draft (never Production)',
+            'Live mobile 320/390/430 and desktop 1440 Chromium QA (never submit)',
+            'Always upload final GO/HOLD report, 29 image checks, mobile and PC screenshots'
+          ):
+              assert stages.get(key)=='success',(key,stages.get(key))
+          print('PASS_V235_EXISTING_DRAFT_SOURCE_AND_CHROMIUM_GUARD')
+          PY
+
+      - name: Download small original HTTP failure + successful Chromium reports
+        id: reports
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v235-final-draft-preproduction-qa-reports
+          run-id: 38845014645
+          path: prior-live-qa
+          github-token: ${{ github.token }}
+
+      - name: Recheck existing Draft pages, actual 29 OG images, and six student links
+        id: recheck
+        run: |
+          set -euo pipefail
+          python3 scripts/v235_existing_draft_http_recheck_only.py
+
+      - name: Always record GO/HOLD and links in GitHub summary
+        if: always()
+        env:
+          SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          REPORTS_OUTCOME: ${{ steps.reports.outcome }}
+          RECHECK_OUTCOME: ${{ steps.recheck.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          folder=Path('draft-recheck-report');folder.mkdir(exist_ok=True)
+          report=folder/'V235_EXISTING_DRAFT_HTTP_OG_RECHECK.json'
+          check=json.loads(report.read_text(encoding='utf-8')) if report.exists() else {}
+          stages={k:os.environ.get(k+'_OUTCOME','unknown') for k in ('SOURCE','REPORTS','RECHECK')}
+          passed=all(v=='success' for v in stages.values()) and check.get('status')=='PASS_V235_EXISTING_DRAFT_HTTP_OG_STUDENT_QA'
+          status='PASS_V235_EXISTING_DRAFT_FINAL_RECHECK' if passed else 'HOLD_V235_EXISTING_DRAFT_FINAL_RECHECK'
+          final={
+            'status':status,'original_draft_run':38845014645,
+            'source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+            'stages':stages,'actual_live_qa':check.get('status','NOT_COMPLETED'),
+            'draft_url':check.get('draft_unique_url'),
+            'og_alias_url':check.get('og_alias_url'),
+            'http_pages_passed':check.get('http_pages_passed'),
+            'og_images_passed':check.get('og_images_passed'),
+            'student_links_passed':len(check.get('student_links',[])),
+            'previous_chromium_checks_passed':check.get('prior_chromium_checks'),
+            'error_count':check.get('errors_count'),
+            'production_deployed':False,'netlify_deployed':False,'form_submitted':False
+          }
+          (folder/'RUN_STATUS.json').write_text(json.dumps(final,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+            f.write('### ENGLISH PT v23.5 existing Draft: '+status+'\n\n')
+            f.write('Existing unique Draft: '+str(final['draft_url'])+'\n\n')
+            f.write('OG alias: '+str(final['og_alias_url'])+'\n\n')
+            f.write('Stages: '+str(stages)+'\n\n')
+            f.write('Live pages: '+str(final['http_pages_passed'])+'; OG images: '+str(final['og_images_passed'])+'; Student links: '+str(final['student_links_passed'])+'\n\n')
+            f.write('Previously completed Chromium: '+str(final['previous_chromium_checks_passed'])+' PASS\n\n')
+            f.write('No Netlify upload, no Production deploy, no form submissions.\n')
+          print(status,stages,flush=True)
+          PY
+
+      - name: Always upload detailed JSON and human-readable QA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v235-existing-draft-http-og-student-qa-fixed
+          path: draft-recheck-report/
+          retention-days: 30
+          if-no-files-found: error
