@@ -156,6 +156,7 @@ jobs:
           files=sorted(root.glob('*.html'))
           if len(files)!=140393:raise RuntimeError('Unexpected HTML count')
           count=0
+          used_images=set()
           for i,p in enumerate(files):
             html=p.read_text(encoding='utf-8')
             n=[0]
@@ -171,19 +172,25 @@ jobs:
             if n[0]!=3:raise ValueError('Expected 3 OG/Twitter image meta tags: '+p.name+' '+str(n[0]))
             if patched.count('rel="canonical"')!=html.count('rel="canonical"'):
               raise ValueError('Canonical changed: '+p.name)
+            image_match=re.search(r'<meta property="og:image" content="'+re.escape(alias)+r'([^"]+\.png)"',patched)
+            if not image_match:raise ValueError('Unable to resolve OG PNG URL from page: '+p.name)
+            used_images.add(image_match.group(1))
             p.write_text(patched,encoding='utf-8')
             count+=n[0]
             if (i+1)%30000==0:print('V235_DRAFT_OG_ALIAS_PROGRESS',i+1,flush=True)
-          images=list((root/'assets/images/og-pages').glob('*.png'))
-          if len(images)!=29:raise ValueError('OG image templates !=29')
+          images={p.name for p in (root/'assets/images/og-pages').glob('*.png')}
+          missing=sorted(used_images-images)
+          if missing:raise ValueError('OG PNGs referenced by pages but missing: '+str(missing[:10]))
+          if len(used_images)<26:raise ValueError('Expected at least 26 in-use OG designs: '+str(len(used_images)))
           report={'status':'PASS_V235_DRAFT_OG_ALIAS_PREP',
                   'preview_pages':len(files),'image_meta_urls_rewritten':count,
-                  'image_files':len(images),'alias':os.environ['V235_ALIAS_URL'],
+                  'image_files':len(images),'referenced_image_files':len(used_images),
+                  'alias':os.environ['V235_ALIAS_URL'],
                   'canonical_changed':False,'production_source_og_modified':False,
                   'noindex_headers':True,'production_deployed':False}
           Path('draft-review-report/V235_DRAFT_OG_ALIAS_PREP.json').write_text(
               json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-          print(report['status'],len(files),count,len(images))
+          print(report['status'],len(files),count,len(images),'used',len(used_images))
           PY
       - name: Install Netlify CLI with Draft-only site configuration
         id: cli
@@ -210,19 +217,24 @@ jobs:
           parsed=urlsplit(link)
           suffix='--'+os.environ['REVIEW_SITE_NAME']+'.netlify.app'
           assert parsed.scheme=='https' and (parsed.hostname or '').endswith(suffix),response
-          assert 'englishpt.kr' not in link and link.rstrip('/')!=os.environ['V235_ALIAS_URL']
+          assert 'englishpt.kr' not in link
           deploy_id=str(response.get('deploy_id') or response.get('id') or '')
-          assert deploy_id and deploy_id in parsed.hostname
+          assert deploy_id and deploy_id.replace('-','').isalnum()
+          # Netlify with --alias may return the alias as deploy_url;
+          # derive the immutable URL from the verified deploy ID.
+          unique_url='https://'+deploy_id+'--'+os.environ['REVIEW_SITE_NAME']+'.netlify.app'
+          assert (parsed.hostname in (urlsplit(unique_url).hostname,
+                  urlsplit(os.environ['V235_ALIAS_URL']).hostname)),('unexpected deploy host',link)
           with open(os.environ['GITHUB_ENV'],'a') as env:
-              env.write('REVIEW_DEPLOY_URL='+link.rstrip('/')+'\n')
+              env.write('REVIEW_DEPLOY_URL='+unique_url+'\n')
               env.write('REVIEW_DEPLOY_ID='+deploy_id+'\n')
-          report={'status':'PASS_V235_DRAFT_DEPLOY_URL','url':link,
-                  'alias':os.environ['V235_ALIAS_URL'],
+          report={'status':'PASS_V235_DRAFT_DEPLOY_URL','url':unique_url,
+                  'cli_deploy_url':link,'alias':os.environ['V235_ALIAS_URL'],
                   'id':deploy_id,'review_site_id':os.environ['REVIEW_SITE_ID'],
                   'production_deployed':False}
           with open('draft-review-report/V235_DRAFT_DEPLOY.json','w') as f:
               json.dump(report,f,ensure_ascii=False,indent=2)
-          print('PASS_V235_DRAFT_DEPLOY_URL',link)
+          print('PASS_V235_DRAFT_DEPLOY_URL',unique_url)
           print('PASS_V235_DRAFT_OG_ALIAS_URL',report['alias'])
           print('PASS_V235_DRAFT_DEPLOY_ID',deploy_id)
           PY
