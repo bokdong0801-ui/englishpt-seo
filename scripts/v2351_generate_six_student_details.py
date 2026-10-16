@@ -303,6 +303,7 @@ def main():
     ap.add_argument("--expected-source",type=int,default=140391)
     ap.add_argument("--expected-locations",type=int,default=6060)
     ap.add_argument("--sample-zip",type=Path)
+    ap.add_argument("--pilot",action="store_true",help="Small fixture without hub index and 23 intent coverage")
     args=ap.parse_args()
     root=args.root.resolve()
     page_count=len(list(root.glob("*.html")))
@@ -323,7 +324,8 @@ def main():
     slugs={}
     errors=[]
     try:
-        if page_count!=args.expected_source+2:raise ValueError("source page count "+str(page_count))
+        expected_html=args.expected_source if args.pilot else args.expected_source+2
+        if page_count!=expected_html:raise ValueError("source page count "+str(page_count))
         if len(local_pages)!=args.expected_locations:raise ValueError("locality count "+str(len(local_pages)))
         for i,p in enumerate(local_pages):
             try:
@@ -377,15 +379,18 @@ def main():
         # UI should not pretend a shared generic student guide is a locality detail.
         # Keep the shared student-english hub as a separately accessible information page.
         final_pages=len(list(root.glob("*.html")))
-        if final_pages!=expected_final+2:
-            raise ValueError(f"unexpected final html total: {final_pages}; expected {expected_final+2}")
-        if result["regional_pages_nav_updated"]!=args.expected_locations*26:
+        expected_full_html=expected_final if args.pilot else expected_final+2
+        if final_pages!=expected_full_html:
+            raise ValueError(f"unexpected final html total: {final_pages}; expected {expected_full_html}")
+        if (not args.pilot and result["regional_pages_nav_updated"]!=args.expected_locations*26):
             raise ValueError("student nav group coverage not 26 per locality")
+        if args.pilot and result["regional_pages_nav_updated"]<7:
+            raise ValueError("pilot requires at least seven student navigation groups")
         for slug,dong in slugs.items():
             for course in COURSES:
                 if not (root/(slug+"-"+course+".html")).is_file():
                     raise ValueError("missing six detail pages: "+slug+"-"+course)
-        result["final_generated_found"]=final_pages-2
+        result["final_generated_found"]=final_pages-(0 if args.pilot else 2)
         result["samples"]=sorted(sample)
         if args.sample_zip:
             args.sample_zip.parent.mkdir(parents=True,exist_ok=True)
