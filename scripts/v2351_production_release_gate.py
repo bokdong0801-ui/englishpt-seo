@@ -22,7 +22,7 @@ CANONICAL=re.compile(r'<link\s+rel="canonical"\s+href="([^"]+)"',re.I)
 OG=re.compile(r'<meta\s+property="og:image"\s+content="([^"]+)"',re.I)
 TITLE=re.compile(r'<title>.*?</title>',re.I|re.S)
 DESC=re.compile(r'<meta\s+name="description"\s+content="([^"]+)"',re.I)
-NOINDEX_HEADER=re.compile(r'(?im)^[ \t]*X-Robots-Tag:[ \t]*noindex\b[^\r\n]*
+NOINDEX_HEADER=re.compile(r'(?im)^[ \t]*X-Robots-Tag:[ \t]*noindex\b[^\r\n]*$')
 PREVIEW_HOST='englishpt-final-ia-review-bokdong.netlify.app'
 
 def digest(p):
