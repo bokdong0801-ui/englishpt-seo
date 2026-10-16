@@ -1,0 +1,308 @@
+name: ENGLISH PT v23.5 Mobile Hero All-Page QA + Freeze (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v235-hero-build-no-deploy.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v235-hero-build-no-deploy
+  cancel-in-progress: false
+
+jobs:
+  v235-build-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      ORIGINAL_SOURCE_RUN: '38689660290'
+      ORIGINAL_SOURCE_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
+      V234_CORRECTED_RUN: '38771578401'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize always-published QA
+        run: |
+          mkdir -p v235-reports
+          printf '{"status":"STARTED","stage":"v23.5_hero","source_run":"38689660290","source_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f","draft_deployed":false,"production_deployed":false,"form_submissions":false}\n' > v235-reports/V235_EXECUTION.json
+      - name: Fast check mobile Hero category classifier
+        id: fast
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v235_mobile_hero_wrap.py
+          python3 - <<'PY'
+          import importlib.util
+          spec=importlib.util.spec_from_file_location('hero','scripts/v235_mobile_hero_wrap.py')
+          h=importlib.util.module_from_spec(spec);spec.loader.exec_module(h)
+          cases=[
+            ('사직동 직장인영어회화학원','region-worker.html','long'),
+            ('암사역사공원역<br>영어회화·영어과외','station-amsayeoksagongwon.html','long'),
+            ('초장거리초대형신설환승역<br>영어회화·영어과외','station-long.html','xlong'),
+            ('짧은 영어','simple.html','regular')
+          ]
+          for title,name,expected in cases:
+            got=h.classify(title,name)[0]
+            assert got==expected,(name,expected,got)
+          print('PASS_V235_HERO_CATEGORY_UNIT_TESTS',len(cases))
+          PY
+      - name: Verify original source and immutable prior OG + student-link PASS artifact
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY'];token=os.environ['GH_TOKEN']
+          def get(path):
+            req=urllib.request.Request('https://api.github.com/repos/'+repo+path,
+              headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'})
+            with urllib.request.urlopen(req,timeout=45) as f: return json.load(f)
+          orig=get('/actions/runs/'+os.environ['ORIGINAL_SOURCE_RUN'])
+          assert orig['conclusion']=='success' and orig['status']=='completed'
+          assert orig['head_sha']==os.environ['ORIGINAL_SOURCE_SHA']
+          prior=get('/actions/runs/'+os.environ['V234_CORRECTED_RUN'])
+          assert prior['conclusion']=='success' and prior['status']=='completed'
+          artifacts=get('/actions/runs/'+os.environ['V234_CORRECTED_RUN']+'/artifacts?per_page=100')['artifacts']
+          name='englishpt-v23-4-student-nav-corrected-OG-full-site-REVIEW-ONLY'
+          assert any(a['name']==name and not a['expired'] for a in artifacts)
+          print('PASS_V235_SOURCE_GUARD',orig['head_sha'],prior['id'])
+          PY
+      - name: Download last verified corrected OG+student-link full site
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23-4-student-nav-corrected-OG-full-site-REVIEW-ONLY
+          run-id: 38771578401
+          path: prior-v234
+          github-token: ${{ github.token }}
+      - name: Download prior checksum and QA reports
+        id: qa_download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23-4-student-nav-corrected-QA
+          run-id: 38771578401
+          path: prior-qa
+          github-token: ${{ github.token }}
+      - name: Verify checksum and extract all pages
+        id: extract
+        run: |
+          set -euo pipefail
+          if ! command -v zstd >/dev/null; then sudo apt-get update -qq && sudo apt-get install -qq -y zstd; fi
+          (cd prior-v234 && sha256sum -c ../prior-qa/STUDENT_NAV_RELEASE_SHA256.txt)
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('prior-qa/RUN_STATUS.json').read_text())
+          q=json.loads(Path('prior-qa/V23_4_STUDENT_NAV_AUDIT.json').read_text())
+          assert p['status']=='PASS_V23_4_STUDENT_NAV_ALL_REVIEW_ONLY'
+          assert q['status']=='PASS_V23_4_STUDENT_NAV_FULL_QA'
+          assert q['html_scanned']==140393 and q['og_meta_preserved']==140393
+          assert q['student_blocks_checked']==139380 and q['errors_count']==0
+          print('PASS_V235_FROZEN_V234_ARTIFACT',q['student_links_checked'])
+          PY
+          mkdir -p v235-site
+          tar --zstd -xf prior-v234/englishpt-v23-4-student-nav-corrected-OG-140391-REVIEW-ONLY.tar.zst -C v235-site
+          test -f v235-site/pilot.css
+          test -f v235-site/assets/styles.css
+          test -f v235-site/station-amsayeoksagongwon.html
+      - name: Apply mobile H1 wrapping rules to all 140391 pages
+        id: patch
+        run: |
+          set -euo pipefail
+          python3 scripts/v235_mobile_hero_wrap.py \
+            --root v235-site --expected 140391 \
+            --report v235-reports/V235_HERO_WRAP_ALL_PAGES.json
+      - name: Independent audit OG, H1 text, canonical presence, student navigation and CSS
+        id: audit
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,re,sys
+          from pathlib import Path
+          root=Path('v235-site');pages=sorted(root.glob('*.html'))
+          err=[];headings=0;og=0;student=0;canonical=0
+          for i,p in enumerate(pages):
+            t=p.read_text(encoding='utf-8',errors='replace')
+            h=re.findall(r'<h1\b[^>]*>(.*?)</h1>',t,re.I|re.S)
+            if len(h)==1 and len(re.findall(r'\bdata-v235-hero-wrap="(?:regular|long|xlong)"',t))==1:
+              headings+=1
+            elif len(err)<50:err.append([p.name,'bad H1 or adaptive wrap attr'])
+            if t.count('property="og:image"')==1 and t.count('name="twitter:image"')==1:
+              og+=1
+            elif len(err)<50:err.append([p.name,'OG metadata lost'])
+            if 'rel="canonical"' in t:canonical+=1
+            if '<h3>학생 영어</h3>' in t:
+              student+=1
+              if t.count('class="related-course-tutor"')!=3 or t.count('class="related-course-fallback"')!=3:
+                if len(err)<50:err.append([p.name,'student card mapping changed'])
+            if (i+1)%40000==0:print('V235_INDEPENDENT_QA_PROGRESS',i+1,len(pages),flush=True)
+          for fname in ('pilot.css','assets/styles.css'):
+            css=(root/fname).read_text(encoding='utf-8')
+            if css.count('/* V23.5 RESPONSIVE LONG HERO TITLES — MOBILE ONLY */')!=1:
+              err.append([fname,'missing/duplicate mobile Hero stylesheet'])
+          status='PASS_V235_ALL_PAGE_SEO_HERO_OG_STUDENT_QA' if not err and len(pages)==140393 and headings==140393 and og==140393 and student==139380 else 'FAIL_V235_ALL_PAGE_SEO_HERO_OG_STUDENT_QA'
+          result={'status':status,'html_total':len(pages),'h1_adaptive':headings,'og_meta_preserved':og,
+            'student_groups_preserved':student,'canonical_found':canonical,'errors_count':len(err),'errors':err,
+            'not_deployed':True}
+          Path('v235-reports/V235_INDEPENDENT_ALL_PAGE_QA.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(status,headings,og,student,'errors',len(err),flush=True)
+          if status.startswith('FAIL'):sys.exit(1)
+          PY
+      - name: Install Korean fonts and Chromium QA library
+        id: browser_install
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+          echo PASS_CHROMIUM_KOREAN_FONT_FALLBACK
+      - name: Chromium visual check 320px 390px 430px and PC for short/long station + region
+        id: browser
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,re,shutil,sys,threading,traceback
+          from pathlib import Path
+          from http.server import ThreadingHTTPServer,SimpleHTTPRequestHandler
+          from playwright.sync_api import sync_playwright
+          root=Path('v235-site').resolve()
+          screenshots=Path('v235-reports/screenshots');screenshots.mkdir(parents=True,exist_ok=True)
+          names=['englishpt.html','seoul-jongno-sajikdong-worker-english-conv-academy.html',
+                 'station-amsayeoksagongwon.html','station-gangnam.html',
+                 'dalseo-songhyeondong.html','seoul-jongno-sajikdong-high-conv.html']
+          # Include the two station pages with longest first-line names.
+          candidates=[]
+          for p in root.glob('station-*.html'):
+            s=p.read_text(encoding='utf-8',errors='replace')
+            m=re.search(r'<h1[^>]*>(.*?)</h1>',s,re.I|re.S)
+            if m:
+              first=re.split(r'<br\s*/?>',m.group(1),flags=re.I)[0]
+              label=re.sub(r'<[^>]+>','',first)
+              candidates.append((len(label),p.name))
+          for _,name in sorted(candidates,reverse=True)[:2]:
+            if name not in names:names.append(name)
+          issues=[];rows=[]
+          class Handler(SimpleHTTPRequestHandler):
+            def __init__(self,*args,**kwargs):super().__init__(*args,directory=str(root),**kwargs)
+            def log_message(self,*args):pass
+          server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+          threading.Thread(target=server.serve_forever,daemon=True).start()
+          try:
+            with sync_playwright() as pw:
+              binary=shutil.which('google-chrome') or shutil.which('google-chrome-stable') or shutil.which('chromium')
+              kwargs={'headless':True,'args':['--no-sandbox','--disable-dev-shm-usage']}
+              if binary:kwargs['executable_path']=binary
+              browser=pw.chromium.launch(**kwargs)
+              try:
+                for width in (320,390,430,1440):
+                  context=browser.new_context(viewport={'width':width,'height':900},
+                    device_scale_factor=1,is_mobile=width<600,has_touch=width<600)
+                  context.route('**/*',lambda route: route.abort() if route.request.method not in ('GET','HEAD') else route.continue_())
+                  page=context.new_page()
+                  try:
+                    for name in names:
+                      url=f'http://127.0.0.1:{server.server_port}/'+name
+                      try:
+                        response=page.goto(url,wait_until='domcontentloaded',timeout=50000)
+                        if response is None or response.status!=200:raise ValueError('HTTP page failed')
+                        page.evaluate('() => document.fonts.ready')
+                        box=page.locator('.hero h1').first
+                        if box.count()!=1:raise ValueError('missing Hero H1')
+                        values=box.evaluate('e=>{const r=e.getBoundingClientRect(),s=getComputedStyle(e);return {text:e.innerText,mode:e.dataset.v235HeroWrap,font:s.fontSize,lineHeight:parseFloat(s.lineHeight),height:r.height,x:r.x,right:r.right,width:r.width,visible:!!(r.width&&r.height),pagescroll:document.documentElement.scrollWidth}}')
+                        errors=[]
+                        if not values['mode']:errors.append('adaptive_mode_missing')
+                        if not values['visible'] or values['right']>width+3 or values['x']< -3:
+                          errors.append('h1_outside_viewport')
+                        if values['pagescroll']>width+3:errors.append('horizontal_overflow')
+                        lines=round(values['height']/values['lineHeight']) if values['lineHeight'] else 99
+                        if lines>(5 if width==320 else 4 if width<600 else 3):
+                          errors.append('too_many_hero_lines:'+str(lines))
+                        if width in (390,1440):
+                          fn=name[:-5]+'-'+str(width)+'.png'
+                          page.screenshot(path=str(screenshots/fn),full_page=False,timeout=20000)
+                        rows.append({'name':name,'width':width,'observed':values,'lines':lines,'errors':errors})
+                        if errors: issues.append({'name':name,'width':width,'errors':errors})
+                        print('V235_HERO_BROWSER',width,name,values['mode'],lines,'PASS' if not errors else errors,flush=True)
+                      except Exception as exc:
+                        issues.append({'name':name,'width':width,'exception':str(exc)[:500]})
+                  finally: context.close()
+              finally:browser.close()
+          except Exception:
+            issues.append({'runner':'browser','trace':traceback.format_exc()[-1500:]})
+          finally:server.shutdown()
+          status='PASS_V235_MOBILE_HERO_CHROMIUM' if not issues and len(rows)==len(names)*4 else 'FAIL_V235_MOBILE_HERO_CHROMIUM'
+          result={'status':status,'tested_pages':names,'viewports':[320,390,430,1440],
+            'screenshots':len(list(screenshots.glob('*.png'))),'checks':len(rows),'issues':issues,'rows':rows,
+            'draft_deployed':False,'production_deployed':False,'form_submissions':False}
+          Path('v235-reports/V235_HERO_CHROMIUM_QA.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(status,len(rows),'issues',len(issues),flush=True)
+          if issues:
+            for row in issues[:20]:print('::error::'+json.dumps(row,ensure_ascii=False),flush=True)
+            sys.exit(1)
+          PY
+      - name: Create immutable v23.5 Review-only full-site package
+        id: package
+        run: |
+          set -euo pipefail
+          tar -I 'zstd -T0 -3' -cf englishpt-v23-5-hero-og-student-nav-140391-REVIEW-ONLY.tar.zst -C v235-site .
+          sha256sum englishpt-v23-5-hero-og-student-nav-140391-REVIEW-ONLY.tar.zst > v235-reports/V235_RELEASE_SHA256.txt
+          echo PASS_V235_REVIEW_RELEASE_PACKAGED
+      - name: Always record freeze status
+        if: always()
+        env:
+          FAST: ${{ steps.fast.outcome }}
+          SOURCE: ${{ steps.source.outcome }}
+          DOWNLOAD: ${{ steps.download.outcome }}
+          QA_DOWNLOAD: ${{ steps.qa_download.outcome }}
+          EXTRACT: ${{ steps.extract.outcome }}
+          PATCH: ${{ steps.patch.outcome }}
+          AUDIT: ${{ steps.audit.outcome }}
+          BROWSER_INSTALL: ${{ steps.browser_install.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+          PACKAGE: ${{ steps.package.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          folder=Path('v235-reports')
+          stage={k:os.environ.get(k,'unknown') for k in ('FAST','SOURCE','DOWNLOAD','QA_DOWNLOAD','EXTRACT','PATCH','AUDIT','BROWSER_INSTALL','BROWSER','PACKAGE')}
+          success=all(v=='success' for v in stage.values())
+          obj={'status':'PASS_V235_HERO_OG_STUDENT_NAV_FROZEN' if success else 'HOLD_V235_HERO_OG_STUDENT_NAV_FROZEN',
+            'source_run':'38689660290','source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+            'input_v234_run':'38771578401','stages':stage,'netlify_deployed':False,
+            'production_deployed':False,'form_submitted':False}
+          (folder/'V235_EXECUTION.json').write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+            f.write('## v23.5 Hero, OG and student navigation: '+obj['status']+'\n\n')
+            f.write('Stages: '+str(stage)+'\n\n')
+            f.write('No Netlify or Production deployments; no form submission.\n')
+          print(obj['status'],stage,flush=True)
+          PY
+      - name: Always upload JSON QA and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v235-hero-og-student-qa-reports
+          path: v235-reports/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload full site only after all QA stages pass
+        if: steps.package.outcome == 'success' && steps.audit.outcome == 'success' && steps.browser.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v235-hero-og-student-full-site-REVIEW-ONLY
+          path: englishpt-v23-5-hero-og-student-nav-140391-REVIEW-ONLY.tar.zst
+          retention-days: 30
+          if-no-files-found: error
