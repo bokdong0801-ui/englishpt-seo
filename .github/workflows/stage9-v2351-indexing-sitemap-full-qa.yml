@@ -1,0 +1,139 @@
+name: ENGLISH PT v23.5.1 Full Indexing and Sitemap Audit (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths:
+      - '.github/workflows/stage9-v2351-indexing-sitemap-full-qa.yml'
+      - 'scripts/v2351_indexing_sitemap_full_qa.py'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v2351-indexing-sitemap-audit
+  cancel-in-progress: false
+
+jobs:
+  full-indexing-qa:
+    name: Inspect all 158571 generated HTML, robots and reachable XML sitemap entries, read only
+    runs-on: ubuntu-latest
+    timeout-minutes: 125
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare permanent partial report on failure
+        run: |
+          mkdir -p v2351-seo-audit
+          printf '{"status":"STARTED","source_run":38864767374,"original_source_run":38689660290,"original_source_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f","netlify_deployed":false,"production_deployed":false}\n' > v2351-seo-audit/V2351_SEO_EXECUTION.json
+      - name: Verify frozen source run and all-page QA PASS
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY'];token=os.environ['GH_TOKEN']
+          def get(id):
+            with urllib.request.urlopen(urllib.request.Request(
+                f'https://api.github.com/repos/{repo}/actions/runs/{id}',
+                headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}),timeout=45) as r:
+                return json.load(r)
+          source=get('38689660290')
+          assert source['status']=='completed' and source['conclusion']=='success'
+          assert source['head_sha']=='a18b8901ecda7d37f65e35b15f03d579ec63c70f'
+          build=get('38864767374')
+          assert build['status']=='completed' and build['conclusion']=='success'
+          print('PASS_V2351_SEO_SOURCE_GUARD',source['head_sha'],build['id'],flush=True)
+          PY
+      - name: Download final immutable 158571-page artifact
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-full-site-158571-REVIEW-ONLY
+          run-id: 38864767374
+          path: immutable-site
+          github-token: ${{ github.token }}
+      - name: Download full QA report and archive checksum
+        id: qa
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-all-158571-student-qa-and-naeidong-previews
+          run-id: 38864767374
+          path: immutable-reports
+          github-token: ${{ github.token }}
+      - name: Verify SHA256 and source QC before audit
+        id: extract
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          (cd immutable-site && sha256sum -c ../immutable-reports/V2351_RELEASE_SHA256.txt)
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          x=json.loads(Path('immutable-reports/V2351_EXECUTION.json').read_text(encoding='utf8'))
+          y=json.loads(Path('immutable-reports/V2351_ALL_158571_STUDENT_NAV_SEMANTIC_QA.json').read_text(encoding='utf8'))
+          assert x['status']=='PASS_V2351_ALL_158571_STUDENT_SIX_DRAFT_READY'
+          assert y['status']=='PASS_V2351_ALL_158571_STUDENT_NAV_SEMANTIC_QA'
+          assert y['html_checked']==158573 and y['errors_count']==0
+          print('PASS_V2351_IMMUTABLE_INPUT_SHA_AND_QA',flush=True)
+          PY
+          mkdir -p inspect-site
+          tar --zstd -xf immutable-site/englishpt-v2351-student-six-158571-REVIEW-ONLY.tar.zst -C inspect-site
+          test -f inspect-site/sitemap-index.xml
+          test -f inspect-site/robots.txt
+      - name: Audit canonical, index/noindex, robots and sitemap on all 158571 pages
+        id: seo
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v2351_indexing_sitemap_full_qa.py
+          python3 scripts/v2351_indexing_sitemap_full_qa.py \
+            --root inspect-site --report v2351-seo-audit/V2351_INDEXING_SITEMAP_FULL_QA.json
+      - name: Always record SEO GO/HOLD and source provenance
+        if: always()
+        env:
+          SOURCE: ${{ steps.source.outcome }}
+          DOWNLOAD: ${{ steps.download.outcome }}
+          QA: ${{ steps.qa.outcome }}
+          EXTRACT: ${{ steps.extract.outcome }}
+          SEO: ${{ steps.seo.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path('v2351-seo-audit')
+          path=root/'V2351_INDEXING_SITEMAP_FULL_QA.json'
+          seo=json.loads(path.read_text(encoding='utf8')) if path.is_file() else {}
+          stages={k:os.environ.get(k,'unknown') for k in ('SOURCE','DOWNLOAD','QA','EXTRACT','SEO')}
+          passed=all(v=='success' for v in stages.values()) and seo.get('status')=='PASS_V2351_INDEXING_SITEMAP_FULL_QA'
+          report={'status':'PASS_V2351_SEO_INDEX_SITEMAP_QA' if passed else 'HOLD_V2351_SEO_INDEX_SITEMAP_QA',
+                  'source_run':38864767374,'original_source_run':38689660290,
+                  'original_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+                  'stages':stages,'indexable':seo.get('indexable_count'),
+                  'noindex':seo.get('noindex_count'),
+                  'sitemap_urls':seo.get('sitemap_unique_urls'),
+                  'sitemap_issues':seo.get('error_reason_counts',{}),
+                  'draft_deployed':False,'production_deployed':False}
+          (root/'V2351_SEO_EXECUTION.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as f:
+            f.write('## v23.5.1 '+report['status']+'\n\n')
+            f.write('Indexable: '+str(report['indexable'])+' / Noindex: '+str(report['noindex'])+' / Sitemap URLs: '+str(report['sitemap_urls'])+'\n\n')
+            f.write('Issues: '+str(report['sitemap_issues'])+'\n\n')
+            f.write('No Netlify upload or Production changes. SEO indexation is not the same as actual search-engine coverage.\n')
+          print(report['status'],stages,flush=True)
+          PY
+      - name: Upload independent SEO and sitemap JSON reports even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2351-158571-index-robots-sitemap-full-audit
+          path: v2351-seo-audit/
+          retention-days: 30
+          if-no-files-found: error
