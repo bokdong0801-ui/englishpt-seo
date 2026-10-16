@@ -1,0 +1,195 @@
+name: ENGLISH PT v23.5.1 Indexing Policy Repair + Final 158571 Sitemap QA (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths:
+      - '.github/workflows/stage9-v2351-seo-policy-repair-full-qa.yml'
+      - 'scripts/v2351_patch_index_orphans.py'
+      - 'scripts/v2351_indexing_sitemap_full_qa.py'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v2351-seo-policy-repair-no-deploy
+  cancel-in-progress: false
+
+jobs:
+  seo-corrected-freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 160
+    env:
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize guaranteed QA artifact
+        run: |
+          mkdir -p seo-policy-reports
+          printf '{"status":"STARTED","source_run":38864767374,"source_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f","production_deployed":false}\n' > seo-policy-reports/V2351_SEO_RELEASE_STATUS.json
+      - name: Validate immutable source SHA and original full student QA
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import urllib.request,os,json
+          repo=os.environ['GITHUB_REPOSITORY'];token=os.environ['GH_TOKEN']
+          def api(run):
+            with urllib.request.urlopen(urllib.request.Request(f'https://api.github.com/repos/{repo}/actions/runs/{run}',headers={'Authorization':'Bearer '+token}),timeout=45) as r:
+              return json.load(r)
+          source=api(38689660290)
+          assert source['conclusion']=='success' and source['head_sha']=='a18b8901ecda7d37f65e35b15f03d579ec63c70f'
+          build=api(38864767374)
+          assert build['conclusion']=='success'
+          print('PASS_V2351_IMMUTABLE_SEO_SOURCE',source['head_sha'],build['id'],flush=True)
+          PY
+      - name: Download 158571-page frozen v23.5.1 Draft-ready source
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-full-site-158571-REVIEW-ONLY
+          run-id: 38864767374
+          path: frozen-site
+          github-token: ${{ github.token }}
+      - name: Download frozen checksum and independent student QA
+        id: qa
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-all-158571-student-qa-and-naeidong-previews
+          run-id: 38864767374
+          path: source-qa
+          github-token: ${{ github.token }}
+      - name: SHA256 validate source and extract before any change
+        id: extract
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          (cd frozen-site && sha256sum -c ../source-qa/V2351_RELEASE_SHA256.txt)
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('source-qa/V2351_EXECUTION.json').read_text(encoding='utf8'))
+          b=json.loads(Path('source-qa/V2351_ALL_158571_STUDENT_NAV_SEMANTIC_QA.json').read_text(encoding='utf8'))
+          assert a['status']=='PASS_V2351_ALL_158571_STUDENT_SIX_DRAFT_READY'
+          assert b['status']=='PASS_V2351_ALL_158571_STUDENT_NAV_SEMANTIC_QA'
+          assert a['errors']==0 and b['errors_count']==0
+          print('PASS_V2351_SOURCE_SHA_AND_STUDENT_QA',flush=True)
+          PY
+          mkdir -p patched-site
+          tar --zstd -xf frozen-site/englishpt-v2351-student-six-158571-REVIEW-ONLY.tar.zst -C patched-site
+          test -f patched-site/sitemap-index.xml
+          test -f patched-site/robots.txt
+          grep -q 'X-Robots-Tag: noindex' patched-site/_headers
+      - name: Fix exactly 2733 existing orphan station and Songhyeondong index directives
+        id: patch
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v2351_patch_index_orphans.py
+          python3 scripts/v2351_patch_index_orphans.py \
+            --root patched-site \
+            --report seo-policy-reports/V2351_SEO_ORPHAN_POLICY_PATCH.json \
+            --overlay-dir seo-policy-overlay
+      - name: Independent comprehensive robots canonical sitemap audit of all 158571 pages
+        id: audit
+        run: |
+          set -euo pipefail
+          python3 scripts/v2351_indexing_sitemap_full_qa.py \
+            --root patched-site --report seo-policy-reports/V2351_SEO_FULL_FINAL_QA.json
+      - name: Prepare and inspect dedicated Production header candidate WITHOUT deploying
+        id: headers
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re,json
+          from pathlib import Path
+          src=Path('patched-site/_headers').read_text(encoding='utf8')
+          # Store only as a candidate for an explicit, future Production gate.
+          # Draft archive keeps global noindex, as it must.
+          lines=src.splitlines()
+          clean=[x for x in lines if not re.search(r'X-Robots-Tag:\s*noindex',x,re.I)]
+          candidate='\n'.join(clean).rstrip()+'\n'
+          assert 'X-Robots-Tag: noindex' in src and 'X-Robots-Tag: noindex' not in candidate
+          assert '/ *' not in candidate
+          dest=Path('seo-policy-reports/PRODUCTION_HEADERS_CANDIDATE.txt')
+          dest.write_text(candidate,encoding='utf8')
+          r={'status':'PASS_SEPARATE_DRAFT_AND_PRODUCTION_HEADERS',
+            'draft_global_noindex':True,
+            'production_header_candidate_global_noindex':False,
+            'production_candidate_applied_to_site':False,
+            'live_search_indexing_confirmed':False,
+            'production_deployed':False}
+          Path('seo-policy-reports/V2351_HEADERS_POLICY_QA.json').write_text(json.dumps(r,indent=2)+'\n',encoding='utf8')
+          print(r['status'],flush=True)
+          PY
+      - name: Package corrected Draft-only full site and small SEO 2733 overlay
+        id: package
+        run: |
+          set -euo pipefail
+          tar -I 'zstd -T0 -3' -cf englishpt-v2351-SEO-CORRECTED-158571-DRAFT-ONLY.tar.zst -C patched-site .
+          sha256sum englishpt-v2351-SEO-CORRECTED-158571-DRAFT-ONLY.tar.zst > seo-policy-reports/V2351_SEO_CORRECTED_RELEASE_SHA256.txt
+          (cd seo-policy-overlay && tar -I 'zstd -T0 -3' -cf ../seo-policy-reports/V2351_2733_ROBOTS_META_OVERLAY.tar.zst .)
+          test -s seo-policy-reports/V2351_2733_ROBOTS_META_OVERLAY.tar.zst
+          echo PASS_V2351_CORRECTED_FULL_SITE_AND_2733_META_OVERLAY
+      - name: Always record comprehensive SEO verdict with risk warning
+        if: always()
+        env:
+          SOURCE: ${{ steps.source.outcome }}
+          DOWNLOAD: ${{ steps.download.outcome }}
+          QA: ${{ steps.qa.outcome }}
+          EXTRACT: ${{ steps.extract.outcome }}
+          PATCH: ${{ steps.patch.outcome }}
+          AUDIT: ${{ steps.audit.outcome }}
+          HEADERS: ${{ steps.headers.outcome }}
+          PACKAGE: ${{ steps.package.outcome }}
+        run: |
+          python3 - <<'PY'
+          import os,json
+          from pathlib import Path
+          root=Path('seo-policy-reports')
+          def read(filename):
+            p=root/filename
+            return json.loads(p.read_text(encoding='utf8')) if p.exists() else {}
+          stages={k:os.environ.get(k,'unknown') for k in ('SOURCE','DOWNLOAD','QA','EXTRACT','PATCH','AUDIT','HEADERS','PACKAGE')}
+          qa=read('V2351_SEO_FULL_FINAL_QA.json')
+          patch=read('V2351_SEO_ORPHAN_POLICY_PATCH.json')
+          good=all(x=='success' for x in stages.values()) and qa.get('status')=='PASS_V2351_INDEXING_SITEMAP_FULL_QA' and patch.get('corrected')==2733
+          final={'status':'PASS_V2351_SEO_POLICY_CORRECTED_DRAFT_READY' if good else 'HOLD_V2351_SEO_POLICY_CORRECTED_DRAFT_READY',
+            'production_verdict':'HOLD_UNTIL_PRODUCTION_HEADER_GATE',
+            'source_run':38864767374,'source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+            'pages_total':qa.get('generated_total'),'indexable':qa.get('indexable_count'),
+            'noindex':qa.get('noindex_count'),'sitemap_urls':qa.get('sitemap_unique_urls'),
+            'orphan_noindex_fixed':patch.get('corrected'),
+            'seo_issues':qa.get('error_reason_counts',{}),'stages':stages,
+            'draft_header_noindex_intact':True,'production_header_candidate_only':True,
+            'production_deployed':False,'netlify_deployed':False}
+          (root/'V2351_SEO_RELEASE_STATUS.json').write_text(json.dumps(final,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as f:
+            f.write('## ENGLISH PT v23.5.1 '+final['status']+'\n\n')
+            f.write('HTML '+str(final['pages_total'])+'; indexable '+str(final['indexable'])+'; noindex '+str(final['noindex'])+
+                    '; sitemaps '+str(final['sitemap_urls'])+'; corrected '+str(final['orphan_noindex_fixed'])+'\n\n')
+            f.write('Production HOLD: Draft archive has global noindex header intentionally. Candidate Production _headers is reported separately; do not blindly deploy this Draft archive.\n')
+          print(final['status'],stages,flush=True)
+          PY
+      - name: Always upload small final policy report and 2733-page overlay
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2351-indexing-corrected-full-sitemap-report-and-overlay
+          path: seo-policy-reports/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload full corrected site only if all independent QA passed
+        if: steps.patch.outcome == 'success' && steps.audit.outcome == 'success' && steps.headers.outcome == 'success' && steps.package.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2351-SEO-corrected-158571-full-site-DRAFT-ONLY
+          path: englishpt-v2351-SEO-CORRECTED-158571-DRAFT-ONLY.tar.zst
+          retention-days: 30
+          if-no-files-found: error
