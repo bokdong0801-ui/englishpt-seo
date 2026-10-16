@@ -111,10 +111,18 @@ def main():
                 results["invalid_robots_count"]+=1;fail(p.name,"conflicting_robots")
             if "noindex" in tokens:noindex.add(SITE+"/"+p.name)
             else:indexable.add(SITE+"/"+p.name)
-            if p.name.endswith(new_suffixes):
-                results["new_student_pages_count"]+=1
-                if "noindex" in tokens:results["new_student_noindex_count"]+=1
-                else:fail(p.name,"new_student_page_unexpectedly_indexable")
+            # Only the 6060 locality clusters expanded by v23.5.1 count as NEW.
+            # 911 station routes and Songhyeondong share suffix names but predate v23.5.1.
+            suffix=next((x for x in new_suffixes if p.name.endswith(x)),None)
+            if suffix:
+                slug=p.name[:-len(suffix)]
+                is_regional=(root/(slug+"-worker-english-conv-academy.html")).is_file() and (
+                    root/(slug+"-mid-conv.html")).is_file() and (
+                    root/(slug+"-high-conv.html")).is_file()
+                if is_regional:
+                    results["new_student_pages_count"]+=1
+                    if "noindex" in tokens:results["new_student_noindex_count"]+=1
+                    else:fail(p.name,"new_student_page_unexpectedly_indexable")
             if (i+1)%35000==0:
                 print("SEO_INDEX_AUDIT_PROGRESS",i+1,len(generated),
                       "indexable",len(indexable),"noindex",len(noindex),flush=True)
