@@ -167,7 +167,7 @@ jobs:
                 n[0]+=1
                 return tag.replace(src,alias)
               return tag
-            patched=re.sub(r'<meta\\b[^>]*>',update_meta,html,flags=re.I)
+            patched=re.sub(r'<meta\b[^>]*>',update_meta,html,flags=re.I)
             if n[0]!=3:raise ValueError('Expected 3 OG/Twitter image meta tags: '+p.name+' '+str(n[0]))
             if patched.count('rel="canonical"')!=html.count('rel="canonical"'):
               raise ValueError('Canonical changed: '+p.name)
