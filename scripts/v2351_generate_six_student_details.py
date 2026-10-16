@@ -19,6 +19,17 @@ from urllib.parse import urlsplit
 
 COURSES=("elem-tutor","mid-tutor","high-tutor","elem-conv","mid-conv","high-conv")
 GRADE=("초등학생","중학생","고등학생")
+ORIGINAL_INTENTS=(
+  "elem-tutor","mid-conv","high-conv","univ-conv",
+  "jobseeker-conv","biz-business-conv","housewife-conv",
+  "toeic","toeic-speaking","opic","ielts","duolingo","toefl",
+  "toeic-academy","toeic-speaking-academy","opic-academy",
+  "ielts-academy","duolingo-academy","toefl-academy",
+  "english-conv-academy","adult-english-conv-academy",
+  "worker-english-conv-academy","beginner-english-conv",
+)
+ALL_LOCAL_INTENTS=ORIGINAL_INTENTS+("mid-tutor","high-tutor","elem-conv")
+
 SERVICE={
     "elem-tutor":"초등학생영어과외","mid-tutor":"중학생영어과외",
     "high-tutor":"고등학생영어과외","elem-conv":"초등학생영어회화",
@@ -239,6 +250,13 @@ def make_page(template,slug,dong,course):
       '</div></div></section>')
     related=extract_one(RELATED,main,"related section")
     nearby=extract_one(NEARBY,main,"nearby section")
+    if course!="elem-tutor":
+        # "Same course in other neighbourhoods" must follow the NEW grade/course.
+        # Otherwise a new middle tutor page misleadingly opens elementary tutoring.
+        nearby=re.sub(r'(href="/[^"]+)-elem-tutor\.html(")',
+                      lambda m:m.group(1)+"-"+course+".html"+m.group(2),nearby)
+        nearby=nearby.replace("<span>초등학생영어과외</span>",
+                              "<span>"+e(SERVICE[course])+"</span>")
     consult=extract_one(CONSULT,main,"consultation section")
     # Change only values in cloned form; existing Netlify form / consent remain intact.
     old_val="사직동 초등학생영어과외"
@@ -246,7 +264,7 @@ def make_page(template,slug,dong,course):
     consult,n=form_repl.subn(lambda m:m.group(1)+e(title)+m.group(2),consult,count=1)
     if n!=1:raise ValueError("consultation wantedClass input missing")
     # Replace opening consultation subcopy to remove elementary-only context, if any
-    consult=consult.replace("사직동 초등학생영어과외",title)
+    consult=consult.replace(dong+" 초등학생영어과외",title)
     final=(f'<section class="final"><div class="wrap"><h2>{e(title)}, 현재 학습목표부터 확인해보세요.</h2>'
            '<a class="btn light" href="tel:+821050068027">전화 010-5006-8027</a></div></section>')
     body=breadcrumb+hero+hero_next+grade_blocks(dong,course)+related+nearby+consult+final
@@ -361,7 +379,11 @@ def main():
         # Patch ALL 23 original locality intentions + all 3 newly-created intentions.
         for i,(slug,dong) in enumerate(slugs.items()):
             nav=nav_html(slug,dong)
-            for page in root.glob(slug+"-*.html"):
+            for intent in ALL_LOCAL_INTENTS:
+                page=root/(slug+"-"+intent+".html")
+                if not page.is_file():
+                    if args.pilot:continue
+                    raise ValueError("missing expected locality intent: "+page.name)
                 original=page.read_text(encoding="utf-8")
                 updated,n=NAV_RE.subn(lambda m:m.group(1)+nav+m.group(3),original)
                 if n==1:
