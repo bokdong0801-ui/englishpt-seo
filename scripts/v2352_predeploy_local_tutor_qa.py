@@ -60,7 +60,7 @@ try:
                                     return b.left<-4||b.right>innerWidth+4||x.scrollWidth>x.clientWidth+3;
                                   });}""")
                                 if clipped:raise ValueError(kind+" content clipped")
-                            for selector in ('a.hero-actions a[href="#consultation-preview"]',
+                            for selector in ('.hero-actions a[href="#consultation-preview"]',
                                              'a.v2352-small-cta[href="#consultation-preview"]'):
                                 cta=page.locator(selector)
                                 if cta.count()<1:raise ValueError("CTA missing "+selector)
