@@ -98,14 +98,26 @@ def http_qa():
                         raise ValueError("OG should resolve inside isolated Draft alias")
                     group=re.search(r'<article class="related-group"><h3>학생 영어</h3><div class="related-course-links">(.*?)</div></article>',doc,re.S)
                     if not group:raise ValueError("Six-card student navigation missing")
+                    # Read raw HTML with an HTML parser; Netlify may serialize
+                    # valid href attributes without quotes (or with Pretty URLs).
+                    # The actual Chromium click verifier separately checks arrival.
+                    from html.parser import HTMLParser
+                    class StudentHrefCollector(HTMLParser):
+                        def __init__(self):
+                            super().__init__(convert_charrefs=True)
+                            self.hrefs=[]
+                        def handle_starttag(self, tag, attrs):
+                            if tag=="a":
+                                value=dict(attrs).get("href")
+                                if value:self.hrefs.append(value)
+                    parsed=StudentHrefCollector()
+                    parsed.feed(group.group(1))
+                    actual={u.rstrip("/") for u in parsed.hrefs}
                     for mode in ALL_MODES:
-                        dest="/"+slug+"-"+mode+".html"
-                        # Netlify Pretty URLs can rewrite href="/slug.html" to
-                        # href="/slug"; both are valid iff route identity matches.
-                        stem=dest[:-5]
-                        if not any(('href="'+candidate+'"') in group.group(1)
-                                   for candidate in (dest,stem,stem+"/")):
-                            raise ValueError("Wrong regional student link: "+dest)
+                        stem="/"+slug+"-"+mode
+                        if not (stem in actual or stem+".html" in actual):
+                            raise ValueError("Wrong regional student link: "+stem+
+                                " [parsed hrefs="+str(sorted(actual)[:8])+"]")
                     r["page_checks"].append({"url":URL+"/"+filename,"http":200,
                        "h1":name+" "+label,"updated_sections":5,"faqs":6,"student_links":6,"draft_noindex":True})
                     print("V2352_HTTP_PASS",filename,flush=True)
