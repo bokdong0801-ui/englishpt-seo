@@ -61,16 +61,16 @@ jobs:
             json.dumps(snapshot,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
           print('PASS_V2352_ACTUAL_V2351_PILOT_INPUT',len(snapshot),flush=True)
           PY
-      - name: Apply three detailed grade curricula to two localities x three tutoring pages
+      - name: Apply three detailed grade curricula to seven pilot localities
         id: render
         run: |
           set -euo pipefail
           python3 -m py_compile scripts/v2352_enrich_tutor_only.py
           python3 scripts/v2352_enrich_tutor_only.py \
-            --root sample-site --pilot --expected-regions 2 \
+            --root sample-site --pilot --expected-regions 7 \
             --report v2352-pilot-report/V2352_TUTOR_PILOT_BUILD.json \
             --samples v2352-pilot-report/updated-example-pages
-      - name: Independently inspect 6 tutor HTML changes and untouched conversation pages
+      - name: Independently inspect 21 tutor HTML changes and untouched conversation pages
         id: check
         run: |
           set -euo pipefail
@@ -81,7 +81,7 @@ jobs:
           root=Path('sample-site')
           report=json.loads(Path('v2352-pilot-report/V2352_TUTOR_PILOT_BUILD.json').read_text())
           assert report['status']=='PASS_V2352_TUTOR_PAGES_ONLY_RENDERED'
-          assert report['tutor_pages_updated']==6 and report['faq_entries_added']==18
+          assert report['tutor_pages_updated']==21 and report['faq_entries_added']==63
           for name,hash_ in json.loads(Path('v2352-pilot-report/BASELINE_NON_TUTOR_SHA256.json').read_text()).items():
             assert hashlib.sha256((root/name).read_bytes()).hexdigest()==hash_,name
           for prefix in ['gyeongnam-milyang-naeidong','seoul-jongno-sajikdong']:
@@ -95,7 +95,7 @@ jobs:
               assert 'href="#consultation-preview"' in doc
               assert doc.count('class="related-course-tutor"')==3
               assert doc.count('class="related-course-conversation"')==3
-          print('PASS_V2352_PILOT_6_TUTORS_5_SECTIONS_EACH_NON_TUTOR_UNCHANGED',flush=True)
+          print('PASS_V2352_PILOT_21_TUTORS_5_SECTIONS_EACH_NON_TUTOR_UNCHANGED',flush=True)
           PY
       - name: Install Chromium and Korean fonts
         id: browserinstall
@@ -182,7 +182,7 @@ jobs:
           stages={x:os.environ.get(x,'unknown') for x in ('EXTRACT','RENDER','CHECK','BROWSERINSTALL','CHROMIUM')}
           success=all(x=='success' for x in stages.values())
           v={'status':'PASS_V2352_PILOT_READY_FOR_FULL_QA' if success else 'HOLD_V2352_PILOT',
-             'stages':stages,'expected_pages_modified':6,'production_deployed':False,'netlify_deployed':False}
+             'stages':stages,'expected_pages_modified':21,'production_deployed':False,'netlify_deployed':False}
           (root/'V2352_EXECUTION.json').write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
           with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:f.write('## '+v['status']+'\n\n'+str(stages)+'\n\nNo deploy or actual form submissions.\n')
           print(v['status'],flush=True)
