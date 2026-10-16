@@ -100,7 +100,11 @@ def http_qa():
                     if not group:raise ValueError("Six-card student navigation missing")
                     for mode in ALL_MODES:
                         dest="/"+slug+"-"+mode+".html"
-                        if ('href="'+dest+'"') not in group.group(1):
+                        # Netlify Pretty URLs can rewrite href="/slug.html" to
+                        # href="/slug"; both are valid iff route identity matches.
+                        stem=dest[:-5]
+                        if not any(('href="'+candidate+'"') in group.group(1)
+                                   for candidate in (dest,stem,stem+"/")):
                             raise ValueError("Wrong regional student link: "+dest)
                     r["page_checks"].append({"url":URL+"/"+filename,"http":200,
                        "h1":name+" "+label,"updated_sections":5,"faqs":6,"student_links":6,"draft_noindex":True})
@@ -241,8 +245,20 @@ def browser_qa():
                                     if group.count()!=1 or group.locator("a").count()!=6:
                                         raise ValueError("Expected 6 locality student navigation cards")
                                     for mode in ALL_MODES:
-                                        if group.locator('a[href="/'+slug+'-'+mode+'.html"]').count()!=1:
-                                            raise ValueError("Student link wrong "+mode)
+                                        anchor=group.locator('a.related-course-tutor, a.related-course-conversation').filter(
+                                            has=page.locator("span",has_text=(
+                                                "초등학생영어과외" if mode=="elem-tutor" else
+                                                "중학생영어과외" if mode=="mid-tutor" else
+                                                "고등학생영어과외" if mode=="high-tutor" else
+                                                "초등학생영어회화" if mode=="elem-conv" else
+                                                "중학생영어회화" if mode=="mid-conv" else
+                                                "고등학생영어회화"))).first
+                                        if anchor.count()!=1:
+                                            raise ValueError("Student link text absent "+mode)
+                                        href=anchor.get_attribute("href") or ""
+                                        expected="/"+slug+"-"+mode
+                                        if href.rstrip("/") not in (expected,expected+".html"):
+                                            raise ValueError("Student link wrong "+mode+" href="+href)
                                         r["student_navigation_checks"]+=1
                                     r["checks"].append({"file":filename,"width":width,
                                           "h1":d["h1"],"sections":5,"faqs":6,
