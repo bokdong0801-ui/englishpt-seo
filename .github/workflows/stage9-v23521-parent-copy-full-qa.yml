@@ -1,0 +1,284 @@
+name: ENGLISH PT v23.5.2.1 FINAL Parent Copy 158571 Full Review QA (NO DEPLOY)
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23.5.2.1-parent-copy-polish-20261016]
+    paths: ['.github/workflows/stage9-v23521-parent-copy-full-qa.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: englishpt-v23521-parent-polish-all-158571-no-deploy
+  cancel-in-progress: false
+jobs:
+  parent-copy-full-review:
+    name: SHA-verified existing source, polish only 18180 tutor pages, preserve SEO and 140393 other HTML
+    runs-on: ubuntu-latest
+    timeout-minutes: 170
+    env:
+      ORIGINAL_RUN: '38689660290'
+      ORIGINAL_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
+      V2352_RUN: '38878640560'
+      PILOT_RUN: '38902524612'
+      V2352_REVIEW_SHA256: eb02e2dc9007572445d7e92f942d85a35f48f599c274c3daeca6f33853985c8f
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize always-saved status
+        run: |
+          mkdir -p v23521-full-reports
+          printf '{"status":"STARTED","production_deployed":false,"netlify_deployed":false,"form_submitted":false}\n' > v23521-full-reports/V23521_EXECUTION.json
+      - name: Require original source, latest full source, and three-tutor pilot SUCCESS
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import urllib.request,os,json
+          repo=os.environ['GITHUB_REPOSITORY']
+          tok=os.environ['GH_TOKEN']
+          def get(run):
+            req=urllib.request.Request(f'https://api.github.com/repos/{repo}/actions/runs/{run}',
+              headers={'Authorization':'Bearer '+tok,'Accept':'application/vnd.github+json'})
+            with urllib.request.urlopen(req,timeout=50) as r:return json.load(r)
+          base=get(os.environ['ORIGINAL_RUN'])
+          assert base['status']=='completed' and base['conclusion']=='success'
+          assert base['head_sha']==os.environ['ORIGINAL_SHA']
+          for key in ('V2352_RUN','PILOT_RUN'):
+            run=get(os.environ[key])
+            assert run['status']=='completed' and run['conclusion']=='success',run['id']
+          print('PASS_V23521_FROZEN_SOURCE_AND_PILOT_SUCCESS',flush=True)
+          PY
+      - name: Download immutable v23.5.2 158571-page frozen Review source
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2352-tutor-enriched-158571-REVIEW-ONLY
+          run-id: 38878640560
+          path: source-v2352
+          github-token: ${{ github.token }}
+      - name: Download frozen SHA256 and prior exhaustive SEO report
+        id: qa
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2352-tutor-full-qa-reports-and-examples
+          run-id: 38878640560
+          path: baseline-qa
+          github-token: ${{ github.token }}
+      - name: Download actual approved three-page editorial pilot report
+        id: pilot
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-3-real-tutor-copy-polish-pilot
+          run-id: 38902524612
+          path: pilot-qa
+          github-token: ${{ github.token }}
+      - name: Validate source 1.23GB archive SHA and prior QAs, then extract
+        id: extract
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          (cd source-v2352 && sha256sum -c ../baseline-qa/V2352_REVIEW_RELEASE_SHA256.txt)
+          python3 - <<'PY'
+          import os,json
+          from pathlib import Path
+          p=Path('baseline-qa')
+          b=json.loads((p/'V2352_FINAL_EXECUTION.json').read_text('utf8'))
+          seo=json.loads((p/'V2352_PRESERVED_158571_SEO_SITEMAP_QA.json').read_text('utf8'))
+          pilot=json.loads(Path('pilot-qa/V23521_PILOT_FINAL.json').read_text('utf8'))
+          sha=(p/'V2352_REVIEW_RELEASE_SHA256.txt').read_text().split()[0]
+          assert sha==os.environ['V2352_REVIEW_SHA256']
+          assert b['status']=='PASS_V2352_TUTOR_CONTENT_ALL_158571_REVIEW_QA'
+          assert seo['status']=='PASS_V2351_INDEXING_SITEMAP_FULL_QA'
+          assert (seo['generated_total'],seo['indexable_count'],seo['noindex_count'],seo['sitemap_unique_urls'])==(158571,21964,136607,21964)
+          assert pilot['status']=='PASS_V23521_3_TUTOR_PARENT_COPY_PILOT'
+          print('PASS_V23521_INPUT_SHA_3_TUTOR_PILOT_AND_SEO',flush=True)
+          PY
+          mkdir -p polished-site
+          tar --zstd -xf source-v2352/ENGLISHPT_v23.5.2_TUTOR_ENRICHED_158571_REVIEW_ONLY.tar.zst -C polished-site
+          test -f polished-site/_headers
+          grep -q 'X-Robots-Tag: noindex' polished-site/_headers
+          test -f polished-site/gyeongnam-milyang-naeidong-high-tutor.html
+      - name: Calculate immutable non-tutor HTML SHA256, preserve site policies and assets
+        id: baseline
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,hashlib
+          root=Path('polished-site')
+          allfiles=sorted(root.glob('*.html'))
+          assert len(allfiles)==158573,len(allfiles)
+          slugs=[]
+          for p in root.glob('*-elem-tutor.html'):
+            slug=p.name[:-len('-elem-tutor.html')]
+            if (root/(slug+'-worker-english-conv-academy.html')).is_file() and (
+               root/(slug+'-mid-conv.html')).is_file() and (root/(slug+'-high-conv.html')).is_file():
+              slugs.append(slug)
+          assert len(slugs)==6060,len(slugs)
+          tutors={f'{slug}-{m}.html' for slug in slugs for m in ('elem-tutor','mid-tutor','high-tutor')}
+          assert len(tutors)==18180
+          digest=hashlib.sha256();count=0
+          for p in allfiles:
+            if p.name in tutors:continue
+            digest.update(p.name.encode()+b'\0'+hashlib.sha256(p.read_bytes()).digest())
+            count+=1
+          assert count==140393,count
+          special=('robots.txt','sitemap-index.xml','_headers','pilot.css','assets/styles.css')
+          hashes={p:hashlib.sha256((root/p).read_bytes()).hexdigest() for p in special}
+          o={'source_v2352_sha256':'eb02e2dc9007572445d7e92f942d85a35f48f599c274c3daeca6f33853985c8f',
+            'localities':len(slugs),'tutor_html':len(tutors),'other_html':count,
+            'other_html_sha256':digest.hexdigest(),'site_policy_asset_sha256':hashes}
+          Path('v23521-full-reports/V23521_BASELINE.json').write_text(json.dumps(o,indent=2)+'\n',encoding='utf8')
+          print('PASS_V23521_140393_NON_TUTOR_HTML_SHA_BASELINE',digest.hexdigest(),flush=True)
+          PY
+      - name: Polish parent copy on exactly 6060 localities x 3 tutor pages
+        id: edit
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_polish_tutor_pages.py
+          python3 scripts/v23521_polish_tutor_pages.py \
+            --root polished-site --expected-regions 6060 \
+            --overlay-dir v23521-overlay \
+            --report v23521-full-reports/V23521_FULL_COPY_EDIT.json
+      - name: Independently check 18180 edited pages, form fields, FAQ and no mutation of 140393 others
+        id: content_qa
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,re,sys
+          from pathlib import Path
+          root=Path('polished-site');out=Path('v23521-full-reports')
+          before=json.loads((out/'V23521_BASELINE.json').read_text('utf8'))
+          ed=json.loads((out/'V23521_FULL_COPY_EDIT.json').read_text('utf8'))
+          errors=[];digest=hashlib.sha256();count_other=0;count_tutor=0
+          mods=('elem-tutor','mid-tutor','high-tutor')
+          for idx,p in enumerate(sorted(root.glob('*.html'))):
+            mode=next((m for m in mods if p.name.endswith('-'+m+'.html')),None)
+            is_local=False
+            if mode:
+              slug=p.name[:-len('-'+mode+'.html')]
+              is_local=(root/(slug+'-worker-english-conv-academy.html')).is_file() and (
+                 root/(slug+'-mid-conv.html')).is_file() and (root/(slug+'-high-conv.html')).is_file()
+            if not is_local:
+              digest.update(p.name.encode()+b'\0'+hashlib.sha256(p.read_bytes()).digest())
+              count_other+=1
+              continue
+            count_tutor+=1
+            html=p.read_text('utf8')
+            if html.count('data-v2352-tutor-content="parent-guide-v1"')!=5 or html.count('class="faq-item"')!=6:
+              if len(errors)<70:errors.append([p.name,'new_tutor_sections_or_FAQ_invalid'])
+            if 'class="section mass-context"' in html or '수업에서 확인하는 예시' in html:
+              if len(errors)<70:errors.append([p.name,'old_duplicate_sections_remain'])
+            if html.count('class="v2352-note"')!=1 or '체험수업 신청' in html:
+              if len(errors)<70:errors.append([p.name,'duplicate_disclaimer_or_trial_text_remains'])
+            if html.count('class="related-course-tutor"')!=3 or html.count('class="related-course-conversation"')!=3:
+              if len(errors)<70:errors.append([p.name,'student_navigation_changed'])
+            if 'name="englishpt-consultation" method="POST" data-netlify="true"' not in html or (
+                html.count('id="consultation-preview"')!=1):
+              if len(errors)<70:errors.append([p.name,'Netlify_form_schema_missing'])
+            if html.count('href="#consultation-preview"')<3:
+              if len(errors)<70:errors.append([p.name,'consultation_anchors_missing'])
+            if not re.search(r'<meta name="robots" content="([^"]+)"',html):
+              if len(errors)<70:errors.append([p.name,'SEO_robots_meta_missing'])
+            if idx%40000==0:print('V23521_EDITORIAL_QA_PROGRESS',idx,flush=True)
+          if count_other!=140393 or digest.hexdigest()!=before['other_html_sha256']:
+            errors.append(['(all)','non_tutor_html_mutated',count_other,digest.hexdigest()])
+          if count_tutor!=18180:
+            errors.append(['(all)','tutor_edit_count',count_tutor])
+          if ed['status']!='PASS_V23521_PARENT_COPY_POLISH_TUTORS_ONLY' or (
+             ed['changed_tutor_pages'],ed['old_sections_removed'],ed['disclaimers_deduplicated'],ed['consultation_text_and_classification_aligned'],ed['faq_questions_refined'])!=(18180,36360,18180,90900,12120):
+            errors.append(['(all)','content_change_counts_unexpected'])
+          for name,sha in before['site_policy_asset_sha256'].items():
+            if hashlib.sha256((root/name).read_bytes()).hexdigest()!=sha:
+              errors.append([name,'site_policy_or_asset_changed'])
+          o={'status':'PASS_V23521_ALL_158571_IMMUTABILITY_CONTENT_QA' if not errors else 'HOLD_V23521_ALL_158571_IMMUTABILITY_CONTENT_QA',
+             'modified_tutor_pages':count_tutor,'other_html_unchanged':count_other,
+             'seo_assets_unchanged':not any('site_policy' in str(x) for x in errors),
+             'errors':errors,'error_count':len(errors),'production_deployed':False}
+          (out/'V23521_INDEPENDENT_FULL_CONTENT_QA.json').write_text(json.dumps(o,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print(o['status'],count_tutor,count_other,len(errors),flush=True)
+          if errors:sys.exit(1)
+          PY
+      - name: Exhaustive sitemap, canonical and robots QA for all 158571 generated URLs
+        id: seo
+        run: |
+          set -euo pipefail
+          python3 scripts/v2351_indexing_sitemap_full_qa.py \
+            --root polished-site --report v23521-full-reports/V23521_SEO_SITEMAP_QA.json
+      - name: Package final v23.5.2.1 full Review site and 18180-page overlay, compute SHA256
+        id: package
+        run: |
+          set -euo pipefail
+          tar -I 'zstd -T0 -3' -cf ENGLISHPT_v23.5.2.1_TUTOR_PARENT_POLISHED_158571_REVIEW_ONLY.tar.zst -C polished-site .
+          sha256sum ENGLISHPT_v23.5.2.1_TUTOR_PARENT_POLISHED_158571_REVIEW_ONLY.tar.zst > v23521-full-reports/V23521_REVIEW_ARCHIVE_SHA256.txt
+          (cd v23521-overlay && tar -I 'zstd -T0 -3' -cf ../v23521-full-reports/V23521_18180_TUTOR_ONLY_OVERLAY.tar.zst .)
+          test -s ENGLISHPT_v23.5.2.1_TUTOR_PARENT_POLISHED_158571_REVIEW_ONLY.tar.zst
+          test -s v23521-full-reports/V23521_18180_TUTOR_ONLY_OVERLAY.tar.zst
+          echo PASS_V23521_FULL_AND_OVERLAY_ARCHIVE_SHA
+      - name: Always record true Review GO/HOLD, no Production
+        if: always()
+        env:
+          SOURCE: ${{ steps.source.outcome }}
+          DOWNLOAD: ${{ steps.download.outcome }}
+          QA: ${{ steps.qa.outcome }}
+          PILOT: ${{ steps.pilot.outcome }}
+          EXTRACT: ${{ steps.extract.outcome }}
+          BASELINE: ${{ steps.baseline.outcome }}
+          EDIT: ${{ steps.edit.outcome }}
+          CONTENT_QA: ${{ steps.content_qa.outcome }}
+          SEO: ${{ steps.seo.outcome }}
+          PACKAGE: ${{ steps.package.outcome }}
+        run: |
+          python3 - <<'PY'
+          import os,json
+          from pathlib import Path
+          root=Path('v23521-full-reports')
+          def read(name):
+            p=root/name
+            return json.loads(p.read_text('utf8')) if p.exists() else {}
+          qa=read('V23521_INDEPENDENT_FULL_CONTENT_QA.json')
+          seo=read('V23521_SEO_SITEMAP_QA.json')
+          steps={k:os.environ.get(k,'unknown') for k in (
+            'SOURCE','DOWNLOAD','QA','PILOT','EXTRACT','BASELINE','EDIT','CONTENT_QA','SEO','PACKAGE')}
+          ok=all(v=='success' for v in steps.values()) and (
+            qa.get('status')=='PASS_V23521_ALL_158571_IMMUTABILITY_CONTENT_QA') and (
+            seo.get('status')=='PASS_V2351_INDEXING_SITEMAP_FULL_QA')
+          result={'status':'PASS_V23521_PARENT_COPY_ALL_158571_REVIEW_QA' if ok else 'HOLD_V23521_PARENT_COPY_ALL_158571_REVIEW_QA',
+           'original_v2352_archive_sha256':'eb02e2dc9007572445d7e92f942d85a35f48f599c274c3daeca6f33853985c8f',
+           'source_run':38878640560,'changed_tutor_pages':qa.get('modified_tutor_pages'),
+           'unchanged_html':qa.get('other_html_unchanged'),'all_pages':seo.get('generated_total'),
+           'indexable':seo.get('indexable_count'),'noindex':seo.get('noindex_count'),
+           'sitemap_urls':seo.get('sitemap_unique_urls'),
+           'release_type':'REVIEW_ONLY',
+           'stages':steps,'production_deployed':False,'draft_deployed':False,'form_submitted':False,
+           'limitations':['New visible submission copy and hidden requestType require actual post-release form-email test',
+             'v23.5.2.1 page content has not yet been published to a new Netlify Draft']}
+          (root/'V23521_FINAL_EXECUTION.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+            f.write('## '+result['status']+'\n\n')
+            f.write('Modified tutoring '+str(result['changed_tutor_pages'])+'; unchanged HTML '+
+              str(result['unchanged_html'])+'; sitemap '+str(result['sitemap_urls'])+'\n\n')
+            f.write('NO Netlify deploy, NO Production deploy, NO form submissions.\n')
+          print(result['status'],steps,flush=True)
+          PY
+      - name: Always upload full reports and editing overlay
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-full-158571-parent-copy-seo-qa-and-18180-overlay
+          path: v23521-full-reports/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload complete 158571-page Review-only archive only on full QA PASS
+        if: steps.edit.outcome == 'success' && steps.content_qa.outcome == 'success' && steps.seo.outcome == 'success' && steps.package.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-parent-polished-158571-full-REVIEW-ONLY
+          path: ENGLISHPT_v23.5.2.1_TUTOR_PARENT_POLISHED_158571_REVIEW_ONLY.tar.zst
+          retention-days: 30
+          if-no-files-found: error
