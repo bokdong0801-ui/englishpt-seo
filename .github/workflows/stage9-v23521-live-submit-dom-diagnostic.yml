@@ -1,0 +1,91 @@
+name: ENGLISH PT v23.5.2.1 Read-Only Live Submit Label ROOT-CAUSE Diagnostic
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23.5.2.1-parent-copy-polish-20261016]
+    paths: ['.github/workflows/stage9-v23521-live-submit-dom-diagnostic.yml']
+permissions:
+  contents: read
+concurrency:
+  group: englishpt-v23521-readonly-submit-dom-diagnostic
+  cancel-in-progress: true
+jobs:
+  inspect-existing-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install browser and Korean fonts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+      - name: Observe actual visible submit label BEFORE and AFTER CTA, no user data no POST
+        run: |
+          python3 - <<'PY'
+          import json,shutil
+          from pathlib import Path
+          from playwright.sync_api import sync_playwright
+          target='https://6ad22244efa528796be5b050--englishpt-final-ia-review-bokdong.netlify.app'
+          out=Path('v23521-form-dom-diagnostic');out.mkdir(exist_ok=True)
+          rows=[]
+          with sync_playwright() as pw:
+            exe=shutil.which('google-chrome') or shutil.which('chromium')
+            args={'headless':True,'args':['--no-sandbox','--disable-dev-shm-usage']}
+            if exe:args['executable_path']=exe
+            b=pw.chromium.launch(**args)
+            try:
+              for width in (390,1440):
+                ctx=b.new_context(viewport={'width':width,'height':900})
+                ctx.route('**/*',lambda route:route.continue_() if route.request.method in ('GET','HEAD') else route.abort())
+                page=ctx.new_page()
+                try:
+                  for slug in ('gyeongnam-milyang-naeidong','seoul-jongno-sajikdong'):
+                    url=target+'/'+slug+'-elem-tutor.html'
+                    res=page.goto(url,wait_until='domcontentloaded',timeout=65000)
+                    if not res or res.status!=200:raise ValueError('No live 200 '+slug)
+                    def details(stage):
+                      return page.evaluate("""(stage) => {
+                        const form=document.querySelector('#consultation-preview form');
+                        const input = name => form?.querySelector('input[name="'+name+'"]');
+                        const btn=form?.querySelector('button[type="submit"]');
+                        return {
+                          stage, buttons:[...form.querySelectorAll('button')].map(b=>({
+                            text:b.innerText,outer:b.outerHTML.slice(0,250),
+                            visible:getComputedStyle(b).display})),
+                          submitText:btn?.innerText,
+                          formInnerText:form?.innerText?.slice(-450),
+                          submitTextContent:btn?.textContent,
+                          requestType:input('requestType')?.value,
+                          subject:input('subject')?.value,
+                          navCta:document.querySelector('.nav-cta')?.innerText,
+                          formHTMLHashLike:form?.outerHTML?.length
+                        }
+                      }""",stage)
+                    initial=details('initial')
+                    page.locator('.hero-actions a[href="#consultation-preview"]').first.click()
+                    after=details('after-click')
+                    rows.append({'slug':slug,'width':width,'before':initial,'after':after})
+                    print('OBSERVED_RUNTIME_SUBMIT',slug,width,repr(after.get('submitText')),
+                      'REQUEST_TYPE',repr(after.get('requestType')),flush=True)
+                finally:ctx.close()
+            finally:b.close()
+          out.joinpath('V23521_REAL_SUBMIT_LABEL_DIAGNOSTIC.json').write_text(json.dumps(
+            {'status':'OBSERVED_ONLY_NOT_A_PASS','rows':rows,'production_deployed':False,
+              'draft_redeployed':False,'form_submitted':False},ensure_ascii=False,indent=2)+'\n')
+          assert len(rows)==4
+          print('DONE_SAFE_SUBMIT_RUNTIME_DIAGNOSTIC',flush=True)
+          PY
+      - name: Upload actual runtime label evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-readonly-actual-submit-label-dom-diagnostic
+          path: v23521-form-dom-diagnostic/
+          if-no-files-found: warn
