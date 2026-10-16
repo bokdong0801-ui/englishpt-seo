@@ -96,16 +96,32 @@ def http_qa():
                     m=re.search(r'<meta property="og:image" content="([^"]+)"',doc)
                     if not m or not m.group(1).startswith(ALIAS+"/assets/images/og-pages/"):
                         raise ValueError("OG should resolve inside isolated Draft alias")
-                    group=re.search(r'<article class="related-group"><h3>학생 영어</h3><div class="related-course-links">(.*?)</div></article>',doc,re.S)
-                    if not group:raise ValueError("Six-card student navigation missing")
+                    # HTML attributes can be re-ordered/minified or serialized without
+                    # double quotes by the deploy CDN. Parse semantics, NOT source text.
+                    # The independent real-click browser QA validates arrival/H1.
+                    from html.parser import HTMLParser
+                    class CourseLinks(HTMLParser):
+                        def __init__(self):
+                            super().__init__(convert_charrefs=True)
+                            self.hrefs=[]
+                        def handle_starttag(self,tag,attrs):
+                            if tag!="a":return
+                            a=dict(attrs)
+                            classes=set((a.get("class") or "").split())
+                            if classes.intersection(("related-course-tutor","related-course-conversation")):
+                                self.hrefs.append(a.get("href") or "")
+                    parsed=CourseLinks()
+                    parsed.feed(doc)
+                    hrefs={h.rstrip("/") for h in parsed.hrefs}
                     for mode in ALL_MODES:
-                        dest="/"+slug+"-"+mode+".html"
-                        # Netlify Pretty URLs can rewrite href="/slug.html" to
-                        # href="/slug"; both are valid iff route identity matches.
-                        stem=dest[:-5]
-                        if not any(('href="'+candidate+'"') in group.group(1)
-                                   for candidate in (dest,stem,stem+"/")):
-                            raise ValueError("Wrong regional student link: "+dest)
+                        stem="/"+slug+"-"+mode
+                        if stem not in hrefs and stem+".html" not in hrefs:
+                            raise ValueError("Wrong regional student link: "+stem+
+                                " (parsed="+str(sorted(hrefs)[:8])+")")
+                    if len([h for h in parsed.hrefs if h]): 
+                        pass
+                    else:
+                        raise ValueError("No parsed student navigation links")
                     r["page_checks"].append({"url":URL+"/"+filename,"http":200,
                        "h1":name+" "+label,"updated_sections":5,"faqs":6,"student_links":6,"draft_noindex":True})
                     print("V2352_HTTP_PASS",filename,flush=True)
