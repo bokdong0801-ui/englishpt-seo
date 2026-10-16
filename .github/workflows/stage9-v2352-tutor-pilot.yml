@@ -1,0 +1,197 @@
+name: ENGLISH PT v23.5.2 Tutor Content PILOT (Review Only No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23.5.2-tutor-content-20261016]
+    paths:
+      - '.github/workflows/stage9-v2352-tutor-pilot.yml'
+      - 'scripts/v2352_enrich_tutor_only.py'
+      - 'content/v2352_*_tutor.json'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v2352-tutor-pilot
+  cancel-in-progress: true
+
+jobs:
+  tutor-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Create reports on all outcomes
+        run: |
+          mkdir -p v2352-pilot-report
+          printf '{"status":"STARTED","version":"v23.5.2","production_deployed":false,"netlify_deployed":false}\n' > v2352-pilot-report/V2352_EXECUTION.json
+      - name: Fetch actual approved v23.5.1 Naeidong and Sajikdong HTML samples
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v2351-all-158571-student-qa-and-naeidong-previews
+          run-id: 38864767374
+          path: v2351-samples
+          github-token: ${{ github.token }}
+      - name: Extract baseline and preserve non-tutor baseline hashes
+        id: extract
+        run: |
+          set -euo pipefail
+          mkdir -p sample-site
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile,json,hashlib
+          zipfile_path=Path('v2351-samples/V2351_NAEIDONG_SAJIKDONG_SAMPLES.zip')
+          assert zipfile_path.exists(),zipfile_path
+          with zipfile.ZipFile(zipfile_path) as f:f.extractall('sample-site')
+          root=Path('sample-site')
+          assert (root/'pilot.css').is_file()
+          assert (root/'assets/styles.css').is_file()
+          courses=['elem-tutor','mid-tutor','high-tutor']
+          for prefix in ['gyeongnam-milyang-naeidong','seoul-jongno-sajikdong']:
+            for kind in courses:
+              assert (root/(prefix+'-'+kind+'.html')).exists(),(prefix,kind)
+          snapshot={p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in root.glob('*.html') if not p.name.endswith(tuple('-'+x+'.html' for x in courses))}
+          Path('v2352-pilot-report/BASELINE_NON_TUTOR_SHA256.json').write_text(
+            json.dumps(snapshot,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('PASS_V2352_ACTUAL_V2351_PILOT_INPUT',len(snapshot),flush=True)
+          PY
+      - name: Apply three detailed grade curricula to two localities x three tutoring pages
+        id: render
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v2352_enrich_tutor_only.py
+          python3 scripts/v2352_enrich_tutor_only.py \
+            --root sample-site --pilot --expected-regions 2 \
+            --report v2352-pilot-report/V2352_TUTOR_PILOT_BUILD.json \
+            --samples v2352-pilot-report/updated-example-pages
+      - name: Independently inspect 6 tutor HTML changes and untouched conversation pages
+        id: check
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from collections import Counter
+          import json,hashlib,re
+          root=Path('sample-site')
+          report=json.loads(Path('v2352-pilot-report/V2352_TUTOR_PILOT_BUILD.json').read_text())
+          assert report['status']=='PASS_V2352_TUTOR_PAGES_ONLY_RENDERED'
+          assert report['tutor_pages_updated']==6 and report['faq_entries_added']==18
+          for name,hash_ in json.loads(Path('v2352-pilot-report/BASELINE_NON_TUTOR_SHA256.json').read_text()).items():
+            assert hashlib.sha256((root/name).read_bytes()).hexdigest()==hash_,name
+          for prefix in ['gyeongnam-milyang-naeidong','seoul-jongno-sajikdong']:
+            for intent in ['elem-tutor','mid-tutor','high-tutor']:
+              name=prefix+'-'+intent+'.html'
+              doc=(root/name).read_text(encoding='utf8')
+              for part in ('levels','lesson','errors','timeline','parent'):
+                assert doc.count('data-v2352-section="'+part+'"')==1,(name,part)
+              assert doc.count('class="faq-item"')==6,name
+              assert doc.count('data-v2352-tutor-content="parent-guide-v1"')==5
+              assert 'href="#consultation-preview"' in doc
+              assert doc.count('class="related-course-tutor"')==3
+              assert doc.count('class="related-course-conversation"')==3
+          print('PASS_V2352_PILOT_6_TUTORS_5_SECTIONS_EACH_NON_TUTOR_UNCHANGED',flush=True)
+          PY
+      - name: Install Chromium and Korean fonts
+        id: browserinstall
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+      - name: Screenshot 6 actual tutor pages at mobile 390 and PC 1440
+        id: chromium
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,threading,shutil,sys
+          from pathlib import Path
+          from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
+          from playwright.sync_api import sync_playwright
+          root=Path('sample-site').resolve()
+          out=Path('v2352-pilot-report/screenshots')
+          out.mkdir(parents=True,exist_ok=True)
+          class Handler(SimpleHTTPRequestHandler):
+            def __init__(self,*args,**kw):super().__init__(*args,directory=str(root),**kw)
+            def log_message(self,*args):pass
+          server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+          threading.Thread(target=server.serve_forever,daemon=True).start()
+          errors=[];checks=[]
+          try:
+            with sync_playwright() as pw:
+              binary=shutil.which('google-chrome') or shutil.which('chromium')
+              args={'headless':True,'args':['--no-sandbox','--disable-dev-shm-usage']}
+              if binary:args['executable_path']=binary
+              browser=pw.chromium.launch(**args)
+              try:
+                for width in (390,1440):
+                  ctx=browser.new_context(viewport={'width':width,'height':900},device_scale_factor=1)
+                  page=ctx.new_page()
+                  try:
+                    for prefix in ('gyeongnam-milyang-naeidong','seoul-jongno-sajikdong'):
+                      for intent in ('elem-tutor','mid-tutor','high-tutor'):
+                        name=prefix+'-'+intent+'.html'
+                        try:
+                          response=page.goto('http://127.0.0.1:'+str(server.server_port)+'/'+name,wait_until='domcontentloaded',timeout=35000)
+                          assert response and response.status==200
+                          page.evaluate('() => document.fonts.ready')
+                          headings=page.locator('.v2352-tutor h2')
+                          assert headings.count()==5,(name,headings.count())
+                          for marker in ('levels','lesson','errors','timeline','parent'):
+                            assert page.locator('[data-v2352-section="'+marker+'"]').count()==1
+                          maxw=page.evaluate('document.documentElement.scrollWidth')
+                          assert maxw<=width+3,(name,width,'overflow',maxw)
+                          target=page.locator('[data-v2352-section="levels"]')
+                          target.scroll_into_view_if_needed()
+                          page.screenshot(path=str(out/(name[:-5]+'-'+str(width)+'.png')),full_page=False,timeout=19000)
+                          checks.append({'name':name,'width':width,'h2':headings.count(),'scrollWidth':maxw})
+                          print('V2352_PILOT_BROWSER_PASS',width,name,flush=True)
+                        except Exception as exc:
+                          errors.append({'name':name,'width':width,'reason':str(exc)})
+                  finally:ctx.close()
+              finally:browser.close()
+          finally:server.shutdown()
+          report={'status':'PASS_V2352_PILOT_MOBILE_PC' if not errors and len(checks)==12 else 'FAIL_V2352_PILOT_MOBILE_PC',
+            'checks':checks,'errors':errors,'production_deployed':False,'form_submitted':False}
+          Path('v2352-pilot-report/V2352_PILOT_CHROMIUM.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print(report['status'],len(checks),len(errors),flush=True)
+          if errors:sys.exit(1)
+          PY
+      - name: Always create and upload QA status even if failed
+        if: always()
+        env:
+          EXTRACT: ${{ steps.extract.outcome }}
+          RENDER: ${{ steps.render.outcome }}
+          CHECK: ${{ steps.check.outcome }}
+          BROWSERINSTALL: ${{ steps.browserinstall.outcome }}
+          CHROMIUM: ${{ steps.chromium.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path('v2352-pilot-report')
+          stages={x:os.environ.get(x,'unknown') for x in ('EXTRACT','RENDER','CHECK','BROWSERINSTALL','CHROMIUM')}
+          success=all(x=='success' for x in stages.values())
+          v={'status':'PASS_V2352_PILOT_READY_FOR_FULL_QA' if success else 'HOLD_V2352_PILOT',
+             'stages':stages,'expected_pages_modified':6,'production_deployed':False,'netlify_deployed':False}
+          (root/'V2352_EXECUTION.json').write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:f.write('## '+v['status']+'\n\n'+str(stages)+'\n\nNo deploy or actual form submissions.\n')
+          print(v['status'],flush=True)
+          PY
+      - name: Upload preview HTML, screenshots and JSON pilot reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2352-tutor-content-pilot-qa
+          path: v2352-pilot-report/
+          retention-days: 30
+          if-no-files-found: error
