@@ -1,0 +1,103 @@
+name: ENGLISH PT v23.5.2.1 SHARED JS FIX Self-Test + REAL Browser BEFORE UPLOAD
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23.5.2.1-parent-copy-polish-20261016]
+    paths: ['.github/workflows/stage9-v23521-runtime-js-predeploy-no-upload.yml']
+permissions:
+  contents: read
+concurrency:
+  group: englishpt-v23521-runtime-js-real-browser-no-netlify-upload
+  cancel-in-progress: true
+jobs:
+  browser-prove-shared-js-fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 48
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch exactly deployed shared JS; require matching SHA256 of known bad runtime
+        id: fetch
+        run: |
+          set -euo pipefail
+          mkdir -p jsfix-proof
+          python3 - <<'PY'
+          import urllib.request,hashlib
+          from pathlib import Path
+          base='https://6ad22244efa528796be5b050--englishpt-final-ia-review-bokdong.netlify.app'
+          req=urllib.request.Request(base+'/pilot.js?v=20261012-9',headers={'User-Agent':'EnglishPT-safe-GET-only-jsfix'})
+          with urllib.request.urlopen(req,timeout=70) as resp:
+            data=resp.read()
+            assert resp.status==200
+          actual=hashlib.sha256(data).hexdigest()
+          assert actual=='f9e4f7e90de3924281ced3c346491661c5d047fcc34400063ac0145165d039e5',actual
+          Path('jsfix-proof/source-pilot.js').write_bytes(data)
+          print('PASS_EXACT_BAD_RUNTIME_FINGERPRINT_BEFORE_PATCH',actual,flush=True)
+          PY
+      - name: Apply exact TWO edits to one shared JS file and validate Node syntax + source intent
+        id: patch
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_patch_shared_pilot_js.py scripts/v23521_live_override_js_regression.py
+          python3 scripts/v23521_patch_shared_pilot_js.py \
+            --input jsfix-proof/source-pilot.js \
+            --output jsfix-proof/pilot.js \
+            --manifest jsfix-proof/V23521_FIXED_SHARED_PILOT_JS_MANIFEST.json
+          node --check jsfix-proof/pilot.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          p=Path('jsfix-proof')
+          status=json.loads((p/'V23521_FIXED_SHARED_PILOT_JS_MANIFEST.json').read_text('utf8'))
+          assert status['status']=='PASS_EXACT_SHARED_PILOT_JS_RUNTIME_MODE_PATCH'
+          assert status['patched_sha256']=='8f6c0150ae36cb72cfbfeb812345444facad070a61666356bb9e140c182aa717'
+          print('PASS_EXACT_TWO_EDITS_NODE_JS_PARSE_AND_EXPECTED_PATCH_SHA',flush=True)
+          PY
+      - name: Install Chromium and Korean fonts to test REAL deployed HTML with patched JS intercepted
+        id: browser_install
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+      - name: 24 tutor viewports x 2 CTAs and 8 control pages read-only (ZERO Netlify upload)
+        id: chrome
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_live_override_js_regression.py \
+             --patched-js jsfix-proof/pilot.js \
+             --report jsfix-proof/V23521_PATCHED_JS_CHROMIUM_BEFORE_DEPLOY.json \
+             --screenshots jsfix-proof/screenshots
+      - name: Validate meaningful real regression result before labeling PASS
+        id: final
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('jsfix-proof')
+          b=json.loads((p/'V23521_PATCHED_JS_CHROMIUM_BEFORE_DEPLOY.json').read_text('utf8'))
+          assert b['status']=='PASS_V23521_PATCHED_JS_REAL_BROWSER_BEFORE_DEPLOY'
+          assert b['tutor_viewports']==24 and b['tutor_cta_clicks']==48
+          assert b['unchanged_other_course_cases']==8
+          assert not b['errors'] and not b['draft_redeployed'] and not b['production_deployed']
+          with open('jsfix-proof/FINAL_PREFLIGHT_PASS.txt','w') as f:
+            f.write('PASS: JS syntax and 24 real tutor viewports x 2 CTA clicks + 8 non-tutor regression cases. Zero deploy.\n')
+          print('PASS_V23521_SHARED_JS_PATCH_READY_FOR_ONE_SAFE_DRAFT',flush=True)
+          PY
+      - name: Always upload patched JS, two-edit manifest, Chromium proof, and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-shared-pilot-js-exact-patch-full-predeploy-proof
+          path: jsfix-proof/
+          retention-days: 30
+          if-no-files-found: error
