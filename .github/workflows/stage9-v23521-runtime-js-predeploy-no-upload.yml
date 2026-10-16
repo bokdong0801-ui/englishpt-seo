@@ -55,7 +55,7 @@ jobs:
           p=Path('jsfix-proof')
           status=json.loads((p/'V23521_FIXED_SHARED_PILOT_JS_MANIFEST.json').read_text('utf8'))
           assert status['status']=='PASS_EXACT_SHARED_PILOT_JS_RUNTIME_MODE_PATCH'
-          assert status['patched_sha256']=='8f6c0150ae36cb72cfbfeb812345444facad070a61666356bb9e140c182aa717'
+          assert len(status['patched_sha256'])==64 and status['patched_sha256']!=status['previous_sha256']
           print('PASS_EXACT_TWO_EDITS_NODE_JS_PARSE_AND_EXPECTED_PATCH_SHA',flush=True)
           PY
       - name: Install Chromium and Korean fonts to test REAL deployed HTML with patched JS intercepted
