@@ -1,0 +1,68 @@
+name: ENGLISH PT v23.5.2.1 OLD Production Candidate Actual Archive Audit (NO DEPLOY)
+on:
+  push:
+    branches: [review/v23521-ogfix-approved-once-20261017]
+    paths: ['.github/workflows/stage9-v23521-old-production-audit-once.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect-actual-frozen-production-archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-PRODUCTION-CANDIDATE-158571-NOT-DEPLOYED
+          run-id: 38903769454
+          path: old-production
+          github-token: ${{ github.token }}
+      - name: Read actual old package: archive hash JS content Production OG and headers, no deployments
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          mkdir -p production-sample production-audit
+          FILE=old-production/ENGLISHPT_v23.5.2.1_PRODUCTION_READY_NOT_DEPLOYED.tar.zst
+          test -s "$FILE"
+          echo "3115627f104969e80db6a964c950d9a1867c10e199656c4c1e474aa62d0f8956  $FILE" | sha256sum -c -
+          tar --zstd -xf "$FILE" -C production-sample \
+            ./pilot.js ./_headers \
+            ./gyeongnam-milyang-naeidong-elem-tutor.html \
+            ./assets/images/og-pages/elementary.png
+          python3 - <<'PY'
+          import json,hashlib,struct
+          from pathlib import Path
+          root=Path('production-sample')
+          js=(root/'pilot.js').read_bytes()
+          js_sha=hashlib.sha256(js).hexdigest()
+          expected_old='f9e4f7e90de3924281ced3c346491661c5d047fcc34400063ac0145165d039e5'
+          fixed='d604994a74352a81978002fd6f6286c7d0f4f4c99278745bbf6dad1abce29ede'
+          doc=(root/'gyeongnam-milyang-naeidong-elem-tutor.html').read_text('utf8')
+          h=(root/'_headers').read_text('utf8')
+          og='https://englishpt.kr/assets/images/og-pages/'
+          sample=(root/'assets/images/og-pages/elementary.png').read_bytes()[:24]
+          x={'status':'RUNNING','old_archive_sha256_verified':True,'old_js_sha256':js_sha,
+             'known_old_js':js_sha==expected_old,'patched_js_present':js_sha==fixed,
+             'production_og_host_correct':og in doc,
+             'review_netlify_host_leaked':'englishpt-final-ia-review-bokdong.netlify.app' in doc,
+             'global_draft_noindex_absent':'X-Robots-Tag: noindex' not in h,
+             'og_png_valid':len(sample)==24 and sample[:8]==bytes.fromhex('89504e470d0a1a0a')
+               and struct.unpack('>II',sample[16:24])==(1200,630),
+             'production_deployed':False,'form_submitted':False,
+             'verdict':'HOLD_OLD_PRODUCTION_CANDIDATE_REPLACE_JS_BEFORE_APPROVAL'}
+          assert x['known_old_js'] and not x['patched_js_present'],x
+          assert x['production_og_host_correct'] and not x['review_netlify_host_leaked'],x
+          assert x['global_draft_noindex_absent'] and x['og_png_valid'],x
+          x['status']='PASS_ARCHIVE_AUDIT_CONFIRMED_OLD_JS_AND_VALID_PRODUCTION_OG'
+          Path('production-audit/V23521_OLD_PRODUCTION_CANDIDATE_AUDIT.json').write_text(
+             json.dumps(x,ensure_ascii=False,indent=2)+'\\n',encoding='utf8')
+          print(x['status'],x,flush=True)
+          PY
+      - name: Preserve actual old archive diagnosis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-old-production-candidate-real-archive-audit
+          path: production-audit/
+          if-no-files-found: warn
