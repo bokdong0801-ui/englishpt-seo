@@ -200,7 +200,16 @@ def main():
                     # This is optional in isolated localities; skip, but validate
                     # every existing nearby same-course link when present.
                     continue
-                found=re.findall(r'href="(/[^"]+\.html)"',match.group(0))
+                # Check only locality cards, not legitimate hub buttons
+                # inside the same section (/stations.html, /courses.html).
+                locality_grid=re.search(
+                    r'<div class="nearby-locality-grid">(.*?)</div>',
+                    match.group(0),re.S
+                )
+                if not locality_grid:
+                    fail(file.name,"nearby_locality_grid_missing")
+                    continue
+                found=re.findall(r'href="(/[^"]+\.html)"',locality_grid.group(1))
                 if not found:fail(file.name,"nearby_same_course_links_absent")
                 for href in found:
                     report["nearby_same_course_links_checked"]+=1
@@ -208,6 +217,16 @@ def main():
                         fail(file.name,"nearby_course_wrong",href)
                     elif href[1:] not in paths:
                         fail(file.name,"nearby_target_missing",href)
+                # Separate unrelated navigation buttons from same-course routes.
+                hub_actions=re.search(
+                    r'<div class="related-hub-actions">(.*?)</div>',
+                    match.group(0),re.S
+                )
+                if hub_actions:
+                    for href in re.findall(r'href="(/[^"]+)"',hub_actions.group(1)):
+                        hub_path=href.split("#",1)[0].split("?",1)[0]
+                        if hub_path[1:] not in paths:
+                            fail(file.name,"nearby_hub_target_missing",href)
         report["page_categories"]=dict(counts)
         required_nav=6060*26 if args.expected_regions==6060 else args.expected_regions*26
         if report["student_blocks_checked"]!=required_nav:
