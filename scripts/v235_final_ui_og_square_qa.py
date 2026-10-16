@@ -195,12 +195,40 @@ def browser_check():
                                 reached=target.count()>0
                                 if reached:
                                     target.scroll_into_view_if_needed(timeout=5000)
+                            elif name=="stations.html":
+                                # The station directory is a discovery hub, not a
+                                # landing page with a direct application button.
+                                # Confirm the real journey: directory -> station detail -> form.
+                                station_link=page.locator('a[href*="station-"]').first
+                                if station_link.count():
+                                    station_link.scroll_into_view_if_needed(timeout=6000)
+                                    href=station_link.get_attribute("href")
+                                    station_link.click(timeout=9000)
+                                    page.wait_for_load_state("domcontentloaded",timeout=30000)
+                                    if page.url==url:
+                                        problems.append("station directory link did not navigate")
+                                    else:
+                                        after=page.locator("[data-open-form]:visible")
+                                        if after.count():
+                                            after.first.click(timeout=7000)
+                                            dialog=page.locator("#applyModal")
+                                            reached=dialog.count()>0 and dialog.evaluate(
+                                                "e=>e.classList.contains('open') && e.getAttribute('aria-hidden') !== 'true'")
+                                            mode="directory-to-station-to-modal"
+                                        else:
+                                            anchor2=page.locator('a[href="#consultation-preview"]:visible')
+                                            if anchor2.count():
+                                                anchor2.first.click(timeout=7000)
+                                                reached=page.locator("#consultation-preview").count()>0
+                                                mode="directory-to-station-to-inline"
+                                else:
+                                    problems.append("station directory has no navigable station links")
                             else:
                                 problems.append("no visible consultation CTA")
                             if reached:
                                 result["forms_reached"]+=1
                                 result["cta_clicks"]+=1
-                                if mode=="modal":
+                                if mode.endswith("modal"):
                                     sheet=page.locator("#applyModal")
                                     form=sheet.locator("form").first
                                 else:
@@ -239,8 +267,10 @@ def browser_check():
                                 else:
                                     for i,label in enumerate(SIX):
                                         link=cards.nth(i)
-                                        if label not in " ".join(link.inner_text().split()):
-                                            problems.append("student card label mismatch at "+str(i))
+                                        expected_suffix=["초등학생영어과외","중학생영어과외","고등학생영어과외",
+                                            "초등학생영어회화","중학생영어회화","고등학생영어회화"][i]
+                                        if expected_suffix not in " ".join(link.inner_text().split()):
+                                            problems.append("student card category mismatch at "+str(i))
                                             continue
                                         dest=link.get_attribute("href")
                                         # Open the exact destination through Playwright,
