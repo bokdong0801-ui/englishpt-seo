@@ -332,7 +332,7 @@ def main():
        "location_detected":len(local_pages),"new_expected":args.expected_locations*3,
        "final_generated_expected":expected_final,"new_pages_created":0,
        "elementary_tutor_rewritten":0,"regional_pages_nav_updated":0,
-       "nav_links_checked":0,"new_page_labels":dict(Counter()),
+       "nav_links_checked":0,"new_page_labels":dict(Counter()),"naeidong_slugs":[],
        "errors":[],"error_count":0,"source_run":38689660290,
        "source_sha":"a18b8901ecda7d37f65e35b15f03d579ec63c70f",
        "v235_source_run":38843408620,"production_deployed":False,
@@ -352,6 +352,7 @@ def main():
                 dong=page_location(raw)
                 if slug in slugs:raise ValueError("duplicate slug "+slug)
                 slugs[slug]=dong
+                if dong=="내이동":result["naeidong_slugs"].append(slug)
                 for existing in ("mid-conv","high-conv"):
                     if not (root/(slug+"-"+existing+".html")).is_file():
                         raise ValueError("missing existing "+existing)
@@ -390,7 +391,9 @@ def main():
                     if updated!=original:page.write_text(updated,encoding="utf-8")
                     result["regional_pages_nav_updated"]+=1
                     result["nav_links_checked"]+=6
-                    if dong in ("내이동","사직동") and page.name in sample:
+                    if dong in ("내이동","사직동") and (
+                        intent in COURSES or intent=="worker-english-conv-academy"
+                    ):
                         sample[page.name]=updated
                 elif n>1:
                     raise ValueError("multiple student nav groups: "+page.name)
