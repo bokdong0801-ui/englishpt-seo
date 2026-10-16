@@ -1,0 +1,39 @@
+name: ENGLISH PT v23.5.1 Production Header Smoke Test (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths:
+      - '.github/workflows/stage9-v2351-production-header-smoke.yml'
+      - 'scripts/v2351_production_release_gate.py'
+
+permissions:
+  contents: read
+
+jobs:
+  gate-unit-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile release gate Python and test two Draft noindex formats against Production header candidate
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v2351_production_release_gate.py
+          python3 - <<'PY'
+          import importlib.util
+          spec=importlib.util.spec_from_file_location('release_gate','scripts/v2351_production_release_gate.py')
+          mod=importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(mod)
+          cleaned='/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n'
+          for tag in ('X-Robots-Tag: noindex','X-Robots-Tag: noindex, nofollow, noarchive'):
+              source=cleaned+('  '+tag+'\n')
+              match=mod.NOINDEX_HEADER.findall(source)
+              assert len(match)==1,(tag,match)
+              remaining=mod.NOINDEX_HEADER.sub('',source)
+              assert [x.strip() for x in remaining.splitlines() if x.strip()]==[x.strip() for x in cleaned.splitlines() if x.strip()]
+              print('PASS_V2351_DRAFT_NOINDEX_HEADER_CLEANUP',tag,flush=True)
+          assert mod.BASE=='https://englishpt.kr'
+          print('PASS_V2351_RELEASE_GATE_PYTHON_SYNTAX_AND_HEADER_UNIT_TEST')
+          PY
