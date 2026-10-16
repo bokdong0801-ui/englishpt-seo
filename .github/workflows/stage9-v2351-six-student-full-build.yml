@@ -1,0 +1,273 @@
+name: ENGLISH PT v23.5.1 ALL Local Student Six Details + Full QA (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v2351-six-student-full-build.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v2351-six-student-all-regions-no-deploy
+  cancel-in-progress: false
+
+jobs:
+  full-student-details:
+    name: Generate 18180 missing student pages; verify all 158571; no deployment
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      ORIGINAL_RUN: '38689660290'
+      ORIGINAL_SHA: a18b8901ecda7d37f65e35b15f03d579ec63c70f
+      V235_SOURCE_RUN: '38843408620'
+      V235_SOURCE_SHA: e24622862706f384bd5094846abb041c0e4341a0
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare detailed fail-report even if input is unavailable
+        run: |
+          mkdir -p v2351-reports
+          printf '{"status":"STARTED","source_run":"38689660290","v235_source_run":"38843408620","draft_deployed":false,"production_deployed":false,"form_submitted":false}\n' > v2351-reports/V2351_EXECUTION.json
+      - name: Validate original source SHA, prior v23.5 full build, and pilot PASS
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY'];token=os.environ['GH_TOKEN']
+          def api(path):
+            req=urllib.request.Request('https://api.github.com/repos/'+repo+path,
+                 headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'})
+            with urllib.request.urlopen(req,timeout=40) as r:return json.load(r)
+          source=api('/actions/runs/'+os.environ['ORIGINAL_RUN'])
+          assert source['conclusion']=='success' and source['head_sha']==os.environ['ORIGINAL_SHA']
+          v235=api('/actions/runs/'+os.environ['V235_SOURCE_RUN'])
+          assert v235['conclusion']=='success' and v235['head_sha']==os.environ['V235_SOURCE_SHA']
+          pilot=api('/actions/runs/38862312235')
+          assert pilot['conclusion']=='success'
+          packages=api('/actions/runs/'+os.environ['V235_SOURCE_RUN']+'/artifacts?per_page=100')['artifacts']
+          assert any(p['name']=='englishpt-v235-hero-og-student-full-site-REVIEW-ONLY' and not p['expired'] for p in packages)
+          print('PASS_V2351_IMMUTABLE_SOURCE_PILOT_GUARD',source['head_sha'],v235['id'],pilot['id'])
+          PY
+      - name: Download 140391-page immutable v23.5 full-site artifact
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v235-hero-og-student-full-site-REVIEW-ONLY
+          run-id: 38843408620
+          path: v235-immutable
+          github-token: ${{ github.token }}
+      - name: Download full v23.5 SHA256 and QA report artifact
+        id: qa_download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v235-hero-og-student-qa-reports
+          run-id: 38843408620
+          path: prior-qa
+          github-token: ${{ github.token }}
+      - name: Validate unmodified input SHA256 and 140391 base pages
+        id: extract
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || sudo apt-get update -qq && sudo apt-get install -qq -y zstd
+          (cd v235-immutable && sha256sum -c ../prior-qa/V235_RELEASE_SHA256.txt)
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          qa=json.loads(Path('prior-qa/V235_INDEPENDENT_ALL_PAGE_QA.json').read_text(encoding='utf-8'))
+          assert qa['status']=='PASS_V235_ALL_PAGE_SEO_HERO_OG_STUDENT_QA'
+          assert qa['html_total']==140393 and qa['og_meta_preserved']==140393
+          assert qa['student_groups_preserved']==139380 and qa['errors_count']==0
+          print('PASS_V235_IMMUTABLE_140391_SITE_QA')
+          PY
+          mkdir -p v2351-site
+          tar --zstd -xf v235-immutable/englishpt-v23-5-hero-og-student-nav-140391-REVIEW-ONLY.tar.zst -C v2351-site
+          test -f v2351-site/robots.txt
+          test -f v2351-site/sitemap-index.xml
+          test -f v2351-site/pilot.css
+          test -f v2351-site/student-english.html
+      - name: Add 6060 x 3 missing student detail pages and fix all 26-intent local navigation blocks
+        id: generate
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v2351_generate_six_student_details.py
+          python3 scripts/v2351_generate_six_student_details.py \
+            --root v2351-site --expected-source 140391 --expected-locations 6060 \
+            --report v2351-reports/V2351_SIX_COURSE_BUILD.json \
+            --sample-zip v2351-reports/V2351_NAEIDONG_SAJIKDONG_SAMPLES.zip
+      - name: Independent full QA of 158571 pages and 945360 local student links
+        id: audit
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v2351_audit_student_six.py
+          python3 scripts/v2351_audit_student_six.py \
+            --root v2351-site --expected-generated 158571 --expected-regions 6060 \
+            --report v2351-reports/V2351_ALL_158571_STUDENT_NAV_SEMANTIC_QA.json
+      - name: Verify specific Naeidong student destinations, and snapshot all six at 390 and 1440
+        id: browser
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+          python3 - <<'PY'
+          import json,re,sys,shutil,threading
+          from pathlib import Path
+          from http.server import ThreadingHTTPServer,SimpleHTTPRequestHandler
+          from playwright.sync_api import sync_playwright
+          root=Path('v2351-site').resolve()
+          folder=Path('v2351-reports/screenshots');folder.mkdir(parents=True,exist_ok=True)
+          build=json.loads(Path('v2351-reports/V2351_SIX_COURSE_BUILD.json').read_text(encoding='utf-8'))
+          slugs=build.get('naeidong_slugs',[])
+          if not slugs:raise ValueError('User-specified locality 내이동 missing from full generation')
+          # Verify real destination HTML, not a student hub fallback.
+          courses=['elem-tutor','mid-tutor','high-tutor','elem-conv','mid-conv','high-conv']
+          labels=['초등학생영어과외','중학생영어과외','고등학생영어과외',
+                  '초등학생영어회화','중학생영어회화','고등학생영어회화']
+          issues=[];observations=[]
+          class Handler(SimpleHTTPRequestHandler):
+            def __init__(self,*a,**k):super().__init__(*a,directory=str(root),**k)
+            def log_message(self,*a):pass
+          server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+          threading.Thread(target=server.serve_forever,daemon=True).start()
+          try:
+            with sync_playwright() as pw:
+              binary=shutil.which('google-chrome') or shutil.which('google-chrome-stable') or shutil.which('chromium')
+              kw={'headless':True,'args':['--no-sandbox','--disable-dev-shm-usage']}
+              if binary:kw['executable_path']=binary
+              browser=pw.chromium.launch(**kw)
+              for width in (390,1440):
+                context=browser.new_context(viewport={'width':width,'height':900},is_mobile=width<600,has_touch=width<600)
+                context.route('**/*',lambda route: route.abort() if route.request.method not in ('GET','HEAD') else route.continue_())
+                page=context.new_page()
+                try:
+                  for slug in slugs:
+                    parent=f'{slug}-worker-english-conv-academy.html'
+                    url=f'http://127.0.0.1:{server.server_port}/{parent}'
+                    response=page.goto(url,wait_until='domcontentloaded',timeout=50000)
+                    if not response or response.status!=200:raise ValueError('parent locality HTTP failed')
+                    page.evaluate('()=>document.fonts.ready')
+                    group=page.locator('article.related-group').filter(has=page.locator('h3',has_text='학생 영어')).first
+                    if group.count()!=1:raise ValueError('parent lacks six student cards')
+                    cards=group.locator('a')
+                    if cards.count()!=6:raise ValueError('student card count mismatch')
+                    for i,(course,label) in enumerate(zip(courses,labels)):
+                      href=cards.nth(i).get_attribute('href')
+                      if href!='/'+slug+'-'+course+'.html':
+                        issues.append({'course':course,'width':width,'issue':'wrong_href','href':href})
+                        continue
+                      dest='http://127.0.0.1:'+str(server.server_port)+href
+                      rr=page.goto(dest,wait_until='domcontentloaded',timeout=50000)
+                      h1=page.locator('h1').first.inner_text().strip()
+                      if not rr or rr.status!=200 or label not in h1:
+                        issues.append({'course':course,'width':width,'issue':'wrong_landing','h1':h1})
+                      if page.locator('#consultation-preview form').count()!=1:
+                        issues.append({'course':course,'width':width,'issue':'missing_real_consultation_form'})
+                      check=page.evaluate('() => ({viewport:innerWidth,scroll:document.documentElement.scrollWidth})')
+                      if check['scroll']>width+3:
+                        issues.append({'course':course,'width':width,'issue':'horizontal_overflow'})
+                      shot=folder/(slug+'-'+course+'-'+str(width)+'.png')
+                      page.screenshot(path=str(shot),full_page=False,timeout=18000)
+                      observations.append({'slug':slug,'course':course,'width':width,'h1':h1,'http':rr.status,'screenshot':str(shot)})
+                      page.goto(url,wait_until='domcontentloaded',timeout=50000)
+                      group=page.locator('article.related-group').filter(has=page.locator('h3',has_text='학생 영어')).first
+                      cards=group.locator('a')
+                    print('PASS_V2351_NAEIDONG_BROWSER',slug,width,flush=True)
+                finally:context.close()
+              browser.close()
+          except Exception as exc:
+            issues.append({'runner':str(exc)[:800]})
+          finally:server.shutdown()
+          result={'status':'PASS_V2351_NAEIDONG_SIX_REAL_COURSE_CHROMIUM' if not issues and len(observations)>=12 else 'FAIL_V2351_NAEIDONG_SIX_REAL_COURSE_CHROMIUM',
+                  'naedong_slugs':slugs,'screen_checks':len(observations),
+                  'viewports':[390,1440],'errors':issues,
+                  'form_submissions':0,'production_deployed':False}
+          Path('v2351-reports/V2351_NAEIDONG_BROWSER.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print(result['status'],len(observations),'issues',len(issues),flush=True)
+          if issues:
+            for issue in issues[:15]:print('::error::'+str(issue))
+            sys.exit(1)
+          PY
+      - name: Package 158571-page v23.5.1 REVIEW-ONLY release and record SHA256
+        id: package
+        run: |
+          set -euo pipefail
+          tar -I 'zstd -T0 -3' -cf englishpt-v2351-student-six-158571-REVIEW-ONLY.tar.zst -C v2351-site .
+          sha256sum englishpt-v2351-student-six-158571-REVIEW-ONLY.tar.zst > v2351-reports/V2351_RELEASE_SHA256.txt
+          echo PASS_V2351_REVIEW_ONLY_PACKAGE
+      - name: Always report GO or HOLD with first failed phase
+        if: always()
+        env:
+          SOURCE: ${{ steps.source.outcome }}
+          DOWNLOAD: ${{ steps.download.outcome }}
+          QA_DOWNLOAD: ${{ steps.qa_download.outcome }}
+          EXTRACT: ${{ steps.extract.outcome }}
+          GENERATE: ${{ steps.generate.outcome }}
+          AUDIT: ${{ steps.audit.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+          PACKAGE: ${{ steps.package.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path('v2351-reports');root.mkdir(exist_ok=True)
+          keys=('SOURCE','DOWNLOAD','QA_DOWNLOAD','EXTRACT','GENERATE','AUDIT','BROWSER','PACKAGE')
+          stages={k:os.environ.get(k,'unknown') for k in keys}
+          ok=all(v=='success' for v in stages.values())
+          def get(name):
+            p=root/name
+            return json.loads(p.read_text(encoding='utf-8')) if p.exists() else {}
+          build=get('V2351_SIX_COURSE_BUILD.json')
+          audit=get('V2351_ALL_158571_STUDENT_NAV_SEMANTIC_QA.json')
+          browser=get('V2351_NAEIDONG_BROWSER.json')
+          result={
+            'status':'PASS_V2351_ALL_158571_STUDENT_SIX_DRAFT_READY' if ok else 'HOLD_V2351_ALL_158571_STUDENT_SIX_DRAFT_READY',
+            'stages':stages,'source_run':38689660290,
+            'source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+            'v235_source_run':38843408620,
+            'generated_pages':audit.get('generated_found'),
+            'new_pages':build.get('new_pages_created'),
+            'regions':build.get('location_detected'),
+            'six_card_links_checked':audit.get('student_links_checked'),
+            'six_landing_pages_checked':audit.get('six_detailed_pages_checked'),
+            'naedong_slugs':build.get('naeidong_slugs'),
+            'browser_checks':browser.get('screen_checks'),
+            'errors':build.get('error_count',0)+audit.get('errors_count',0)+len(browser.get('errors',[])),
+            'note':'New locality routes remain noindex as in v23.5; SEO index strategy must be separately reviewed before publishing.',
+            'production_deployed':False,'netlify_deployed':False,'form_submitted':False}
+          (root/'V2351_EXECUTION.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+            f.write('## ENGLISH PT v23.5.1 six course detail expansion: '+result['status']+'\n\n')
+            f.write('Stages: '+str(stages)+'\n\n')
+            f.write(f"New pages: {result['new_pages']}; all pages: {result['generated_pages']}; links: {result['six_card_links_checked']}; errors: {result['errors']}\n\n")
+            f.write('No Netlify/Production deployment; no form submissions. Review noindex status before Production.\n')
+          print(result['status'],stages,flush=True)
+          PY
+      - name: Always upload all-page QA JSON, Naeidong samples and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2351-all-158571-student-qa-and-naeidong-previews
+          path: v2351-reports/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload complete 158571-page Draft-ready artifact ONLY on full PASS
+        if: steps.generate.outcome == 'success' && steps.audit.outcome == 'success' && steps.browser.outcome == 'success' && steps.package.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2351-full-site-158571-REVIEW-ONLY
+          path: englishpt-v2351-student-six-158571-REVIEW-ONLY.tar.zst
+          retention-days: 30
+          if-no-files-found: error
