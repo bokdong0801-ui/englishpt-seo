@@ -111,7 +111,7 @@ SPECS={
 NAV_RE=re.compile(r'(<article class="related-group"><h3>학생 영어</h3><div class="related-course-links">)(.*?)(</div></article>)',re.S)
 H1_RE=re.compile(r'<h1\b[^>]*>.*?</h1>',re.S|re.I)
 DETAIL=re.compile(r'<section class="section intro-detail" id="detail">.*?</section>',re.S)
-CONSULT=re.compile(r'<section\\b(?=[^>]*\\bid="consultation-preview")(?=[^>]*class="[^"]*consult)[^>]*>.*?</section>',re.S)
+CONSULT=re.compile(r'<section\b(?=[^>]*\bid="consultation-preview")(?=[^>]*class="[^"]*consult)[^>]*>.*?</section>',re.S)
 RELATED=re.compile(r'<section class="section related local-navigation">.*?</section>',re.S)
 NEARBY=re.compile(r'<section class="section nearby-localities">.*?</section>',re.S)
 TRUST=re.compile(r'<div class="trust">.*?</div></div>',re.S)
