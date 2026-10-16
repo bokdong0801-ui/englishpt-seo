@@ -40,7 +40,14 @@ def main():
     ap.add_argument("--expected-regions",type=int,default=6060)
     args=ap.parse_args()
     root=args.root.resolve()
-    regions=sorted(root.glob("*-elem-tutor.html"))
+    elem_candidates=sorted(root.glob("*-elem-tutor.html"))
+    regions=[p for p in elem_candidates if (
+       root/(p.name[:-len("-elem-tutor.html")]+"-worker-english-conv-academy.html")
+       ).is_file() and (
+       root/(p.name[:-len("-elem-tutor.html")]+"-mid-conv.html")
+       ).is_file() and (
+       root/(p.name[:-len("-elem-tutor.html")]+"-high-conv.html")
+       ).is_file()]
     report={"status":"RUNNING","generated_expected":args.expected_generated,
             "regions_expected":args.expected_regions,"regions":len(regions),
             "generated_found":0,"html_checked":0,"student_blocks_checked":0,
