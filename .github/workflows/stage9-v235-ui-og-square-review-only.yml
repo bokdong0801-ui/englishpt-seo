@@ -1,0 +1,113 @@
+name: ENGLISH PT v23.5 Live UI + OG Square Visual QA (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v235-ui-og-square-review-only.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: englishpt-v235-ui-og-square-only
+  cancel-in-progress: false
+
+jobs:
+  review-only:
+    name: UI consultation clicks + all OG square crops - no submit or deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize persistent reports
+        run: |
+          mkdir -p v235-final-visual-qa
+          printf '{"status":"STARTED","draft_url":"https://6ad1988e906a5d8e1bb920c9--englishpt-final-ia-review-bokdong.netlify.app","draft_deployed":false,"production_deployed":false,"form_submitted":false}\n' > v235-final-visual-qa/V235_EXECUTION_STATUS.json
+      - name: Verify immutable Draft run and source identity
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY'];token=os.environ['GH_TOKEN']
+          def get(path):
+            req=urllib.request.Request('https://api.github.com/repos/'+repo+path,
+              headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'})
+            with urllib.request.urlopen(req,timeout=45) as res:return json.load(res)
+          source=get('/actions/runs/38689660290')
+          assert source['head_sha']=='a18b8901ecda7d37f65e35b15f03d579ec63c70f' and source['conclusion']=='success'
+          deploy=get('/actions/runs/38845014645')
+          jobs=get('/actions/runs/38845014645/jobs?per_page=100')['jobs']
+          steps={s['name']:s.get('conclusion') for j in jobs for s in j.get('steps',[])}
+          assert steps.get('Publish isolated unique v23.5 Draft (never Production)')=='success'
+          recheck=get('/actions/runs/38857847333')
+          assert recheck['conclusion']=='success'
+          print('PASS_V235_IMMUTABLE_DRAFT_AND_PREVIOUS_RECHECK',source['head_sha'])
+          PY
+      - name: Install Korean fonts and Chromium + Pillow for visual audit
+        id: install
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0 Pillow==11.3.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+          python3 -m py_compile scripts/v235_final_ui_og_square_qa.py
+          echo PASS_V235_VISUAL_AUDIT_DEPENDENCIES
+      - name: Run 14-page mobile and PC CTA browser test and 29 OG image square crops
+        id: visual
+        run: |
+          set -euo pipefail
+          python3 scripts/v235_final_ui_og_square_qa.py
+      - name: Always save final JSON status and first failure stage
+        if: always()
+        env:
+          SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          VISUAL_OUTCOME: ${{ steps.visual.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          path=Path('v235-final-visual-qa');path.mkdir(exist_ok=True)
+          stages={k:os.environ.get(k+'_OUTCOME','unknown') for k in ('SOURCE','INSTALL','VISUAL')}
+          qa=path/'V235_UI_AND_OG_FINAL_SUMMARY.json'
+          details=json.loads(qa.read_text(encoding='utf-8')) if qa.exists() else {}
+          good=all(x=='success' for x in stages.values()) and details.get('status')=='PASS_V235_UI_AND_OG_SQUARE'
+          result={'status':'PASS_V235_VISUAL_PREPRODUCTION_QA' if good else 'HOLD_V235_VISUAL_PREPRODUCTION_QA',
+            'source_run':38689660290,'source_sha':'a18b8901ecda7d37f65e35b15f03d579ec63c70f',
+            'draft_run':38845014645,'recheck_run':38857847333,
+            'stages':stages,'og_images_checked':details.get('og_images_checked'),
+            'og_square_safe':details.get('square_safe'),'ui_checks':details.get('ui_checks'),
+            'forms_reached':details.get('forms_reached'),
+            'student_links_checked':details.get('student_links_checked_by_browser'),
+            'ui_errors':details.get('ui_errors',[]),'og_errors':details.get('og_errors',[]),
+            'netlify_deployed':False,'production_deployed':False,'forms_submitted':False}
+          (path/'V235_EXECUTION_STATUS.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+            f.write('## ENGLISH PT v23.5 live design, CTA, OG square preview: '+result['status']+'\n\n')
+            f.write('Existing immutable v23.5 Draft; no redeployment, no form submissions.\n\n')
+            f.write('Stages: '+str(stages)+'\n\n')
+            f.write('OG square safe: '+str(result['og_square_safe'])+'/'+str(result['og_images_checked'])+'\n\n')
+            f.write('Browser UI checks: '+str(result['ui_checks'])+'; forms reached: '+str(result['forms_reached'])+'\n\n')
+            f.write('Review artifact for complete error/warning details and screenshots.\n')
+          print(result['status'],json.dumps(stages),flush=True)
+          PY
+      - name: Upload all screenshots + 29 OG originals and square crops even on error
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v235-ui-consultation-og29-square-visual-qa
+          path: v235-final-visual-qa/
+          retention-days: 30
+          if-no-files-found: error
