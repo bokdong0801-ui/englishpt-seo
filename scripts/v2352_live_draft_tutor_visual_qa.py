@@ -96,32 +96,10 @@ def http_qa():
                     m=re.search(r'<meta property="og:image" content="([^"]+)"',doc)
                     if not m or not m.group(1).startswith(ALIAS+"/assets/images/og-pages/"):
                         raise ValueError("OG should resolve inside isolated Draft alias")
-                    # HTML attributes can be re-ordered/minified or serialized without
-                    # double quotes by the deploy CDN. Parse semantics, NOT source text.
-                    # The independent real-click browser QA validates arrival/H1.
-                    from html.parser import HTMLParser
-                    class CourseLinks(HTMLParser):
-                        def __init__(self):
-                            super().__init__(convert_charrefs=True)
-                            self.hrefs=[]
-                        def handle_starttag(self,tag,attrs):
-                            if tag!="a":return
-                            a=dict(attrs)
-                            classes=set((a.get("class") or "").split())
-                            if classes.intersection(("related-course-tutor","related-course-conversation")):
-                                self.hrefs.append(a.get("href") or "")
-                    parsed=CourseLinks()
-                    parsed.feed(doc)
-                    hrefs={h.rstrip("/") for h in parsed.hrefs}
-                    for mode in ALL_MODES:
-                        stem="/"+slug+"-"+mode
-                        if stem not in hrefs and stem+".html" not in hrefs:
-                            raise ValueError("Wrong regional student link: "+stem+
-                                " (parsed="+str(sorted(hrefs)[:8])+")")
-                    if len([h for h in parsed.hrefs if h]): 
-                        pass
-                    else:
-                        raise ValueError("No parsed student navigation links")
+                    from v23521_qa_contracts import parse_regional_student_links
+                    confirmed=parse_regional_student_links(doc,slug)
+                    if len(confirmed)!=6:
+                        raise ValueError("Parsed regional student card link count must equal six")
                     r["page_checks"].append({"url":URL+"/"+filename,"http":200,
                        "h1":name+" "+label,"updated_sections":5,"faqs":6,"student_links":6,"draft_noindex":True})
                     print("V2352_HTTP_PASS",filename,flush=True)
