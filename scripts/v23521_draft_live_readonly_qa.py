@@ -57,26 +57,10 @@ def html_phase():
     if 'name="englishpt-consultation" method="POST" data-netlify="true"' not in content:
      raise ValueError('Netlify consultation form missing')
     if 'name="consent"' not in content:raise ValueError('consent field missing')
-    # CDN-served HTML can serialize attributes differently from frozen source.
-    # HTMLParser also accepts unquoted / single-quoted / reordered attrs.
-    from html.parser import HTMLParser
-    class CardLinks(HTMLParser):
-     def __init__(self):
-      super().__init__(convert_charrefs=True)
-      self.links=[]
-     def handle_starttag(self,tag,attrs):
-      if tag!='a':return
-      a=dict(attrs);classes=set((a.get('class') or '').split())
-      for candidate in ('related-course-tutor','related-course-conversation'):
-       if candidate in classes:self.links.append((candidate,a.get('href') or ''))
-    cards=CardLinks();cards.feed(content)
-    modes=('elem-tutor','mid-tutor','high-tutor','elem-conv','mid-conv','high-conv')
-    if len(cards.links)!=6:
-     raise ValueError('Expected six parsed regional course anchors, got '+str(cards.links))
-    for intended in modes:
-     path='/'+slug+'-'+intended
-     if not any(h.rstrip('/') in (path,path+'.html') for _,h in cards.links):
-      raise ValueError('Missing course link: '+path)
+    from v23521_qa_contracts import parse_regional_student_links,verify_tutoring_form_copy
+    if len(parse_regional_student_links(content,slug))!=6:
+     raise ValueError('Regional student courses not complete')
+    verify_tutoring_form_copy(content)
     if mode=='elem-tutor' and '학교 영어가 어렵다면 읽기·문법 중 무엇부터 살펴봐야 하나요?' not in content:
      raise ValueError('elementary parent FAQ improvement missing')
     if mode=='high-tutor' and '고2에서 고3으로 올라가기 전 무엇을 먼저 점검해야 하나요?' not in content:
