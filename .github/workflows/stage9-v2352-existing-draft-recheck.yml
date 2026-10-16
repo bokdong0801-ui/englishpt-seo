@@ -1,0 +1,172 @@
+name: ENGLISH PT v23.5.2 Existing Draft Fixed Pretty-URL Links + CTA QA (NO REDEPLOY)
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23.5.2-tutor-content-20261016]
+    paths:
+      - '.github/workflows/stage9-v2352-existing-draft-recheck.yml'
+permissions:
+  contents: read
+concurrency:
+  group: englishpt-v2352-fixed-existing-draft-no-redeploy
+  cancel-in-progress: true
+jobs:
+  existing-draft-QA:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      V2352_UNIQUE_DRAFT_URL: https://6ad1f66796fb4304b7283cfc--englishpt-final-ia-review-bokdong.netlify.app
+      V2352_DRAFT_OG_ALIAS: https://v2352-tutor-review-20261016--englishpt-final-ia-review-bokdong.netlify.app
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Confirm fixed existing Draft origin, immutable source and prior deployment run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY']
+          for id in (38878640560,38884209997):
+            with urllib.request.urlopen(urllib.request.Request(
+              f'https://api.github.com/repos/{repo}/actions/runs/{id}',
+              headers={'Authorization':'Bearer '+os.environ['GH_TOKEN']}),timeout=50) as r:
+              data=json.load(r)
+            assert data['conclusion']=='success',(id,data['conclusion'])
+          assert os.environ['V2352_UNIQUE_DRAFT_URL'].startswith(
+            'https://6ad1f66796fb4304b7283cfc--englishpt-final-ia-review-bokdong.netlify.app')
+          assert os.environ['V2352_DRAFT_OG_ALIAS'].startswith(
+            'https://v2352-tutor-review-20261016--englishpt-final-ia-review-bokdong.netlify.app')
+          print('PASS_ORIGINAL_FROZEN_SOURCE_AND_EXISTING_UNIQUE_DRAFT_GUARD',flush=True)
+          PY
+      - name: Install real Chromium and Korean fonts
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+      - name: Rerun 6 tutor live HTML, six local links each and 29 OG checks (read-only)
+        id: http
+        continue-on-error: true
+        run: |
+          python3 scripts/v2352_live_draft_tutor_visual_qa.py http
+      - name: Rerun all 24 mobile desktop layouts, 120 sections, 48 real CTAs, 144 regional links
+        id: browser
+        continue-on-error: true
+        run: |
+          python3 scripts/v2352_live_draft_tutor_visual_qa.py browser
+      - name: Verify real navigation on both 390 and 1440px, six click destinations per district
+        id: click
+        continue-on-error: true
+        run: |
+          python3 - <<'PY'
+          import os,json,shutil
+          from pathlib import Path
+          from urllib.parse import urlsplit
+          from playwright.sync_api import sync_playwright
+          root=Path('v2352-live-report');root.mkdir(exist_ok=True)
+          base=os.environ['V2352_UNIQUE_DRAFT_URL']
+          paths=('gyeongnam-milyang-naeidong','seoul-jongno-sajikdong')
+          courses=('elem-tutor','mid-tutor','high-tutor','elem-conv','mid-conv','high-conv')
+          titles=('초등학생영어과외','중학생영어과외','고등학생영어과외','초등학생영어회화','중학생영어회화','고등학생영어회화')
+          result={'status':'RUNNING','checks':[],'errors':[],'production_deployed':False,'form_submitted':False}
+          try:
+            with sync_playwright() as pw:
+              executable=shutil.which('google-chrome') or shutil.which('chromium')
+              kwargs={'headless':True,'args':['--no-sandbox','--disable-dev-shm-usage']}
+              if executable:kwargs['executable_path']=executable
+              browser=pw.chromium.launch(**kwargs)
+              try:
+                for width in (390,1440):
+                  ctx=browser.new_context(viewport={'width':width,'height':900})
+                  ctx.route('**/*',lambda route:route.continue_() if route.request.method in ('GET','HEAD') else route.abort())
+                  page=ctx.new_page()
+                  try:
+                    for slug in paths:
+                      origin=base+'/'+slug+'-elem-tutor.html'
+                      for mode,title in zip(courses,titles):
+                        try:
+                          x=page.goto(origin,wait_until='domcontentloaded',timeout=50000)
+                          if not x or x.status!=200:raise ValueError('source link page not 200')
+                          card=page.locator('article.related-group').filter(has=page.locator('h3',has_text='학생 영어')).locator('a').filter(has_text=title)
+                          if card.count()!=1:raise ValueError('expected exactly one student navigation card: '+title)
+                          href=card.get_attribute('href') or ''
+                          correct='/'+slug+'-'+mode
+                          if href.rstrip('/') not in (correct,correct+'.html'):
+                            raise ValueError('invalid href '+href)
+                          card.scroll_into_view_if_needed()
+                          card.click(timeout=12000)
+                          page.wait_for_load_state('domcontentloaded',timeout=30000)
+                          landed=urlsplit(page.url).path.rstrip('/')
+                          if landed not in (correct,correct+'.html'):
+                            raise ValueError('wrong destination after click '+landed)
+                          h1=page.locator('h1').first.inner_text()
+                          if title not in h1:
+                            raise ValueError('wrong course H1 '+h1)
+                          if page.locator('#consultation-preview form').count()!=1:
+                            raise ValueError('consultation target absent')
+                          result['checks'].append({'area':slug,'course':mode,'width':width,'href':href,'landed':landed,'status':'PASS'})
+                          print('V2352_REAL_STUDENT_CARD_CLICK_PASS',slug,mode,width,landed,flush=True)
+                        except Exception as ex:
+                          result['errors'].append({'area':slug,'course':mode,'width':width,'reason':str(ex)})
+                  finally:ctx.close()
+              finally:browser.close()
+          except Exception as ex:result['errors'].append({'runner':str(ex)})
+          result['status']='PASS_V2352_REAL_24_COURSE_CLICKS' if len(result['checks'])==24 and not result['errors'] else 'HOLD_V2352_REAL_24_COURSE_CLICKS'
+          (root/'V2352_REAL_NAVIGATION_CLICKS.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print(result['status'],len(result['checks']),result['errors'][:2],flush=True)
+          if result['errors']:raise SystemExit(1)
+          PY
+      - name: Always produce truthful PASS/HOLD summary
+        if: always()
+        env:
+          HTTP: ${{ steps.http.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+          CLICK: ${{ steps.click.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path('v2352-live-report')
+          def read(name):
+            p=root/name
+            return json.loads(p.read_text('utf8')) if p.exists() else {}
+          h=read('V2352_LIVE_HTTP_QA.json')
+          b=read('V2352_LIVE_BROWSER_QA.json')
+          c=read('V2352_REAL_NAVIGATION_CLICKS.json')
+          status=all(os.environ[k]=='success' for k in ('HTTP','BROWSER','CLICK')) and (
+            h.get('status')=='PASS_V2352_LIVE_HTTP_CONTENT_CTA_SEO_OG') and (
+            b.get('status')=='PASS_V2352_LIVE_TUTOR_RESPONSIVE_CTA') and (
+            c.get('status')=='PASS_V2352_REAL_24_COURSE_CLICKS')
+          out={'status':'PASS_V2352_EXISTING_DRAFT_ALL_LINKS_UI_CTA' if status else 'HOLD_V2352_EXISTING_DRAFT_ALL_LINKS_UI_CTA',
+            'unique_url':os.environ['V2352_UNIQUE_DRAFT_URL'],
+            'html_pages_checked':len(h.get('page_checks',[])),
+            'responsive_combinations':b.get('actual_page_combinations',0),
+            'cta_form_reached':b.get('consultation_form_reached',0),
+            'student_link_identity_checks':b.get('student_navigation_checks',0),
+            'real_student_card_clicks':len(c.get('checks',[])),
+            'og_images_checked':h.get('og_checked',0),
+            'errors':h.get('errors',[])+b.get('errors',[])+c.get('errors',[]),
+            'production_deployed':False,'draft_redeployed':False,'form_submitted':False}
+          (root/'V2352_FINAL_EXISTING_DRAFT_LINKS_CTA_QA.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+            f.write('## '+out['status']+'\n\n'+str(out)+'\n\nNo Netlify redeploy, no Production or form submission.\n')
+          print(out['status'],flush=True)
+          if not status:raise SystemExit(1)
+          PY
+      - name: Always upload JSON and screenshot proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2352-existing-draft-pretty-URL-real-clicks-and-CTA-QA
+          path: v2352-live-report/
+          retention-days: 30
+          if-no-files-found: error
