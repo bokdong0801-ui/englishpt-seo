@@ -1,10 +1,12 @@
 name: ENGLISH PT v23.5.2.1 Approved OG Fix One Review Draft (NO PROD)
 
 on:
-  # User approved ONE isolated Review upload on 2026-10-17.
-  push:
-    branches: [review/v23521-ogfix-approved-once-20261017]
-    paths: ['.github/workflows/stage9-v23521-ogfix-approved-once.yml']
+  # Archived one-time pre-upload dry run. Disabled automatic repeat.
+  workflow_dispatch:
+    inputs:
+      review_upload_approval:
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -48,7 +50,7 @@ jobs:
       - name: FAIL FAST - require manual Review-only approval and valid DNS label BEFORE downloads
         id: dns_preflight
         env:
-          REVIEW_UPLOAD_APPROVAL: REVIEW-ONLY-OGFIX
+          REVIEW_UPLOAD_APPROVAL: ARCHIVED_DO_NOT_DEPLOY
         run: |
           python3 - <<'PY'
           import os,re
