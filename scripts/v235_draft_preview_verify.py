@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read-only v23.5 review Draft HTTP + Chromium verification; no submissions or production actions."""
 import argparse
+import ast
 import json
 import os
 import re
@@ -76,6 +77,38 @@ def meta(doc,key,attr="property"):
     return [attrs(tag).get("content","") for tag in BINDING_RE.findall(doc)
             if attrs(tag).get(attr)==key]
 
+class StudentAnchor(HTMLParser):
+    """Parse HTML anchors regardless of whether Netlify quotes href attributes."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.href = None
+    def handle_starttag(self,tag,attrs):
+        if tag=="a" and self.href is None:
+            self.href=dict(attrs).get("href")
+
+
+def approved_og_template_paths():
+    # Only the 29 approved 1200x630 templates used by the metadata generator
+    # are share-image QA targets. A legacy asset folder contains ~22k
+    # unrelated historical PNGs of different dimensions.
+    script=Path("scripts/v23_4_og_landscape_all_pages.py")
+    tree=ast.parse(script.read_text(encoding="utf-8"),filename=str(script))
+    for node in tree.body:
+        if isinstance(node,ast.Assign) and any(
+            isinstance(t,ast.Name) and t.id=="CATS" for t in node.targets
+        ):
+            cats=ast.literal_eval(node.value)
+            names=[row[0]+".png" for row in cats]
+            if len(names)!=29 or len(set(names))!=29:
+                raise ValueError("29 unique OG design templates not found")
+            root=ROOT/"assets/images/og-pages"
+            missing=[name for name in names if not (root/name).is_file()]
+            if missing:
+                raise ValueError("Generated OG designs missing: "+str(missing[:10]))
+            return [root/name for name in names]
+    raise ValueError("Cannot read approved OG designs from source")
+
+
 def identity():
     return dict(version="v23.5",draft_url=DRAFT,alias_url=ALIAS,
                 source_run="38689660290",
@@ -125,12 +158,39 @@ def http_check():
                     for i,anchor in enumerate(anchors):
                         if CHOICES[i] not in anchor:
                             raise ValueError("student choices out of order: "+CHOICES[i])
-                        href=re.search(r'\bhref="([^"]+)"',anchor)
-                        if not href or not href.group(1).startswith("/"):
-                            raise ValueError("student href invalid: "+str(i))
-                    hub_status,hub_html,_,_=fetch(DRAFT+"/student-english.html")
-                    if hub_status!=200 or not all('id="'+x+'"' in hub_html.decode("utf-8") for x in HUB_IDS):
-                        raise ValueError("student tutoring and conversation destinations missing")
+                        parser=StudentAnchor()
+                        parser.feed(anchor)
+                        href=(parser.href or "").strip()
+                        if not href or href.startswith(("javascript:","mailto:","tel:")):
+                            raise ValueError("student href unusable: "+str(i)+" "+repr(href))
+                        # Netlify may produce extensionless pretty routes and
+                        # HTML minification may remove href quotes. Validate
+                        # the actual destination and grade anchor, not syntax.
+                        dest=urljoin(url,href)
+                        target=urlsplit(dest)
+                        if target.scheme!="https" or target.hostname!=urlsplit(DRAFT).hostname:
+                            raise ValueError("student href leaves Draft host: "+repr(href))
+                        status,body,_,_=fetch(dest.split("#",1)[0])
+                        if status!=200 or b"<h1" not in body.lower():
+                            raise ValueError("student href destination invalid: "+repr(href))
+                        if i>0 and target.fragment!=HUB_IDS[i]:
+                            raise ValueError("student href grade anchor mismatch: "+repr(href))
+                        if target.fragment:
+                            # Proper HTML parser tolerates either single or
+                            # double quoted IDs in the destination page.
+                            class IdParser(HTMLParser):
+                                def __init__(self):
+                                    super().__init__()
+                                    self.ids=set()
+                                def handle_starttag(self,tag,attrs):
+                                    d=dict(attrs)
+                                    if d.get("id"):
+                                        self.ids.add(d["id"])
+                            parser_ids=IdParser()
+                            parser_ids.feed(body.decode("utf-8","replace"))
+                            if target.fragment not in parser_ids.ids:
+                                raise ValueError("student href anchor missing: "+repr(href))
+                    print("PASS_V235_LIVE_STUDENT_LINKS",len(anchors),flush=True)
                 report["pages_checked"]+=1
                 report["checks"].append({"name":name,"http":200,"html_bytes":len(raw),"og":og[0],
                                          "noindex":True})
@@ -138,10 +198,12 @@ def http_check():
             except Exception as exc:
                 errors.append({"page":name,"reason":repr(exc)})
                 print("::error::HTTP "+name+" "+str(exc),flush=True)
-        # Verify every image included in the 29-template release, not merely sampled OGs.
-        image_dir=ROOT/"assets/images/og-pages"
-        paths=sorted(image_dir.glob("*.png"))
-        if len(paths)<26:errors.append({"image_total":len(paths),"reason":"OG PNG set smaller than 26 actively referenced image types"})
+        # Limit dimensions QA to the exact 29 approved 1200x630 OG PNGs.
+        # 21,961 unrelated legacy PNGs must not cause false OG failures.
+        paths=approved_og_template_paths()
+        for image_url in images:
+            if image_url.rsplit("/",1)[-1] not in {p.name for p in paths}:
+                errors.append({"image":image_url,"reason":"OG refers to unapproved image"})
         for path in paths:
             try:
                 url=ALIAS+"/assets/images/og-pages/"+path.name
