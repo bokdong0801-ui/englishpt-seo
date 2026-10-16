@@ -1,0 +1,79 @@
+name: ENGLISH PT v23.5.1 Live Student Link Diagnostic (Read Only)
+
+on:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v2351-live-link-diagnostic.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-inspection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect exact deployed student links, HTTP destinations and content H1
+        run: |
+          set -euo pipefail
+          mkdir -p diagnostic
+          python3 - <<'PY'
+          import json,html,re,urllib.request,traceback
+          from urllib.parse import urljoin,urlsplit
+          from pathlib import Path
+          base='https://6ad1cedf4338fd3a81cdb51a--englishpt-final-ia-review-bokdong.netlify.app'
+          slugs=['gyeongnam-milyang-naeidong','seoul-jongno-sajikdong']
+          modes=['elem-tutor','mid-tutor','high-tutor','elem-conv','mid-conv','high-conv']
+          records=[];issues=[]
+          for slug in slugs:
+            p=f'{slug}-worker-english-conv-academy.html'
+            req=urllib.request.Request(base+'/'+p,headers={'User-Agent':'ENGLISHPT-safe-read-only-link-diagnostic'})
+            with urllib.request.urlopen(req,timeout=35) as response:
+              document=response.read().decode('utf-8',errors='replace')
+            group=re.search(r'<article class="related-group"><h3>학생 영어</h3><div class="related-course-links">(.*?)</div></article>',document,re.S)
+            if not group:
+              issues.append({'area':slug,'error':'missing student group'})
+              continue
+            links=re.findall(r'<a\b[^>]*>.*?</a>',group.group(1),re.S)
+            print('AREA',slug,'student_cards',len(links),flush=True)
+            for i,link in enumerate(links):
+              href=re.search(r'\bhref=["\x27]([^"\x27]+)',link)
+              target=html.unescape(href.group(1)) if href else ''
+              visible=' '.join(html.unescape(re.sub(r'<[^>]+>','',link)).split())
+              resolved=urljoin(base+'/'+p,target)
+              info={'area':slug,'position':i,'href':target,'text':visible,'resolved':resolved}
+              try:
+                with urllib.request.urlopen(urllib.request.Request(resolved,headers={'User-Agent':'ENGLISHPT-read-only-test'}),timeout=35) as reply:
+                  body=reply.read().decode('utf-8',errors='replace')
+                  title=re.search(r'<h1[^>]*>(.*?)</h1>',body,re.I|re.S)
+                  info.update(http=reply.status,actual_url=reply.url,
+                    h1=html.unescape(re.sub(r'<[^>]*>','',title.group(1))) if title else '')
+              except Exception as e:info['error']=str(e)[:500]
+              expect='/'+slug+'-'+modes[i]+'.html' if i<len(modes) else '(excess)'
+              info['expected']=expect
+              info['path_exact']=urlsplit(resolved).path==expect
+              info['destination_grade_correct']=(i<len(modes) and 
+                ['초등학생영어과외','중학생영어과외','고등학생영어과외',
+                 '초등학생영어회화','중학생영어회화','고등학생영어회화'][i] in info.get('h1',''))
+              print('CARD',json.dumps(info,ensure_ascii=False),flush=True)
+              records.append(info)
+          result={'status':'PASS' if len(records)==12 and all(x.get('http')==200 and x.get('destination_grade_correct') for x in records) else 'HOLD',
+            'link_count':len(records),'http_200':sum(x.get('http')==200 for x in records),
+            'path_exact':sum(x.get('path_exact') for x in records),
+            'grade_correct':sum(x.get('destination_grade_correct') for x in records),
+            'errors':issues,'cards':records,
+            'production_deployed':False,'form_submissions':False}
+          Path('diagnostic/V2351_LIVE_STUDENT_LINKS.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+          print('V2351_REAL_LINK_DIAGNOSTIC',result['status'],'links',len(records),'HTTP200',result['http_200'],
+             'gradeCorrect',result['grade_correct'],flush=True)
+          if result['status']!='PASS':raise SystemExit(1)
+          PY
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2351-real-deployed-student-link-diagnostic
+          path: diagnostic/
+          if-no-files-found: warn
+          retention-days: 30
