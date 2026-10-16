@@ -206,7 +206,7 @@ def browser_qa():
                                     if faq.count()!=6:raise ValueError("Missing 6 FAQ questions")
                                     r["actual_page_combinations"]+=1
                                     # Verify real button click and actual form reachable (never POST).
-                                    for cta_kind,selector in (("hero","a.hero-actions a[href='#consultation-preview']"),
+                                    for cta_kind,selector in (("hero",".hero-actions a[href='#consultation-preview']"),
                                                               ("parent","a.v2352-small-cta[href='#consultation-preview']")):
                                         link=page.locator(selector)
                                         if link.count()<1:raise ValueError(cta_kind+" consultation CTA absent")
