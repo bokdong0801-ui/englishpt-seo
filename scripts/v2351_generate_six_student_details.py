@@ -334,7 +334,8 @@ def main():
         and (root/(p.name[:-len("-elem-tutor.html")]+"-mid-conv.html")).is_file()
         and (root/(p.name[:-len("-elem-tutor.html")]+"-high-conv.html")).is_file()
     ]
-    excluded_elem_tutor=[p.name for p in elem_candidates if p not in set(local_pages)]
+    local_set=set(local_pages)
+    excluded_elem_tutor=[p.name for p in elem_candidates if p not in local_set]
     expected_final=args.expected_source+args.expected_locations*3
     result={"status":"STARTED","source_expected":args.expected_source,
        "source_generated_count":page_count-2,"location_expected":args.expected_locations,
