@@ -1,0 +1,213 @@
+name: ENGLISH PT v23.5.2.1 FINAL Existing Draft ZERO Reupload Regression QA
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23.5.2.1-parent-copy-polish-20261016]
+    paths:
+      - '.github/workflows/stage9-v23521-existing-draft-zero-reupload-final-qa.yml'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: englishpt-v23521-final-existing-draft-zero-reupload
+  cancel-in-progress: true
+jobs:
+  same-immutable-deploy-post-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      REVIEW_DEPLOY_URL: https://6ad22244efa528796be5b050--englishpt-final-ia-review-bokdong.netlify.app
+      OG_ALIAS_URL: https://v23521-parent-final-20261016--englishpt-final-ia-review-bokdong.netlify.app
+      ORIGINAL_SHA256: d6bd3b7299db5d74e900e9f80062e7b0449870dd34399713cc11f420871c6acd
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize failed until all steps and source provenance pass
+        run: |
+          mkdir -p v23521-no-reupload-reports v2352-live-report v23521-live-report
+          printf '{"status":"HOLD_PRECHECK","production_deployed":false,"draft_redeployed":false,"form_submitted":false}\n' > v23521-no-reupload-reports/FINAL_QA.json
+      - name: Verify same previous immutable Netlify Draft and frozen source identity
+        id: identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import urllib.request,os,json
+          repo=os.environ['GITHUB_REPOSITORY'];token=os.environ['GH_TOKEN']
+          for id in (38689660290,38902833981,38903769454,38905144736):
+            req=urllib.request.Request(f'https://api.github.com/repos/{repo}/actions/runs/{id}',
+              headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'})
+            with urllib.request.urlopen(req,timeout=50) as response:r=json.load(response)
+            if id==38905144736:
+              assert r['status']=='completed' and r['conclusion']=='failure'
+            else:
+              assert r['status']=='completed' and r['conclusion']=='success',(id,r['conclusion'])
+            if id==38689660290:
+              assert r['head_sha']=='a18b8901ecda7d37f65e35b15f03d579ec63c70f'
+          assert os.environ['REVIEW_DEPLOY_URL'].split('//')[1].split('--')[0]=='6ad22244efa528796be5b050'
+          print('PASS_SAME_FROZEN_DEPLOY_ID_PREVIOUS_BROWSER_PASS_PROVENANCE',flush=True)
+          PY
+      - name: Download approved real tutoring HTML overlay, only 13MB (not full 1.23GB)
+        id: overlay
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-full-158571-parent-copy-seo-qa-and-18180-overlay
+          run-id: 38902833981
+          path: source-report
+          github-token: ${{ github.token }}
+      - name: Download original live PASS screenshots and QA, do not repeat costly build
+        id: previous
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-final-unique-draft-live-parent-copy-and-cta-QA
+          run-id: 38905144736
+          path: previous-live-report
+          github-token: ${{ github.token }}
+      - name: Extract precisely six immutable tutor HTML from overlay, unit-test QA itself BEFORE live checks
+        id: unit
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          mkdir -p tutor-real-source
+          for slug in gyeongnam-milyang-naeidong seoul-jongno-sajikdong; do
+            for grade in elem-tutor mid-tutor high-tutor; do
+              tar --zstd -xf source-report/V23521_18180_TUTOR_ONLY_OVERLAY.tar.zst \
+                -C tutor-real-source "./$slug-$grade.html"
+            done
+          done
+          python3 -m py_compile scripts/v23521_qa_contracts.py \
+            scripts/v23521_qa_contract_selftest.py \
+            scripts/v23521_draft_live_readonly_qa.py \
+            scripts/v2352_live_draft_tutor_visual_qa.py
+          python3 scripts/v23521_qa_contract_selftest.py --site-root tutor-real-source
+      - name: Validate prior 24/24 browser, 120/120 sections, 48/48 form arrivals, 144 nav references from EXACT same unique Draft
+        id: prior
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path('previous-live-report/v2352-live-report')
+          dep=json.loads((p/'V2352_DRAFT_DEPLOY.json').read_text('utf8'))
+          chrome=json.loads((p/'V2352_LIVE_BROWSER_QA.json').read_text('utf8'))
+          html=json.loads((p/'V2352_LIVE_HTTP_QA.json').read_text('utf8'))
+          assert dep['status']=='PASS_V2352_ISOLATED_DRAFT_DEPLOY'
+          assert dep['source_run']==38902833981
+          assert dep['unique_url']==os.environ['REVIEW_DEPLOY_URL']
+          assert chrome['status']=='PASS_V2352_LIVE_TUTOR_RESPONSIVE_CTA'
+          assert (chrome['actual_page_combinations'],chrome['section_layout_checks'],chrome['cta_click_checks'],
+            chrome['consultation_form_reached'],chrome['student_navigation_checks'])==(24,120,48,48,144)
+          assert html['og_checked']==29
+          assert not chrome['errors'] and chrome['form_submitted'] is False
+          Path('v23521-no-reupload-reports/PRIOR_ACTUAL_BROWSER_24_VIEWPORTS.json').write_text(
+            json.dumps({'status':'PASS_PRIOR_SAME_DEPLOY_ACTUAL_BROWSER',
+              'immutable_unique_draft':dep['unique_url'],
+              'browser_combinations':24,'sections':120,'cta_to_forms':48,
+              'regional_student_link_structure':144,'og_images':29,
+              'production_deployed':False,'draft_redeployed':False},indent=2)+'\n',encoding='utf8')
+          print('PASS_PRIOR_SAME_IMMUTABLE_DRAFT_24_BROWSER_48_FORMS_144_LINKS_29_OG',flush=True)
+          PY
+      - name: Install Chromium and Korean fonts for FIXED real visible copy/CTA and actual regional clicks
+        id: chrome
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+      - name: GET six real immutable tutor pages with shared semantic HTML parser + 29 OG checks
+        id: http
+        continue-on-error: true
+        run: |
+          python3 scripts/v2352_live_draft_tutor_visual_qa.py http
+      - name: Validate six live revised tutoring HTML against visible submit and hidden form values
+        id: revised_html
+        continue-on-error: true
+        run: |
+          python3 scripts/v23521_draft_live_readonly_qa.py html
+      - name: Real Chromium click six region courses and BOTH parent/hero CTAs in BOTH localities
+        id: click
+        continue-on-error: true
+        run: |
+          python3 scripts/v23521_draft_live_readonly_qa.py clicks
+      - name: Always record explicit full QA PASS or meaningful HOLD; never mark untested as success
+        if: always()
+        id: final
+        env:
+          IDENTITY: ${{ steps.identity.outcome }}
+          OVERLAY: ${{ steps.overlay.outcome }}
+          PREVIOUS: ${{ steps.previous.outcome }}
+          UNIT: ${{ steps.unit.outcome }}
+          PRIOR: ${{ steps.prior.outcome }}
+          CHROME: ${{ steps.chrome.outcome }}
+          HTTP: ${{ steps.http.outcome }}
+          REVISED_HTML: ${{ steps.revised_html.outcome }}
+          CLICK: ${{ steps.click.outcome }}
+        run: |
+          python3 - <<'PY'
+          import os,json
+          from pathlib import Path
+          out=Path('v23521-no-reupload-reports')
+          def load(p):
+            return json.loads(p.read_text('utf8')) if p.exists() else {}
+          browser=load(out/'PRIOR_ACTUAL_BROWSER_24_VIEWPORTS.json')
+          live=load(Path('v2352-live-report/V2352_LIVE_HTTP_QA.json'))
+          edited=load(Path('v23521-live-report/V23521_LIVE_COPY_HTML_QA.json'))
+          clicks=load(Path('v23521-live-report/V23521_LIVE_CLICKS_CTA_QA.json'))
+          stages={k:os.environ.get(k,'unknown') for k in
+            ('IDENTITY','OVERLAY','PREVIOUS','UNIT','PRIOR','CHROME','HTTP','REVISED_HTML','CLICK')}
+          valid=all(x=='success' for x in stages.values()) and (
+            browser.get('status')=='PASS_PRIOR_SAME_DEPLOY_ACTUAL_BROWSER') and (
+            live.get('status')=='PASS_V2352_LIVE_HTTP_CONTENT_CTA_SEO_OG') and (
+            edited.get('status')=='PASS_V23521_LIVE_COPY_AND_FORM_HTML') and (
+            clicks.get('status')=='PASS_V23521_LIVE_COURSE_LINKS_AND_REVISED_FORM') and (
+            len(edited.get('checks',[]))==6 and len(live.get('page_checks',[]))==6) and (
+            clicks.get('navigation_clicks')==24 and clicks.get('new_copy_cta_checks')==24) and (
+            live.get('og_checked')==29) and (not clicks.get('errors'))
+          r={'status':'PASS_V23521_EXISTING_DRAFT_ONE_SHOT_QA_NO_REUPLOAD' if valid else 'HOLD_V23521_EXISTING_DRAFT_ONE_SHOT_QA',
+            'immutable_unique_draft':os.environ['REVIEW_DEPLOY_URL'],
+            'source_full_run':38902833981,
+            'source_sha256':os.environ['ORIGINAL_SHA256'],
+            'source_generated_pages':158571,'tutor_edited':18180,
+            'real_http_pages':len(live.get('page_checks',[])),
+            'prior_real_mobile_pc_combinations':browser.get('browser_combinations'),
+            'prior_sections_checked':browser.get('sections'),
+            'prior_cta_to_form':browser.get('cta_to_forms'),
+            'prior_region_links_checked':browser.get('regional_student_link_structure'),
+            'og_images':live.get('og_checked'),
+            'new_visible_copy_html_checked':len(edited.get('checks',[])),
+            'real_student_course_nav_clicks':clicks.get('navigation_clicks'),
+            'real_both_districts_revised_cta_form_clicks':clicks.get('new_copy_cta_checks'),
+            'errors':live.get('errors',[])+edited.get('errors',[])+clicks.get('errors',[]),
+            'stages':stages,'production_deployed':False,'draft_redeployed':False,'form_submitted':False,
+            'limitations':['Actual user form submission/email pipeline not exercised',
+              'Production deployment and Google/Naver sitemap submission remain unapproved']}
+          (out/'FINAL_QA.json').write_text(json.dumps(r,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+            f.write('## '+r['status']+'\n\n')
+            f.write('**Reused immutable Netlify Draft:** '+r['immutable_unique_draft']+'\n\n')
+            f.write('Source 158,571 pages / 18,180 tutor edits; 24 prior browser widths, 48 existing CTA form arrivals; ')
+            f.write(str(r['real_student_course_nav_clicks'])+' actual course clicks; ')
+            f.write(str(r['real_both_districts_revised_cta_form_clicks'])+' revised CTA clicks in both districts.\n\n')
+            f.write('Zero new Netlify deployments, zero Production changes, zero actual consultation form submissions.\n')
+          print(r['status'],stages,flush=True)
+          if not valid:raise SystemExit(1)
+          PY
+      - name: Always upload QA unit tests, current real GET, screenshots and results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-PASS-or-HOLD-existing-immutable-draft-zero-reupload-QA
+          path: |
+            v23521-no-reupload-reports/
+            v23521-live-report/
+            v2352-live-report/
+          retention-days: 30
+          if-no-files-found: error
