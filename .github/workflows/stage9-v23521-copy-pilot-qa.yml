@@ -32,8 +32,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p pilot-site/assets pilot-reports
-          cp pilot.css pilot-site/pilot.css
-          cp assets/styles.css pilot-site/assets/styles.css
+          # This editorial pilot does not edit or render CSS; original styles live in the immutable website archive.
           python3 - <<'PY'
           from pathlib import Path
           import json,hashlib
