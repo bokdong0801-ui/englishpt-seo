@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: englishpt-v2351-final-integrated-preview-qa
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   integrated-live:
@@ -66,7 +66,7 @@ jobs:
           else:raise TimeoutError('Q2 corrected SEO full run did not finish in time')
           source=get(base+os.environ['SOURCE_PREVIEW_RUN'],gh)
           started=datetime.fromisoformat(source['run_started_at'].replace('Z','+00:00'))
-          deadline=time.monotonic()+45*60
+          deadline=time.monotonic()+200*60
           while time.monotonic()<deadline:
             jobs=get(base+os.environ['SOURCE_PREVIEW_RUN']+'/jobs?per_page=100',gh)['jobs']
             steps={s['name']:s.get('conclusion') for j in jobs for s in j.get('steps',[])}
