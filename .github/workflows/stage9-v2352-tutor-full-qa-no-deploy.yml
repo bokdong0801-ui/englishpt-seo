@@ -181,8 +181,15 @@ jobs:
             if s.count('<meta property="og:image"')!=1 or s.count('<link rel="canonical"')!=1:
               if len(errors)<100:errors.append([p.name,'SEO_OG_canonical_preservation'])
             r=re.search(r'<meta name="robots" content="([^"]+)"',s)
-            if not r or 'noindex' not in r.group(1):
-              if len(errors)<100:errors.append([p.name,'tutor_noindex_policy_changed'])
+            if not r:
+              if len(errors)<100:errors.append([p.name,'robots_meta_missing'])
+            else:
+              robot_flags={v.strip().lower() for v in r.group(1).split(',')}
+              if 'index' in robot_flags and 'noindex' in robot_flags:
+                if len(errors)<100:errors.append([p.name,'conflicting_robots_meta'])
+              # Existing station elementary tutoring pages can deliberately be
+              # indexable. Preserve original meta exactly in the render step,
+              # and confirm total index/noindex in the independent SEO audit.
             counts['faq_total']+=s.count('class="faq-item"')
             counts['new_sections']+=s.count('data-v2352-tutor-content="parent-guide-v1"')
             if (i+1)%40000==0:
