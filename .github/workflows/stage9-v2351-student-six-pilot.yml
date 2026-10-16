@@ -1,0 +1,80 @@
+name: ENGLISH PT v23.5.1 Student Six-Detail Pilot QA (No Deploy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [review/v23-aftercare-cta-20261014]
+    paths: ['.github/workflows/stage9-v2351-student-six-pilot.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  student-six-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download approved v23.4 student HTML samples
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23-4-student-nav-corrected-QA
+          run-id: 38771578401
+          path: source-samples
+          github-token: ${{ github.token }}
+      - name: Extract fixture with actual elementary/middle/high pages
+        run: |
+          set -euo pipefail
+          mkdir -p pilot-fixture pilot-output
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('source-samples/ENGLISHPT_V23_4_STUDENT_NAV_SAMPLES.zip') as z:
+            z.extractall('pilot-fixture')
+          import pathlib
+          assert len(list(pathlib.Path('pilot-fixture').glob('*.html')))==8
+          PY
+      - name: Generate elementary conversation and mid/high tutoring detail pages, fix all pilot links
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v2351_generate_six_student_details.py
+          python3 scripts/v2351_generate_six_student_details.py \
+            --pilot --root pilot-fixture --expected-source 8 --expected-locations 1 \
+            --report pilot-output/PILOT_STUDENT_SIX_QA.json \
+            --sample-zip pilot-output/PILOT_STUDENT_SIX_DETAILS.zip
+      - name: Independently parse six detailed student pages and metadata
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          from html.parser import HTMLParser
+          root=Path('pilot-fixture');page_names=[]
+          modes=['elem-tutor','mid-tutor','high-tutor','elem-conv','mid-conv','high-conv']
+          for mode in modes:
+            name='seoul-jongno-sajikdong-'+mode+'.html'
+            p=root/name;assert p.is_file(),name
+            content=p.read_text(encoding='utf-8')
+            title={'elem-tutor':'초등학생영어과외','mid-tutor':'중학생영어과외',
+                   'high-tutor':'고등학생영어과외','elem-conv':'초등학생영어회화',
+                   'mid-conv':'중학생영어회화','high-conv':'고등학생영어회화'}[mode]
+            assert '<h1' in content and title in content.split('</h1>')[0],name
+            assert f'https://englishpt.kr/{name}' in content,name
+            assert 'name="englishpt-consultation"' in content,name
+            assert 'name="consent"' in content,name
+            assert content.count('class="related-course-tutor"')==3,name
+            assert content.count('class="related-course-conversation"')==3,name
+            page_names.append(name)
+          print('PASS_V2351_SIX_REAL_STUDENT_LANDING_PILOT',page_names)
+          PY
+      - name: Upload pilot report and actual sample pages
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v2351-student-six-pilot-qa
+          path: pilot-output/
+          retention-days: 30
+          if-no-files-found: warn
