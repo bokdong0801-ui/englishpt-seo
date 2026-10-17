@@ -1,0 +1,68 @@
+name: ENGLISH PT Review Full HTML Inventory Normalized Netlify Transformation QA
+on:
+  push:
+    branches: [ops/v23521-backup-forms-verify-20261017]
+    paths: ['.github/workflows/stage9-v23521-review-file-transform-reconcile-readonly-once.yml']
+permissions:
+  actions: read
+  contents: read
+jobs:
+  check-existing-full-manifest-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-review-vs-Production-frozen-full-file-set-missing-extra-report
+          run-id: 39005946939
+          github-token: ${{ github.token }}
+          path: input
+      - name: Identify only exact Netlify metadata transforms and rule out missing website HTML
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          orig=json.loads(Path('input/FINAL_REVIEW_VS_FROZEN_FILE_SET.json').read_text('utf8'))
+          missing=set(orig['missing_sample'])
+          extra=set(orig['unexpected_sample'])
+          expected_dirs={'assets','assets/images','assets/images/og','assets/images/og-master',
+            'assets/images/og-pages','assets/images/representative','privacy','sitemaps'}
+          expected_metadata={'_headers','_redirects'}
+          removed_case={x for x in missing if x.endswith('.json')}
+          added_case={x for x in extra if x.endswith('.json')}
+          assert removed_case and len(removed_case)==8,(removed_case,added_case)
+          assert {x.lower() for x in removed_case}==added_case,(removed_case,added_case)
+          assert missing==expected_dirs|expected_metadata|removed_case,(missing,expected_dirs,expected_metadata,removed_case)
+          assert extra==added_case
+          assert orig['missing_total_count']==len(missing)==18
+          assert orig['unexpected_total_count']==len(extra)==8
+          assert orig['missing_html_count']==0 and orig['unexpected_html_count']==0
+          assert orig['frozen_html']==orig['deployed_html']==158574
+          assert orig['deployed_review_files']==180796
+          assert orig['root_files_deployed']==158589
+          out={'status':'PASS_ALL_ORIGINAL_HTML_PRESENT_WITH_KNOWN_NETLIFY_FILE_TRANSFORMS',
+             'review_deploy_id':'6ad2561619f2bc1574990fc9',
+             'original_html_files':orig['frozen_html'],
+             'deployed_html_files':orig['deployed_html'],
+             'missing_html_files':0,
+             'missing_real_static_assets_excluding_netlify_metadata':0,
+             'removed_metadata':['/_headers','/_redirects'],
+             'removed_directory_entries':sorted(expected_dirs),
+             'converted_qa_report_filename_case':sorted(removed_case),
+             'review_root_file_count':158589,
+             'official_netlify_directory_limit':54000,
+             'directory_limit_reconciliation':'Review deploy returned ready with all original HTML; Netlify documentation still says 54000 files per directory, so treat as a Production implementation risk until an authorized Production deploy confirms support.',
+             'site_modified':False,'production_deployed':False}
+          Path('output/RECONCILED_FULL_IMMUTABLE_REVIEW_HTML_QA.json').write_text(
+            json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('PASS_FULL_REVIEW_HTML_INVENTORY_WITH_METADATA_RECONCILIATION',json.dumps(out,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: englishpt-v23521-final-all-Review-HTML-zero-missing-reconciled-QA
+          path: output/
+          retention-days: 30
+          if-no-files-found: warn
