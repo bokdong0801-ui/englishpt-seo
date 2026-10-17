@@ -1,0 +1,247 @@
+name: ENGLISH PT v23.5.2.1 USER-APPROVED ONE Production Deploy With Gated QA
+on:
+  push:
+    branches: [release/v23521-approved-production-once-20261017]
+    paths: ['.github/workflows/stage9-v23521-APPROVED-one-Production-deploy-once.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: englishpt-v23521-one-user-approved-production-release
+  cancel-in-progress: false
+jobs:
+  exactly-one-approved-production-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    env:
+      GH_TOKEN: ${{ github.token }}
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: '98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+      OLD_PRODUCTION_DEPLOY_ID: '6ac4bd517c30220008bb9661'
+      CANDIDATE_SHA: 'e06c6a7b33a3042c9c52e73e95f1ed8a25819dde8584873f939fa14cff9c4bba'
+      TZ: 'Asia/Seoul'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - name: Checkout exact approved source branch
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fail closed for reruns, old pipelines and any unapproved branch
+        id: start
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = '1'
+          test "$GITHUB_REF" = 'refs/heads/release/v23521-approved-production-once-20261017'
+          test "$GITHUB_REPOSITORY" = 'bokdong0801-ui/englishpt-seo'
+          mkdir -p production-release-evidence
+          printf '{"status":"HOLD_UNTIL_PREDEPLOY_GATES_PASS","deployment_attempted":false,"production_deployed":false,"test_submitted":false}\n' > production-release-evidence/PRODUCTION_RELEASE_FINAL_STATUS.json
+          test -n "$NETLIFY_AUTH_TOKEN"
+          python3 -m py_compile scripts/v23521_approved_prod_authorization_gate.py \
+             scripts/v23521_release_preflight_gate.py scripts/v2351_indexing_sitemap_full_qa.py \
+             scripts/v23521_postproduction_readonly_smoke.py
+          echo 'PASS_AUTHORIZE_EXACTLY_ONE_NEW_PRODUCTION_RELEASE'
+      - name: Download ONE approved frozen 158571-page Production candidate archive
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-JSFIX-PRODUCTION-READY-158571-NOT-DEPLOYED
+          run-id: 38992648694
+          github-token: ${{ github.token }}
+          path: frozen-source
+      - name: Download complete verified old Production rollback backup (1791 files)
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-OLD-PRODUCTION-ORIGINAL-FULL-SHA-VERIFIED-BACKUP
+          run-id: 39005690268
+          github-token: ${{ github.token }}
+          path: verified-original-backup
+      - name: Verify the frozen 1.23GB candidate and rollback ZIP SHA256 before ANY Netlify changes
+        id: sha
+        run: |
+          set -euo pipefail
+          ORIGINAL=verified-original-backup/ENGLISHPT_ORIGINAL_PRODUCTION_6ac4bd517c30220008bb9661.zip
+          FROZEN=frozen-source/ENGLISHPT_v23.5.2.1_JSFIX_PRODUCTION_READY_NOT_DEPLOYED.tar.zst
+          echo "b490c4a19cb4deb04d3c6dd5927446cbda879991ba581e4654f2d5462686bac5  $ORIGINAL" | sha256sum -c -
+          echo "$CANDIDATE_SHA  $FROZEN" | sha256sum -c -
+          python3 - <<'PY'
+          from zipfile import ZipFile
+          with ZipFile('verified-original-backup/ENGLISHPT_ORIGINAL_PRODUCTION_6ac4bd517c30220008bb9661.zip') as z:
+              assert len(z.namelist())==1791 and z.testzip() is None
+              assert 'index.html' in z.namelist()
+          print('PASS_CANDIDATE_SHA_AND_INDEPENDENT_ROLLBACK_BACKUP_SHA_CRC',flush=True)
+          PY
+      - name: Unpack verified original Production candidate WITHOUT deploying
+        id: unpack
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          mkdir -p candidate-site
+          tar --zstd -xf frozen-source/ENGLISHPT_v23.5.2.1_JSFIX_PRODUCTION_READY_NOT_DEPLOYED.tar.zst -C candidate-site
+          test -s candidate-site/index.html
+          test -s candidate-site/_headers
+          test -s candidate-site/pilot.js
+          printf '%s  %s\n' d604994a74352a81978002fd6f6286c7d0f4f4c99278745bbf6dad1abce29ede candidate-site/pilot.js | sha256sum -c -
+          echo 'PASS_FULL_FROZEN_SITE_UNPACKED_NO_CHANGES'
+      - name: Last live Netlify read-only gate for exact site old backup, Credits, Forms, hooks and release
+        id: authorization_gate
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_approved_prod_authorization_gate.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('production-release-evidence/FROZEN_PREDEPLOY_AUTHORIZATION_GATE.json')
+          x=json.loads(p.read_text('utf8'))
+          assert x['status']=='PASS_FINAL_ONE_SHOT_PRODUCTION_AUTHORIZATION_GATE',x
+          assert len(x['checks'])>=7,x
+          print('PASS_LAST_PRODUCTION_AUTHORIZATION_GATE_AND_REAL_BACKUP',flush=True)
+          PY
+      - name: Fresh static 158573 HTML/29 OG/6 pilot pages Production gate
+        id: static
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_release_preflight_gate.py \
+            --mode production --root candidate-site \
+            --report production-release-evidence/PRODUCTION_STATIC_PREFLIGHT.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('production-release-evidence/PRODUCTION_STATIC_PREFLIGHT.json')
+          r=json.loads(p.read_text('utf8'))
+          assert r['status']=='PASS_PRODUCTION_RELEASE_PREFLIGHT',r
+          for k in ('draft_production_header_separation','verified_patched_js_sha256',
+            '158573_html_inventory','29_og_pngs_1200x630','6_live_pilot_html_contracts'):
+              assert k in r['checked'],(k,r)
+          print('PASS_PRODUCTION_FROZEN_STATIC_PREFLIGHT',flush=True)
+          PY
+      - name: Fresh independent 158571-page SEO, 21964 sitemap/136607 noindex audit
+        id: full_seo
+        run: |
+          set -euo pipefail
+          python3 scripts/v2351_indexing_sitemap_full_qa.py \
+            --root candidate-site \
+            --report production-release-evidence/PRODUCTION_FULL_SEO_RECHECK.json
+          python3 - <<'PY'
+          import json
+          r=json.load(open('production-release-evidence/PRODUCTION_FULL_SEO_RECHECK.json'))
+          assert r['status']=='PASS_V2351_INDEXING_SITEMAP_FULL_QA' and r['errors_count']==0,r
+          for key,num in [('generated_total',158571),('html_total',158573),('indexable_count',21964),
+             ('noindex_count',136607),('sitemap_unique_urls',21964),('indexable_missing_from_sitemaps',0),
+             ('noindex_in_sitemaps',0)]:
+            assert r[key]==num,(key,r[key],num)
+          assert not r['site_header_draft_noindex']
+          print('PASS_ZERO_ERRORS_COMPLETE_158571_PRODUCTION_SEO',flush=True)
+          PY
+      - name: Record completed all PASS and mark exactly ONE authorized deploy attempt
+        id: deploy_marker
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,datetime
+          from pathlib import Path
+          root=Path('production-release-evidence')
+          x={'status':'ALL_PREDEPLOY_GATES_PASS_NOW_AUTHORIZE_EXACTLY_ONE_UPLOAD',
+            'deployment_attempted':True,'deployment_completed':False,
+            'target_site_id':'98d96cc5-f0b7-4d3d-8072-6476d93e55a3',
+            'old_production_deploy_id':'6ac4bd517c30220008bb9661',
+            'candidate_sha256':'e06c6a7b33a3042c9c52e73e95f1ed8a25819dde8584873f939fa14cff9c4bba',
+            'old_backup_sha256':'b490c4a19cb4deb04d3c6dd5927446cbda879991ba581e4654f2d5462686bac5',
+            'marked_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+          (root/'PRODUCTION_RELEASE_FINAL_STATUS.json').write_text(json.dumps(x,indent=2)+'\n')
+          print('PASS_ALL_PREDEPLOY_GATES_ISSUING_USER_APPROVED_ONE_NETLIFY_PRODUCTION_DEPLOY',flush=True)
+          PY
+      - name: Install Netlify CLI after all security and SEO gates
+        id: cli
+        run: |
+          set -euo pipefail
+          npm install --global netlify-cli@latest
+          netlify --version
+      - name: ONE approved Netlify Production deploy to englishpt.kr (not Review)
+        id: deploy_once
+        run: |
+          set -euo pipefail
+          test "$GITHUB_RUN_ATTEMPT" = '1'
+          test "$NETLIFY_SITE_ID" = '98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          test -s production-release-evidence/FROZEN_PREDEPLOY_AUTHORIZATION_GATE.json
+          python3 - <<'PY'
+          import json
+          g=json.load(open('production-release-evidence/FROZEN_PREDEPLOY_AUTHORIZATION_GATE.json'))
+          assert g['status']=='PASS_FINAL_ONE_SHOT_PRODUCTION_AUTHORIZATION_GATE',g
+          p=json.load(open('production-release-evidence/PRODUCTION_RELEASE_FINAL_STATUS.json'))
+          assert p['status']=='ALL_PREDEPLOY_GATES_PASS_NOW_AUTHORIZE_EXACTLY_ONE_UPLOAD',p
+          PY
+          echo 'ONE_PRODUCTION_DEPLOY_ATTEMPT_START user-approved, no retries'
+          netlify deploy \
+            --prod \
+            --dir="$GITHUB_WORKSPACE/candidate-site" \
+            --site="$NETLIFY_SITE_ID" \
+            --auth="$NETLIFY_AUTH_TOKEN" \
+            --no-build \
+            --message="ENGLISH PT v23.5.2.1 user-approved 158571 pages fixed JS 2026-10-17 ONE production" \
+            --json > production-release-evidence/NETLIFY_ONE_PRODUCTION_DEPLOY.json
+          cat production-release-evidence/NETLIFY_ONE_PRODUCTION_DEPLOY.json
+          echo 'ONE_PRODUCTION_DEPLOY_COMMAND_RETURNED'
+      - name: Capture new deploy ID, verify exact target and wait for ready published Production state
+        id: published
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,urllib.request,os,time
+          from pathlib import Path
+          p=Path('production-release-evidence/NETLIFY_ONE_PRODUCTION_DEPLOY.json')
+          txt=p.read_text('utf8')
+          result=json.loads(txt)
+          new_id=result.get('deploy_id') or result.get('id')
+          assert new_id and new_id!='6ac4bd517c30220008bb9661',result
+          site_id=os.environ['NETLIFY_SITE_ID']; token=os.environ['NETLIFY_AUTH_TOKEN']
+          def fetch(path):
+              url='https://api.netlify.com/api/v1/'+path
+              q=urllib.request.Request(url,headers={'Authorization':'Bearer '+token,'Accept':'application/json'},method='GET')
+              with urllib.request.urlopen(q,timeout=60) as resp:return json.load(resp)
+          for attempt in range(35):
+              site=fetch('sites/'+site_id)
+              dep=fetch('sites/'+site_id+'/deploys/'+new_id)
+              if (site.get('published_deploy') or {}).get('id')==new_id and dep.get('state')=='ready' and dep.get('context')=='production':
+                  break
+              if attempt==34:raise ValueError('Deployment did not become published and ready, current='+
+                   str((site.get('published_deploy') or {}).get('id'))+' new='+new_id+' state='+str(dep.get('state')))
+              time.sleep(8)
+          x={'status':'PASS_ONE_NEW_PRODUCTION_DEPLOY_PUBLISHED_READY',
+            'new_deploy_id':new_id,'site_id':site_id,'state':'ready',
+            'old_deploy_id':'6ac4bd517c30220008bb9661',
+            'deploy_url':dep.get('deploy_ssl_url') or dep.get('deploy_url'),
+            'new_production_published':True,'form_submitted':False}
+          Path('production-release-evidence/NETLIFY_PUBLISHED_DEPLOY_VERIFIED.json').write_text(json.dumps(x,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          with open(os.environ['GITHUB_ENV'],'a') as g:
+              g.write('NEW_PRODUCTION_DEPLOY_ID='+new_id+'\n')
+          print('PASS_NEW_PRODUCTION_IS_PUBLISHED_AND_READY',json.dumps(x,ensure_ascii=False),flush=True)
+          PY
+      - name: READ ONLY production HTTP routes, fixed JS, SEO, 29 OG and registered Form/notifications
+        id: get_only_live_smoke
+        env:
+          READONLY_QA_APPROVAL: READ-ONLY-SMOKE
+          EXPECTED_PUBLISHED_DEPLOY_ID: ${{ env.NEW_PRODUCTION_DEPLOY_ID }}
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_postproduction_readonly_smoke.py
+          cp postproduction-readonly-qa/RESULT.json production-release-evidence/POSTPRODUCTION_ACTUAL_HTTP_OG_FORM_QA.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('production-release-evidence/POSTPRODUCTION_ACTUAL_HTTP_OG_FORM_QA.json'))
+          assert x['status']=='PASS_POSTPRODUCTION_GET_ONLY_READY_FOR_AUTHORIZED_FORM_TEST',x
+          assert x['og_200_1200x630']==29 and not x['errors'],x
+          print('PASS_NEW_PRODUCTION_ROUTES_FORMS_NOTIFICATION_CONFIGURATIONS',flush=True)
+          PY
+      - name: Preserve Production results without a second deploy or rollback
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-one-authorized-Production-release-and-live-HTTP-Form-evidence
+          path: |
+            production-release-evidence/
+            postproduction-readonly-qa/RESULT.json
+          retention-days: 30
+          if-no-files-found: warn
