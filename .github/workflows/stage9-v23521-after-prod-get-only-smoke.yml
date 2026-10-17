@@ -1,0 +1,50 @@
+name: ENGLISH PT v23.5.2.1 POST Production GET Only QA After Separate Launch Approval
+on:
+  workflow_dispatch:
+    inputs:
+      expected_published_deploy_id:
+        description: 'Actual Netlify published deploy ID; no changes will be made'
+        required: true
+        type: string
+      readonly_approval:
+        description: 'Type READ-ONLY-SMOKE'
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+jobs:
+  only-public-read-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      EXPECTED_PUBLISHED_DEPLOY_ID: ${{ inputs.expected_published_deploy_id }}
+      READONLY_QA_APPROVAL: ${{ inputs.readonly_approval }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Preflight script is GET-only and syntax valid
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_postproduction_readonly_smoke.py
+          python3 - <<'PY'
+          from pathlib import Path
+          script=Path('scripts/v23521_postproduction_readonly_smoke.py').read_text('utf8')
+          assert 'method="GET"' in script
+          assert 'method="POST"' not in script
+          assert 'EXPECTED_JS_SHA' in script
+          print('PASS_NO_POST_NO_DEPLOY_NO_SEARCH_SUBMISSION',flush=True)
+          PY
+      - name: Check live new deploy and critical pages without touching any user submissions
+        run: python3 scripts/v23521_postproduction_readonly_smoke.py
+      - name: Preserve QA status on HOLD and PASS
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-POST-production-readonly-HTTP-SEO-FORMS-OG-qa
+          path: postproduction-readonly-qa/
+          retention-days: 30
+          if-no-files-found: warn
