@@ -1,0 +1,102 @@
+name: ENGLISH PT v23.5.2.1 Review 158571 File Inventory Audit GET ONLY
+on:
+  push:
+    branches: [ops/v23521-backup-forms-verify-20261017]
+    paths: ['.github/workflows/stage9-v23521-review-full-file-inventory-readonly-once.yml']
+permissions:
+  contents: read
+jobs:
+  inventory-deployed-review-files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: GET immutable Review deployment manifest and count actual HTML
+        run: |
+          set -euo pipefail
+          mkdir -p review-deploy-file-inventory
+          python3 - <<'PY'
+          import json,urllib.request,urllib.error,os,collections,hashlib
+          from pathlib import Path
+          site='803550a8-03af-4776-bc8a-bd0bae85f5c7'
+          immutable_deploy='6ad2561619f2bc1574990fc9'
+          base='https://api.netlify.com/api/v1'
+          token=os.environ['NETLIFY_AUTH_TOKEN']
+          def fetch(path):
+              req=urllib.request.Request(base+path,headers={
+                'Authorization':'Bearer '+token,'Accept':'application/json'},method='GET')
+              with urllib.request.urlopen(req,timeout=140) as f:return f.read(),dict(f.headers)
+          report={'status':'RUNNING','netlify_write_calls':0,'production_deployed':False,'review_deployed':False,
+            'expected_review_deploy_id':immutable_deploy,'expected_generated_html_count':158571,
+            'files_per_directory_netlify_documented_limit':54000,'methods_used':['GET'],'errors':[]}
+          try:
+              raw,_=fetch('/sites/'+site+'/deploys/'+immutable_deploy)
+              info=json.loads(raw)
+              assert info.get('id')==immutable_deploy
+              assert info.get('site_id')==site,(info.get('site_id'),site)
+              report['deploy_state']=info.get('state')
+              report['deploy_context']=info.get('context')
+              sources=['/deploys/'+immutable_deploy+'/files',
+                       '/sites/'+site+'/deploys/'+immutable_deploy+'/files']
+              manifest=None
+              for source in sources:
+                  try:
+                      raw,headers=fetch(source)
+                      x=json.loads(raw)
+                      if isinstance(x,list):
+                          manifest=x
+                          report['successful_manifest_api_path']=source
+                          report['header_link']=headers.get('Link','')[:100]
+                          report['header_total_count']=headers.get('X-Total-Count')
+                          break
+                      report['errors'].append(source+' returned '+type(x).__name__)
+                  except urllib.error.HTTPError as e:
+                      report['errors'].append(source+' HTTP '+str(e.code))
+                  except Exception as e:
+                      report['errors'].append(source+' '+type(e).__name__)
+              if manifest is None:
+                  report['status']='HOLD_REVIEW_INVENTORY_API_UNAVAILABLE'
+              else:
+                  paths=[x.get('path') or x.get('id') for x in manifest]
+                  paths=[str(p).lstrip('/') for p in paths if p]
+                  total=len(paths)
+                  html=[p for p in paths if p.endswith('.html')]
+                  html_count=len(html)
+                  root=sum(1 for p in paths if '/' not in p)
+                  report.update({
+                     'actual_deployed_file_manifest_count':total,
+                     'actual_html_files':html_count,
+                     'actual_root_files':root,
+                     'directory_limit_exceeded':root>54000,
+                     'missing_known_sample':[
+                       p for p in ('index.html','404.html',
+                           'gyeongnam-milyang-naeidong-elem-tutor.html',
+                           'seoul-jongno-sajikdong-mid-tutor.html','pilot.js')
+                       if p not in paths],
+                     'names_unique':len(set(paths))==len(paths),
+                     'manifest_data_sha256':hashlib.sha256(raw).hexdigest(),
+                     'review_source_html_expected':158573,
+                     'html_manifest_count_matches_source':html_count==158573,
+                  })
+                  report['status']='PASS_REVIEW_FULL_FILE_INVENTORY' if html_count==158573 and not report['missing_known_sample'] and report['names_unique'] else 'HOLD_REVIEW_FILE_MANIFEST_COUNT'
+                  if report['directory_limit_exceeded']:
+                      report['warnings']=['Netlify published 54000 files-per-directory limitation may affect Production; reconcile with actual Review deploy manifest and Netlify Support.']
+              print('FINAL_REVIEW_FULL_INVENTORY',json.dumps(report,ensure_ascii=False),flush=True)
+          except Exception as e:
+              report['status']='HOLD_REVIEW_INVENTORY_EXCEPTION'
+              report['errors'].append(type(e).__name__+': '+str(e)[:200])
+              print('FINAL_REVIEW_FULL_INVENTORY',json.dumps(report,ensure_ascii=False),flush=True)
+          finally:
+              Path('review-deploy-file-inventory/REVIEW_158571_ACTUAL_NETLIFY_FILES.json').write_text(
+                  json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          # Run result reports HOLD explicitly but read-only file outputs always preserved.
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: englishpt-v23521-actual-immutable-Review-deploy-full-file-manifest-audit
+          path: review-deploy-file-inventory/
+          retention-days: 30
+          if-no-files-found: warn
