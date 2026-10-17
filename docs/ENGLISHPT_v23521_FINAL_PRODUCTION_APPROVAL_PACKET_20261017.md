@@ -43,6 +43,17 @@ Date: 2026-10-17. **This document DOES NOT approve or execute the Production dep
 - Team is shared by Review and Production, [verification 39001448213](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39001448213).
 - Corrected read-only preflight [39001379598](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39001379598) PASS; **real 1.23 GB production upload was NOT attempted**.
 
+## FINAL synchronized GO/HOLD (2026-10-17 14:28 KST)
+
+- [One-shot final read-only gate 39006399416](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39006399416) SUCCESS, Artifact `12090639594` contains the signed-by-evidence JSON assessment.
+- `technical_backup_and_review_gates=PASS`: source SHA, 1,791/1,791 original ZIP backup, Netlify same previous Production deploy ready, 158,574/158,574 HTML in immutable Review, 6 real static tutor Forms, ordinary credits 1,000 balance, no exceeded limits.
+- **Overall `HOLD_ONLY_FOR_USER_UI_FORM_DETECTION_AND_EXPLICIT_PRODUCTION_AUTH`.**
+- Netlify API site `use_forms=null`; current old Production `GET forms` returned 0 registered forms. The current API cannot verify the Form detection UI toggle.
+- Before any Production upload, user must visit [Netlify Production Forms](https://app.netlify.com/sites/englishpt-seo/forms) and ensure **Enable form detection** was selected. If the UI offers **Disable form detection**, detection is already ON and should remain unchanged.
+- User should download and retain the validated existing old Production ZIP (Artifact `12091475871`) locally before approval.
+- Once UI setting and durable backup are confirmed, request **separate explicit one-time Production approval**. This package contains no deploying workflow trigger. DO NOT deploy from an old Stage 9 workflow.
+- Official forms documentation: https://docs.netlify.com/manage/forms/setup/#enable-form-detection
+
 ## FULL independent old Production backup VERIFIED (2026-10-17)
 
 - [GET-only verified backup run 39005690268](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39005690268) **PASS**, no site mutations.
