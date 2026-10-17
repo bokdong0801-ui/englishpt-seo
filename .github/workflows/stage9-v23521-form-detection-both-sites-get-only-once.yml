@@ -1,0 +1,44 @@
+name: ENGLISH PT v23.5.2.1 Real Forms Detection Both Sites GET ONLY
+on:
+  push:
+    branches: [ops/v23521-forms-detection-readonly-20261017]
+    paths: ['.github/workflows/stage9-v23521-form-detection-both-sites-get-only-once.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  real-netlify-form-detection-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Strict GET-only form detection and site safety
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_final_forms_detection_readonly.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/v23521_final_forms_detection_readonly.py').read_text('utf8')
+          assert 'method="GET"' in s
+          assert 'method="POST"' not in s
+          assert 'netlify deploy' not in s
+          assert '98d96cc5-f0b7-4d3d-8072-6476d93e55a3' in s
+          assert '803550a8-03af-4776-bc8a-bd0bae85f5c7' in s
+          print('PASS_READ_ONLY_REAL_SITE_FORM_DETECTION_CONTRACT',flush=True)
+          PY
+      - name: Compare actual Production and Review form detection with registered forms
+        run: |
+          python3 scripts/v23521_final_forms_detection_readonly.py
+      - name: Save factual diagnostic and unknown status without deployment
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-verified-production-and-review-form-detection-get-only
+          path: forms-detection-readonly/
+          retention-days: 30
+          if-no-files-found: warn
