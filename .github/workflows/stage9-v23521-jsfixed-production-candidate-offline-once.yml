@@ -1,0 +1,248 @@
+name: ENGLISH PT v23.5.2.1 JS-FIXED Production Candidate OFFLINE (NEVER DEPLOY)
+on:
+  push:
+    branches: [review/v23521-production-offline-jsfix-20261017]
+    paths: ['.github/workflows/stage9-v23521-jsfixed-production-candidate-offline-once.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: englishpt-v23521-jsfixed-prod-offline-candidate-once
+  cancel-in-progress: false
+jobs:
+  build-and-check-offline-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    env:
+      OLD_SOURCE_RUN: '38903769454'
+      VERIFIED_REVIEW_RUN: '38934554110'
+      OLD_ARCHIVE_SHA256: '3115627f104969e80db6a964c950d9a1867c10e199656c4c1e474aa62d0f8956'
+      EXPECTED_PATCHED_JS_SHA256: 'd604994a74352a81978002fd6f6286c7d0f4f4c99278745bbf6dad1abce29ede'
+      PYTHONUNBUFFERED: '1'
+      OUTPUT_ARCHIVE: ENGLISHPT_v23.5.2.1_JSFIX_PRODUCTION_READY_NOT_DEPLOYED.tar.zst
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Mark HOLD by default and refuse any deployment capability
+        id: start
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/review/v23521-production-offline-jsfix-20261017"
+          mkdir -p offline-candidate-qa
+          printf '{"status":"HOLD_UNTIL_ALL_OFFLINE_GATES_PASS","netlify_deployed":false,"production_deployed":false,"forms_submitted":false}\n' > offline-candidate-qa/FINAL_STATUS.json
+          if env | grep -E '^(NETLIFY_AUTH_TOKEN|NETLIFY_TOKEN|NETLIFY_SITE_ID)='; then
+            echo "::error::No Netlify credentials allowed in offline production package job"
+            exit 1
+          fi
+          python3 -m py_compile scripts/v23521_patch_shared_pilot_js.py scripts/v23521_release_preflight_gate.py scripts/v2351_indexing_sitemap_full_qa.py scripts/v23521_predeploy_original_html_with_corrected_js.py
+      - name: Verify frozen Production source and final immutable Review PASS by GitHub API
+        id: provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,urllib.request
+          repo=os.environ['GITHUB_REPOSITORY']
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'}
+          detail={}
+          for name,run in (('old_offline_source',os.environ['OLD_SOURCE_RUN']),
+                           ('final_review',os.environ['VERIFIED_REVIEW_RUN'])):
+              url=f'https://api.github.com/repos/{repo}/actions/runs/{run}'
+              with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=50) as resp:
+                  data=json.load(resp)
+              assert data.get('status')=='completed' and data.get('conclusion')=='success',data
+              detail[name]={'run':data['id'],'head_sha':data['head_sha'],'conclusion':data['conclusion']}
+          assert detail['old_offline_source']['head_sha']=='a7a27d19e742813457927e479a6be40bbe0935e0'
+          assert detail['final_review']['head_sha']=='b66ba69659fc6ac1fa6c300a045640ca5a0cf6a0'
+          with open('offline-candidate-qa/SOURCE_PROVENANCE.json','w') as f:
+              json.dump({'status':'PASS_FROZEN_SOURCE_AND_FINAL_REVIEW','source':detail,
+               'production_deployed':False},f,ensure_ascii=False,indent=2)
+          print('PASS_FROZEN_PRODUCTION_SOURCE_AND_FINAL_REVIEW_QA',detail,flush=True)
+          PY
+      - name: Download previously validated OLD offline Production candidate (not Preview and not Netlify)
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-PRODUCTION-CANDIDATE-158571-NOT-DEPLOYED
+          run-id: 38903769454
+          path: old-frozen-production
+          github-token: ${{ github.token }}
+      - name: Verify old 1.23GB Production archive SHA256 and unpack into a new independent work folder
+        id: unpack
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          OLD="old-frozen-production/ENGLISHPT_v23.5.2.1_PRODUCTION_READY_NOT_DEPLOYED.tar.zst"
+          test -s "$OLD"
+          echo "$OLD_ARCHIVE_SHA256  $OLD" | sha256sum -c -
+          mkdir -p production-candidate
+          tar --zstd -xf "$OLD" -C production-candidate
+          test -f production-candidate/pilot.js
+          test -f production-candidate/_headers
+          printf '%s  %s\n' "$OLD_ARCHIVE_SHA256" "$OLD" > offline-candidate-qa/ORIGINAL_ARCHIVE_SHA256.txt
+          echo PASS_VERIFIED_OLD_SOURCE_ARCHIVE_UNPACKED
+      - name: Replace exact known bad shared JS once; verify expected SHA and Node syntax
+        id: jsfix
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_patch_shared_pilot_js.py \
+            --input production-candidate/pilot.js \
+            --output production-candidate/pilot.js \
+            --manifest offline-candidate-qa/V23521_EXACT_JS_REPLACEMENT.json
+          node --check production-candidate/pilot.js
+          printf '%s  %s\n' "$EXPECTED_PATCHED_JS_SHA256" "production-candidate/pilot.js" | sha256sum -c -
+          python3 - <<'PY'
+          import json
+          p='offline-candidate-qa/V23521_EXACT_JS_REPLACEMENT.json'
+          x=json.load(open(p,encoding='utf8'))
+          assert x['changed_files']==['pilot.js'] and x['other_files_modified'] is False,x
+          assert x['previous_sha256']=='f9e4f7e90de3924281ced3c346491661c5d047fcc34400063ac0145165d039e5',x
+          assert x['patched_sha256']=='d604994a74352a81978002fd6f6286c7d0f4f4c99278745bbf6dad1abce29ede',x
+          print('PASS_ONE_FILE_JS_PATCH_SOURCE_INTENT_AND_SHA',flush=True)
+          PY
+      - name: Static Production-only gate for headers, canonical, 29 OG images, all HTML and JS
+        id: static
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_release_preflight_gate.py \
+            --mode production --root production-candidate \
+            --report offline-candidate-qa/V23521_PRODUCTION_PREUPLOAD_GATE.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('offline-candidate-qa/V23521_PRODUCTION_PREUPLOAD_GATE.json',encoding='utf8'))
+          expected={'draft_production_header_separation','verified_patched_js_sha256',
+                    '158573_html_inventory','29_og_pngs_1200x630','6_live_pilot_html_contracts'}
+          assert x['status']=='PASS_PRODUCTION_RELEASE_PREFLIGHT' and expected.issubset(set(x['checked'])),x
+          print('PASS_PRODUCTION_STATIC_GATE_REQUIRED_NAMES',sorted(expected),flush=True)
+          PY
+      - name: Independent 158571-page full SEO + sitemap QA with no Production network access
+        id: fullseo
+        run: |
+          set -euo pipefail
+          python3 scripts/v2351_indexing_sitemap_full_qa.py \
+            --root production-candidate \
+            --report offline-candidate-qa/V23521_FULL_INDEX_SITEMAP_SEO_QA.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('offline-candidate-qa/V23521_FULL_INDEX_SITEMAP_SEO_QA.json',encoding='utf8'))
+          assert x['status']=='PASS_V2351_INDEXING_SITEMAP_FULL_QA',x
+          expected=(158573,158571,21964,136607,21964)
+          actual=tuple(x[k] for k in ('html_total','generated_total','indexable_count','noindex_count','sitemap_unique_urls'))
+          assert actual==expected,(actual,expected)
+          assert x['errors_count']==0 and not x['site_header_draft_noindex'],x
+          assert x['noindex_in_sitemaps']==0 and x['indexable_missing_from_sitemaps']==0,x
+          print('PASS_158571_FULL_OFFLINE_PRODUCTION_SEO_AND_SITEMAP_QA',actual,flush=True)
+          PY
+      - name: Install Korean fonts and Playwright for actual local production HTML and JS click tests
+        id: browser_setup
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -qq -y fonts-noto-cjk fontconfig
+          fc-list :lang=ko family | grep -q .
+          python3 -m pip install --quiet playwright==1.55.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python3 -m playwright install --with-deps chromium
+          fi
+      - name: Real Chromium against offline Production folder: tutor/other course copy and CTA, GET only
+        id: browser
+        run: |
+          set -euo pipefail
+          ln -s production-candidate review-site
+          python3 scripts/v23521_predeploy_original_html_with_corrected_js.py
+          cp jsfix-local-preflight/LOCAL_ACTUAL_JS_LOAD_FORM_QA.json \
+            offline-candidate-qa/V23521_PRODUCTION_ACTUAL_BROWSER_FORM_QA.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('offline-candidate-qa/V23521_PRODUCTION_ACTUAL_BROWSER_FORM_QA.json',encoding='utf8'))
+          assert x['status']=='PASS_V23521_FIXED_JS_REAL_STATIC_SITE_LOCAL_BEFORE_UPLOAD',x
+          assert (x['tutor_checked'],x['tutor_ctas'],x['non_tutor_checked'])==(12,24,8),x
+          assert x['pilot_js_loaded']>=20 and x['errors']==[] and x['form_submitted'] is False,x
+          print('PASS_OFFLINE_PRODUCTION_REAL_JS_12_TUTORS_24_CTA_8_OTHERS',flush=True)
+          PY
+      - name: Build NEW versioned Production candidate tar.zst and fresh SHA256 (NO Netlify)
+        id: pack
+        run: |
+          set -euo pipefail
+          tar -I 'zstd -T0 -3' -cf "$OUTPUT_ARCHIVE" -C production-candidate .
+          test -s "$OUTPUT_ARCHIVE"
+          sha256sum "$OUTPUT_ARCHIVE" > offline-candidate-qa/V23521_NEW_PRODUCTION_ARCHIVE_SHA256.txt
+          sha256sum -c offline-candidate-qa/V23521_NEW_PRODUCTION_ARCHIVE_SHA256.txt
+          echo PASS_NEW_PRODUCTION_OFFLINE_CANDIDATE_SHA256
+      - name: Generate release manifest and explicit HOLD for Production deployment
+        id: manifest
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,hashlib
+          from pathlib import Path
+          report=Path('offline-candidate-qa')
+          src=json.loads((report/'SOURCE_PROVENANCE.json').read_text('utf8'))
+          seo=json.loads((report/'V23521_FULL_INDEX_SITEMAP_SEO_QA.json').read_text('utf8'))
+          gate=json.loads((report/'V23521_PRODUCTION_PREUPLOAD_GATE.json').read_text('utf8'))
+          browser=json.loads((report/'V23521_PRODUCTION_ACTUAL_BROWSER_FORM_QA.json').read_text('utf8'))
+          js=json.loads((report/'V23521_EXACT_JS_REPLACEMENT.json').read_text('utf8'))
+          path=Path(os.environ['OUTPUT_ARCHIVE'])
+          h=hashlib.file_digest(path.open('rb'),'sha256').hexdigest()
+          assert h!=os.environ['OLD_ARCHIVE_SHA256'],'New archive unexpectedly same as old candidate'
+          assert js['patched_sha256']==os.environ['EXPECTED_PATCHED_JS_SHA256']
+          assert seo['errors_count']==0 and not seo['site_header_draft_noindex']
+          assert gate['status']=='PASS_PRODUCTION_RELEASE_PREFLIGHT'
+          assert browser['errors']==[] and browser['status'].startswith('PASS_')
+          data={'status':'PASS_V23521_JSFIX_OFFLINE_PRODUCTION_CANDIDATE',
+            'production_approval':'HOLD_PENDING_EXPLICIT_USER_AUTH',
+            'version':'v23.5.2.1','source_run':38903769454,
+            'verified_review_run':38934554110,
+            'source_old_archive_sha256':os.environ['OLD_ARCHIVE_SHA256'],
+            'new_archive':path.name,'new_archive_sha256':h,
+            'patched_shared_js_sha256':js['patched_sha256'],
+            'html_total':seo['html_total'],'generated_pages':seo['generated_total'],
+            'indexable_pages':seo['indexable_count'],'noindex_pages':seo['noindex_count'],
+            'sitemap_unique_urls':seo['sitemap_unique_urls'],
+            'og_pngs_verified':29,
+            'local_production_tutor_cases':browser['tutor_checked'],
+            'local_production_cta_checks':browser['tutor_ctas'],
+            'local_other_course_cases':browser['non_tutor_checked'],
+            'modified_site_assets':['pilot.js'],
+            'netlify_deployed':False,'production_deployed':False,'form_submitted':False,
+            'remaining_before_prod':['Explicit user approval','Netlify rollback/space check',
+              'Post-deploy real submission and email validation','Search registration after authorized launch'],
+            'provenance':src['source']}
+          (report/'FINAL_STATUS.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          (report/'PRODUCTION_APPROVAL_HOLD.md').write_text(
+            '# ENGLISH PT v23.5.2.1 Final Production candidate (OFFLINE)\n\n'
+            'Status: PASS for offline artifact only; Production deployment remains HOLD.\n\n'
+            f'Artifact: {path.name}\nSHA256: {h}\n'
+            f'Corrected shared pilot.js SHA256: {js["patched_sha256"]}\n'
+            'No Netlify deployment, no form POST, no live email or search registration.\n',
+            encoding='utf8')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf8') as f:
+            f.write('## PASS_V23521_JSFIX_OFFLINE_PRODUCTION_CANDIDATE\n\n')
+            f.write('**Production NOT deployed; explicit user approval still required.**\n\n')
+            f.write('New candidate SHA256: `'+h+'`\n\n')
+            f.write('158,571 generated pages, 21,964 indexable, 136,607 noindex, 21,964 sitemap URLs, 29 OG PNG.\n\n')
+            f.write('Original Production candidate obsolete; only pilot.js changed.\n')
+          print('PASS_OFFLINE_PRODUCTION_CANDIDATE_FINAL_SHA',h,flush=True)
+          PY
+      - name: Upload small QA JSON/SHA256/checklist even if any step fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-JSFIX-OFFLINE-PRODUCTION-QA-SHA-CHECKLIST
+          path: offline-candidate-qa/
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload full NEW 158571-page Production candidate ZIP artifact ONLY if ALL independent checks passed
+        if: ${{ success() && steps.provenance.outcome == 'success' && steps.unpack.outcome == 'success' && steps.jsfix.outcome == 'success' && steps.static.outcome == 'success' && steps.fullseo.outcome == 'success' && steps.browser.outcome == 'success' && steps.pack.outcome == 'success' && steps.manifest.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-JSFIX-PRODUCTION-READY-158571-NOT-DEPLOYED
+          path: ENGLISHPT_v23.5.2.1_JSFIX_PRODUCTION_READY_NOT_DEPLOYED.tar.zst
+          retention-days: 30
+          if-no-files-found: error
