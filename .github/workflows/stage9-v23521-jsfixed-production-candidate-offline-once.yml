@@ -150,7 +150,7 @@ jobs:
           if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
             python3 -m playwright install --with-deps chromium
           fi
-      - name: Real Chromium against offline Production folder: tutor/other course copy and CTA, GET only
+      - name: Real Chromium local Production tutor and other-course CTA GET-only checks
         id: browser
         run: |
           set -euo pipefail
