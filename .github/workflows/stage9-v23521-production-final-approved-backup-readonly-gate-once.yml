@@ -1,0 +1,114 @@
+name: ENGLISH PT v23.5.2.1 Final GO HOLD With Real Backup and All Review HTML
+on:
+  push:
+    branches: [ops/v23521-backup-forms-verify-20261017]
+    paths: ['.github/workflows/stage9-v23521-production-final-approved-backup-readonly-gate-once.yml']
+permissions:
+  actions: read
+  contents: read
+jobs:
+  final-before-authorization-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-original-production-verified-file-manifest-and-backup-status
+          run-id: 39005690268
+          github-token: ${{ github.token }}
+          path: input-backup
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-final-all-Review-HTML-zero-missing-reconciled-QA
+          run-id: 39006124158
+          github-token: ${{ github.token }}
+          path: input-review
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-final-production-preapproval-restore-form-credits-qa
+          run-id: 39002338827
+          github-token: ${{ github.token }}
+          path: input-preapproval
+      - name: Verify backups, exact release SHA, Review full HTML, site current state and form activation uncertainty
+        run: |
+          set -euo pipefail
+          mkdir -p final-go-hold
+          python3 - <<'PY'
+          import os,urllib.request,json,datetime
+          from pathlib import Path
+          repo='bokdong0801-ui/englishpt-seo'
+          old='6ac4bd517c30220008bb9661'
+          site_id='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          cand='e06c6a7b33a3042c9c52e73e95f1ed8a25819dde8584873f939fa14cff9c4bba'
+          backup=json.loads(Path('input-backup/BACKUP_STATUS.json').read_text('utf8'))
+          review=json.loads(Path('input-review/RECONCILED_FULL_IMMUTABLE_REVIEW_HTML_QA.json').read_text('utf8'))
+          gate=json.loads(Path('input-preapproval/FINAL_PREAPPROVAL_GO_HOLD.json').read_text('utf8'))
+          def fetch(url,token):
+              request=urllib.request.Request(url,headers={'Authorization':'Bearer '+token,'Accept':'application/json'},method='GET')
+              with urllib.request.urlopen(request,timeout=40) as r:return json.load(r)
+          assert backup['status']=='PASS_FULL_INDEPENDENT_PRODUCTION_ORIGINAL_BACKUP',backup
+          assert backup['original_backup_complete'] is True
+          assert backup['file_manifest_count']==1791 and backup['api_raw_sha1_verified_count']==1791
+          assert backup['zip_integrity_checked'] is True
+          assert backup['archive_sha256']=='b490c4a19cb4deb04d3c6dd5927446cbda879991ba581e4654f2d5462686bac5'
+          assert review['status']=='PASS_ALL_ORIGINAL_HTML_PRESENT_WITH_KNOWN_NETLIFY_FILE_TRANSFORMS'
+          assert review['missing_html_files']==0 and review['original_html_files']==158574
+          assert gate['status']=='PASS_TECHNICAL_PREAPPROVAL_WITH_EXPLICIT_HOLDS',gate
+          assert gate['candidate_archive_sha256']==cand
+          assert len(gate['form_samples'])==6
+          gh=os.environ['GH_TOKEN']
+          api='https://api.github.com/repos/'+repo+'/actions/artifacts/'
+          artifact=fetch(api+'12091475871',gh)
+          assert artifact['name']=='englishpt-v23521-OLD-PRODUCTION-ORIGINAL-FULL-SHA-VERIFIED-BACKUP' and not artifact.get('expired'),artifact
+          token=os.environ['NETLIFY_AUTH_TOKEN']
+          site=fetch('https://api.netlify.com/api/v1/sites/'+site_id,token)
+          assert site['id']==site_id and (site.get('published_deploy') or {}).get('id')==old
+          previous=fetch('https://api.netlify.com/api/v1/sites/'+site_id+'/deploys/'+old,token)
+          assert previous.get('state')=='ready' and previous.get('id')==old
+          acc=fetch('https://api.netlify.com/api/v1/accounts/'+site['account_id'],token)
+          cr=(acc.get('capabilities') or {}).get('credits') or {}
+          assert cr.get('included')==1000 and cr.get('used')==0
+          assert acc.get('in_operational_mode') is False
+          assert not acc.get('usages_exceeded') and not acc.get('configurable_limits_exceeded')
+          forms=fetch('https://api.netlify.com/api/v1/sites/'+site_id+'/forms',token)
+          manual=['Confirm Netlify UI Forms > Form detection shows enabled before Production upload',
+                  'Download and durably store previous production ZIP artifact outside GitHub (30-day retention)',
+                  'Approve exact frozen candidate SHA256 for one Production deployment separately',
+                  'After authorized deployment verify form registration and exactly one test submission/email']
+          report={'status':'HOLD_ONLY_FOR_USER_UI_FORM_DETECTION_AND_EXPLICIT_PRODUCTION_AUTH',
+                  'technical_backup_and_review_gates':'PASS',
+                  'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                  'production_deployed':False,'form_submitted':False,
+                  'pass':{'old_production_zip_complete_and_sha_checked':True,'backup_count':1791,
+                    'backup_sha256':backup['archive_sha256'],
+                    'frozen_candidate_sha256':cand,
+                    'all_Review_HTML_present':review['missing_html_files']==0,
+                    'actual_Review_HTML':review['original_html_files'],
+                    'Netlify_current_old_deploy_ready':True,'Netlify_credit_block':False,
+                    'static_form_contracts_valid_count':len(gate['form_samples']),
+                    'backup_artifact_unexpired':True},
+                  'netlify_form_detection_site_field':site.get('use_forms'),
+                  'current_old_Production_forms_count':len(forms),
+                  'manual_actions_remaining':manual,
+                  'production_deploy_site_id':site_id,
+                  'restore_existing_production_deploy':old,
+                  'candidate_artifact_id':12085981996,
+                  'backup_artifact_id':12091475871,
+                  'review_reconcile_artifact_id':12090534549,
+                  'deployment_authorized':False}
+          Path('final-go-hold/PRODUCTION_FINAL_GO_HOLD_NOW_BACKED_UP.json').write_text(
+             json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('FINAL_PRE_APPROVAL_GO_HOLD_WITH_COMPLETE_BACKUP',json.dumps(report,ensure_ascii=False),flush=True)
+          PY
+      - name: Store final HOLD or PASS evidence without deploying
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-final-production-approval-stage-with-backup-and-all-pages
+          path: final-go-hold/
+          retention-days: 30
+          if-no-files-found: warn
