@@ -1,0 +1,47 @@
+name: ENGLISH PT Corrected Netlify Credit GO HOLD Readonly Preflight
+on:
+  push:
+    branches: [ops/v23521-netlify-credit-diag-20261017]
+    paths: ['.github/workflows/stage9-v23521-netlify-credit-corrected-go-hold-once.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  corrected-account-read-only-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax and billing flag semantics guard
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_prelaunch_netlify_readonly.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/v23521_prelaunch_netlify_readonly.py').read_text('utf8')
+          assert 'operational is True or bool(over) or bool(configurable)' in s
+          assert 'operational is False and over==[] and configurable==[] and remaining is not None and remaining>0' in s
+          assert 'netlify_account_credit_or_usage_block' not in s
+          assert 'method="GET"' in s
+          assert 'method="POST"' not in s
+          assert "EXPECTED_RUN = 38992648694" in s
+          print('PASS_CORRECT_CREDIT_FLAG_SEMANTICS_NO_NETLIFY_WRITES',flush=True)
+          PY
+      - name: Revalidate real account credits, published deploy rollback point and all previous GO HOLD requirements
+        id: readonly
+        run: |
+          python3 scripts/v23521_prelaunch_netlify_readonly.py
+      - name: Save corrected evidence even if account/Forms issue remains
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-corrected-netlify-account-credit-go-hold-and-rollback
+          path: prelaunch-readonly-report/
+          retention-days: 30
+          if-no-files-found: warn
