@@ -13,6 +13,18 @@ Date: 2026-10-17. **This document DOES NOT approve or execute the Production dep
 - Live nonproduction Review QA: [38934554110](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/38934554110) PASS.
 - Obsolete archive from run `38903769454` must NEVER be deployed (shared JS bug).
 
+## Final candidate preapproval READ-ONLY proof (2026-10-17)
+
+- [GitHub run 39002338827](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39002338827) SUCCESS, Artifact `12089318578` (`FINAL_PREAPPROVAL_GO_HOLD.json`).
+- Verified exact complete 1.23GB candidate archive SHA256 again before sampling it.
+- Actual previous published Production deploy `6ac4bd517c30220008bb9661`: current and `ready`.
+- Candidate's exact `pilot.js` SHA256 and absence of global Draft `X-Robots-Tag: noindex`: PASS.
+- Six real representative student tutor HTML pages: all 6 contained exactly one static `englishpt-consultation` `method=POST`, Netlify detection markup, `requestType`, `subject`, and hidden `form-name=englishpt-consultation`. PASS.
+- Live Netlify `GET /sites/:id/forms`: 0 registered forms on **old** Production. This is not evidence that the *new* candidate lacks valid form markup.
+- API `use_forms=null`; no explicit enable/disable state established. **Before authorizing Production, open Netlify site's Forms > Form detection and ensure it is ENABLED**. No live site settings were changed by this audit.
+- The verified technical result is `PASS_TECHNICAL_PREAPPROVAL_WITH_EXPLICIT_HOLDS`: all code/SEO/account/rollback checks PASS, manual backup and UI forms-enable verification still pending.
+- This test did not deploy, submit forms, or alter Production.
+
 ## Netlify account (corrected)
 
 - Team: `bokdong0801`, Personal plan, API `credits.included=1000`, `credits.used=0`, computed available `1000`.
