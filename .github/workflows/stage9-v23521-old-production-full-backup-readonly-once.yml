@@ -1,0 +1,78 @@
+name: ENGLISH PT Old Production Complete Backup or Verified Safe Manual Hold
+on:
+  push:
+    branches: [ops/v23521-backup-forms-verify-20261017]
+    paths: ['.github/workflows/stage9-v23521-old-production-full-backup-readonly-once.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  original-old-deploy-get-only-backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify GET-only backup script, no Production mutations
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_backup_existing_netlify_site_get_only.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/v23521_backup_existing_netlify_site_get_only.py').read_text('utf8')
+          assert 'method="GET"' in s
+          assert 'method="POST"' not in s and 'method="PATCH"' not in s
+          assert 'netlify deploy' not in s
+          assert '6ac4bd517c30220008bb9661' in s
+          assert 'MAX_FILES=2500' in s and 'MAX_BYTES=120*1024*1024' in s
+          assert 'incomplete backup' in s
+          print('PASS_READ_ONLY_BACKUP_SAFETY_AND_NO_PARTIAL_ZIP',flush=True)
+          PY
+      - name: GET exact currently published Netlify files, independently ZIP if safely small
+        id: backup
+        run: python3 scripts/v23521_backup_existing_netlify_site_get_only.py
+      - name: Store backup file manifest and status regardless of full-backup eligibility
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-original-production-verified-file-manifest-and-backup-status
+          path: |
+            production-original-backup/BACKUP_STATUS.json
+            production-original-backup/NETLIFY_ORIGINAL_DEPLOY_FILE_MANIFEST.json
+            production-original-backup/ORIGINAL_DEPLOY_BACKUP_SHA256.txt
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Store full independent verified ZIP only when complete and SHA-checked
+        if: ${{ success() && steps.backup.outcome == 'success' }}
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          state=json.loads(Path('production-original-backup/BACKUP_STATUS.json').read_text('utf8'))
+          if state.get('status')!='PASS_FULL_INDEPENDENT_PRODUCTION_ORIGINAL_BACKUP':
+              with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+                  f.write('## Independent full backup not created\n\nUse Netlify old deploy UI > Download > Download ready. Manifest status: '+state['status']+'\n')
+              print('MANUAL_ZIP_BACKUP_REQUIRED',state['status'],flush=True)
+              exit()
+          archive=Path('production-original-backup')/state['archive_name']
+          assert archive.is_file(),archive
+          with open(os.environ['GITHUB_ENV'],'a') as f:
+              f.write('FULL_ZIP_BACKUP_OK=1\n')
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+              f.write('## Verified independent original Production ZIP backup exists\n\nSHA256: '+state['archive_sha256']+'\n')
+          print('FULL_BACKUP_READY_AND_SHA256_VERIFIED',state['archive_sha256'],flush=True)
+          PY
+      - name: Publish verified ORIGINAL Production ZIP backup only when complete
+        if: ${{ success() && env.FULL_ZIP_BACKUP_OK == '1' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-OLD-PRODUCTION-ORIGINAL-FULL-SHA-VERIFIED-BACKUP
+          path: |
+            production-original-backup/ENGLISHPT_ORIGINAL_PRODUCTION_6ac4bd517c30220008bb9661.zip
+            production-original-backup/ORIGINAL_DEPLOY_BACKUP_SHA256.txt
+          retention-days: 30
+          if-no-files-found: error
