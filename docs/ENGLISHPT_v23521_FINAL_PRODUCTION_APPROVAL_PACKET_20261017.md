@@ -43,11 +43,22 @@ Date: 2026-10-17. **This document DOES NOT approve or execute the Production dep
 - Team is shared by Review and Production, [verification 39001448213](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39001448213).
 - Corrected read-only preflight [39001379598](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39001379598) PASS; **real 1.23 GB production upload was NOT attempted**.
 
+## FULL independent old Production backup VERIFIED (2026-10-17)
+
+- [GET-only verified backup run 39005690268](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39005690268) **PASS**, no site mutations.
+- Old production site ID: `98d96cc5-f0b7-4d3d-8072-6476d93e55a3`; exact old published deploy ID: `6ac4bd517c30220008bb9661`; state READY.
+- Netlify API original deployed files: **1,791 files**, original size sum **89,042,147 bytes**, **1,791/1,791 raw SHA1 digests verified**.
+- Independent ZIP file: `ENGLISHPT_ORIGINAL_PRODUCTION_6ac4bd517c30220008bb9661.zip`, **15,426,238 bytes**, ZIP CRC check PASS, complete path-set equality.
+- ZIP SHA256 `b490c4a19cb4deb04d3c6dd5927446cbda879991ba581e4654f2d5462686bac5`.
+- GitHub independent full backup Artifact ID **12091475871**; manifest and SHA report Artifact ID **12091032928**. GitHub archives are not permanent; user should download and keep an independent copy.
+- **Old no-portable-backup HOLD is resolved.** The restoration pointer `6ac4bd517c30220008bb9661` remains saved and was reverified.
+- This was a reconstruction of every original deploy file via Netlify's authenticated GET API; it was not created by clicking Netlify's UI ZIP download and is independently SHA-verified.
+
 ## Production rollback baseline
 
 - Current published Production Netlify deploy: `6ac4bd517c30220008bb9661` (`ready` on 2026-10-17).
 - Existing restore metadata backup GitHub Artifact `12088532792`; this is NOT an independent full website backup.
-- Before requesting launch approval, obtain an independent ZIP of the *same old production deployment*: Netlify → Deploys → old deploy detail ID `6ac4bd517c30220008bb9661` → Download → Download ready. Preserve ZIP and its SHA256 separately.
+- Independent full ZIP has NOW been generated and verified from all 1,791 original deploy files (Artifact 12091475871; see above). User should download and keep a separate durable copy; GitHub's 30-day artifact retention is not permanent.
 - Verify the old immutable deploy still exists immediately before new release. Never roll back to the outdated 95-page Stage 7 archive.
 - Production restore method if explicitly separately authorized: Netlify previous deploy → **Publish deploy**; verify current ID and page behavior after restoration.
 
@@ -63,7 +74,7 @@ Date: 2026-10-17. **This document DOES NOT approve or execute the Production dep
 
 Until all are true, Production remains HOLD:
 - [ ] Final preapproval read-only run verified old deploy, 6 candidate forms, and latest ordinary credits.
-- [ ] Old published Production ZIP backup separately downloaded, hash recorded, and extractable.
+- [x] Old published Production ZIP backup created, its exact 1,791-file content checked, hash recorded, ZIP tested (Artifact 12091475871). **User should download an external copy before release.**
 - [ ] Production Form detection ENABLED in Netlify site UI, or independently verified already enabled.
 - [ ] Confirm Netlify can accept manual upload to Production site and sufficient credits (GET alone cannot guarantee it).
 - [ ] Ensure currently published deploy ID still matches rollback plan.
