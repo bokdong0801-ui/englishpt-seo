@@ -1,0 +1,49 @@
+name: ENGLISH PT v23.5.2.1 Prelaunch HOLD Evidence and Rollback ID Readonly
+on:
+  push:
+    branches: [release/v23521-production-prelaunch-readonly-20261017]
+    paths: ['.github/workflows/stage9-v23521-prelaunch-evidence-readonly-once.yml']
+permissions:
+  actions: read
+  contents: read
+jobs:
+  read-prior-preflight-artifact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-production-prelaunch-go-hold-and-original-rollback-point
+          run-id: 38999946448
+          github-token: ${{ github.token }}
+          path: prior
+      - name: Print safe site credit and live HTTP evidence only, never personal form data
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          s=json.loads(Path('prior/GO_HOLD_PREFLIGHT.json').read_text('utf8'))
+          p=json.loads(Path('prior/ROLLBACK_PUBLISHED_DEPLOY_POINT.json').read_text('utf8'))
+          safe={
+              'prelaunch_status':s.get('status'),
+              'account_safety':s.get('account_safety'),
+              'account_name_or_id_hidden':True,
+              'blocking_items':s.get('blocking_items'),
+              'manual_holds':s.get('manual_hold_items'),
+              'forms_notifications':s.get('forms_notifications_metadata'),
+              'live_http':[{'path':x.get('path'),'status':x.get('http_status'),'error':x.get('error')}
+                        for x in s.get('live_get_checks',[])],
+              'site_state':{'disabled':s.get('site_meta',{}).get('disabled'),
+                            'state':s.get('site_meta',{}).get('state'),
+                            'published_deploy_id':s.get('site_meta',{}).get('published_deploy_id')},
+              'backup_restore_pointer':{
+                 'status':p.get('status'),'published_deploy_id':p.get('published_deploy_id'),
+                 'site_id':p.get('site_id'),'published_deploy_state':p.get('published_deploy_state'),
+                 'deploy_permalink':p.get('deploy_permalink'),
+                 'restore_api_path':p.get('rollback_api_path'),
+                 'is_full_separate_backup':p.get('is_separate_site_file_backup')},
+              'production_deployed':False
+          }
+          assert p.get('published_deploy_id')=='6ac4bd517c30220008bb9661'
+          print('PRODUCTION_READONLY_PREFLIGHT_EVIDENCE',json.dumps(safe,ensure_ascii=False),flush=True)
+          PY
