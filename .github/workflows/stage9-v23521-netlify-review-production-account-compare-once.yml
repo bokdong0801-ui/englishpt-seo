@@ -1,0 +1,67 @@
+name: ENGLISH PT Netlify Review and Production Team Billing Comparison Readonly
+on:
+  push:
+    branches: [ops/v23521-netlify-credit-diag-20261017]
+    paths: ['.github/workflows/stage9-v23521-netlify-review-production-account-compare-once.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compare-site-accounts-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare the two Netlify site teams using only GET requests
+        run: |
+          set -euo pipefail
+          mkdir -p netlify-account-compare
+          python3 - <<'PY'
+          import urllib.request,json,os
+          from pathlib import Path
+          base='https://api.netlify.com/api/v1'
+          token=os.environ['NETLIFY_AUTH_TOKEN']
+          ids={'production':'98d96cc5-f0b7-4d3d-8072-6476d93e55a3',
+               'review':'803550a8-03af-4776-bc8a-bd0bae85f5c7'}
+          def fetch(path):
+              req=urllib.request.Request(base+path,headers={'Authorization':'Bearer '+token,
+                'Accept':'application/json'},method='GET')
+              with urllib.request.urlopen(req,timeout=40) as r:return json.load(r)
+          out={'site_account_ids_match':None,'comparison':{},'netlify_mutations':0,'production_deployed':False}
+          for name,site_id in ids.items():
+              try:
+                  s=fetch('/sites/'+site_id)
+                  a=fetch('/accounts/'+s['account_id'])
+                  credit=(a.get('capabilities') or {}).get('credits') or {}
+                  out['comparison'][name]={
+                      'site_id_matches_expected':s.get('id')==site_id,
+                      'netlify_account_id':s.get('account_id'),
+                      'account_slug':a.get('slug'),
+                      'plan':a.get('type_name'),
+                      'credits_included':credit.get('included'),
+                      'credits_used':credit.get('used'),
+                      'in_operational_mode':a.get('in_operational_mode'),
+                      'usages_exceeded_count':len(a.get('usages_exceeded') or []),
+                      'site_disabled':s.get('disabled')
+                  }
+              except Exception as e:
+                  out['comparison'][name]={'error':type(e).__name__+' '+str(getattr(e,'code',''))}
+          x,y=out['comparison'].get('production',{}),out['comparison'].get('review',{})
+          if x.get('netlify_account_id') and y.get('netlify_account_id'):
+              out['site_account_ids_match']=x['netlify_account_id']==y['netlify_account_id']
+          out['status']='PASS_TWO_SITE_ACCOUNT_IDS_COMPARED' if out['site_account_ids_match'] is not None else 'HOLD_REVIEW_ACCOUNT_UNVERIFIED'
+          Path('netlify-account-compare/REVIEW_VS_PRODUCTION_NETLIFY_TEAMS.json').write_text(
+             json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('NETLIFY_REVIEW_PRODUCTION_ACCOUNT_COMPARE',json.dumps(out,ensure_ascii=False),flush=True)
+          if out['status'].startswith('HOLD_'):raise SystemExit(1)
+          PY
+      - name: Preserve comparison report even if the Review team is inaccessible
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-netlify-review-production-team-comparison
+          path: netlify-account-compare/
+          retention-days: 30
+          if-no-files-found: warn
