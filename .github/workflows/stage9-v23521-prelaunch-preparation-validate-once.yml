@@ -1,0 +1,73 @@
+name: ENGLISH PT v23.5.2.1 Prelaunch Code QA and Netlify Form Names GET Only
+on:
+  push:
+    branches: [release/v23521-production-prelaunch-readonly-20261017]
+    paths: ['.github/workflows/stage9-v23521-prelaunch-preparation-validate-once.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect-and-validate-without-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate both scripts and exact non-production gates
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_prelaunch_netlify_readonly.py scripts/v23521_postproduction_readonly_smoke.py
+          python3 - <<'PY'
+          from pathlib import Path
+          live=Path('scripts/v23521_prelaunch_netlify_readonly.py').read_text('utf8')
+          post=Path('scripts/v23521_postproduction_readonly_smoke.py').read_text('utf8')
+          release=Path('docs/ENGLISHPT_V23521_PRODUCTION_GO_HOLD_BACKUP_ROLLBACK_POSTLAUNCH_20261017.md').read_text('utf8')
+          wf=Path('.github/workflows/stage9-v23521-after-prod-get-only-smoke.yml').read_text('utf8')
+          assert 'method="GET"' in live and 'method="GET"' in post
+          assert not any(x in live+post for x in ['method="POST"','netlify deploy','--prod'])
+          assert 'workflow_dispatch:' in wf and 'push:' not in wf
+          assert '6ac4bd517c30220008bb9661' in release
+          assert 'e06c6a7b33a3042c9c52e73e95f1ed8a25819dde8584873f939fa14cff9c4bba' in release
+          assert 'RESTORE' not in wf.upper()
+          print('PASS_PRODUCTION_GO_HOLD_ROLLBACK_AND_POSTLAUNCH_CODE_COMPILED_SAFE',flush=True)
+          PY
+      - name: GET only Production Netlify form names and notification configuration scope
+        run: |
+          set -euo pipefail
+          mkdir -p production-prelaunch-validation
+          python3 - <<'PY'
+          import os,json,urllib.request
+          from pathlib import Path
+          site='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          token=os.environ['NETLIFY_AUTH_TOKEN']
+          if not token:raise ValueError('No Netlify read-only token')
+          def fetch(path):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,
+              headers={'Authorization':'Bearer '+token,'Accept':'application/json'},method='GET')
+            with urllib.request.urlopen(req,timeout=30) as r:return json.load(r)
+          forms=fetch('sites/'+site+'/forms')
+          hooks=fetch('hooks?site_id='+site)
+          form_names=sorted({f.get('name','') for f in forms if f.get('name')})
+          hook_types=[{'type':h.get('type'),'event':h.get('event'),
+            'form_scoped':bool(h.get('form_id') or h.get('form_name'))} for h in hooks]
+          safe={'form_names':form_names,'form_count':len(forms),'hook_types_and_scope':hook_types,
+            'expected_form':'englishpt-consultation',
+            'expected_name_present':'englishpt-consultation' in form_names,
+            'no_submission_data_accessed':True,'no_emails_exposed':True,
+            'production_deployed':False,'form_submitted':False}
+          Path('production-prelaunch-validation/FORMS_NAMES_AND_HOOK_SCOPE.json').write_text(
+            json.dumps(safe,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('SAFE_NETLIFY_FORMS_METADATA',json.dumps(safe,ensure_ascii=False),flush=True)
+          PY
+      - name: Upload safe code QA and forms metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-prelaunch-forms-names-and-code-readonly-validation
+          path: production-prelaunch-validation/
+          retention-days: 30
+          if-no-files-found: warn
