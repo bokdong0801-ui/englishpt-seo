@@ -147,12 +147,23 @@ def main():
                 "in_operational_mode":operational,"usages_exceeded":over,
                 "configurable_limits_exceeded":configurable,
                 "type_name":account.get("type_name")}
-            if operational is False or over is True or configurable is True:
-                summary["blocking_items"].append("netlify_account_credit_or_usage_block")
-            elif operational is None and over is None and configurable is None:
-                summary["manual_hold_items"].append("netlify_credit_status_unverified")
-            else: summary["pass_items"].append("no_reported_account_block")
-            # Successful API reads do not guarantee sufficient remaining deploy credits.
+            # A TRUE in_operational_mode means Netlify's special operational-credit state.
+            # FALSE means this flag is not activated, NOT that the account is shut down.
+            credit=account.get("capabilities",{}).get("credits") or {}
+            included=credit.get("included")
+            used=credit.get("used")
+            remaining=(included-used) if isinstance(included,(int,float)) and isinstance(used,(int,float)) else None
+            summary["account_safety"]["plan"]=account.get("type_name")
+            summary["account_safety"]["credit_included"]=included
+            summary["account_safety"]["credit_used"]=used
+            summary["account_safety"]["credit_remaining_computed"]=remaining
+            if operational is True or bool(over) or bool(configurable):
+                summary["blocking_items"].append("netlify_operational_credit_mode_or_limit_exceeded")
+            elif operational is False and over==[] and configurable==[] and remaining is not None and remaining>0:
+                summary["pass_items"].append("account_has_remaining_ordinary_credits_and_operational_mode_off")
+            else:
+                summary["manual_hold_items"].append("netlify_credit_balance_or_operational_state_unverified")
+            # A GET cannot prove Netlify will permit a new 1.23GB deploy.
             summary["manual_hold_items"].append("confirm_remaining_upload_capacity_before_1_23GB_prod")
         # Forms and notification metadata ONLY, never retrieve existing submissions or addresses.
         forms,forms_err=get_json(API+"/sites/"+site_id+"/forms",token,required=False)
