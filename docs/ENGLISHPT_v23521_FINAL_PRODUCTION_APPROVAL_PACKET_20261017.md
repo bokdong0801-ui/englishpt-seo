@@ -22,7 +22,7 @@ Date: 2026-10-17. **This document DOES NOT approve or execute the Production dep
 - Six real representative student tutor HTML pages: all 6 contained exactly one static `englishpt-consultation` `method=POST`, Netlify detection markup, `requestType`, `subject`, and hidden `form-name=englishpt-consultation`. PASS.
 - Live Netlify `GET /sites/:id/forms`: 0 registered forms on **old** Production. This is not evidence that the *new* candidate lacks valid form markup.
 - API `use_forms=null`; no explicit enable/disable state established. **Before authorizing Production, open Netlify site's Forms > Form detection and ensure it is ENABLED**. No live site settings were changed by this audit.
-- The verified technical result is `PASS_TECHNICAL_PREAPPROVAL_WITH_EXPLICIT_HOLDS`: all code/SEO/account/rollback checks PASS, manual backup and UI forms-enable verification still pending.
+- The verified technical result is `PASS_TECHNICAL_PREAPPROVAL_WITH_EXPLICIT_HOLDS`: all code/SEO/account/rollback checks PASS and independent backup NOW PASS; only confirmation of UI Form detection, final deployment permissions, separate user approval and postdeploy lead-flow verification remain.
 - This test did not deploy, submit forms, or alter Production.
 
 ## Netlify actual immutable Review deploy FULL content inventory (2026-10-17)
