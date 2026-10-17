@@ -14,12 +14,14 @@ Version: 2026-10-17. **No Production deploy has been authorized or performed in 
 
 ## Confirmed LIVE read-only findings
 
+**Correction:** An earlier preflight incorrectly raised a billing HOLD for `in_operational_mode=false`. The corrected read-only checker passed without a credit blocking condition; other rollout HOLDs persist for independent backup, Forms registration verification, and explicit user authorization.
+
 GitHub Actions [38999946448](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/38999946448) and sanitized evidence [39000032216](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39000032216).
 
 - Netlify Production site UUID: `98d96cc5-f0b7-4d3d-8072-6476d93e55a3`.
 - Published deploy ID at 2026-10-17 inspection: `6ac4bd517c30220008bb9661`. It was verified from Netlify `GET /api/v1/sites/englishpt.kr` and its individual deploy record; state `ready`.
 - **Backup achieved:** immutable *restore-point metadata*, stored in GitHub Artifact `12088532792` / `ROLLBACK_PUBLISHED_DEPLOY_POINT.json`. This is **not an exported complete backup** of site files. Do not delete/prune this deployed revision while it may be needed.
-- Netlify account status `in_operational_mode=false`; `usages_exceeded=[]`, `configurable_limits_exceeded=[]` (the exact cause or remaining deploy credits is not determined).
+- CORRECTED on 2026-10-17: Netlify team `bokdong0801` Personal plan reports **1,000 included credits, 0 used, 1,000 remaining (API arithmetic)**, `in_operational_mode=false`, `usages_exceeded=[]`, `configurable_limits_exceeded=[]`. The old assertion that `false` means deploys are blocked was an inverted interpretation. This evidence **does not prove** a future 1.23GB upload will succeed; operational production upload still requires an actual gated deploy after approval. See read-only runs [39001269428](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39001269428) and [39001379598](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39001379598). Review and Production share the same Netlify team (run [39001448213](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39001448213)).
 - Public live HTTP before new release: root /, /englishpt.html, /robots.txt, /sitemap-index.xml returned 200. Newly added /gyeongnam-milyang-naeidong-elem-tutor.html returned 404 because that URL is not yet published in Production.
 - Netlify Forms GET succeeded and **returned 0 registered forms total**, not merely an unexpected form name. There is one generic `submission_created` email hook (unscoped). The Netlify production deployment has not registered a working consultation form yet; confirm Netlify Forms detection is enabled before launch and check registration immediately after deploy. Neither form capture nor actual email delivery has been proved.
 - Exact sanitized forms evidence: GitHub Actions [39000230995](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39000230995), no submissions or recipient addresses fetched. 
@@ -32,8 +34,8 @@ GitHub Actions [38999946448](https://github.com/bokdong0801-ui/englishpt-seo/act
 | Review Draft live UI and links | GO (separate nonproduction site) |
 | Existing published deploy restore ID captured | GO for metadata-only restore point |
 | External portable full production-site backup | NOT DONE (optional; do not confuse with a Netlify restore point) |
-| Netlify account can currently upload new Production | **HOLD: in_operational_mode false** |
-| Remaining credits/capacity for 1.23 GB deploy | **HOLD: not verified** |
+| Netlify credit and ordinary usage flags | **PASS (read-only): 1,000 available of 1,000, operational-only mode OFF, no exceed flags** |
+| Actual approval/permission/processing of full 1.23GB Production upload | **UNVERIFIED until authorized deployment; no new upload attempted** |
 | Expected Netlify Forms registration | **HOLD: 0 forms registered in current Production** |
 | Email hook configuration | CONFIGURED, but actual delivery untested |
 | Existing deployed baseline HTTP root/sitemap | 200; new unreleased tutor route 404 is expected |
@@ -44,7 +46,7 @@ Overall status: **HOLD**. Do not reinterpret an offline PASS as Production launc
 
 ## Release prerequisites
 
-1. Recheck Netlify Team **Usage & billing**; resolve `in_operational_mode=false` and verify actual remaining deployment capacity. The empty `usages_exceeded` array does not itself prove usable deployment credits.
+1. Netlify team **Usage & billing** should show 1,000 plan credits and 0 used as of 2026-10-17; `in_operational_mode=false` is not itself a block and must **not** be toggled to true. Verify the billing UI and that payments are current; avoid unnecessary credit purchases/upgrades. Actual deployment processing remains unverified until a separately authorized rollout.
 2. Confirm `englishpt.kr` Production site UUID matches `98d96cc5-f0b7-4d3d-8072-6476d93e55a3`; keep the Review site `803550a8-03af-4776-bc8a-bd0bae85f5c7` entirely separate.
 3. Confirm correct Netlify Forms detection for `englishpt-consultation` after publication. Form registration differs from configuring email notification hooks.
 4. Preserve previous published deploy ID `6ac4bd517c30220008bb9661`, its metadata artifact and Netlify Deploys history. Check that the old deploy still exists immediately before public deploy.
