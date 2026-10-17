@@ -1,0 +1,49 @@
+name: ENGLISH PT v23.5.2.1 Production Readonly GO HOLD and Restore Snapshot
+on:
+  push:
+    branches: [release/v23521-production-prelaunch-readonly-20261017]
+    paths: ['.github/workflows/stage9-v23521-production-readonly-go-hold-once.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: englishpt-v23521-prod-readonly-go-hold-one-run
+  cancel-in-progress: false
+jobs:
+  snapshot-and-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile and enforce GET only before inspecting Netlify
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/release/v23521-production-prelaunch-readonly-20261017"
+          python3 -m py_compile scripts/v23521_prelaunch_netlify_readonly.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/v23521_prelaunch_netlify_readonly.py').read_text('utf8')
+          assert 'method="GET"' in s
+          assert 'method="POST"' not in s
+          assert 'urllib.request.Request' in s
+          assert "EXPECTED_RUN = 38992648694" in s
+          print('PASS_NO_NETLIFY_DEPLOY_NO_FORM_POST_NO_SEARCH_REGISTRATION',flush=True)
+          PY
+      - name: Record current EnglishPT Production deploy rollback point and check read-only GO HOLD
+        id: inspect
+        run: |
+          python3 scripts/v23521_prelaunch_netlify_readonly.py
+      - name: Keep reports even on HOLD and never mutate live site
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-production-prelaunch-go-hold-and-original-rollback-point
+          path: prelaunch-readonly-report/
+          retention-days: 30
+          if-no-files-found: warn
