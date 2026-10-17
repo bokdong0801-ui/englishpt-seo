@@ -21,7 +21,8 @@ GitHub Actions [38999946448](https://github.com/bokdong0801-ui/englishpt-seo/act
 - **Backup achieved:** immutable *restore-point metadata*, stored in GitHub Artifact `12088532792` / `ROLLBACK_PUBLISHED_DEPLOY_POINT.json`. This is **not an exported complete backup** of site files. Do not delete/prune this deployed revision while it may be needed.
 - Netlify account status `in_operational_mode=false`; `usages_exceeded=[]`, `configurable_limits_exceeded=[]` (the exact cause or remaining deploy credits is not determined).
 - Public live HTTP before new release: root /, /englishpt.html, /robots.txt, /sitemap-index.xml returned 200. Newly added /gyeongnam-milyang-naeidong-elem-tutor.html returned 404 because that URL is not yet published in Production.
-- Netlify Forms GET succeeded but form named `englishpt-consultation` was not registered on the existing Production site; one email submission hook was present. Neither form capture nor actual email delivery has been proved in this version.
+- Netlify Forms GET succeeded and **returned 0 registered forms total**, not merely an unexpected form name. There is one generic `submission_created` email hook (unscoped). The Netlify production deployment has not registered a working consultation form yet; confirm Netlify Forms detection is enabled before launch and check registration immediately after deploy. Neither form capture nor actual email delivery has been proved.
+- Exact sanitized forms evidence: GitHub Actions [39000230995](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39000230995), no submissions or recipient addresses fetched. 
 
 ## GO/HOLD gate
 
@@ -33,7 +34,7 @@ GitHub Actions [38999946448](https://github.com/bokdong0801-ui/englishpt-seo/act
 | External portable full production-site backup | NOT DONE (optional; do not confuse with a Netlify restore point) |
 | Netlify account can currently upload new Production | **HOLD: in_operational_mode false** |
 | Remaining credits/capacity for 1.23 GB deploy | **HOLD: not verified** |
-| Expected Netlify Forms registration | **HOLD: expected name not registered** |
+| Expected Netlify Forms registration | **HOLD: 0 forms registered in current Production** |
 | Email hook configuration | CONFIGURED, but actual delivery untested |
 | Existing deployed baseline HTTP root/sitemap | 200; new unreleased tutor route 404 is expected |
 | Production rollback POST privilege | Unverified; cannot test without modifying Production |
@@ -49,6 +50,17 @@ Overall status: **HOLD**. Do not reinterpret an offline PASS as Production launc
 4. Preserve previous published deploy ID `6ac4bd517c30220008bb9661`, its metadata artifact and Netlify Deploys history. Check that the old deploy still exists immediately before public deploy.
 5. Confirm fresh SHA256 matches the exact candidate above. Exclude any obsolete Stage 7 95-page rollback archive and earlier 140,391-page Stage 9 pipeline.
 6. Obtain a **new, explicit user approval** for Production deployment; do not infer it from this document or the current prelaunch request.
+
+## Portable backup of OLD published site — separate step NOT YET completed
+
+To create an **independent ZIP backup** of the actual old live site, before releasing the new candidate:
+1. Open Netlify **Deploys** for Production site `englishpt.kr`.
+2. Open the specific old deploy ID `6ac4bd517c30220008bb9661` (check the ID, not simply the latest deploy).
+3. In the deployment detail header select **Download**; wait for ZIP generation, then select **Download ready**.
+4. Store that ZIP separately with the site ID, deployment ID and UTC timestamp. Compute its SHA256 and check it can be opened. This backup is **not** already downloaded; the current GitHub artifact is a rollback *pointer* only.
+5. Preserve both the downloaded ZIP and Netlify's published deploy reference. Netlify deploy retention/deletion can make old links unavailable, so the independent archive adds protection.
+
+Official instructions: https://docs.netlify.com/deploy/manage-deploys/manage-deploys-overview/#download-all-deployed-files
 
 ## Rollback procedure prepared, NOT executed
 
