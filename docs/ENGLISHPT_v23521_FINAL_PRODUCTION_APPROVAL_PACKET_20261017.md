@@ -1,0 +1,72 @@
+# ENGLISH PT v23.5.2.1 — FINAL PRODUCTION APPROVAL PACKET
+Date: 2026-10-17. **This document DOES NOT approve or execute the Production deployment.**
+
+## Frozen release (strict)
+
+- Production target: `https://englishpt.kr` — Netlify site ID `98d96cc5-f0b7-4d3d-8072-6476d93e55a3`.
+- Isolated Review site: `803550a8-03af-4776-bc8a-bd0bae85f5c7` — MUST NEVER be used as Production.
+- Corrected immutable offline candidate GitHub run: [38992648694](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/38992648694).
+- Artifact ID: `12085981996`, filename `ENGLISHPT_v23.5.2.1_JSFIX_PRODUCTION_READY_NOT_DEPLOYED.tar.zst`.
+- Candidate SHA256: `e06c6a7b33a3042c9c52e73e95f1ed8a25819dde8584873f939fa14cff9c4bba`.
+- pilot.js SHA256: `d604994a74352a81978002fd6f6286c7d0f4f4c99278745bbf6dad1abce29ede`.
+- Pages: 158,571 generated and 158,573 total HTML; index 21,964; noindex 136,607; sitemap 21,964; OG 29.
+- Live nonproduction Review QA: [38934554110](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/38934554110) PASS.
+- Obsolete archive from run `38903769454` must NEVER be deployed (shared JS bug).
+
+## Netlify account (corrected)
+
+- Team: `bokdong0801`, Personal plan, API `credits.included=1000`, `credits.used=0`, computed available `1000`.
+- `in_operational_mode=false` is not a limit violation and must not be switched to true.
+- `usages_exceeded=[]`; `configurable_limits_exceeded=[]`.
+- Team is shared by Review and Production, [verification 39001448213](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39001448213).
+- Corrected read-only preflight [39001379598](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39001379598) PASS; **real 1.23 GB production upload was NOT attempted**.
+
+## Production rollback baseline
+
+- Current published Production Netlify deploy: `6ac4bd517c30220008bb9661` (`ready` on 2026-10-17).
+- Existing restore metadata backup GitHub Artifact `12088532792`; this is NOT an independent full website backup.
+- Before requesting launch approval, obtain an independent ZIP of the *same old production deployment*: Netlify → Deploys → old deploy detail ID `6ac4bd517c30220008bb9661` → Download → Download ready. Preserve ZIP and its SHA256 separately.
+- Verify the old immutable deploy still exists immediately before new release. Never roll back to the outdated 95-page Stage 7 archive.
+- Production restore method if explicitly separately authorized: Netlify previous deploy → **Publish deploy**; verify current ID and page behavior after restoration.
+
+## Form registration risk and handoff
+
+- Read-only GET shows **zero existing registered forms** on current Production; one unscoped `submission_created` email hook exists.
+- Netlify must have **Form detection enabled BEFORE the new deploy** in the Production site's Forms UI. Netlify documentation: https://docs.netlify.com/manage/forms/setup/.
+- Full candidate contains static HTML tutoring consultation form(s) and fixed JS; verify exact six-page structural QA report in the final preapproval run.
+- DO NOT infer registration or email delivery from static HTML. After the new deploy, confirm the `englishpt-consultation` form appears in Netlify Forms and a notification targets it.
+- Only after explicit test submission approval, perform ONE clearly labeled test and verify Netlify stored entry and destination inbox. No student personal data in tests.
+
+## STOP / GO (release operator)
+
+Until all are true, Production remains HOLD:
+- [ ] Final preapproval read-only run verified old deploy, 6 candidate forms, and latest ordinary credits.
+- [ ] Old published Production ZIP backup separately downloaded, hash recorded, and extractable.
+- [ ] Production Form detection ENABLED in Netlify site UI, or independently verified already enabled.
+- [ ] Confirm Netlify can accept manual upload to Production site and sufficient credits (GET alone cannot guarantee it).
+- [ ] Ensure currently published deploy ID still matches rollback plan.
+- [ ] Re-check frozen SHA256 of candidate and no global Draft `X-Robots-Tag: noindex`.
+- [ ] **Explicit, separate user authorization for actual `englishpt.kr` Production deployment.**
+
+## After explicit approval (not before)
+
+1. Record current Production `published_deploy.id` as rollback baseline; preserve backup ZIP and artifact.
+2. Upload *the frozen corrected archive contents* (not .tar.zst as a Netlify ZIP; unpack first; use Netlify CLI `--dir`, with fully verified target site ID and `--prod` only after approval). Netlify direct ZIP API extraction limit is 25,000 files, so do NOT try to deploy this 158,573-HTML site through a single Netlify ZIP API.
+3. Capture new deployed ID and verify it is `ready` and the intended Production published deploy.
+4. Run the existing **read-only** GitHub workflow `stage9-v23521-after-prod-get-only-smoke.yml` with new deploy ID and `READ-ONLY-SMOKE`. It verifies 15 public routes, patched pilot.js, 29 OG, Forms registration, headers and sitemap.
+5. After *separate* user permission, submit ONE labeled test consultation, check stored Netlify Forms fields, `requestType`, `subject`, region/school grade, then email inbox arrival.
+6. Once site and lead flow are stable, verify property ownership and submit `https://englishpt.kr/sitemap-index.xml` in Google Search Console and Naver Search Advisor; do not request indexing for 136,607 intentionally noindex pages.
+7. If site-wide HTTP or lead flow fails, coordinate restore of previous immutable deploy ID, log evidence and re-test.
+
+## User approval template — DO NOT auto-send or infer authorization
+
+**If all nonauthorization gates above are verified**, ask the user to write:
+
+`ENGLISH PT v23.5.2.1의 최종 후보 SHA256 e06c6a7b...를 확인했습니다. englishpt.kr Production 운영 배포를 승인합니다. 기존 운영 백업과 롤백 ID를 유지하고 1회만 배포해 주세요.`
+
+This file intentionally contains **no executable Production deploy trigger**. The old Stage 9 workflow built for earlier 140,391-page source is not a valid substitute.
+
+## Supporting sources
+- Netlify deploy download and rollback: https://docs.netlify.com/deploy/manage-deploys/manage-deploys-overview/
+- Netlify static form detection: https://docs.netlify.com/manage/forms/setup/
+- Netlify API direct ZIP deploy max 25,000 files: https://docs.netlify.com/api-and-cli-guides/api-guides/get-started-with-api/#zip-file-method
