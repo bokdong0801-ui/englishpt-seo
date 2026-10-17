@@ -1,0 +1,72 @@
+name: ENGLISH PT Immutable Review Versus Frozen Production Full Filename Set
+on:
+  push:
+    branches: [ops/v23521-backup-forms-verify-20261017]
+    paths: ['.github/workflows/stage9-v23521-review-full-filename-set-compare-once.yml']
+permissions:
+  actions: read
+  contents: read
+jobs:
+  compare-every-filename-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-JSFIX-PRODUCTION-READY-158571-NOT-DEPLOYED
+          run-id: 38992648694
+          github-token: ${{ github.token }}
+          path: frozen-candidate
+      - name: SHA check frozen candidate, list original tar paths and GET exact Review manifest
+        run: |
+          set -euo pipefail
+          mkdir -p immutable-filename-audit
+          FROZEN=frozen-candidate/ENGLISHPT_v23.5.2.1_JSFIX_PRODUCTION_READY_NOT_DEPLOYED.tar.zst
+          printf '%s  %s\n' e06c6a7b33a3042c9c52e73e95f1ed8a25819dde8584873f939fa14cff9c4bba "$FROZEN" | sha256sum -c -
+          tar --zstd -tf "$FROZEN" > immutable-filename-audit/FROZEN_ARTIFACT_TAR_FILE_LIST.txt
+          python3 - <<'PY'
+          import os,json,urllib.request,collections
+          from pathlib import Path
+          url='https://api.netlify.com/api/v1/deploys/6ad2561619f2bc1574990fc9/files'
+          req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN'],
+            'Accept':'application/json'},method='GET')
+          with urllib.request.urlopen(req,timeout=150) as r:
+            deployed=json.load(r)
+          assert isinstance(deployed,list),type(deployed)
+          a=set()
+          for x in Path('immutable-filename-audit/FROZEN_ARTIFACT_TAR_FILE_LIST.txt').read_text('utf8').splitlines():
+            x=x.removeprefix('./').rstrip('/')
+            if x:a.add(x)
+          b=set((x.get('path') or x.get('id') or '').lstrip('/') for x in deployed)
+          b.discard('')
+          missing=sorted(a-b)
+          extra=sorted(b-a)
+          htmlmissing=[x for x in missing if x.endswith('.html')]
+          htmlextra=[x for x in extra if x.endswith('.html')]
+          report={'status':'RUNNING','production_deployed':False,'form_submitted':False,
+            'netlify_api_methods':['GET'],'frozen_candidate_sha256':'e06c6a7b33a3042c9c52e73e95f1ed8a25819dde8584873f939fa14cff9c4bba',
+            'review_deploy_id':'6ad2561619f2bc1574990fc9',
+            'frozen_manifest_files':len(a),'deployed_review_files':len(b),
+            'frozen_html':sum(s.endswith('.html') for s in a),
+            'deployed_html':sum(s.endswith('.html') for s in b),
+            'missing_total_count':len(missing),'missing_html_count':len(htmlmissing),
+            'unexpected_total_count':len(extra),'unexpected_html_count':len(htmlextra),
+            'missing_sample':missing[:30],'unexpected_sample':extra[:30],
+            'root_files_deployed':sum('/' not in s for s in b)}
+          report['status']='PASS_ZERO_MISSING_ORIGINAL_SITE_FILES' if not missing and len(a)>=158573 else 'HOLD_REVIEW_MISSING_FILES_IN_NETLIFY'
+          Path('immutable-filename-audit/FINAL_REVIEW_VS_FROZEN_FILE_SET.json').write_text(
+            json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('REVIEW_FROZEN_FULL_FILE_SET_COMPARISON',json.dumps(report,ensure_ascii=False),flush=True)
+          assert not missing,report
+          PY
+      - name: Keep file-set evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-review-vs-Production-frozen-full-file-set-missing-extra-report
+          path: immutable-filename-audit/FINAL_REVIEW_VS_FROZEN_FILE_SET.json
+          retention-days: 30
+          if-no-files-found: warn
