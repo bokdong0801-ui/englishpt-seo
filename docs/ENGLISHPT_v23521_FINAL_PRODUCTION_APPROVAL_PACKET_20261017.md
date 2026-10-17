@@ -25,6 +25,16 @@ Date: 2026-10-17. **This document DOES NOT approve or execute the Production dep
 - The verified technical result is `PASS_TECHNICAL_PREAPPROVAL_WITH_EXPLICIT_HOLDS`: all code/SEO/account/rollback checks PASS, manual backup and UI forms-enable verification still pending.
 - This test did not deploy, submit forms, or alter Production.
 
+## Netlify actual immutable Review deploy FULL content inventory (2026-10-17)
+
+- Immutable Review deploy ID: `6ad2561619f2bc1574990fc9`, state `ready`, Netlify deployed manifest 180,796 files.
+- Compared against the frozen final Production candidate by sha-verified archive and exact filename set.
+- Original HTML count `158,574`, Netlify Review deployed HTML count `158,574`, **HTML missing `0`**.
+- No real static content files are missing; the differences in the generic filename set were directory records, Netlify-processed `_headers`/`_redirects`, and uppercase QA JSON names normalized to lowercase.
+- [Full evidence run 39005946939](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39005946939) returned a strict filename-identity failure for these expected transforms. [Normalized read-only verification run 39006124158](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39006124158) passed, artifact `12090534549`.
+- Official Netlify documentation still states a limit of `54,000` files per directory; this successful immutable Review manifest contains 158,589 root entries. This conflict remains a **production implementation risk**; do not claim that a different Production deploy is guaranteed to succeed until it actually does.
+- NONE of these checks uploaded to Netlify or altered the live site.
+
 ## Netlify account (corrected)
 
 - Team: `bokdong0801`, Personal plan, API `credits.included=1000`, `credits.used=0`, computed available `1000`.
