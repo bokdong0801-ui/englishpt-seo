@@ -70,6 +70,13 @@ def main():
     STATE["file_manifest_count"]=len(listing)
     STATE["file_manifest_bytes"]=size_sum
     STATE["file_manifest_complete"]=True
+    link_header=headers.get("Link","")
+    if 'rel="next"' in link_header or "rel=next" in link_header:
+      raise ValueError("Netlify file list pagination detected; refusing incomplete backup")
+    if headers.get("X-Total-Count") and int(headers["X-Total-Count"])!=len(listing):
+      raise ValueError("Netlify file-list X-Total-Count differs; refusing incomplete backup")
+    if "index.html" not in paths:
+      raise ValueError("Missing index.html in old deploy manifest; refusing incomplete backup")
     STATE["manifest_has_index"]="index.html" in paths
     STATE["list_response_has_link_header"]=bool(headers.get("Link"))
     STATE["list_response_x_total_count"]=headers.get("X-Total-Count")
