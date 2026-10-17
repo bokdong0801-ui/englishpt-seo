@@ -43,15 +43,24 @@ Date: 2026-10-17. **This document DOES NOT approve or execute the Production dep
 - Team is shared by Review and Production, [verification 39001448213](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39001448213).
 - Corrected read-only preflight [39001379598](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39001379598) PASS; **real 1.23 GB production upload was NOT attempted**.
 
+## Forms detection verified directly by authenticated Netlify API (2026-10-17)
+
+- [Exact read-only Forms diagnostic run 39006933545](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39006933545), Artifact `12091685209`: **SUCCESS**, no deploy, no POST.
+- Production Netlify site `98d96cc5-f0b7-4d3d-8072-6476d93e55a3`: `processing_settings.ignore_html_forms=false`, meaning **Form detection ENABLED**. `/sites/:id/forms` currently lists **0 registered forms** because the current old site does not contain an appropriate `englishpt-consultation` form.
+- Review site `803550a8-03af-4776-bc8a-bd0bae85f5c7`: `processing_settings.ignore_html_forms=true`, meaning **Form detection DISABLED**; the immutable Review sample HTML **does** contain a `method=POST`, `data-netlify=true`, named `englishpt-consultation` form, plus hidden `form-name`. Thus Review Forms count zero is an expected consequence of its site-specific setting, not evidence of a broken candidate.
+- The earlier API reading `use_forms=null` was insufficient; the actual `processing_settings.ignore_html_forms` flag resolves the uncertainty. **No Netlify UI action is required for the Production site.**
+- Netlify official guidance confirms `ignore_html_forms=false` means enabled. This setting is kept as-is; the Production form should be detected on its next separately authorized deployment, then verified through the Forms API.
+- **Technical pre-deploy gate is now GO. Overall public deployment still requires explicit user authorization, backed-up artifact preservation, and a final check immediately before the upload; postdeploy form/email test remains necessary.**
+
 ## FINAL synchronized GO/HOLD (2026-10-17 14:28 KST)
 
 - [One-shot final read-only gate 39006399416](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39006399416) SUCCESS, Artifact `12090639594` contains the signed-by-evidence JSON assessment.
 - `technical_backup_and_review_gates=PASS`: source SHA, 1,791/1,791 original ZIP backup, Netlify same previous Production deploy ready, 158,574/158,574 HTML in immutable Review, 6 real static tutor Forms, ordinary credits 1,000 balance, no exceeded limits.
-- **Overall `HOLD_ONLY_FOR_USER_UI_FORM_DETECTION_AND_EXPLICIT_PRODUCTION_AUTH`.**
-- Netlify API site `use_forms=null`; current old Production `GET forms` returned 0 registered forms. The current API cannot verify the Form detection UI toggle.
-- Before any Production upload, user must visit [Netlify Production Forms](https://app.netlify.com/sites/englishpt-seo/forms) and ensure **Enable form detection** was selected. If the UI offers **Disable form detection**, detection is already ON and should remain unchanged.
+- **Superseded by run 39006933545:** Form detection was verified ENABLED in Production; the only authorization hold is an explicit user approval for deployment (plus final immediately-before-upload checks).
+- Netlify `use_forms=null` was inconclusive, but subsequent GET revealed `processing_settings.ignore_html_forms=false` in Production; form detection is ENABLED. Old site still has 0 registered forms. No UI changes needed.
+- Netlify Production's Form detection is already ON per authenticated API; do not toggle this setting. After new Production deploy, check actual `englishpt-consultation` registration and email delivery separately.
 - User should download and retain the validated existing old Production ZIP (Artifact `12091475871`) locally before approval.
-- Once UI setting and durable backup are confirmed, request **separate explicit one-time Production approval**. This package contains no deploying workflow trigger. DO NOT deploy from an old Stage 9 workflow.
+- Since Form detection is confirmed enabled and backup independently completed, request **separate explicit one-time Production approval**; user should also save the GitHub backup artifact outside GitHub before launch. This package contains no deploying workflow trigger. DO NOT deploy from an old Stage 9 workflow.
 - Official forms documentation: https://docs.netlify.com/manage/forms/setup/#enable-form-detection
 
 ## FULL independent old Production backup VERIFIED (2026-10-17)
@@ -86,7 +95,7 @@ Date: 2026-10-17. **This document DOES NOT approve or execute the Production dep
 Until all are true, Production remains HOLD:
 - [ ] Final preapproval read-only run verified old deploy, 6 candidate forms, and latest ordinary credits.
 - [x] Old published Production ZIP backup created, its exact 1,791-file content checked, hash recorded, ZIP tested (Artifact 12091475871). **User should download an external copy before release.**
-- [ ] Production Form detection ENABLED in Netlify site UI, or independently verified already enabled.
+- [x] Production Form detection independently verified enabled by Netlify API (`processing_settings.ignore_html_forms=false`; run 39006933545).
 - [ ] Confirm Netlify can accept manual upload to Production site and sufficient credits (GET alone cannot guarantee it).
 - [ ] Ensure currently published deploy ID still matches rollback plan.
 - [ ] Re-check frozen SHA256 of candidate and no global Draft `X-Robots-Tag: noindex`.
