@@ -1,0 +1,86 @@
+name: ENGLISH PT v23.5.2.1 One Attempt Timeout Production Status GET ONLY
+on:
+  push:
+    branches: [ops/v23521-posttimeout-status-readonly-20261018]
+    paths: ['.github/workflows/stage9-v23521-production-timeout-status-get-only-once.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  determine-real-published-state-no-retries:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: GET current Netlify Production deploy, recent upload states, published JS and forms
+        run: |
+          set -euo pipefail
+          mkdir -p timeout-status
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.error,datetime,hashlib
+          from pathlib import Path
+          api='https://api.netlify.com/api/v1'
+          sid='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          old='6ac4bd517c30220008bb9661'
+          expected_js='d604994a74352a81978002fd6f6286c7d0f4f4c99278745bbf6dad1abce29ede'
+          token=os.environ['NETLIFY_AUTH_TOKEN']
+          def get(url,authenticated=True,limit=600000):
+            headers={'Accept':'application/json' if authenticated else '*/*'}
+            if authenticated:headers['Authorization']='Bearer '+token
+            req=urllib.request.Request(url,headers=headers,method='GET')
+            with urllib.request.urlopen(req,timeout=50) as r:return r.status,r.headers,r.read(limit),r.geturl()
+          def apijson(path):
+            _,_,body,_=get(api+path)
+            return json.loads(body)
+          result={'status':'UNKNOWN','checked_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+             'approved_attempt_run':39007687919,'only_one_deploy_approved':True,
+             'production_deployed_by_this_job':False,'netlify_writes':0,'form_post_count':0,
+             'errors':[]}
+          try:
+            site=apijson('/sites/'+sid)
+            assert site['id']==sid and site.get('custom_domain')=='englishpt.kr',site.get('id')
+            pd=site.get('published_deploy') or {}
+            result['published_deploy']={k:pd.get(k) for k in ('id','state','context','created_at','published_at')}
+            result['is_previous_old_published']=pd.get('id')==old
+            deploys=apijson('/sites/'+sid+'/deploys?per_page=40')
+            result['recent_deploys']=[{k:d.get(k) for k in ('id','state','context','created_at','published_at','error_message','title','draft')} for d in deploys[:40]]
+            forms=apijson('/sites/'+sid+'/forms')
+            result['registered_form_names']=sorted({f.get('name') for f in forms if f.get('name')})
+            result['registered_form_count']=len(forms)
+            for path in ('/pilot.js','/gyeongnam-milyang-naeidong-elem-tutor.html','/robots.txt','/sitemap-index.xml'):
+              try:
+                st,h,data,url=get('https://englishpt.kr'+path,False)
+                observation={'http_status':st,'bytes_checked':len(data)}
+                if path=='/pilot.js':
+                  observation['sha256']=hashlib.sha256(data).hexdigest()
+                  observation['expected_patched_sha256_match']=observation['sha256']==expected_js
+                result.setdefault('live_http',{})[path]=observation
+              except urllib.error.HTTPError as e:
+                result.setdefault('live_http',{})[path]={'http_status':e.code}
+              except Exception as e:
+                result.setdefault('live_http',{})[path]={'error':type(e).__name__}
+            jsmatch=result.get('live_http',{}).get('/pilot.js',{}).get('expected_patched_sha256_match',False)
+            tutor200=result.get('live_http',{}).get('/gyeongnam-milyang-naeidong-elem-tutor.html',{}).get('http_status')==200
+            if not result['is_previous_old_published'] and jsmatch and tutor200:
+              result['status']='NEW_PRODUCTION_VISIBLE_GET_ONLY_CONFIRMATION'
+            elif result['is_previous_old_published']:
+              result['status']='OLD_PRODUCTION_STILL_PUBLISHED_DO_NOT_AUTORETRY'
+            else:
+              result['status']='PRODUCTION_STATE_MIXED_OR_UNKNOWN_DO_NOT_AUTORETRY'
+          except Exception as e:
+            result['status']='DIAGNOSTIC_FAILED_DO_NOT_AUTORETRY'
+            result['errors'].append(type(e).__name__+': '+str(e)[:180])
+          Path('timeout-status/ACTUAL_PRODUCTION_POST_TIMEOUT_STATUS.json').write_text(
+            json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('POST_TIMEOUT_ACTUAL_NETLIFY_STATUS',json.dumps(result,ensure_ascii=False),flush=True)
+          PY
+      - name: Preserve read-only evidence of approved attempt without redeploy
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-one-approved-attempt-posttimeout-live-state-GET-only
+          path: timeout-status/
+          retention-days: 30
+          if-no-files-found: warn
