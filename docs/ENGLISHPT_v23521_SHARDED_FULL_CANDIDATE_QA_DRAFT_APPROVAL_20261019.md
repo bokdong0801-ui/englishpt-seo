@@ -33,6 +33,17 @@ Updated 2026-10-19 KST. This step **did NOT deploy any Netlify Draft or Producti
 
 The actual candidate contains the Netlify Edge code at netlify/edge-functions/shard-router.js with matching netlify.toml Edge declarations. All root .html public addresses remain unchanged through an intended same-site internal rewrite. The old 301 redirect paths are exempt.
 
+## 2026-10-19 — First approved Draft CLI invocation HOLD; NO Netlify Draft created
+
+- User-approved Draft-only run [39196186317](https://github.com/bokdong0801-ui/englishpt-seo/actions/runs/39196186317): **failed, without creating a deploy ID**.
+- Protected pre-upload gates passed: new candidate SHA256, 1,791-file independent old Production ZIP/sha, rollback deploy ready/current, Netlify account credits and Form detection ON; candidate unpack + 256-shard Edge configuration passed.
+- Netlify CLI v27.13.0 rejected the command locally before uploading: `Error: --context flag is only available when using the --build flag`.
+- The workflow mistakenly used `--no-build` AND `--context=deploy-preview` together. **These flags must not be combined.**
+- Netlify GET after the invocation returned exactly **zero Drafts with this marker**, old Production `published_deploy.id=6ac4bd517c30220008bb9661` unchanged, and no new Draft URL. No HTTP, Forms or email testing was possible.
+- Correction for the NEXT separately approved one-shot attempt: **remove `--context=deploy-preview` entirely**. Netlify CLI `deploy` without `--prod` creates a nonpublished Draft by default; retain `--no-build`, exact Site ID and SHA gates, unique alias, one-command ceiling, no auto retries.
+- DO NOT rerun or edit the one-shot `push` workflow on the approved branch; prepare a new unique fail-closed workflow only after renewed authorization. The previous authorization specified a one-time attempt and automatic retry was expressly disallowed.
+- Official CLI docs: https://cli.netlify.com/commands/deploy/ — command default is Draft and `--context` only used with builds.
+
 ## Draft approval and safe deployment plan
 
 **NEW explicit permission is REQUIRED for creating exactly ONE Draft deploy.** Earlier approval for one Production attempt is already consumed by the failed Oct 17 workflow. Do not reuse the old Production workflow.
