@@ -1,0 +1,50 @@
+name: ENGLISH PT 180798 File Async Draft Digest OFFLINE MANIFEST NO DEPLOY
+on:
+  push:
+    branches: [ops/v23521-timeout-root-cause-offline-20261019]
+    paths: ['.github/workflows/stage9-v23521-sharded-async-draft-manifest-offline-only-once.yml']
+permissions:
+  actions: read
+  contents: read
+jobs:
+  prove-async-draft-digest-without-network-writes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: No Netlify API, no credentials or upload commands
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_sharded_async_manifest_OFFLINE_ONLY.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/v23521_sharded_async_manifest_OFFLINE_ONLY.py').read_text('utf8')
+          assert 'urllib' not in s and 'requests' not in s and 'netlify deploy' not in s
+          assert '"async":True,"draft":True' in s
+          assert 'EXPECTED_SHA="e06c6a7b33a3042c9c52e73e95f1ed8a25819dde8584873f939fa14cff9c4bba"' in s
+          print('PASS_OFFLINE_ASYNC_DRAFT_SHA1_MANIFEST_ONLY_NEVER_POST',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-JSFIX-PRODUCTION-READY-158571-NOT-DEPLOYED
+          run-id: 38992648694
+          github-token: ${{ github.token }}
+          path: frozen-source
+      - name: Compute complete file digest and would-be Netlify request without sending it
+        run: |
+          set -euo pipefail
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y zstd -qq)
+          python3 scripts/v23521_sharded_async_manifest_OFFLINE_ONLY.py \
+            frozen-source/ENGLISHPT_v23.5.2.1_JSFIX_PRODUCTION_READY_NOT_DEPLOYED.tar.zst \
+            --output-dir offline-async-draft-payload
+      - name: Upload offline QA and unsigned manifest (NO file contents)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-FULL-sharded-180798-files-async-draft-SHA1-payload-OFFLINE-NOT-SENT
+          path: offline-async-draft-payload/
+          retention-days: 30
+          if-no-files-found: warn
