@@ -1,0 +1,48 @@
+name: ENGLISH PT 20261019 One Authorized REAL Form Test -> Naver Notification
+on:
+  push:
+    branches: [ops/v23521-live-form-email-single-test-20261019]
+    paths: ['.github/workflows/stage9-v23521-USER-APPROVED-ONE-NAVER-EMAIL-FORM-LIVE-TEST.yml']
+permissions:
+  contents: read
+concurrency:
+  group: enpt-v23521-20261019-one-real-live-form-Naver-once
+  cancel-in-progress: false
+jobs:
+  one-labeled-form-and-netlify-submission-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      APPROVED_SINGLE_REAL_FORM_TEST: ENPT_USER_APPROVED_ONE_REAL_FORM_TEST_20261019
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static safety gate confirms ONE POST and no Netlify deploy, hook updates, or mailbox access
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_ONE_APPROVED_real_form_Naver_notification_test.py
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('scripts/v23521_ONE_APPROVED_real_form_Naver_notification_test.py').read_text('utf8')
+          assert 'method="POST"' in src and src.count('method="POST"')==1
+          assert 'netlify deploy' not in src and 'api.netlify.com/api/v1/sites/'+'' not in src
+          assert 'SINGLE_REAL_POST_ATTEMPT_MARKER.json' in src
+          assert 'TARGET_DIGEST="6d153d8d6d5380e35fa611e0bac4a2d34c56f1ff25636f392fbf7cf5e1b10998"' in src
+          assert 'Never' in src and 'real_form_POST_count' in src
+          print('PASS_EXACTLY_ONE_LABELED_FORM_POST_WITH_NAVER_RECIPIENT_VERIFICATION_GUARD',flush=True)
+          PY
+      - name: One real consultation POST to live englishpt.kr and GET-only Netlify receipt verification
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_ONE_APPROVED_real_form_Naver_notification_test.py
+      - name: Retain sanitized timestamp, Netlify submission receipt and hook verified flag
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-ONE-real-form-NAVER-notification-check-20261019
+          path: single-form-test-evidence/
+          retention-days: 30
+          if-no-files-found: warn
