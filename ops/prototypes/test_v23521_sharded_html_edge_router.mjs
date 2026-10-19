@@ -5,7 +5,7 @@ import { fnvBucket, rewritePath } from "./v23521_sharded_html_edge_router.mjs";
 const manifest = process.argv[2], profilePath = process.argv[3], reportPath = process.argv[4];
 if (!manifest || !profilePath || !reportPath) throw Error("Need full frozen archive tar listing, profile and output");
 const profile = JSON.parse(readFileSync(profilePath,"utf8"));
-const names = readFileSync(manifest,"utf8").split(/\r?\n/).map(n=>n.replace(/^\.\//,"").replace(/\/$/,"")).filter(Boolean);
+const names = readFileSync(manifest,"utf8").split(/\r?\n/).filter(n=>n && !n.endsWith("/")).map(n=>n.replace(/^\.\//,"")).filter(Boolean);
 const roots = names.filter(n=>!n.includes("/"));
 const html = roots.filter(n=>n.endsWith(".html"));
 const moving = html.filter(n=>n!=="index.html"&&n!=="404.html");
