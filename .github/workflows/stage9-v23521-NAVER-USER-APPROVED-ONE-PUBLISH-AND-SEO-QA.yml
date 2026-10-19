@@ -1,0 +1,175 @@
+name: ENGLISH PT USER APPROVED NAVER Tag Existing READY Draft ONE Production Publication
+on:
+  push:
+    branches:
+      - release/v23521-NAVER-USER-APPROVED-PUBLISH-ONCE-20261019
+    paths:
+      - .github/workflows/stage9-v23521-NAVER-USER-APPROVED-ONE-PUBLISH-AND-SEO-QA.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ENPT-20261019-ONLY-ONE-NAVER-OWNER-META-PRODUCTION-RESTORE
+  cancel-in-progress: false
+jobs:
+  approved-publish-once-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NAVER_ONE_PUBLISH_APPROVED: EXPLICIT_USER_APPROVED_20261019_NAVER_TWO_META
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Preflight Python syntax, strict target IDs, exact one Netlify restore, and no full file upload
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_NAVER_APPROVED_exact_READY_Draft_ONE_PUBLISH_and_GET.py scripts/v23521_PUBLISHED_englishptkr_GET_only_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          f=Path('scripts/v23521_NAVER_APPROVED_exact_READY_Draft_ONE_PUBLISH_and_GET.py').read_text('utf8')
+          assert '6ad5dce289bf03bfba2b534c' in f and '6ad5eb4918f9411c4d5e1ba4' in f
+          assert '6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884' in f
+          assert f.count('method="POST"')==1 and f.count('/restore')==1
+          assert 'netlify deploy' not in f and 'netlify --prod' not in f
+          assert 'NAVER_ONE_PUBLISH_APPROVED' in f
+          print('PASS_ONE_USER_APPROVED_NETLIFY_RESTORE_WITHOUT_UPLOAD_OR_RETRY',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: qa-map
+      - name: Publish pre-existing READY Naver and Google dual-tag Draft EXACTLY ONCE after read-only safety checks
+        id: once
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_NAVER_APPROVED_exact_READY_Draft_ONE_PUBLISH_and_GET.py publish
+      - name: GET only verify exact new published ID, dual meta tags and Forms plus mail notification hook
+        id: live
+        if: ${{ steps.once.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_NAVER_APPROVED_exact_READY_Draft_ONE_PUBLISH_and_GET.py verify
+      - name: Real Production 62 HTTP GET QA, canonical index noindex robots JS, six Forms and 29 OG
+        id: samples
+        if: ${{ steps.once.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_PUBLISHED_englishptkr_GET_only_QA.py \
+            --url=https://englishpt.kr \
+            --manifest=qa-map/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz \
+            --output=publish-evidence/03_LIVE_PRODUCTION_62_GET_SEO_QA.json
+      - name: Real Production all 45 sitemap XML documents and full 21964 intended indexable URLs GET only
+        id: sitemaps
+        if: ${{ steps.once.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import datetime,gzip,json,pathlib,urllib.parse,urllib.request,xml.etree.ElementTree as ET
+          out=pathlib.Path('publish-evidence');out.mkdir(exist_ok=True)
+          record={'status':'HOLD','sitemaps_get_checked':0,'discovered_eligible_urls':0,
+             'issues':[],'published_by_this_check':False,'form_post_count':0}
+          try:
+              with gzip.open('qa-map/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz','rt',encoding='utf8') as f:
+                  routes=json.load(f)['original_public_html_to_data_payload']
+              indexed={k for k,v in routes.items() if not v['noindex']}
+              noindexed={k for k,v in routes.items() if v['noindex']}
+              if len(routes)!=158571 or len(indexed)!=21964 or len(noindexed)!=136607:
+                  raise ValueError('Wrong full URL inventory')
+              def fetch(path):
+                  req=urllib.request.Request('https://englishpt.kr/'+path.lstrip('/'),
+                    headers={'User-Agent':'ENPT-NAVER-FULL-LIVE-SITEMAP-GETONLY'},method='GET')
+                  with urllib.request.urlopen(req,timeout=40) as r:
+                      if r.status!=200 or r.geturl().split('/')[2]!='englishpt.kr':
+                          raise ValueError('HTTP or host incorrect: '+path)
+                      record['sitemaps_get_checked']+=1
+                      return r.read(7000000)
+              root=ET.fromstring(fetch('sitemap-index.xml'))
+              children=[e.text.strip() for e in root.iter() if e.tag.endswith('loc') and e.text]
+              if len(children)!=44:raise ValueError('Incorrect sitemap subindex count')
+              got=set()
+              for url in children:
+                  u=urllib.parse.urlsplit(url)
+                  if u.scheme!='https' or u.netloc!='englishpt.kr' or not u.path.startswith('/sitemaps/'):
+                      raise ValueError('Sitemap child not on canonical host')
+                  child=ET.fromstring(fetch(u.path))
+                  for item in child.iter():
+                      if not item.tag.endswith('loc') or not item.text:continue
+                      q=urllib.parse.urlsplit(item.text.strip())
+                      if q.scheme!='https' or q.netloc!='englishpt.kr':raise ValueError('Bad canonical child')
+                      name=urllib.parse.unquote(q.path).lstrip('/')
+                      if name in got:raise ValueError('Duplicate sitemap URL '+name)
+                      got.add(name)
+              if got!=indexed:raise ValueError('Full sitemap membership differs from original 21964 indexable routes')
+              record['status']='PASS_45_LIVE_XML_21964_UNIQUE_INTENDED_INDEXABLE_MATCH'
+              record['discovered_eligible_urls']=len(got)
+              record['noindex_urls_absent_from_sitemap']=len(noindexed)
+          except Exception as e:
+              record['issues'].append(type(e).__name__+': '+str(e)[:300])
+          (out/'04_LIVE_ALL_SITEMAPS_21964_URLS.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('NAVER_GOOGLE_PRODUCTION_SITEMAP_COMPLETE_QA',json.dumps(record,ensure_ascii=False),flush=True)
+          if not record['status'].startswith('PASS_'):raise SystemExit('HOLD live sitemap GET QA; never repeat publish')
+          PY
+      - name: Record truthful final 158571-page offline plus live SEO and dual verification state
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import datetime,json
+          d=Path('publish-evidence');d.mkdir(exist_ok=True)
+          files={'publish':'01_PUBLISH_RESULT.json','dual_meta_forms':'02_LIVE_DUAL_META_FORMS.json',
+             'representative_live_seo':'03_LIVE_PRODUCTION_62_GET_SEO_QA.json',
+             'all_public_sitemaps':'04_LIVE_ALL_SITEMAPS_21964_URLS.json'}
+          expected={'publish':'PASS_APPROVED_ONE_NETLIFY_DRAFT_PUBLISHED',
+             'dual_meta_forms':'PASS_NAVER_GOOGLE_DUAL_META_LIVE_AND_FORMS',
+             'representative_live_seo':'PASS_LIVE_ENGLISHPT_MIXED_INDEX_ROBOTS_CANONICAL_FORMS_OG',
+             'all_public_sitemaps':'PASS_45_LIVE_XML_21964_UNIQUE_INTENDED_INDEXABLE_MATCH'}
+          statuses={};issues=[]
+          for k,f in files.items():
+              p=d/f
+              if not p.is_file():issues.append('Missing: '+f);continue
+              data=json.loads(p.read_text('utf8'))
+              statuses[k]=data.get('status')
+              if statuses[k]!=expected[k]:issues.append(k+': '+str(statuses[k]))
+          final={'status':'PASS_USER_APPROVED_ONE_PRODUCTION_PUBLISH_DUAL_META_AND_SEO' if not issues else 'HOLD_POSTPUBLISH_REVIEW_NO_RESTORE_RETRY',
+            'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'new_live_deploy_id':'6ad5eb4918f9411c4d5e1ba4',
+            'checks':statuses,'issues':issues,
+            'source_full_offline_SHA1_verified_files':180800,
+            'source_full_original_public_SEO_routes':158571,'eligible_for_index':21964,'noindex_follow_routes':136607,
+            'full_live_sitemap_routes_verified_if_pass':21964,
+            'production_site':'https://englishpt.kr','google_owner_meta_preserved':not issues,
+            'naver_owner_meta_ready_for_user_verification':not issues,
+            'naver_owner_verified_by_search_advisor':False,
+            'naver_sitemap_submitted_by_search_advisor':False,
+            'google_search_console_existing_setup_unmodified':True,
+            'live_consultation_form_POST_count':0,
+            'no_file_reupload':True,'no_deploy_retry':True}
+          (d/'05_FINAL_RELEASE_GO_HOLD.json').write_text(json.dumps(final,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('FINAL_NAVER_PRODUCTION_AND_158571_SEO_VERDICT',json.dumps(final,ensure_ascii=False),flush=True)
+          PY
+      - name: Preserve final evidence even if postpublication GET fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-APPROVED-ONE-PRODUCTION-PUBLISH-DUAL-META-158571-SEO-RESULT
+          path: publish-evidence/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Fail closed on any issue; never issue another Netlify restore request
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('publish-evidence/05_FINAL_RELEASE_GO_HOLD.json')
+          if not p.is_file():raise SystemExit('HOLD missing report; never republish automatically')
+          data=json.loads(p.read_text('utf8'))
+          if data['status']!='PASS_USER_APPROVED_ONE_PRODUCTION_PUBLISH_DUAL_META_AND_SEO':
+              raise SystemExit('HOLD: '+str(data.get('issues'))+'; do not repeat Netlify restore')
+          print('PASS_NAVER_ONE_PUBLISH_GOOGLE_PRESERVED_158571_SEO_FULL_SITEMAP_62_LIVE_GET',flush=True)
+          PY
