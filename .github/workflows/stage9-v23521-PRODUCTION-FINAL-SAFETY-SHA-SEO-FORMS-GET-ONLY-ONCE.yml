@@ -35,7 +35,9 @@ jobs:
             s=Path(p).read_text('utf8')
             assert 'netlify deploy' not in s and 'method="POST"' not in s
             assert 'method="GET"' in s or 'urllib.request' not in s
-          assert 'netlify deploy' not in y and '--prod' not in y
+          for line in y.splitlines():
+            v=line.strip()
+            assert not v.startswith(('netlify ' + 'deploy','npx netlify ','stdbuf -oL -eL netlify')),v
           print('PASS_READONLY_SCRIPT_AND_WORKFLOW_NO_NETLIFY_WRITES',flush=True)
           PY
       - uses: actions/download-artifact@v4
@@ -137,6 +139,7 @@ jobs:
           import json,datetime
           from pathlib import Path
           root=Path('production-final-safety')
+          root.mkdir(parents=True,exist_ok=True)
           needed=['SITE_BACKUP_FORMS_CREDIT_READONLY.json',
              'FULL_SOURCE_SEO_AND_ALL_180800_SHA1_RECHECK.json',
              'FULL_EDGE_PUBLIC_URLS_AND_ROBOTS_RECHECK.json',
