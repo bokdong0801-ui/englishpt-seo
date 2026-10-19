@@ -1,0 +1,47 @@
+name: ENGLISH PT Canceled Deploy Netlify Summary Detail READ ONLY
+on:
+  push:
+    branches: [ops/v23521-timeout-root-cause-offline-20261019]
+    paths: ['.github/workflows/stage9-v23521-canceled-deploy-summary-detail-get-only-once.yml']
+permissions:
+  contents: read
+jobs:
+  netlify-canceled-deploy-summary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch canceled deploy summary, validation report and exact published state with GET only
+        run: |
+          set -euo pipefail
+          mkdir -p canceled-details
+          python3 - <<'PY'
+          import os,json,urllib.request,datetime
+          from pathlib import Path
+          sid='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          d='6ad30d01781992bcb8dd92a1'
+          tok=os.environ['NETLIFY_AUTH_TOKEN']
+          def api(route):
+              req=urllib.request.Request('https://api.netlify.com/api/v1/'+route,
+                method='GET',headers={'Authorization':'Bearer '+tok,'Accept':'application/json'})
+              with urllib.request.urlopen(req,timeout=40) as r:return json.load(r)
+          result={'checked_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'production_deployed':False,'netlify_mutations':0}
+          x=api('sites/'+sid+'/deploys/'+d)
+          y=api('sites/'+sid)
+          assert x.get('id')==d and y.get('id')==sid
+          result.update({'failed_state':x.get('state'),'failed_error':x.get('error_message'),
+            'failed_summary':x.get('summary'),'validation_report':x.get('deploy_validations_report'),
+            'published_id':(y.get('published_deploy') or {}).get('id'),
+            'failed_deploy_id':d})
+          # no tokens or billing information stored
+          Path('canceled-details/NETLIFY_CANCELED_DEPLOY_SUMMARY.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('NETLIFY_CANCELED_DEPLOY_SUMMARY_DETAIL',json.dumps(result,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-canceled-deploy-summary-and-validation-readonly
+          path: canceled-details/
+          retention-days: 30
