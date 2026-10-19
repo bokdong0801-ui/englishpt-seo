@@ -1,0 +1,72 @@
+name: ENGLISH PT 1000-5000 capacity tiers offline build NO NETLIFY
+on:
+  push:
+    branches: [ops/v23521-tiered-capacity-offline-20261019]
+    paths: ['.github/workflows/stage9-v23521-TIER1000-TIER5000-OFFLINE-BUILD-ONCE.yml']
+permissions:
+  actions: read
+  contents: read
+jobs:
+  create-safe-tier-packages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Strictly offline preflight
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_tiered_review_candidates_OFFLINE.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/v23521_tiered_review_candidates_OFFLINE.py').read_text()
+          assert 'netlify deploy' not in s and 'api.netlify.com' not in s
+          assert 'urllib' not in s and 'requests' not in s
+          assert "for cap in (1000,5000)" in s
+          print('PASS_OFFLINE_NO_SITE_WRITES')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-SHARDED-EDGE-FULL-158571-CANDIDATE-NO-DRAFT-NO-PROD
+          run-id: 39194321977
+          github-token: ${{ github.token }}
+          path: source
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-actual-sharded-all-files-SEO-sitemap-OG-Forms-QA-and-frozen-SHA
+          run-id: 39194321977
+          github-token: ${{ github.token }}
+          path: source-map
+      - name: Generate two complete SHA-checked test candidates ONLY offline
+        run: |
+          set -euo pipefail
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          python3 scripts/v23521_tiered_review_candidates_OFFLINE.py \
+            --archive source/ENGLISHPT_v23.5.2.1_SHARDED_EDGE_NEW_CANDIDATE_NOT_DEPLOYED.tar.zst \
+            --filemap source-map/ORIGINAL_TO_SHARDED_ALL_FILE_SHA1_MAP.json.gz \
+            --out tiered-output
+      - name: Independently ensure outputs have sample pages, Edge, static forms, noindex
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          qa=json.loads(Path('tiered-output/TIER_1000_5000_OFFLINE_QA.json').read_text())
+          for x in ('1000','5000'):
+            assert qa[x]['status']=='PASS_TIER_OFFLINE'
+            assert qa[x]['sampled_routes']>=int(x)
+            assert qa[x]['files']<6500
+            assert qa[x]['X_Robots_Tag_global_noindex'] and qa[x]['static_tutor_sample_six']
+            assert qa[x]['compressed_bytes']<100000000
+          print('PASS_TIER_CANDIDATE_SHA_AND_SEO_SAFETY')
+          PY
+      - name: Store checked tier candidates and SHA evidence
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-TIERED-1000-5000-REAL-EDGE-DRAFT-CANDIDATES-NOT-DEPLOYED
+          path: tiered-output/
+          retention-days: 30
+          if-no-files-found: error
