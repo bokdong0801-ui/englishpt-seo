@@ -1,0 +1,49 @@
+name: ENGLISH PT v23521 Sharded Draft QA Script Preflight NO DEPLOY
+on:
+  push:
+    branches: [release/v23521-sharded-candidate-offline-20261019]
+    paths: ['.github/workflows/stage9-v23521-sharded-draft-readonly-preflight-once.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  ensure-ready-for-separately-authorized-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Inspect immutable PASS artifacts and compile Draft GET only script
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_sharded_draft_live_get_only_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/v23521_sharded_draft_live_get_only_QA.py').read_text('utf8')
+          assert 'method="GET"' in p and 'method="POST"' not in p
+          assert 'netlify deploy' not in p and 'urllib.request.urlopen' in p
+          assert '--draft-url' in p and '"production_published":False' in p
+          doc=Path('docs/ENGLISHPT_v23521_SHARDED_FULL_CANDIDATE_QA_DRAFT_APPROVAL_20261019.md').read_text('utf8')
+          assert 'e27ffd3e94687e0f2fc58c3951ee1262bca8fd22bd684cf7b4bdb62d014326b1' in doc
+          assert 'Draft **1회만' in doc
+          print('PASS_DRAFT_STAGING_GET_ONLY_QA_SCRIPT_SAFE_AND_COMPILED',flush=True)
+          PY
+      - name: Verify actual frozen new site candidate and QA GitHub artifacts exist, unexpired
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import urllib.request,json,os
+          base='https://api.github.com/repos/bokdong0801-ui/englishpt-seo/actions/artifacts/'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'}
+          expected={
+            12160917768:'englishpt-v23521-SHARDED-EDGE-FULL-158571-CANDIDATE-NO-DRAFT-NO-PROD',
+            12161620971:'englishpt-v23521-actual-sharded-all-files-SEO-sitemap-OG-Forms-QA-and-frozen-SHA'}
+          for aid,name in expected.items():
+            r=urllib.request.Request(base+str(aid),headers=headers,method='GET')
+            with urllib.request.urlopen(r,timeout=30) as f:a=json.load(f)
+            assert a['name']==name and a['expired'] is False,(aid,a)
+          print('PASS_NEW_SHARDED_FULL_SITE_AND_QA_ARTIFACTS_UNEXPIRED',flush=True)
+          PY
