@@ -1,0 +1,38 @@
+name: ENGLISH PT v23521 Naver Form Notification GET-only Exact Recipient Check
+on:
+  push:
+    branches: [ops/v23521-live-form-email-single-test-20261019]
+    paths: ['.github/workflows/stage9-v23521-NAVER-EMAIL-NOTIFICATION-PREFLIGHT-GET-ONLY-ONCE.yml']
+permissions:
+  contents: read
+jobs:
+  inspect-live-form-and-naver-address-digest-without-submitting:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Strict GET-only form and recipient preflight
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_naver_notification_form_GET_PREFLIGHT.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/v23521_naver_notification_form_GET_PREFLIGHT.py').read_text('utf8')
+          assert 'method="GET"' in s and 'method="POST"' not in s
+          assert 'netlify deploy' not in s and 'cicada3865@naver.com' not in s
+          print('PASS_GET_ONLY_NEVER_SUBMIT_NEVER_PRINT_RECIPIENT',flush=True)
+          PY
+          python3 scripts/v23521_naver_notification_form_GET_PREFLIGHT.py
+      - name: Preserve sanitized report on PASS or HOLD
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-live-form-recipient-preflight-GET-ONLY
+          path: single-form-test-evidence/
+          retention-days: 30
+          if-no-files-found: warn
