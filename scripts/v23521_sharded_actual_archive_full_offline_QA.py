@@ -87,6 +87,12 @@ def main():
       sitemaps[name]=payload
     if name.startswith("assets/images/og-pages/") and name.endswith(".png"):
       r["og_directory_files"]=r.get("og_directory_files",0)+1
+      stem=name.rsplit("/",1)[-1].removesuffix(".png")
+      if stem in OG_PNGS:
+        import struct
+        if len(payload)<24 or payload[:8]!=bytes.fromhex("89504e470d0a1a0a") or struct.unpack(">II",payload[16:24])!=(1200,630):
+          raise ValueError("Malformed 1200x630 base OG PNG "+name)
+        r["static_og_29"].append(stem)
     if name.startswith("assets/images/og/") and name.endswith(".png"):
       r["og_assets_files"]=r.get("og_assets_files",0)+1
     if r["files_verified"]%30000==0:print("SHARDED_FULL_QA_PROGRESS",r["files_verified"],len(indexable),len(noindex),flush=True)
@@ -123,6 +129,7 @@ def main():
  if len(r["form_samples"])!=6 or r["files_verified"]!=180799 or r["html_verified"]!=158574:
   raise ValueError("Full target inventory/forms unexpected")
  if r.get("og_directory_files")!=21990:raise ValueError("OG generated PNG inventory mismatch")
+ if set(r["static_og_29"])!=OG_PNGS:raise ValueError("Editorial 29 OG PNG inventory/dimensions mismatch")
  if "netlify/edge-functions/shard-router.js" not in files:raise ValueError("Edge handler missing")
  r["sitemap_unique_urls"]=len(locs)
  # Separate JS test uses extracted actual Edge bundle and original redirect routes.
