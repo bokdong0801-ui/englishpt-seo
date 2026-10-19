@@ -1,0 +1,199 @@
+name: ENGLISH PT v23521 ONE USER APPROVED Production-Site NONPUBLISHED Draft
+on:
+  push:
+    branches: [release/v23521-PRODUCTION-SITE-PREVIEW-DRAFT-APPROVED-ONCE-20261019]
+    paths: ['.github/workflows/stage9-v23521-PRODUCTION-SITE-EXACT-PAYLOAD-DRAFT-ONE-APPROVAL.yml']
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: ENGLISHPT-v23521-Production-Site-NONPUBLISHED-Draft-ONCE-Oct19
+  cancel-in-progress: false
+jobs:
+  stage-one-immutable-draft-and-readonly-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 26
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      CANDIDATE: frozen/ENGLISHPT_v23.5.2.1_FULL_158571_PAYLOAD_EDGE_NEW_NOT_DEPLOYED.tar.zst
+      OLD_ZIP: backup/ENGLISHPT_ORIGINAL_PRODUCTION_6ac4bd517c30220008bb9661.zip
+      ALIAS: enpt23521prodfinaldraft1
+      MARKER: ENGLISHPT_V23521_PRODUCTION_SITE_DRAFT_ONLY_ONCE_OCT19
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fail closed before CLI - one nonproduction deploy only, no context
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_payload_production_site_draft_once_gate.py scripts/v23521_payload_prod_site_draft_GET_QA.py
+          test "$GITHUB_REF" = "refs/heads/release/v23521-PRODUCTION-SITE-PREVIEW-DRAFT-APPROVED-ONCE-20261019"
+          python3 - <<'PY'
+          from pathlib import Path
+          w=Path('.github/workflows/stage9-v23521-PRODUCTION-SITE-EXACT-PAYLOAD-DRAFT-ONE-APPROVAL.yml').read_text('utf8')
+          delim='\n          set +e\n          stdbuf -oL -eL timeout 360s netlify deploy'
+          assert w.count(delim)==1,"One actual deploy attempt only"
+          command=w.split(delim,1)[1].split('2>&1 | tee',1)[0]
+          assert '--site="$NETLIFY_SITE_ID"' in command and '--no-build' in command
+          assert '--prod' not in command and '--context' not in command
+          assert '--alias="$ALIAS"' in command
+          print('PASS_NO_PRODUCTION_FLAGS_ONE_DRAFT_CALL',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-FULL-158571-PAYLOAD-EDGE-4-STATIC-HTML-NOT-DEPLOYED
+          run-id: 39210125229
+          github-token: ${{ github.token }}
+          path: frozen
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-full-payload-180800-SEO-Forms-OG-SHA1-QA
+          run-id: 39210125229
+          github-token: ${{ github.token }}
+          path: qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-OLD-PRODUCTION-ORIGINAL-FULL-SHA-VERIFIED-BACKUP
+          run-id: 39005690268
+          github-token: ${{ github.token }}
+          path: backup
+      - name: Strict one-time Netlify GET only before upload including current published/backup candidate SHA
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_payload_production_site_draft_once_gate.py --mode before --candidate "$CANDIDATE" --backup "$OLD_ZIP"
+          unzip -tq "$OLD_ZIP" | tail -2
+          echo "0f72556e20ed2e22b45f144b4ccf687937e1b15cedc4d2dd109819fef65db7e8  $CANDIDATE" | sha256sum -c -
+      - name: Unpack 180800 Production source files without Review-wide robots transforms
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          mkdir -p actual-draft
+          tar --zstd -xf "$CANDIDATE" -C actual-draft
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,tomllib
+          p=Path('actual-draft')
+          assert len(list(p.glob('**/*.html')))==4
+          assert len(list(p.glob('__pages/*')))==256
+          assert len(list(p.rglob('*.page')))==158571
+          assert (p/'__internal/consultation-blueprint.html').is_file()
+          hdr=(p/'_headers').read_text('utf8')
+          assert '\n/*\n  X-Robots-Tag: noindex' not in hdr
+          assert 'Disallow: /\n' not in (p/'robots.txt').read_text('utf8')
+          edge=(p/'netlify/edge-functions/shard-router.js').read_text('utf8')
+          assert 'headers.delete("X-Robots-Tag");' in edge
+          assert 'headers.set("X-Robots-Tag", "noindex, nofollow");' not in edge
+          config=tomllib.loads((p/'netlify.toml').read_text('utf8'))
+          assert len(config.get('edge_functions',[]))==1
+          print('PASS_158571_PAGES_FOUR_HTML_NO_DRAFT_GLOBAL_NOINDEX',flush=True)
+          PY
+          df -h .
+      - name: Install known-working CLI and confirm flags before upload
+        run: |
+          set -euo pipefail
+          npm install -g netlify-cli@27.13.0 --no-audit --no-fund
+          netlify --version
+          netlify deploy --help > prod_draft_cli_help.txt
+          for flag in --site --dir --alias --timeout --no-build; do grep -q -- "$flag" prod_draft_cli_help.txt; done
+          echo PASS_CLI_FLAGS_DRY_RECOGNIZED
+      - name: ONLY ONE manually approved NONPUBLISHED Production-site Draft no --prod
+        id: attempt
+        run: |
+          set -euo pipefail
+          mkdir -p prod-draft-evidence
+          date -u +'%FT%TZ' > prod-draft-evidence/START_UTC.txt
+          cd actual-draft
+          set +e
+          stdbuf -oL -eL timeout 360s netlify deploy \
+            --site="$NETLIFY_SITE_ID" \
+            --dir=. \
+            --no-build \
+            --alias="$ALIAS" \
+            --timeout=300 \
+            --message="$MARKER" \
+            2>&1 | tee -a ../prod-draft-evidence/NETLIFY_DRAFT_UPLOAD.txt
+          CODE=${PIPESTATUS[0]}
+          set -e
+          cd ..
+          echo "CLI_EXIT_CODE=$CODE" | tee -a prod-draft-evidence/NETLIFY_DRAFT_UPLOAD.txt
+          date -u +'%FT%TZ' > prod-draft-evidence/FINISH_UTC.txt
+          echo "exit_code=$CODE" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Confirm EXACT one Draft READY and published Production unchanged via Netlify GET
+        id: actual
+        if: ${{ always() && steps.attempt.outcome == 'success' }}
+        run: |
+          python3 scripts/v23521_payload_production_site_draft_once_gate.py --mode after
+          python3 - <<'PY'
+          import json,os
+          p='prod-draft-evidence/ACTUAL_DRAFT_STATUS.json'
+          j=json.load(open(p))
+          if j.get('status')=='PASS_DRAFT_READY_NOT_PUBLISHED':
+            with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('ready=yes\n')
+              f.write('url='+j['draft_url']+'\n')
+          print('DRAFT_RUNTIME_GO_HOLD',j['status'],j.get('draft_id'),j.get('draft_state'),flush=True)
+          PY
+      - name: Live GET-only mixed SEO indexed/noindex HTML, six Forms, 29 OG, sitemap and JS
+        id: html
+        if: ${{ steps.actual.outputs.ready == 'yes' }}
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_payload_prod_site_draft_GET_QA.py \
+            --url="${{ steps.actual.outputs.url }}" \
+            --manifest qa-map/FULL_PAYLOAD_ORIGINAL_TO_FILE_SHA1_MAP.json.gz \
+            --output prod-draft-evidence/REAL_IMMUTABLE_DRAFT_SEO_ROBOTS_FORMS_HTTP_QA.json
+      - name: Save final status even on failure and never start another deploy
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('prod-draft-evidence');p.mkdir(exist_ok=True)
+          q=p/'REAL_IMMUTABLE_DRAFT_SEO_ROBOTS_FORMS_HTTP_QA.json'
+          d=p/'ACTUAL_DRAFT_STATUS.json'
+          status={'state':'HOLD','publication_authorized':False,'Production_published':False,'retry_allowed':False,
+            'form_POST_sent':False,'google_naver_submitted':False}
+          if d.exists():
+            x=json.loads(d.read_text())
+            status['Draft']=x.get('status');status['Draft_id']=x.get('draft_id')
+            status['Draft_URL']=x.get('draft_url');status['old_live_ID']=x.get('current_production_published')
+            status['Forms_registered']=x.get('form_englishpt_consultation_registered')
+          if q.exists():
+            x=json.loads(q.read_text())
+            status['HTTP_SEO_QA']=x.get('status');status['HTTP_errors']=len(x.get('issues',[]))
+            status['Draft_global_header_noindex']=x.get('preview_header_protection')
+            if x.get('status','').startswith('PASS_') and status.get('Draft')=='PASS_DRAFT_READY_NOT_PUBLISHED':
+              status['state']='PASS_ONE_PRODUCTION_FORMATTED_DRAFT_REQUIRES_SEPARATE_PUBLISH_APPROVAL'
+          (p/'FINAL_DRAFT_GO_HOLD.json').write_text(json.dumps(status,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('PRODUCTION_SITE_NONPUBLISHED_DRAFT_FINAL',json.dumps(status,ensure_ascii=False),flush=True)
+          PY
+      - name: Save immutable full logs and GET evidence, no auto retry
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-PRODUCTION-FORMATTED-DRAFT-ONCE-NO-PUBLISH-and-REAL-HTTP
+          path: |
+            prod-draft-evidence/
+            prod_draft_cli_help.txt
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Fail closed if one-time Draft or its 63 read-only HTTP checks incomplete
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          x=Path('prod-draft-evidence/FINAL_DRAFT_GO_HOLD.json')
+          if not x.exists():raise SystemExit('HOLD: no final report, no retry')
+          r=json.loads(x.read_text())
+          if r.get('state')!='PASS_ONE_PRODUCTION_FORMATTED_DRAFT_REQUIRES_SEPARATE_PUBLISH_APPROVAL':
+            raise SystemExit('HOLD: '+str(r)+', no retry/no Production publication')
+          print('PASS_NONPUBLISHED_PRODUCTION_SITE_DRAFT_REAL_HTTP_NO_RETRY',flush=True)
+          PY
