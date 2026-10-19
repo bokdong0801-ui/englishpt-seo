@@ -79,7 +79,7 @@ def main():
         r["form_contract"]=contracts[0]
         if (contracts[0]["method"] or "").lower()!="post":raise ValueError("Form method mismatch")
         names={v["name"] for v in contracts[0]["inputs"] if v["name"]}
-        if not {"form-name","name","grade","requestType","subject"}.issubset(names):
+        if not {"form-name","name","phone","area","consent","requestType","subject"}.issubset(names):
             raise ValueError("Key Netlify Form names not found")
         r["checks"].append("live_actual_form_POST_contract_and_fields")
         if r["email_recipient_matches_naver"]==0:
