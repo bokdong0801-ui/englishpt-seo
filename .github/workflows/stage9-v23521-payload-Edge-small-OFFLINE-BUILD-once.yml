@@ -1,0 +1,110 @@
+name: ENGLISH PT Small Payload Edge HTML Reduction BUILDER offline NO DEPLOY
+on:
+  push:
+    branches: [ops/v23521-html-postprocess-bypass-review-20261019]
+    paths: ['.github/workflows/stage9-v23521-payload-Edge-small-OFFLINE-BUILD-once.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build-actual-lower-html-count-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify offline builder and no Netlify network calls
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_small_payload_edge_real_candidate_OFFLINE.py
+          python3 - <<'PY'
+          from pathlib import Path
+          x=Path('scripts/v23521_small_payload_edge_real_candidate_OFFLINE.py').read_text('utf8')
+          assert 'urllib.request' not in x and 'netlify deploy' not in x and 'api.netlify.com' not in x
+          print('PASS_ZERO_NETLIFY_REQUESTS_PILOT_CONTENT_TRANSFORMATION',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-SMALL-Edge-Draft-PILOT-NOINDEX-NOT-DEPLOYED
+          run-id: 39205280906
+          github-token: ${{ github.token }}
+          path: src
+      - name: Create compressed real Netlify Edge+Forms Blueprint payload pilot
+        run: |
+          set -euo pipefail
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          python3 scripts/v23521_small_payload_edge_real_candidate_OFFLINE.py \
+            --input src/ENGLISHPT_SMALL_SHARDED_EDGE_PILOT_NOINDEX_NOT_DEPLOYED.tar.zst \
+            --output payload-pilot/ENGLISHPT_SMALL_103_PAGES_AS_PAYLOAD_EDGE_NOT_DEPLOYED.tar.zst \
+            --report payload-pilot/PAYLOAD_CANDIDATE_QA.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('payload-pilot/PAYLOAD_CANDIDATE_QA.json').read_text('utf8'))
+          assert r['status']=='PASS_SMALL_PAYLOAD_HTML_POSTPROCESS_BYPASS_OFFLINE'
+          assert r['converted_HTML_to_page_preserving_content']==103
+          assert r['static_html_remain']==3 and r['total_regular_files']==325
+          assert r['all_301_rules']==75 and r['pilot_og_images_preserved']==141
+          print('PASS_SMALL_PAYLOAD_CANDIDATE_REAL_TAR_SHA',r['new_payload_pilot_sha256'],flush=True)
+          PY
+      - name: Extract actual newly created Edge router and run synthetic context.rewrite HTTP response tests
+        run: |
+          set -euo pipefail
+          mkdir -p js-qa
+          tar --zstd -xf payload-pilot/ENGLISHPT_SMALL_103_PAGES_AS_PAYLOAD_EDGE_NOT_DEPLOYED.tar.zst -C js-qa
+          cp js-qa/netlify/edge-functions/shard-router.js js-qa/edge.mjs
+          node --input-type=module <<'JS'
+          import {staticPayloadPath,default as handler} from './js-qa/edge.mjs';
+          import { readFileSync } from 'node:fs';
+          const opts=[
+            '/gyeongnam-milyang-naeidong-elem-tutor.html',
+            '/seoul-jongno-sajikdong-high-tutor.html',
+            '/busan-buk-deokcheondong-adult-english-conv-academy.html'
+          ];
+          for(const p of opts){
+            const internal=staticPayloadPath(p);
+            if(!internal||!internal.endsWith('.page'))throw Error('Bad internal path '+p+' -> '+internal);
+            let rewritten=false;
+            const mock={rewrite:async u=>{rewritten=true; if(u.pathname!==internal)throw Error('Bad rewrite target');return new Response('<html>test</html>',{status:200,headers:{'Content-Type':'application/octet-stream'}})}};
+            const result=await handler(new Request('https://englishpt.kr'+p+'?test=1'),mock);
+            if(!rewritten||result.headers.get('Content-Type')!=='text/html; charset=utf-8'||
+              !result.headers.get('X-Robots-Tag').includes('noindex')||
+              await result.text()!=='<html>test</html>')throw Error('HTTP response parity failed');
+          }
+          if(staticPayloadPath('/index.html')!==null||staticPayloadPath('/robots.txt')!==null)throw Error('Unsafe rewrite');
+          if(await handler(new Request('https://englishpt.kr/gyeongnam-milyang-naeidong-elem-tutor.html',{method:'POST'}),{rewrite:()=>{throw Error('POST bypass failed')}})!==undefined)throw Error('POST must bypass');
+          console.log('PASS_ACTUAL_NEW_EDGE_MOCK_RESPONSE_HTML_CONTENT_TYPE_AND_CANONICAL_GET_301_POST_BYPASS');
+          JS
+      - name: Independently verify actual tar file inventory (not reported count alone)
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          all_files=[f for f in Path('js-qa').rglob('*') if f.is_file()]
+          h=[f for f in all_files if f.suffix=='.html']
+          payload=[f for f in all_files if f.suffix=='.page']
+          assert len(all_files)==326,(len(all_files),[f.name for f in all_files if f.name=='edge.mjs'])
+          assert len(payload)==103 and len(h)==3,(len(payload),len(h))
+          assert all(b'<html' in f.read_bytes()[:1000].lower() or b'<!doctype html' in f.read_bytes()[:1000].lower() for f in payload)
+          print('PASS_INDEPENDENT_REAL_PILOT_HTML_TO_PAYLOAD_INVENTORY',len(payload),'STATIC_HTML',len(h),flush=True)
+          PY
+      - name: Upload no-Deploy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-small-payload-Edge-offline-build-QA
+          path: payload-pilot/PAYLOAD_CANDIDATE_QA.json
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Upload actual small .page Edge candidate only if PASS
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-SMALL-PAYLOAD-EDGE-103-PAGES-3-HTML-NOT-DEPLOYED
+          path: payload-pilot/ENGLISHPT_SMALL_103_PAGES_AS_PAYLOAD_EDGE_NOT_DEPLOYED.tar.zst
+          retention-days: 30
+          if-no-files-found: error
