@@ -1,0 +1,124 @@
+name: ENGLISH PT Naver HTML Meta Two Homepage Offline 180800 File QA
+on:
+  push:
+    branches: [ops/v23521-NAVER-META-ONLY-2HOME-OFFLINE-20261019]
+    paths: ['.github/workflows/stage9-v23521-NAVER-TAG-PRESERVE-GOOGLE-TWO-HOMEPAGES-OFFLINE-ONCE.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ENPT-v23521-Naver-Google-2-Home-Offline-Only-Oct19
+  cancel-in-progress: false
+jobs:
+  prepare-naver-tag-preserving-google-and-all-pages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile offline source and verify explicit no-deploy safeguards
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_NAVER_add_to_GSC_two_homepages_OFFLINE.py scripts/v23521_full_payload_edge_all_content_qa_offline.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/v23521_NAVER_add_to_GSC_two_homepages_OFFLINE.py').read_text('utf8')
+          assert 'netlify deploy' not in s and 'api.netlify.com' not in s and 'method="POST"' not in s
+          assert 'GOOGLE_TAG=b\'<meta name="google-site-verification"' in s
+          assert 'TAG=(\'<meta name="naver-site-verification"' in s
+          assert '340f4e7dc8c5f3ec806e68f6f09b9949f941a0de' in s
+          assert '3ee78c417da2a91bc6f86d2cfd0c4be6c196334a0eaa89a222d99e83365a2acb' in s
+          print('PASS_PRESERVE_GOOGLE_ADD_NAVER_ONLY_OFFLINE',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-GSC-HTML-VERIFICATION-TWO-HOME-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39225996525
+          github-token: ${{ github.token }}
+          path: gsc-source
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-GOOGLE-VERIFICATION-2-HOME-ONLY-180800-FULL-QA
+          run-id: 39225996525
+          github-token: ${{ github.token }}
+          path: gsc-map
+      - name: Patch just 2 real live homepage files; keep Google ownership meta unchanged
+        run: |
+          set -euo pipefail
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          mkdir -p naver-patch
+          python3 scripts/v23521_NAVER_add_to_GSC_two_homepages_OFFLINE.py \
+            --source gsc-source/ENGLISHPT_v23.5.2.1_GOOGLE_META_ONLY_TWO_HOME_PAGES_NOT_DEPLOYED.tar.zst \
+            --original-manifest gsc-map/GOOGLE_META_CHANGED_ONLY_TWO_FILE_SHA1_MAP.json.gz \
+            --out naver-patch/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst \
+            --patched-map naver-patch/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz \
+            --report naver-patch/NAVER_TWO_HOME_SITE_BUILD_QA.json
+      - name: Independent full-site 180800 SHA1 / 158571 SEO / 44 XML shards / 6 Forms / 29 OG
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_full_payload_edge_all_content_qa_offline.py \
+            --source naver-patch/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst \
+            --manifest naver-patch/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz \
+            --report naver-patch/NEW_FULL_180800_SEO_FORM_SITEMAP_QA.json \
+            --support-dir naver-patch/extracted
+      - name: Confirm only two files changed from live Google-tagged version with 2 intact verification tags
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,gzip
+          from pathlib import Path
+          src=Path('gsc-map/GOOGLE_META_CHANGED_ONLY_TWO_FILE_SHA1_MAP.json.gz')
+          new=Path('naver-patch/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz')
+          with gzip.open(src,'rt',encoding='utf8') as z:before=json.load(z)
+          with gzip.open(new,'rt',encoding='utf8') as z:after=json.load(z)
+          original=before['target_SHA1_by_path'];modified=after['target_SHA1_by_path']
+          diff={k for k in original if original[k]!=modified[k]}
+          canonical_home=after['original_public_html_to_data_payload']['englishpt.html']['to']
+          assert canonical_home=='__pages/23/englishpt.page'
+          assert diff=={'index.html',canonical_home},diff
+          assert len(original)==len(modified)==180800
+          b=json.loads(Path('naver-patch/NAVER_TWO_HOME_SITE_BUILD_QA.json').read_text('utf8'))
+          q=json.loads(Path('naver-patch/NEW_FULL_180800_SEO_FORM_SITEMAP_QA.json').read_text('utf8'))
+          assert b['status']=='PASS_SURGICAL_NAVER_TAG_PRESERVE_GOOGLE_ONLY_TWO_HOME_REAL_ARCHIVE'
+          assert b['unchanged_files_verified_sha1']==180798
+          assert b['new_candidate_sha256']==q['archive_sha256']
+          assert q['status']=='PASS_FULL_158571_PAYLOAD_SEO_URL_PARITY_AND_FOUR_HTML_NETLIFY'
+          assert q['site_files_sha1_verified']==180800 and q['payload_original_html_count']==158571
+          assert (q['indexable'],q['noindex'],q['site_map_urls'],q['static_html_count'],q['png_total'])==(21964,136607,21964,4,22088)
+          assert len(q['form_samples'])==6 and len(q['OG_29'])==29
+          assert 'name="google-site-verification"' in b['google_tag_retained']
+          assert 'name="naver-site-verification"' in b['naver_tag_added']
+          final={'status':'PASS_2_HOME_NAVER_GOOGLE_TAG_180800_FULL_SOURCE_QA',
+            'new_candidate_sha256':b['new_candidate_sha256'],
+            'new_candidate_bytes':b['new_candidate_bytes'],
+            'source_existing_google_tag_sha256':b['original_live_candidate_sha256'],
+            'modified_paths':sorted(diff),'unchanged_files':180798,
+            'all_files_SHA1_verified':180800,'original_public_urls':158571,
+            'indexable':21964,'noindex':136607,'sitemap_url_count':21964,
+            'preserved_44_sitemap_shards':True,'preserved_netlify_Forms':True,
+            'Google_meta_preserved':True,'Naver_meta_added_exactly_once':True,
+            'Production_modified':False,'Naver_owner_verified':False,
+            'Naver_sitemap_submitted':False}
+          Path('naver-patch/FINAL_NAVER_GOOGLE_VERIFICATION_META_QA.json').write_text(json.dumps(final,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('PASS_NAVER_GOOGLE_2_HOME_FULL_SITE_OFFLINE',json.dumps(final,ensure_ascii=False),flush=True)
+          PY
+      - name: Preserve all file QA reports and modified map even on HOLD
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          path: |
+            naver-patch/*.json
+            naver-patch/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Archive new full candidate only if complete QA passed; DO NOT deploy
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          path: naver-patch/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          retention-days: 30
+          if-no-files-found: error
