@@ -39,9 +39,11 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           s=Path('.github/workflows/stage9-v23521-sharded-USER-APPROVED-DRAFT-ONE-ATTEMPT.yml').read_text('utf8')
-          assert s.count('netlify deploy')==1
-          assert ' --prod ' not in s and ' --prod-if-unlocked' not in s
-          assert '--alias="$DRAFT_ALIAS"' in s
+          commands=[line.strip() for line in s.splitlines() if line.strip().startswith('stdbuf -oL -eL netlify deploy')]
+          assert len(commands)==1,commands
+          cli_block=s.split('\n          stdbuf -oL -eL netlify deploy \\',1)[1].split('\n          EXIT_CODE=',1)[0]
+          assert '--prod' not in cli_block and '--prod-if-unlocked' not in cli_block
+          assert '--alias="$DRAFT_ALIAS"' in cli_block
           assert 'timeout-minutes: 125' in s
           print('PASS_EXACTLY_ONE_DRAFT_UPLOAD_CALL_NO_PROD_FLAGS',flush=True)
           PY
@@ -134,7 +136,7 @@ jobs:
         if: ${{ always() && steps.one_draft_upload.outcome == 'success' }}
         run: |
           python3 scripts/v23521_sharded_draft_afterattempt_readonly.py
-      - name: Real GET-only Draft validation: public URLs, 6 consultation forms HTML, OG29, robots, sitemap, patched JS
+      - name: Real GET-only Draft validation of public URLs and six consultation forms, OG29, robots, sitemap and patched JS
         id: draft_get_qa
         if: ${{ steps.after_get.outputs.ready == 'yes' }}
         run: |
