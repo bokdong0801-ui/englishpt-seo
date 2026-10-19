@@ -1,0 +1,28 @@
+name: ENGLISH PT Offline Profile Largest Static File and Directory QA
+on:
+  push:
+    branches: [ops/v23521-timeout-root-cause-offline-20261019]
+    paths: ['.github/workflows/stage9-v23521-profiling-top-largest-file-readonly-once.yml']
+permissions:
+  actions: read
+  contents: read
+jobs:
+  inspect-profile-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-offline-root-directory-file-size-SHA1-dedup-256-shard-profile
+          run-id: 39192376231
+          github-token: ${{ github.token }}
+          path: proof
+      - name: Print largest files and extension counts from saved prior offline analysis
+        run: |
+          python3 - <<'PY'
+          import json
+          d=json.load(open('proof/FROZEN_SITE_UPLOAD_SHARD_PROFILE.json'))
+          print('LARGEST_FROZEN_PRODUCTION_FILES',json.dumps(d['largest_files'],ensure_ascii=False),flush=True)
+          print('FROZEN_PRODUCTION_FILE_TYPES',json.dumps(d['extension_counts'],ensure_ascii=False),flush=True)
+          print('SITE_ROOT_HISTOGRAM',json.dumps({k:v for k,v in d['prefix_top_folders'].items() if k!='(root)'},ensure_ascii=False),flush=True)
+          PY
