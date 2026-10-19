@@ -1,0 +1,92 @@
+name: ENGLISH PT Actual Production OG Thumbnails Readonly Audit
+on:
+  push:
+    branches: [ops/v23521-ACTUAL-OG-THUMBNAILS-PREVIEW-GETONLY-20261019]
+    paths: ['.github/workflows/stage9-v23521-READONLY-OG-THUMBNAIL-AUDIT.yml']
+permissions:
+  contents: read
+concurrency:
+  group: enpt-v23521-og-readonly-20261019
+  cancel-in-progress: false
+jobs:
+  inspect-exact-production-meta-and-thumbnail-binary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Current LIVE production META and source PNG image read-only inspection
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,urllib.request,urllib.parse,re,pathlib,hashlib,struct,html,datetime
+          from html.parser import HTMLParser
+          P=pathlib.Path('og-audit');P.mkdir(exist_ok=True)
+          class HTMLInfo(HTMLParser):
+            def __init__(self):
+              super().__init__();self.head=False;self.title=False;self.data={};self.images=[]
+            def handle_starttag(self,tag,attrs):
+              d=dict(attrs)
+              if tag=='head':self.head=True
+              if tag=='title' and self.head:self.title=True
+              if tag=='meta' and self.head:
+                k=d.get('property') or d.get('name')
+                if k:self.data[k]=d.get('content','')
+              if tag=='link' and self.head and d.get('rel')=='canonical':self.data['canonical']=d.get('href','')
+              if tag=='img' and len(self.images)<10:self.images.append({'src':d.get('src'),'alt':d.get('alt')})
+            def handle_data(self,text):
+              if self.title:self.data['title']=self.data.get('title','')+text
+            def handle_endtag(self,tag):
+              if tag=='head':self.head=False
+              if tag=='title':self.title=False
+          def get(u):
+            req=urllib.request.Request(u,method='GET',headers={'User-Agent':'EnglishPT-OG-READONLY-QA','Accept':'text/html,image/png,*/*'})
+            with urllib.request.urlopen(req,timeout=35) as r:
+              return r.status,dict(r.headers),r.read(1600000),r.geturl()
+          uris=['/index.html','/englishpt.html','/courses.html','/english-conversation.html','/exam-english.html','/student-english.html',
+          '/gyeongnam-milyang-naeidong-elem-tutor.html','/seoul-jongno-sajikdong-mid-tutor.html']
+          report={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'status':'HOLD','url_results':[],'images':{},'errors':[],'no_writes_to_site':True}
+          for uri in uris:
+            try:
+              status,headers,b,final=get('https://englishpt.kr'+uri)
+              if status!=200 or 'text/html' not in headers.get('Content-Type',''):raise ValueError('bad HTML response')
+              p=HTMLInfo();p.feed(b.decode('utf8',errors='replace'))
+              d=p.data;og=d.get('og:image') or ''
+              rec={'path':uri,'http':status,'title':d.get('title'),'description':d.get('description'),
+                'og:title':d.get('og:title'),'og:description':d.get('og:description'),
+                'og:image':og,'og:image:width':d.get('og:image:width'),
+                'og:image:height':d.get('og:image:height'),
+                'og:image:alt':d.get('og:image:alt'),
+                'twitter:image':d.get('twitter:image'),
+                'canonical':d.get('canonical'),'robots':d.get('robots'),
+                'sample_body_images':p.images[:4]}
+              report['url_results'].append(rec)
+              if og:
+                u=urllib.parse.urlsplit(og)
+                if u.scheme!='https' or u.netloc!='englishpt.kr':raise ValueError('og:image not same canonical HTTPS domain')
+                if og not in report['images']:
+                  st,hh,blob,fu=get(og)
+                  if st!=200 or blob[:8]!=bytes.fromhex('89504e470d0a1a0a'):raise ValueError('PNG signature or HTTP invalid')
+                  width,height=struct.unpack('>II',blob[16:24])
+                  if not (width>150 and height>150 and (width/height)<=3):raise ValueError('Image too small or wrong ratio')
+                  if len(blob)<5000:raise ValueError('Image too few bytes')
+                  report['images'][og]={'width':width,'height':height,'bytes':len(blob),'sha256':hashlib.sha256(blob).hexdigest(),'http':st}
+                  path=P/('og-'+str(len(report['images']))+'.png')
+                  path.write_bytes(blob)
+            except Exception as e:
+              report['errors'].append({'url':uri,'error':type(e).__name__+': '+str(e)})
+          report['status']='PASS_ACTUAL_LIVE_OG_PNG_AND_META_GETONLY' if not report['errors'] else 'HOLD_OG_META_AUDIT'
+          (P/'actual_production_og_metadata.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('ENPT_PRODUCTION_ACTUAL_OG_READONLY',json.dumps(report,ensure_ascii=False),flush=True)
+          if report['errors']:raise SystemExit('HOLD: Live OG inspection errors')
+          PY
+      - name: Preserve exact live images and their matched URL metadata as evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-actual-production-OG-images-and-meta-readonly-20261019
+          path: og-audit/
+          retention-days: 30
+          if-no-files-found: warn
