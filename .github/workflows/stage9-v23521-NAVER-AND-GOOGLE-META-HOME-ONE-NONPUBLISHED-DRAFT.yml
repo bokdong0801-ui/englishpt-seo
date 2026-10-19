@@ -1,0 +1,187 @@
+name: ENGLISH PT Naver TAG Preserve Google One Nonpublished Draft
+on:
+  push:
+    branches: [release/v23521-NAVER-TAG-NONPUBLISHED-DRAFT-ONCE-20261019]
+    paths: ['.github/workflows/stage9-v23521-NAVER-AND-GOOGLE-META-HOME-ONE-NONPUBLISHED-DRAFT.yml']
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: enpt-Naver-Google-Tag-Home-Once-Draft-No-Prod-20261019
+  cancel-in-progress: false
+jobs:
+  stage-exact-Naver-Google-home-tags-two-files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      RELEASE_ARCHIVE: verified-site/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+      DRAFT_ALIAS: enptnavermetaonce19
+      DRAFT_MARKER: ENPT-NAVER-META-PRESERVE-GOOGLE-ONE-DRAFT-20261019
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Safe CLI and verified home tag only preflight
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_naver_tag_exact_one_Draft_guard_GETONLY.py
+          python3 - <<'PY'
+          from pathlib import Path
+          y=Path('.github/workflows/stage9-v23521-NAVER-AND-GOOGLE-META-HOME-ONE-NONPUBLISHED-DRAFT.yml').read_text()
+          needle='\n          stdbuf -oL -eL timeout 360s netlify deploy'
+          assert y.count(needle)==1
+          cmd=y.split(needle,1)[1].split('2>&1 | tee',1)[0]
+          assert '--no-build' in cmd and '--alias="$DRAFT_ALIAS"' in cmd
+          assert '--site="$NETLIFY_SITE_ID"' in cmd
+          assert '--prod' not in cmd and '--context' not in cmd
+          print('PASS_EXACT_ONE_NONPUBLISHED_NETLIFY_DRAFT_NO_PROD_NO_CONTEXT',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: verified-site
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: verified-qa
+      - name: Exact SHA + old production + credit + forms + unique attempt gate BEFORE Netlify upload
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_naver_tag_exact_one_Draft_guard_GETONLY.py --phase before --tar "$RELEASE_ARCHIVE"
+      - name: Extract actual 180800-file GSC new candidate without rebuilding or changing existing source
+        run: |
+          set -euo pipefail
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          mkdir -p actual-gsc-site
+          tar --zstd -xf "$RELEASE_ARCHIVE" -C actual-gsc-site
+          python3 - <<'PY'
+          import json,re
+          from pathlib import Path
+          p=Path('actual-gsc-site')
+          checks=json.loads(Path('verified-qa/FINAL_NAVER_GOOGLE_VERIFICATION_META_QA.json').read_text('utf8'))
+          assert checks['status']=='PASS_2_HOME_NAVER_GOOGLE_TAG_180800_FULL_SOURCE_QA'
+          assert len(list(p.rglob('*.page')))==158571
+          assert len(list(p.rglob('*.html')))==4
+          assert len(list(p.glob('__pages/*')))==256
+          google_tag=b'<meta name="google-site-verification" content="OTG-5ooTZYTm-HnTOi8I0TRV4bZHUD-uSYSOih3E8ig" />'
+          naver_tag=b'<meta name="naver-site-verification" content="340f4e7dc8c5f3ec806e68f6f09b9949f941a0de" />'
+          for path in ('index.html','__pages/23/englishpt.page'):
+            contents=(p/path).read_bytes()
+            head=re.search(rb'<head\b[^>]*>(.*?)</head>',contents,re.I|re.S)
+            assert head and head.group(1).count(google_tag)==1 and head.group(1).count(naver_tag)==1,path
+          # Exact original homepage robots meta syntax is already validated by full 180800-file source QA.
+          assert b'X-Robots-Tag: noindex' in (p/'_headers').read_bytes()
+          assert b'\n/*\n  X-Robots-Tag: noindex' not in (p/'_headers').read_bytes()
+          print('PASS_EXACT_HEAD_TAG_ON_REAL_REDIRECT_AND_EDGE_HOME_WITH_SEO_INTACT',flush=True)
+          PY
+      - name: Install prior successful Netlify CLI and validate options before uploading
+        run: |
+          set -euo pipefail
+          npm install -g netlify-cli@27.13.0 --no-audit --no-fund
+          netlify --version
+          netlify deploy --help > naver_netlify_options.txt
+          for flag in --site --dir --no-build --alias --timeout; do grep -q -- "$flag" naver_netlify_options.txt; done
+      - name: One nonpublished Netlify Draft carrying ONLY two changed homepage contents, 360 sec maximum
+        id: attempt
+        run: |
+          set -euo pipefail
+          mkdir -p naver-draft-evidence
+          date -u +'%FT%TZ' > naver-draft-evidence/STARTED.txt
+          cd actual-gsc-site
+          set +e
+          stdbuf -oL -eL timeout 360s netlify deploy \
+            --site="$NETLIFY_SITE_ID" \
+            --dir=. \
+            --no-build \
+            --alias="$DRAFT_ALIAS" \
+            --timeout=300 \
+            --message="$DRAFT_MARKER" \
+            2>&1 | tee -a ../naver-draft-evidence/ONE_DRAFT_CLI_LOG.txt
+          CODE=${PIPESTATUS[0]}
+          set -e
+          cd ..
+          echo "CLI_EXIT_CODE=$CODE" | tee -a naver-draft-evidence/ONE_DRAFT_CLI_LOG.txt
+          date -u +'%FT%TZ' > naver-draft-evidence/FINISHED.txt
+          exit 0
+      - name: GET-only new Draft READY and previous live Production published unchanged
+        if: ${{ always() && steps.attempt.outcome == 'success' }}
+        id: netlify
+        run: |
+          python3 scripts/v23521_naver_tag_exact_one_Draft_guard_GETONLY.py --phase after
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads(Path('naver-draft-evidence/NAVER_DRAFT_AFTER.json').read_text())
+          if r.get('status')=='PASS_NAVER_GOOGLE_HOME_DRAFT_READY_UNPUBLISHED':
+            with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write('ready=yes\n')
+              f.write('url='+r['draft_url']+'\n')
+          print('NAVER_DRAFT_API_READY_STATUS',r.get('status'),r.get('draft_id'),flush=True)
+          PY
+      - name: Read only live Draft root and real Edge canonical home HEAD meta, public SEO and sitemap
+        id: verify
+        if: ${{ steps.netlify.outputs.ready == 'yes' }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,re,urllib.request,urllib.parse,os
+          from pathlib import Path
+          base='${{ steps.netlify.outputs.url }}'.rstrip('/')
+          google_tag=b'<meta name="google-site-verification" content="OTG-5ooTZYTm-HnTOi8I0TRV4bZHUD-uSYSOih3E8ig" />'
+          naver_tag=b'<meta name="naver-site-verification" content="340f4e7dc8c5f3ec806e68f6f09b9949f941a0de" />'
+          result={'status':'HOLD_NAVER_GOOGLE_META_DRAFT_RUNTIME','draft_url':base,'issues':[],
+             'real_form_submissions':0,'Production_published':False,'Google_token_preserved':True,'Naver_owner_verified':False,
+             'checks':[]}
+          for uri in ['/index.html','/englishpt.html','/robots.txt','/sitemap-index.xml',
+            '/gyeongnam-milyang-naeidong-elem-tutor.html']:
+            try:
+              req=urllib.request.Request(base+uri,method='GET',headers={'User-Agent':'ENPT-GSC-META-GET-ONLY'})
+              with urllib.request.urlopen(req,timeout=40) as r:
+                body=r.read(650000)
+                if r.status!=200:raise ValueError('Not HTTP200')
+                if uri in ('/index.html','/englishpt.html'):
+                  head=re.search(rb'<head\b[^>]*>(.*?)</head>',body,re.I|re.S)
+                  if not head or head.group(1).count(google_tag)!=1 or head.group(1).count(naver_tag)!=1:
+                    raise ValueError('Google or Naver tag missing in returned <head>')
+                if uri.endswith('tutor.html') and b'name="englishpt-consultation"' not in body:
+                  raise ValueError('Original consultation form missing')
+                result['checks'].append({'path':uri,'http':r.status,'Naver_and_Google_head_tags':uri in ('/index.html','/englishpt.html')})
+            except Exception as e:
+              result['issues'].append({'path':uri,'error':type(e).__name__+':'+str(e)[:140]})
+          if not result['issues'] and len(result['checks'])==5:result['status']='PASS_NAVER_GOOGLE_META_IN_REAL_EDGE_HOME_DRAFT_PRODUCTION_UNCHANGED'
+          Path('naver-draft-evidence/NAVER_AND_GOOGLE_REAL_HEAD_META_HTTP_QA.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+          print('NAVER_GOOGLE_DRAFT_HTML_HEAD_QA',json.dumps(result,ensure_ascii=False),flush=True)
+          if result['issues']:raise SystemExit(1)
+          PY
+      - name: Save one-time Draft outcome before any future Production authorization
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2-HOMEPAGES-DRAFT-ONCE-EVIDENCE
+          path: naver-draft-evidence/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Fail closed if Draft/HTML head QA failed; NEVER retry or publish automatically
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('naver-draft-evidence/NAVER_AND_GOOGLE_REAL_HEAD_META_HTTP_QA.json')
+          if not p.exists():raise SystemExit('HOLD: no real Draft HTTP report, no retry')
+          r=json.loads(p.read_text())
+          if r.get('status')!='PASS_NAVER_GOOGLE_META_IN_REAL_EDGE_HOME_DRAFT_PRODUCTION_UNCHANGED':
+            raise SystemExit('HOLD: '+str(r.get('issues'))+'; no retry')
+          print('PASS_NAVER_GOOGLE_META_READY_DRAFT_EXPLICIT_PRODUCTION_APPROVAL_REQUIRED',flush=True)
+          PY
