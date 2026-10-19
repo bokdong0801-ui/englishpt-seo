@@ -39,7 +39,9 @@ jobs:
           s=Path('.github/workflows/stage9-v23521-SMALL-DRAFT-USER-APPROVED-ONCE-FAST.yml').read_text('utf8')
           calls=[x for x in s.splitlines() if x.strip().startswith('stdbuf -oL -eL timeout 330s netlify deploy')]
           assert len(calls)==1,calls
-          command_section=s.split('stdbuf -oL -eL timeout 330s netlify deploy',1)[1].split('2>&1 | tee',1)[0]
+          marker="\n          set +e\n          stdbuf -oL -eL timeout 330s netlify deploy"
+          assert marker in s
+          command_section=s.split(marker,1)[1].split('2>&1 | tee',1)[0]
           assert '--site="$NETLIFY_SITE_ID"' in command_section
           assert '--alias="$PILOT_ALIAS"' in command_section
           assert '--no-build' in command_section
