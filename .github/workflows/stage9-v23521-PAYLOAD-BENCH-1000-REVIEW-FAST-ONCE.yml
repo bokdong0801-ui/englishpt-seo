@@ -1,0 +1,169 @@
+name: ENGLISH PT v23521 PAYLOAD ONE THOUSAND PAGE REVIEW BENCHMARK
+on:
+  push:
+    branches: [release/v23521-PAYLOAD-BENCH-1000-REVIEW-ONCE-20261019]
+    paths: ['.github/workflows/stage9-v23521-PAYLOAD-BENCH-1000-REVIEW-FAST-ONCE.yml']
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: ENGLISHPT-v23521-PAYLOAD-REVIEW-ONE-20261019
+  cancel-in-progress: false
+jobs:
+  approved-tiny-draft-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 803550a8-03af-4776-bc8a-bd0bae85f5c7
+      PILOT: pilot-site/ENGLISHPT_PAYLOAD_EDGE_1000_PAGES_DRAFT_SAMPLE_NOINDEX_NOT_DEPLOYED.tar.zst
+      EXPECTED_PILOT_SHA: b66d6f5409dd13a4b974877e26e08457e0f42ce527c81fef0bf6daea3fdaaf0d
+      PILOT_ALIAS: enpt23521paybench1k
+      PILOT_MARKER: ENGLISHPT_V23521_PAYLOAD_BENCH_1000_ONCE_20261019
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate workflow cannot publish and preflight scripts compile
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/release/v23521-PAYLOAD-BENCH-1000-REVIEW-ONCE-20261019"
+          python3 -m py_compile scripts/v23521_payload_bench_1000_gate.py scripts/v23521_payload_bench_1000_http_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('.github/workflows/stage9-v23521-PAYLOAD-BENCH-1000-REVIEW-FAST-ONCE.yml').read_text('utf8')
+          calls=[x for x in s.splitlines() if x.strip().startswith('stdbuf -oL -eL timeout 330s netlify deploy')]
+          assert len(calls)==1,calls
+          marker="\n          set +e\n          stdbuf -oL -eL timeout 330s netlify deploy"
+          assert marker in s
+          command_section=s.split(marker,1)[1].split('2>&1 | tee',1)[0]
+          assert '--site="$NETLIFY_SITE_ID"' in command_section
+          assert '--alias="$PILOT_ALIAS"' in command_section
+          assert '--no-build' in command_section
+          assert '--timeout=240' in command_section
+          assert '--prod' not in command_section and '--context' not in command_section
+          assert '803550a8-03af-4776-bc8a-bd0bae85f5c7' in s
+          assert '98d96cc5-f0b7-4d3d-8072-6476d93e55a3' not in command_section
+          print('PASS_APPROVED_ONE_5MIN_TINY_DRAFT_ONLY_NO_PROD_OR_CONTEXT',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-PAYLOAD-REAL-1000-AND-5000-REVIEW-DRAFT-BENCHMARK-NO-DEPLOY
+          run-id: 39210594300
+          github-token: ${{ github.token }}
+          path: pilot-site
+      - name: Preupload exact SHA, Review project ID, old published Production, credits and unique attempt
+        run: |
+          set -euo pipefail
+          echo "$EXPECTED_PILOT_SHA  $PILOT" | sha256sum -c -
+          python3 scripts/v23521_payload_bench_1000_gate.py --mode=before --archive="$PILOT"
+      - name: Extract small archive and verify input static assets and Edge declaration
+        run: |
+          set -euo pipefail
+          mkdir -p tiny-upload
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          tar --zstd -xf "$PILOT" -C tiny-upload
+          python3 - <<'PY'
+          from pathlib import Path
+          import tomllib
+          p=Path('tiny-upload')
+          f=[x for x in p.rglob('*') if x.is_file()]
+          assert len(f)==1346,len(f)
+          html=[x for x in f if x.suffix=='.html']
+          assert len(html)==4,len(html)
+          assert len([x for x in f if x.suffix=='.page'])==1000
+          conf=tomllib.loads((p/'netlify.toml').read_text('utf8'))
+          assert len(conf.get('edge_functions',[]))==1
+          assert (p/'netlify/edge-functions/shard-router.js').is_file()
+          assert b'X-Robots-Tag: noindex' in (p/'_headers').read_bytes()
+          assert b'Disallow: /' in (p/'robots.txt').read_bytes()
+          print('PASS_REVIEW_BENCHMARK_1000_PAGE_FOUR_STATIC_HTML_AND_GLOBAL_NOINDEX',flush=True)
+          PY
+      - name: CLI installation and dry CLI option recognition BEFORE sending deploy
+        run: |
+          set -euo pipefail
+          npm install -g netlify-cli@27.13.0 --no-audit --no-fund
+          netlify --version
+          netlify deploy --help > small_draft_cli_help.txt
+          grep -q -- '--alias' small_draft_cli_help.txt
+          grep -q -- '--no-build' small_draft_cli_help.txt
+          grep -q -- '--timeout' small_draft_cli_help.txt
+          echo PASS_CLI_FLAGS_RECOGNIZED_BEFORE_REAL_REQUEST
+      - name: ONE tiny Draft upload only - bounded to 330 seconds - never Production
+        id: attempt
+        run: |
+          set -euo pipefail
+          mkdir -p small-draft-evidence
+          date -u +'%FT%TZ' | tee small-draft-evidence/STARTED_UTC.txt
+          cd tiny-upload
+          set +e
+          stdbuf -oL -eL timeout 330s netlify deploy \
+            --site="$NETLIFY_SITE_ID" \
+            --dir=. \
+            --no-build \
+            --alias="$PILOT_ALIAS" \
+            --timeout=240 \
+            --message="$PILOT_MARKER" \
+            2>&1 | tee -a ../small-draft-evidence/DEPLOY_CLI_LOG.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -e
+          cd ..
+          echo "CLI_EXIT_CODE=$EXIT_CODE" | tee -a small-draft-evidence/DEPLOY_CLI_LOG.txt
+          echo "cli_exit=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+          date -u +'%FT%TZ' | tee small-draft-evidence/FINISHED_UTC.txt
+          exit 0
+      - name: Read-only exact new Draft state and confirm neither site published deploy changed
+        id: post
+        if: ${{ always() && steps.attempt.outcome == 'success' }}
+        run: |
+          python3 scripts/v23521_payload_bench_1000_gate.py --mode=after
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('small-draft-evidence/AFTER_DRAFT.json')
+          r=json.loads(p.read_text('utf8'))
+          if r['status']=='PASS_SMALL_DRAFT_READY_UNPUBLISHED':
+              with open(__import__('os').environ['GITHUB_OUTPUT'],'a') as f:
+                  f.write('draft_url='+r['draft_url']+'\n')
+                  f.write('ready=yes\n')
+          print('SMALL_DRAFT_DEPLOY_RESULT',r['status'],'ID',r.get('draft_id'),'state',r.get('draft_state'),flush=True)
+          PY
+      - name: Verify actual Draft public Edge routes, static forms, robots, all editorial 29 PNG (GET-only)
+        if: ${{ steps.post.outputs.ready == 'yes' }}
+        run: |
+          python3 scripts/v23521_payload_bench_1000_http_QA.py \
+            --draft-url="${{ steps.post.outputs.draft_url }}" \
+            --report=small-draft-evidence/SMALL_DRAFT_REAL_HTTP_GET_QA.json
+      - name: Persist detailed result and upload log always
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-PAYLOAD-BENCH-1000-REVIEW-ONE-CLI-HTTP-RESULT
+          path: |
+            small-draft-evidence/
+            small_draft_cli_help.txt
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Fail closed on incomplete Draft QA, never retry, never publish
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('small-draft-evidence')
+          draft=root/'AFTER_DRAFT.json'
+          http=root/'SMALL_DRAFT_REAL_HTTP_GET_QA.json'
+          if not draft.exists():raise SystemExit('HOLD: Missing Draft API status, no retry')
+          d=json.loads(draft.read_text('utf8'))
+          if d.get('status')!='PASS_SMALL_DRAFT_READY_UNPUBLISHED':
+              raise SystemExit('HOLD: Draft '+d.get('status','UNKNOWN')+', no retry')
+          if not http.exists():raise SystemExit('HOLD: no real HTTP check')
+          q=json.loads(http.read_text('utf8'))
+          if not q.get('status','').startswith('PASS_'):raise SystemExit('HOLD: HTTP QA did not pass')
+          print('PASS_SMALL_REVIEW_DRAFT_READY_AND_HTTP_QA_PRODUCTION_UNCHANGED')
+          PY
