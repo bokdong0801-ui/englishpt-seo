@@ -1,0 +1,221 @@
+name: ENGLISH PT v23521 FULL PAYLOAD Review Draft V2 5 Min Cap NO PROD
+on:
+  push:
+    branches: [release/v23521-PAYLOAD-FULL-REVIEW-DRAFT-ONCE-V2-20261019]
+    paths: ['.github/workflows/stage9-v23521-FULL-PAYLOAD-REVIEW-DRAFT-FIVE-MIN-CAP-V2-ONCE.yml']
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: ENGLISHPT-v23521-PAYLOAD-REVIEW-ONE-20261019
+  cancel-in-progress: false
+jobs:
+  approved-tiny-draft-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 803550a8-03af-4776-bc8a-bd0bae85f5c7
+      PILOT: pilot-site/ENGLISHPT_v23.5.2.1_FULL_158571_PAYLOAD_EDGE_NEW_NOT_DEPLOYED.tar.zst
+      EXPECTED_PILOT_SHA: 0f72556e20ed2e22b45f144b4ccf687937e1b15cedc4d2dd109819fef65db7e8
+      PILOT_ALIAS: enpt23521fullpayloadrev2
+      PILOT_MARKER: ENGLISHPT_V23521_PAYLOAD_FULL_REVIEW_V2_ONCE_20261019
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate workflow cannot publish and preflight scripts compile
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/release/v23521-PAYLOAD-FULL-REVIEW-DRAFT-ONCE-V2-20261019"
+          python3 -m py_compile scripts/v23521_payload_full_review_once_gate.py scripts/v23521_sharded_draft_live_get_only_QA.py scripts/v23521_full_review_draft_noindex_safety_transform.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('.github/workflows/stage9-v23521-FULL-PAYLOAD-REVIEW-DRAFT-FIVE-MIN-CAP-V2-ONCE.yml').read_text('utf8')
+          calls=[x for x in s.splitlines() if x.strip().startswith('stdbuf -oL -eL timeout 330s netlify deploy')]
+          assert len(calls)==1,calls
+          marker="\n          set +e\n          stdbuf -oL -eL timeout 330s netlify deploy"
+          assert marker in s
+          command_section=s.split(marker,1)[1].split('2>&1 | tee',1)[0]
+          assert '--site="$NETLIFY_SITE_ID"' in command_section
+          assert '--alias="$PILOT_ALIAS"' in command_section
+          assert '--no-build' in command_section
+          assert '--timeout=240' in command_section
+          assert '--prod' not in command_section and '--context' not in command_section
+          assert '803550a8-03af-4776-bc8a-bd0bae85f5c7' in s
+          assert '98d96cc5-f0b7-4d3d-8072-6476d93e55a3' not in command_section
+          print('PASS_APPROVED_ONE_5MIN_TINY_DRAFT_ONLY_NO_PROD_OR_CONTEXT',flush=True)
+          PY
+      - name: Unit-test the exact preview noindex transformer against intentionally noindex-marked internal assets before large download
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import subprocess
+          from pathlib import Path
+          p=Path('fixture-full-preview-protection')
+          (p/'netlify/edge-functions').mkdir(parents=True,exist_ok=True)
+          (p/'privacy').mkdir(parents=True,exist_ok=True)
+          (p/'__internal').mkdir(parents=True,exist_ok=True)
+          for i in range(256):
+              (p/'__pages'/f'{i:02x}').mkdir(parents=True,exist_ok=True)
+          for n in ('index.html','404.html','privacy/index.html','__internal/consultation-blueprint.html'):
+              q=p/n
+              q.write_text('<html>test</html>',encoding='utf8')
+          (p/'netlify/edge-functions/shard-router.js').write_text(
+              'const x = 1; headers.delete("X-Robots-Tag");',encoding='utf8')
+          (p/'_headers').write_text(
+              '/*\n  X-Content-Type-Options: nosniff\n'
+              '/__pages/*\n  X-Robots-Tag: noindex, nofollow\n'
+              '/__internal/*\n  X-Robots-Tag: noindex, nofollow\n',encoding='utf8')
+          (p/'robots.txt').write_text('User-agent: *\nAllow: /\n',encoding='utf8')
+          subprocess.run(['python3','scripts/v23521_full_review_draft_noindex_safety_transform.py',
+             '--dir',str(p),'--report','fixture-preview-protection-QA.json'],check=True)
+          from json import loads
+          q=loads(Path('fixture-preview-protection-QA.json').read_text('utf8'))
+          assert q['status']=='PASS_REVIEW_ONLY_FULL_SITE_NOINDEX_PROTECTION'
+          assert 'noindex' in (p/'_headers').read_text('utf8')
+          print('PASS_EARLY_NO_BRUTE_FORCE_RETRY_PREVIEW_NOINDEX_FIX_UNIT_TEST',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-FULL-158571-PAYLOAD-EDGE-4-STATIC-HTML-NOT-DEPLOYED
+          run-id: 39210125229
+          github-token: ${{ github.token }}
+          path: pilot-site
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-actual-sharded-all-files-SEO-sitemap-OG-Forms-QA-and-frozen-SHA
+          run-id: 39194321977
+          github-token: ${{ github.token }}
+          path: original-route-map
+      - name: Preupload exact SHA, Review project ID, old published Production, credits and unique attempt
+        run: |
+          set -euo pipefail
+          echo "$EXPECTED_PILOT_SHA  $PILOT" | sha256sum -c -
+          python3 scripts/v23521_payload_full_review_once_gate.py --mode=before --archive="$PILOT"
+      - name: Extract full 180800 file candidate, force Review noindex and verify real Edge declarations
+        run: |
+          set -euo pipefail
+          mkdir -p tiny-upload
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          tar --zstd -xf "$PILOT" -C tiny-upload
+          python3 scripts/v23521_full_review_draft_noindex_safety_transform.py --dir tiny-upload --report small-draft-evidence/FULL_REVIEW_ALL_ROUTES_NOINDEX_GUARD.json
+          python3 - <<'PY'
+          from pathlib import Path
+          import tomllib
+          p=Path('tiny-upload')
+          f=[x for x in p.rglob('*') if x.is_file()]
+          assert len(f)==180800,len(f)
+          html=[x for x in f if x.suffix=='.html']
+          assert len(html)==4,len(html)
+          assert len([x for x in f if x.suffix=='.page'])==158571
+          conf=tomllib.loads((p/'netlify.toml').read_text('utf8'))
+          assert len(conf.get('edge_functions',[]))==1
+          assert (p/'netlify/edge-functions/shard-router.js').is_file()
+          assert b'X-Robots-Tag: noindex' in (p/'_headers').read_bytes()
+          assert b'Disallow: /' in (p/'robots.txt').read_bytes()
+          print('PASS_FULL_REVIEW_158571_PAGE_FOUR_STATIC_HTML_WITH_GLOBAL_NOINDEX',flush=True)
+          PY
+      - name: CLI installation and dry CLI option recognition BEFORE sending deploy
+        run: |
+          set -euo pipefail
+          npm install -g netlify-cli@27.13.0 --no-audit --no-fund
+          netlify --version
+          netlify deploy --help > small_draft_cli_help.txt
+          grep -q -- '--alias' small_draft_cli_help.txt
+          grep -q -- '--no-build' small_draft_cli_help.txt
+          grep -q -- '--timeout' small_draft_cli_help.txt
+          echo PASS_CLI_FLAGS_RECOGNIZED_BEFORE_REAL_REQUEST
+      - name: ONE FULL isolated Review Draft only 330 second cap never Production
+        id: attempt
+        run: |
+          set -euo pipefail
+          mkdir -p small-draft-evidence
+          date -u +'%FT%TZ' | tee small-draft-evidence/STARTED_UTC.txt
+          cd tiny-upload
+          set +e
+          stdbuf -oL -eL timeout 330s netlify deploy \
+            --site="$NETLIFY_SITE_ID" \
+            --dir=. \
+            --no-build \
+            --alias="$PILOT_ALIAS" \
+            --timeout=240 \
+            --message="$PILOT_MARKER" \
+            2>&1 | tee -a ../small-draft-evidence/DEPLOY_CLI_LOG.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -e
+          cd ..
+          echo "CLI_EXIT_CODE=$EXIT_CODE" | tee -a small-draft-evidence/DEPLOY_CLI_LOG.txt
+          echo "cli_exit=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+          date -u +'%FT%TZ' | tee small-draft-evidence/FINISHED_UTC.txt
+          exit 0
+      - name: Read-only exact new Draft state and confirm neither site published deploy changed
+        id: post
+        if: ${{ always() && steps.attempt.outcome == 'success' }}
+        run: |
+          python3 scripts/v23521_payload_full_review_once_gate.py --mode=after
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('small-draft-evidence/AFTER_DRAFT.json')
+          r=json.loads(p.read_text('utf8'))
+          if r['status']=='PASS_SMALL_DRAFT_READY_UNPUBLISHED':
+              with open(__import__('os').environ['GITHUB_OUTPUT'],'a') as f:
+                  f.write('draft_url='+r['draft_url']+'\n')
+                  f.write('ready=yes\n')
+          print('SMALL_DRAFT_DEPLOY_RESULT',r['status'],'ID',r.get('draft_id'),'state',r.get('draft_state'),flush=True)
+          PY
+      - name: Real full Draft GET-only SEO sitemap Forms structure and 29 OG QA
+        if: ${{ steps.post.outputs.ready == 'yes' }}
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_sharded_draft_live_get_only_QA.py \
+            --draft-url="${{ steps.post.outputs.draft_url }}" \
+            --map=original-route-map/ORIGINAL_TO_SHARDED_ALL_FILE_SHA1_MAP.json.gz \
+            --report=small-draft-evidence/SMALL_DRAFT_REAL_HTTP_GET_QA.json
+          python3 - <<'PY'
+          import urllib.request,os
+          root=os.environ['TEST_DRAFT_URL'].rstrip('/')
+          for p in ('/gyeongnam-milyang-naeidong-elem-tutor.html','/seoul-jongno-sajikdong-high-tutor.html','/englishpt.html','/index.html'):
+              req=urllib.request.Request(root+p,headers={'User-Agent':'ENPT-ALL-PAYLOAD-NOINDEX-QA'},method='GET')
+              with urllib.request.urlopen(req,timeout=25) as r:
+                  assert r.status==200
+                  assert 'noindex' in r.headers.get('X-Robots-Tag','').lower(),p
+                  assert 'text/html' in r.headers.get('Content-Type','').lower(),p
+          print('PASS_ACTUAL_FULL_REVIEW_NOINDEX_AND_CONTENT_TYPE_ALL_PUBLIC_HTML',flush=True)
+          PY
+        env:
+          TEST_DRAFT_URL: ${{ steps.post.outputs.draft_url }}
+      - name: Persist detailed result and upload log always
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-FULL-PAYLOAD-158571-REVIEW-V2-DRAFT-CLI-AND-GET-QA
+          path: |
+            small-draft-evidence/
+            small_draft_cli_help.txt
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Fail closed on incomplete Draft QA, never retry, never publish
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('small-draft-evidence')
+          draft=root/'AFTER_DRAFT.json'
+          http=root/'SMALL_DRAFT_REAL_HTTP_GET_QA.json'
+          if not draft.exists():raise SystemExit('HOLD: Missing Draft API status, no retry')
+          d=json.loads(draft.read_text('utf8'))
+          if d.get('status')!='PASS_SMALL_DRAFT_READY_UNPUBLISHED':
+              raise SystemExit('HOLD: Draft '+d.get('status','UNKNOWN')+', no retry')
+          if not http.exists():raise SystemExit('HOLD: no real HTTP check')
+          q=json.loads(http.read_text('utf8'))
+          if not q.get('status','').startswith('PASS_'):raise SystemExit('HOLD: HTTP QA did not pass')
+          print('PASS_SMALL_REVIEW_DRAFT_READY_AND_HTTP_QA_PRODUCTION_UNCHANGED')
+          PY
