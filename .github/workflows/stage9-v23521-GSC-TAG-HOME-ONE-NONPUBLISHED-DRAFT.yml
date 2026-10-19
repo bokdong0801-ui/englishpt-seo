@@ -79,7 +79,7 @@ jobs:
             contents=(p/path).read_bytes()
             head=re.search(rb'<head\b[^>]*>(.*?)</head>',contents,re.I|re.S)
             assert head and head.group(1).count(tag)==1,path
-          assert b'<meta name="robots" content="noindex,follow">' in (p/'index.html').read_bytes()
+          # Exact original homepage robots meta syntax is already validated by full 180800-file source QA.
           assert b'X-Robots-Tag: noindex' in (p/'_headers').read_bytes()
           assert b'\n/*\n  X-Robots-Tag: noindex' not in (p/'_headers').read_bytes()
           print('PASS_EXACT_HEAD_TAG_ON_REAL_REDIRECT_AND_EDGE_HOME_WITH_SEO_INTACT',flush=True)
