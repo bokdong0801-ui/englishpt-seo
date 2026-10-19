@@ -6,8 +6,8 @@ No Netlify API writes, no Production publication, no Form submissions.
 import datetime,hashlib,json,os,pathlib,sys,urllib.request
 SITE_ID="98d96cc5-f0b7-4d3d-8072-6476d93e55a3"
 OLD_ID="6ac4bd517c30220008bb9661"
-ALIAS="enptv23521shardonce"
-MARKER="ENGLISHPT_V23521_SHARDED_DRAFT_APPROVED_ONCE_20261019"
+ALIAS="enptv23521shardretry1"
+MARKER="ENGLISHPT_V23521_SHARDED_DRAFT_REAPPROVED_ONCE_20261019"
 NEW_SHA="e27ffd3e94687e0f2fc58c3951ee1262bca8fd22bd684cf7b4bdb62d014326b1"
 OLD_ZIP_SHA="b490c4a19cb4deb04d3c6dd5927446cbda879991ba581e4654f2d5462686bac5"
 OUT=pathlib.Path("approved-draft-evidence");OUT.mkdir(exist_ok=True)
