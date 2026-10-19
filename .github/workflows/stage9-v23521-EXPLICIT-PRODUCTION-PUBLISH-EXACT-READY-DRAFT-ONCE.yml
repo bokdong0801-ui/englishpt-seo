@@ -1,0 +1,157 @@
+name: ENGLISH PT v23521 USER APPROVED EXACT ONCE Production Publication
+on:
+  push:
+    branches: [release/v23521-FINAL-PRODUCTION-PUBLISH-ONE-APPROVED-20261019]
+    paths: ['.github/workflows/stage9-v23521-EXPLICIT-PRODUCTION-PUBLISH-EXACT-READY-DRAFT-ONCE.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: englishpt-v23521-publish-exact-approved-draft-ONCE-20261019
+  cancel-in-progress: false
+jobs:
+  publish-exact-draft-once-and-prove-live-site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      PUBLISH_APPROVED_ONCE: EXACT_V23521_USER_APPROVED_20261019
+      RELEASE_ARCHIVE: frozen/ENGLISHPT_v23.5.2.1_FULL_158571_PAYLOAD_EDGE_NEW_NOT_DEPLOYED.tar.zst
+      BACKUP_ZIP: backup/ENGLISHPT_ORIGINAL_PRODUCTION_6ac4bd517c30220008bb9661.zip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile and validate one-post no-file-reupload Production release constraints
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_publish_exact_ready_netlify_deploy_once.py scripts/v23521_PUBLISHED_englishptkr_GET_only_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/v23521_publish_exact_ready_netlify_deploy_once.py').read_text('utf8')
+          q=Path('scripts/v23521_PUBLISHED_englishptkr_GET_only_QA.py').read_text('utf8')
+          assert '6ad5ca0f1f2051f04bdd9287' in p
+          assert '6ac4bd517c30220008bb9661' in p
+          assert 'method="POST",data=b""' in p
+          assert 'time.sleep(3)' in p and 'NO_FURTHER_POST' in p
+          assert 'Only exact LIVE englishpt.kr domain allowed' in q
+          assert 'Unexpected live global X-Robots noindex on indexable page' in q
+          assert 'method="POST"' not in q and 'method="GET"' in q
+          print('PASS_RELEASE_EXACTLY_ONE_USER_APPROVED_NETLIFY_RESTORE_AND_GET_QA',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-FULL-158571-PAYLOAD-EDGE-4-STATIC-HTML-NOT-DEPLOYED
+          run-id: 39210125229
+          github-token: ${{ github.token }}
+          path: frozen
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-full-payload-180800-SEO-Forms-OG-SHA1-QA
+          run-id: 39210125229
+          github-token: ${{ github.token }}
+          path: qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-OLD-PRODUCTION-ORIGINAL-FULL-SHA-VERIFIED-BACKUP
+          run-id: 39005690268
+          github-token: ${{ github.token }}
+          path: backup
+      - name: Publish approved Netlify READY Draft EXACTLY ONCE with SHA and rollback checks, never reupload
+        id: publish
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_publish_exact_ready_netlify_deploy_once.py
+      - name: Confirm new published state and Netlify Forms + existing email-hook metadata GET only
+        id: metadata
+        if: ${{ steps.publish.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,urllib.request,datetime
+          from pathlib import Path
+          siteid='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          newid='6ad5ca0f1f2051f04bdd9287'
+          def get(path):
+            request=urllib.request.Request('https://api.netlify.com/api/v1/'+path,method='GET',headers={
+              'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN'],'Accept':'application/json'})
+            with urllib.request.urlopen(request,timeout=40) as r:return json.load(r)
+          site=get('sites/'+siteid)
+          published=(site.get('published_deploy') or {}).get('id')
+          assert site.get('custom_domain')=='englishpt.kr' and published==newid,'Published ID changed'
+          forms=get('sites/'+siteid+'/forms')
+          names=[f.get('name') for f in forms]
+          hooks=get('hooks?site_id='+siteid)
+          email=sum(1 for h in hooks if h.get('event')=='submission_created' and h.get('type')=='email')
+          result={'status':'PASS_SITE_NEW_PUBLISHED_WITH_FORM_AND_EMAIL_HOOK_CONFIG' if 'englishpt-consultation' in names and email>=1 else 'HOLD_FORM_OR_EMAIL_HOOK_CONFIG',
+            'verified_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'published_deploy_id':published,'expected_form_present':'englishpt-consultation' in names,
+            'email_submission_hook_count':email,'real_form_submitted':False,'email_received_verified':False,
+            'netlify_write_requests':0}
+          Path('publish-evidence').mkdir(exist_ok=True)
+          Path('publish-evidence/POSTPUBLISH_NETLIFY_FORMS_METADATA.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('POSTPUBLISH_FORMS_EMAIL_METADATA',json.dumps(result,ensure_ascii=False),flush=True)
+          assert result['status'].startswith('PASS_'),result
+          PY
+      - name: REAL englishpt.kr 62 GET-only mixed SEO noindex, 6 tutoring Forms, 29 OG, sitemap, JS
+        id: live
+        if: ${{ steps.publish.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_PUBLISHED_englishptkr_GET_only_QA.py \
+            --url=https://englishpt.kr \
+            --manifest=qa-map/FULL_PAYLOAD_ORIGINAL_TO_FILE_SHA1_MAP.json.gz \
+            --output=publish-evidence/LIVE_PRODUCTION_62_HTTP_SEO_FORMS_OG_QA.json
+      - name: Save truthful final live GO HOLD report irrespective of QA outcome
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json,datetime
+          from pathlib import Path
+          root=Path('publish-evidence');root.mkdir(exist_ok=True)
+          pub=root/'PUBLISH_ACTUAL_RESULT.json'
+          forms=root/'POSTPUBLISH_NETLIFY_FORMS_METADATA.json'
+          qa=root/'LIVE_PRODUCTION_62_HTTP_SEO_FORMS_OG_QA.json'
+          final={'status':'HOLD','checked_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                 'attempts_maximum':1,'no_file_uploads':True,'form_POST_count':0,
+                 'google_naver_submissions':0,'real_email_receipt_test_done':False}
+          if pub.exists():
+            p=json.loads(pub.read_text())
+            final['actual_published_deploy_id']=p.get('live_after',p.get('live_before'))
+            final['publication']=p.get('status')
+            final['publish_POST_count']=p.get('post_count')
+          if forms.exists():
+            f=json.loads(forms.read_text())
+            final['Forms_metadata']=f.get('status')
+          if qa.exists():
+            q=json.loads(qa.read_text())
+            final['real_HTTP_QA']=q.get('status')
+            final['real_HTTP_checked']=q.get('GET_requests')
+            final['real_HTTP_errors']=len(q.get('issues',[]))
+          if final.get('publication')=='PASS_APPROVED_EXACT_TARGET_PUBLISHED' and final.get('Forms_metadata','').startswith('PASS_') and final.get('real_HTTP_QA','').startswith('PASS_'):
+            final['status']='PASS_PUBLISHED_PRODUCTION_HTTPS_SEO_STATIC_FORMS_METADATA'
+          (root/'FINAL_PUBLISHED_GO_HOLD.json').write_text(json.dumps(final,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('FINAL_REAL_ENGLISHPT_PRODUCTION_PUBLISH_VERDICT',json.dumps(final,ensure_ascii=False),flush=True)
+          PY
+      - name: Preserve exact posted deploy evidence, backup checks and live site QA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-USER-APPROVED-ONE-PRODUCTION-PUBLISH-REAL-SEO-Forms-QA
+          path: publish-evidence/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Fail closed if any LIVE validation fails; never post again automatically
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('publish-evidence/FINAL_PUBLISHED_GO_HOLD.json')
+          if not p.exists():raise SystemExit('HOLD: final evidence missing; never auto-retry')
+          x=json.loads(p.read_text())
+          if x.get('status')!='PASS_PUBLISHED_PRODUCTION_HTTPS_SEO_STATIC_FORMS_METADATA':
+            raise SystemExit('HOLD: '+str(x)+'; no auto-retry')
+          print('PASS_USER_APPROVED_ONE_PRODUCTION_PUBLISH_LIVE_HTTP_SEO_FORMS_METADATA',flush=True)
+          PY
