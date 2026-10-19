@@ -16,7 +16,11 @@ def main():
  expected=b'headers.delete("X-Robots-Tag");'
  original=edge.read_bytes()
  if original.count(expected)!=1:raise ValueError("Expected Production Edge mode not found exactly once")
- assert b'X-Robots-Tag: noindex' not in hdr.read_bytes().split(b"\n/*",1)[0]
+ original_headers=hdr.read_bytes()
+ if b"\n/*\n  X-Robots-Tag: noindex" in original_headers:
+  raise ValueError("Unexpected global noindex in original full source")
+ if b"/__pages/*\n  X-Robots-Tag: noindex" not in original_headers:
+  raise ValueError("Expected raw internal payload noindex missing")
  assert bp.exists()
  edge.write_bytes(original.replace(expected,b'headers.set("X-Robots-Tag", "noindex, nofollow");'))
  hdr.write_bytes(hdr.read_bytes()+b"\n/*\n  X-Robots-Tag: noindex, nofollow\n")
