@@ -1,0 +1,74 @@
+name: ENGLISH PT Indexed 21964 Real URL Square Thumbnail Mapping ReadOnly
+on:
+  push:
+    branches:
+      - ops/v23521-THUMBNAIL-21964-REAL-ROUTE-MAPPING-GETONLY-20261020
+    paths:
+      - .github/workflows/v23521-indexed-21964-thumbnail-real-manifest-GETONLY.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21964-real-indexed-thumbnail-mapping-GETONLY-20261020
+  cancel-in-progress: false
+jobs:
+  real-manifest-and-dimension-join:
+    name: Signed source manifest and 911 Korean rail station names join
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static syntax checks without deploying
+        run: |
+          python3 -m py_compile scripts/thumbnail_v1_real_indexed_21964_manifest_readonly.py
+      - name: Download signed-off 158571 route manifest from approved Google plus Naver production artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: qa-source
+      - name: Build real indexable 21964 URL metadata and exact official Korean station names read only
+        run: |
+          set -euo pipefail
+          python3 scripts/thumbnail_v1_real_indexed_21964_manifest_readonly.py
+      - name: Verify output count, field contract and noindex exclusion independently
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import csv,gzip,json
+          from pathlib import Path
+          root=Path('thumb-21964-outputs')
+          d=json.loads((root/'QA_21964_REAL_MAPPING_REPORT.json').read_text('utf8'))
+          assert d['indexable_urls']==21964 and d['original_public_urls']==158571 and d['noindex_fence_count']==136607
+          assert d['indexed_family_counts']=={'national_hub':6,'regional':94,'station':21864},d['indexed_family_counts']
+          assert d['station_count']==911 and d['station_course_intents']==23 and d['station_urls_per_station']==24
+          assert d['unique_accent_colors']==21964
+          path=root/'ALL_21964_INDEXABLE_THUMBNAIL_MAP.csv'
+          with path.open(encoding='utf-8-sig',newline='') as f: rows=list(csv.DictReader(f))
+          assert len(rows)==21964
+          assert len(set(x['route'] for x in rows))==21964
+          assert len(set(x['planned_image_path'] for x in rows))==21964
+          assert len(set(x['accent_hex'] for x in rows))==21964
+          assert all(x['canonical_url']=='https://englishpt.kr/'+x['route'] for x in rows)
+          assert all(x['indexable']=='TRUE' for x in rows)
+          assert all(x['header_label'] for x in rows if x['route_type']=='station')
+          assert all(x['source_page_sha1'] and x['source_edge_path'].startswith('__pages/') for x in rows)
+          with gzip.open('qa-source/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz','rt',encoding='utf8') as f:
+            indexed={k for k,v in json.load(f)['original_public_html_to_data_payload'].items() if not v['noindex']}
+          assert indexed=={x['route'] for x in rows}
+          assert all(x['mapping_status'] in ('READY_METADATA_ONLY','HOLD_REVIEW') for x in rows)
+          assert d['final_png_jpeg_images_generated']==0 and not d['production_og_metadata_changed']
+          print('PASS_ALL_21964_REAL_INDEXED_PATHS_EXACTLY_JOINS_SIGNED_MANIFEST_911_STATIONS_23_INTENTS_NO_DEPLOY',flush=True)
+          PY
+      - name: Upload mapping artifacts without touching Netlify Production
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_REAL_21964_INDEXABLE_911_STATIONS_THUMBNAIL_MAPPING_V1_GETONLY
+          path: thumb-21964-outputs/
+          retention-days: 30
+          if-no-files-found: error
