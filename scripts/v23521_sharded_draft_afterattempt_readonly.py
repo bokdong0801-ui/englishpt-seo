@@ -4,8 +4,8 @@
 import datetime,json,os,pathlib,sys,urllib.parse,urllib.request
 SITE="98d96cc5-f0b7-4d3d-8072-6476d93e55a3"
 OLD="6ac4bd517c30220008bb9661"
-MARKER="ENGLISHPT_V23521_SHARDED_DRAFT_APPROVED_ONCE_20261019"
-ALIAS="enptv23521shardonce"
+MARKER="ENGLISHPT_V23521_SHARDED_DRAFT_REAPPROVED_ONCE_20261019"
+ALIAS="enptv23521shardretry1"
 OUT=pathlib.Path("approved-draft-evidence")
 OUT.mkdir(exist_ok=True)
 def fetch(u):
