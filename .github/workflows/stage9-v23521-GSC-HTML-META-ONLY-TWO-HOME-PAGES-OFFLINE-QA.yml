@@ -1,0 +1,120 @@
+name: ENGLISH PT 2026-10-19 GSC Homepage Ownership Meta Two-File Patch OFFLINE QA
+on:
+  push:
+    branches: [ops/v23521-google-html-tag-surgical-offline-20261019]
+    paths: ['.github/workflows/stage9-v23521-GSC-HTML-META-ONLY-TWO-HOME-PAGES-OFFLINE-QA.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ENPT-v23521-google-html-verification-patch-ONLY-OFFLINE-20261019
+  cancel-in-progress: false
+jobs:
+  prepare-google-verification-site-with-zero-uploads:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline only / compile builders and reject Netlify mutations
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_GSC_exact_tag_two_homepages_patch_OFFLINE.py scripts/v23521_full_payload_edge_all_content_qa_offline.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/v23521_GSC_exact_tag_two_homepages_patch_OFFLINE.py').read_text('utf8')
+          assert 'netlify deploy' not in s
+          assert 'api.netlify.com' not in s
+          assert 'method="POST"' not in s
+          assert 'englishpt.html' in s
+          print('PASS_NO_PUBLICATION_NO_GOOGLE_SUBMISSION',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-FULL-158571-PAYLOAD-EDGE-4-STATIC-HTML-NOT-DEPLOYED
+          run-id: 39210125229
+          github-token: ${{ github.token }}
+          path: frozen
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-full-payload-180800-SEO-Forms-OG-SHA1-QA
+          run-id: 39210125229
+          github-token: ${{ github.token }}
+          path: original-qa
+      - name: Real full site 180800 files / change only two homepage HTML bodies
+        id: build
+        run: |
+          set -euo pipefail
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          mkdir -p gsc-patch
+          python3 scripts/v23521_GSC_exact_tag_two_homepages_patch_OFFLINE.py \
+            --source frozen/ENGLISHPT_v23.5.2.1_FULL_158571_PAYLOAD_EDGE_NEW_NOT_DEPLOYED.tar.zst \
+            --original-manifest original-qa/FULL_PAYLOAD_ORIGINAL_TO_FILE_SHA1_MAP.json.gz \
+            --out gsc-patch/ENGLISHPT_v23.5.2.1_GOOGLE_META_ONLY_TWO_HOME_PAGES_NOT_DEPLOYED.tar.zst \
+            --patched-map gsc-patch/GOOGLE_META_CHANGED_ONLY_TWO_FILE_SHA1_MAP.json.gz \
+            --report gsc-patch/GOOGLE_VERIFICATION_META_ONLY_BUILD_QA.json
+      - name: FULL independent verification all 180800 files, sitemap, 158571 SEO, 6 Forms, all 29 OG
+        id: full
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_full_payload_edge_all_content_qa_offline.py \
+            --source gsc-patch/ENGLISHPT_v23.5.2.1_GOOGLE_META_ONLY_TWO_HOME_PAGES_NOT_DEPLOYED.tar.zst \
+            --manifest gsc-patch/GOOGLE_META_CHANGED_ONLY_TWO_FILE_SHA1_MAP.json.gz \
+            --report gsc-patch/FULL_180800_NEW_SITE_SEO_FORMS_QA.json \
+            --support-dir gsc-patch/extracted
+      - name: Exactly two homepage files have new Google meta, all other files byte-identical
+        id: exact
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import gzip,json
+          from pathlib import Path
+          root=Path('gsc-patch')
+          b=json.loads((root/'GOOGLE_VERIFICATION_META_ONLY_BUILD_QA.json').read_text('utf8'))
+          q=json.loads((root/'FULL_180800_NEW_SITE_SEO_FORMS_QA.json').read_text('utf8'))
+          with gzip.open('original-qa/FULL_PAYLOAD_ORIGINAL_TO_FILE_SHA1_MAP.json.gz','rt',encoding='utf8') as f:old=json.load(f)
+          with gzip.open(root/'GOOGLE_META_CHANGED_ONLY_TWO_FILE_SHA1_MAP.json.gz','rt',encoding='utf8') as f:new=json.load(f)
+          m=old['target_SHA1_by_path'];n=new['target_SHA1_by_path']
+          changed={k for k in m if m[k]!=n[k]}
+          home=new['original_public_html_to_data_payload']['englishpt.html']['to']
+          assert changed=={'index.html',home},changed
+          assert len(m)==len(n)==180800
+          assert len(new['original_public_html_to_data_payload'])==158571
+          assert b['new_candidate_sha256']==q['archive_sha256']
+          assert b['unchanged_files_verified_sha1']==180798
+          assert q['status']=='PASS_FULL_158571_PAYLOAD_SEO_URL_PARITY_AND_FOUR_HTML_NETLIFY'
+          assert q['site_files_sha1_verified']==180800
+          assert (q['indexable'],q['noindex'],q['site_map_urls'],q['static_html_count'])==(21964,136607,21964,4)
+          assert q['png_total']==22088 and len(q['form_samples'])==6
+          assert b['netlify_deploy_created'] is False and b['production_modified'] is False
+          result={'status':'PASS_GSC_HOME_TAG_ONLY_TWO_FILES_FULL_SITE_OFFLINE',
+            'new_site_sha256':b['new_candidate_sha256'],'new_candidate_bytes':b['new_candidate_bytes'],
+            'modified_paths':sorted(changed),'original_candidate_sha256':b['original_live_candidate_sha256'],
+            'unchanged_original_files':180798,'verified_new_site_files':180800,
+            'SEO_original_routes':158571,'indexable':21964,'noindex':136607,'site_map_urls':21964,
+            'real_Netlify_form_blueprint_unchanged':True,'old_redirects_unchanged':True,
+            'no_new_deployment':True,'no_google_submission':True}
+          (root/'FINAL_GSC_VERIFICATION_PATCH_GO_HOLD.json').write_text(
+              json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('PASS_GSC_EXACT_HOME_VERIFICATION_TAG_FULL_SITE_ALL_FILES_QA',json.dumps(result,ensure_ascii=False),flush=True)
+          PY
+      - name: Archive QA and source SHA proof even if HOLD
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-GOOGLE-VERIFICATION-2-HOME-ONLY-180800-FULL-QA
+          path: |
+            gsc-patch/*.json
+            gsc-patch/GOOGLE_META_CHANGED_ONLY_TWO_FILE_SHA1_MAP.json.gz
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Preserve full site package only after all full QA passes (NEVER DEPLOY)
+        if: ${{ success() && steps.exact.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-GSC-HTML-VERIFICATION-TWO-HOME-FULL-CANDIDATE-NOT-DEPLOYED
+          path: gsc-patch/ENGLISHPT_v23.5.2.1_GOOGLE_META_ONLY_TWO_HOME_PAGES_NOT_DEPLOYED.tar.zst
+          retention-days: 30
+          if-no-files-found: error
