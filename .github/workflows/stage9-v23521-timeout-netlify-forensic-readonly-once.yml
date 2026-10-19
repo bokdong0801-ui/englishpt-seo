@@ -1,0 +1,41 @@
+name: ENGLISH PT Canceled Production Deploy Root Cause GET ONLY
+on:
+  push:
+    branches: [ops/v23521-timeout-root-cause-offline-20261019]
+    paths: ['.github/workflows/stage9-v23521-timeout-netlify-forensic-readonly-once.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect-canceled-deploy-no-retry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify no Netlify writes or form submissions
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_failed_deploy_forensic_readonly.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/v23521_failed_deploy_forensic_readonly.py').read_text('utf8')
+          assert 'method="GET"' in s
+          assert not any(x in s for x in ['method="POST"','method="PUT"','method="PATCH"','netlify deploy','--prod'])
+          assert '6ad30d01781992bcb8dd92a1' in s
+          print('PASS_NO_DEPLOY_RETRY_NOR_WRITES',flush=True)
+          PY
+      - name: Inspect FAILED deploy state and immutable uploaded-file manifest
+        run: python3 scripts/v23521_failed_deploy_forensic_readonly.py
+      - name: Preserve diagnostic even when unavailable
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-canceled-Production-6ad30d-forensics-GET-ONLY
+          path: failed-deploy-forensic/
+          retention-days: 30
+          if-no-files-found: warn
