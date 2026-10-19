@@ -1,0 +1,51 @@
+name: ENGLISH PT 158571 Root URL Hash Sharding OFFLINE Edge Prototype Proof
+on:
+  push:
+    branches: [ops/v23521-timeout-root-cause-offline-20261019]
+    paths: ['.github/workflows/stage9-v23521-hash-sharded-root-url-offline-proof-once.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  prove-sharded-routing-without-netlify-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-offline-root-directory-file-size-SHA1-dedup-256-shard-profile
+          run-id: 39192376231
+          github-token: ${{ github.token }}
+          path: reference
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-JSFIX-PRODUCTION-READY-158571-NOT-DEPLOYED
+          run-id: 38992648694
+          github-token: ${{ github.token }}
+          path: frozen-source
+      - name: Validate immutable SHA256 and enumerate all root HTML filenames without uploading
+        run: |
+          set -euo pipefail
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y zstd -qq)
+          FROZEN=frozen-source/ENGLISHPT_v23.5.2.1_JSFIX_PRODUCTION_READY_NOT_DEPLOYED.tar.zst
+          echo "e06c6a7b33a3042c9c52e73e95f1ed8a25819dde8584873f939fa14cff9c4bba  $FROZEN" | sha256sum -c -
+          mkdir -p routing-proof
+          tar --zstd -tf "$FROZEN" > routing-proof/ORIGINAL_MEMBER_NAMES.txt
+          node --check ops/prototypes/v23521_sharded_html_edge_router.mjs
+          node --check ops/prototypes/test_v23521_sharded_html_edge_router.mjs
+          node ops/prototypes/test_v23521_sharded_html_edge_router.mjs \
+            routing-proof/ORIGINAL_MEMBER_NAMES.txt \
+            reference/FROZEN_SITE_UPLOAD_SHARD_PROFILE.json \
+            routing-proof/HASH_SHARD_URL_PRESERVATION_QA.json
+      - name: Preserve only small proof report - no site deployment or uploads
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-158571-root-url-hash-sharded-edge-offline-qa-no-deploy
+          path: routing-proof/HASH_SHARD_URL_PRESERVATION_QA.json
+          retention-days: 30
+          if-no-files-found: warn
