@@ -1,0 +1,190 @@
+name: ENGLISH PT v23521 Production Final GO HOLD SHA SEO Forms GET ONLY
+on:
+  push:
+    branches: [ops/v23521-production-final-safety-GETONLY-20261019]
+    paths: ['.github/workflows/stage9-v23521-PRODUCTION-FINAL-SAFETY-SHA-SEO-FORMS-GET-ONLY-ONCE.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  only-read-netlify-and-all-production-static-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      PRODUCTION_CANDIDATE_TAR: original-candidate/ENGLISHPT_v23.5.2.1_FULL_158571_PAYLOAD_EDGE_NEW_NOT_DEPLOYED.tar.zst
+      ORIGINAL_PRODUCTION_BACKUP_ZIP: old-backup/ENGLISHPT_ORIGINAL_PRODUCTION_6ac4bd517c30220008bb9661.zip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce strict zero deploy zero Forms POST zero external mutation
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_PRODUCTION_safety_site_readonly_GET.py scripts/v23521_PRODUCTION_content_safety_extras.py scripts/v23521_full_payload_edge_all_content_qa_offline.py
+          node --check scripts/v23521_full_payload_edge_all_url_js_qa.mjs
+          python3 - <<'PY'
+          from pathlib import Path
+          y=Path('.github/workflows/stage9-v23521-PRODUCTION-FINAL-SAFETY-SHA-SEO-FORMS-GET-ONLY-ONCE.yml').read_text('utf8')
+          names=('scripts/v23521_PRODUCTION_safety_site_readonly_GET.py','scripts/v23521_PRODUCTION_content_safety_extras.py')
+          for p in names:
+            s=Path(p).read_text('utf8')
+            assert 'netlify deploy' not in s and 'method="POST"' not in s
+            assert 'method="GET"' in s or 'urllib.request' not in s
+          assert 'netlify deploy' not in y and '--prod' not in y
+          print('PASS_READONLY_SCRIPT_AND_WORKFLOW_NO_NETLIFY_WRITES',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-FULL-158571-PAYLOAD-EDGE-4-STATIC-HTML-NOT-DEPLOYED
+          run-id: 39210125229
+          github-token: ${{ github.token }}
+          path: original-candidate
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-full-payload-180800-SEO-Forms-OG-SHA1-QA
+          run-id: 39210125229
+          github-token: ${{ github.token }}
+          path: initial-qa
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-OLD-PRODUCTION-ORIGINAL-FULL-SHA-VERIFIED-BACKUP
+          run-id: 39005690268
+          github-token: ${{ github.token }}
+          path: old-backup
+      - name: Live READONLY original Production and independent backup SHA full ZIP validation
+        id: netlify
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_PRODUCTION_safety_site_readonly_GET.py
+      - name: Verify ORIGINAL Production candidate 180800/180800 files SHA1 and 158571 original SEO pages
+        id: allseo
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -qq -y zstd)
+          mkdir -p production-final-safety/extracted
+          python3 scripts/v23521_full_payload_edge_all_content_qa_offline.py \
+            --source "$PRODUCTION_CANDIDATE_TAR" \
+            --manifest initial-qa/FULL_PAYLOAD_ORIGINAL_TO_FILE_SHA1_MAP.json.gz \
+            --report production-final-safety/FULL_SOURCE_SEO_AND_ALL_180800_SHA1_RECHECK.json \
+            --support-dir production-final-safety/extracted
+      - name: Recheck actual Edge JS on original 158571 URLs including POST bypass and redirect exclusions
+        id: edge
+        run: |
+          set -euo pipefail
+          node scripts/v23521_full_payload_edge_all_url_js_qa.mjs \
+            initial-qa/FULL_PAYLOAD_ORIGINAL_TO_FILE_SHA1_MAP.json.gz \
+            production-final-safety/extracted/shard-router.mjs \
+            production-final-safety/extracted/_redirects \
+            production-final-safety/FULL_EDGE_PUBLIC_URLS_AND_ROBOTS_RECHECK.json
+      - name: Independent original PRODUCTION robots header Edge internal payload noindex static Netlify Forms detection check
+        id: metas
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_PRODUCTION_content_safety_extras.py \
+            --archive "$PRODUCTION_CANDIDATE_TAR" \
+            --mapping initial-qa/FULL_PAYLOAD_ORIGINAL_TO_FILE_SHA1_MAP.json.gz \
+            --full-qa production-final-safety/FULL_SOURCE_SEO_AND_ALL_180800_SHA1_RECHECK.json \
+            --output production-final-safety/PRODUCTION_NO_GLOBAL_NOINDEX_EDGE_FORM_BLUEPRINT.json
+      - name: GET-only full Review behavior reference and confirm purposely global noindex there
+        id: review
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,urllib.request,re,datetime
+          from pathlib import Path
+          base='https://enpt23521fullpayloadrev2--englishpt-final-ia-review-bokdong.netlify.app'
+          samples=['/index.html','/robots.txt','/sitemap-index.xml',
+           '/gyeongnam-milyang-naeidong-elem-tutor.html',
+           '/gyeongnam-milyang-naeidong-mid-tutor.html',
+           '/seoul-jongno-sajikdong-high-tutor.html']
+          report={'status':'RUNNING','review_only':True,'Netlify_writes':0,
+            'Production_published':False,'observations':[],'errors':[]}
+          for path in samples:
+            try:
+              req=urllib.request.Request(base+path,headers={'User-Agent':'ENPT-v23521-final-preprod-GET-only'},method='GET')
+              with urllib.request.urlopen(req,timeout=30) as r:
+                raw=r.read(350000)
+                ct=r.headers.get('Content-Type','')
+                hdr=r.headers.get('X-Robots-Tag','')
+                obs={'route':path,'http':r.status,'content_type':ct,'header_robots':hdr}
+                if path.endswith('.html'):
+                  if 'text/html' not in ct.lower():raise ValueError('Not HTML')
+                  if 'noindex' not in hdr.lower():raise ValueError('Full Review is missing preview-specific noindex')
+                  if path!='/index.html':
+                    text=raw.decode('utf8',errors='replace')
+                    if 'https://englishpt.kr'+path not in text:raise ValueError('Wrong public canonical')
+                    if 'tutor' in path and 'name="englishpt-consultation"' not in text:
+                      raise ValueError('Form static markup missing')
+                report['observations'].append(obs)
+            except Exception as e:
+              report['errors'].append({'route':path,'exception':type(e).__name__,'detail':str(e)[:130]})
+          report['status']='PASS_FULL_REVIEW_RUNTIME_REFERENCE_NOINDEX_ONLY_ON_PREVIEW' if not report['errors'] else 'HOLD_REVIEW_RUNTIME'
+          Path('production-final-safety/FULL_REVIEW_READONLY_HTTP_REFERENCE.json').write_text(
+             json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('PREPROD_REVIEW_GET_ONLY_REFERENCE',json.dumps(report,ensure_ascii=False),flush=True)
+          if report['errors']:raise SystemExit(1)
+          PY
+      - name: Final factual GO HOLD without Production publication or Forms POST
+        id: final
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json,datetime
+          from pathlib import Path
+          root=Path('production-final-safety')
+          needed=['SITE_BACKUP_FORMS_CREDIT_READONLY.json',
+             'FULL_SOURCE_SEO_AND_ALL_180800_SHA1_RECHECK.json',
+             'FULL_EDGE_PUBLIC_URLS_AND_ROBOTS_RECHECK.json',
+             'PRODUCTION_NO_GLOBAL_NOINDEX_EDGE_FORM_BLUEPRINT.json',
+             'FULL_REVIEW_READONLY_HTTP_REFERENCE.json']
+          out={'checked_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+             'publication_authorized':False,'production_deployed':False,'form_submitted':False,
+             'search_submission':False,'status':'HOLD',
+             'gates':{},'blocks':[],'manual_postdeploy':['Live new Production registration/notification/email receipt cannot be verified prior to deploy',
+                'Publish only after separate user approval, full rollback pointer confirmation and site-safe immutable Production Draft QA']}
+          expectations={
+           needed[0]:'PASS_NETLIFY_SITE_BACKUP_CREDIT_REVIEW_FORMS_READONLY',
+           needed[1]:'PASS_FULL_158571_PAYLOAD_SEO_URL_PARITY_AND_FOUR_HTML_NETLIFY',
+           needed[2]:'PASS_158571_LEGACY_SEO_URLS_PRESERVED_VIA_DYNAMIC_PAYLOAD_EDGE',
+           needed[3]:'PASS_PRODUCTION_CONTENT_SEO_EDGE_FORMS_SAFETY',
+           needed[4]:'PASS_FULL_REVIEW_RUNTIME_REFERENCE_NOINDEX_ONLY_ON_PREVIEW'}
+          for path,expected in expectations.items():
+            f=root/path
+            if not f.exists():
+              out['blocks'].append('MISSING '+path);continue
+            r=json.loads(f.read_text('utf8'))
+            status=r.get('state') if path==needed[0] else r.get('status')
+            out['gates'][path]=status
+            if status!=expected:out['blocks'].append(path+' '+str(status))
+          if not out['blocks']:
+            out['status']='PASS_ALL_PRE_PRODUCTION_TECHNICAL_GATES_GO_EXPLICIT_DEPLOY_AUTH_STILL_REQUIRED'
+          (root/'FINAL_PRODUCTION_GO_HOLD.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('ENGLISHPT_20261019_PRODUCTION_FINAL_GO_HOLD',json.dumps(out,ensure_ascii=False),flush=True)
+          PY
+      - name: Preserve all checks and blockers as downloadable evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-20261019-FINAL-PRODUCTION-GETONLY-BACKUP-SEO-FORMS-GO-HOLD
+          path: |
+            production-final-safety/*.json
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Set overall run red if any mandatory technical gate not PASS
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('production-final-safety/FINAL_PRODUCTION_GO_HOLD.json')
+          if not p.is_file():raise SystemExit('HOLD: missing final report')
+          x=json.loads(p.read_text('utf8'))
+          if x.get('status')!='PASS_ALL_PRE_PRODUCTION_TECHNICAL_GATES_GO_EXPLICIT_DEPLOY_AUTH_STILL_REQUIRED':
+            raise SystemExit('HOLD: '+str(x.get('blocks')))
+          print('PASS_ALL_MANDATORY_PREPROD_TECHNICAL_GATES_NO_SITE_MUTATIONS')
+          PY
