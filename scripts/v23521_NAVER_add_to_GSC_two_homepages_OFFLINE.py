@@ -8,8 +8,8 @@ All remaining 180,798 files byte-for-byte preserved; never deploy, no Netlify PO
 import argparse,collections,copy,datetime,gzip,hashlib,io,json,pathlib,re,subprocess,tarfile,sys
 OLD_SHA="3ee78c417da2a91bc6f86d2cfd0c4be6c196334a0eaa89a222d99e83365a2acb"
 CODE="340f4e7dc8c5f3ec806e68f6f09b9949f941a0de"
-GOOGLE_TAG=b'<meta name="naver-site-verification" content="OTG-5ooTZYTm-HnTOi8I0TRV4bZHUD-uSYSOih3E8ig" />'
-TAG=('<meta name="google-site-verification" content="'+CODE+'" />').encode("utf8")
+GOOGLE_TAG=b'<meta name="google-site-verification" content="OTG-5ooTZYTm-HnTOi8I0TRV4bZHUD-uSYSOih3E8ig" />'
+TAG=('<meta name="naver-site-verification" content="'+CODE+'" />').encode("utf8")
 def digest(path):
  h=hashlib.sha256()
  with open(path,"rb") as f:
