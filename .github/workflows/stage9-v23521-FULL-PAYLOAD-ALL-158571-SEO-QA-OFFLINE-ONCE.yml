@@ -1,0 +1,133 @@
+name: ENGLISH PT v23521 FULL 158571 Payload HTML Reduction BUILD plus QA OFFLINE
+on:
+  push:
+    branches: [release/v23521-PAYLOAD-FULL-CANDIDATE-OFFLINE-20261019]
+    paths: ['.github/workflows/stage9-v23521-FULL-PAYLOAD-ALL-158571-SEO-QA-OFFLINE-ONCE.yml']
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: ENGLISHPT-v23521-NEW-PAYLOAD-ALL-SEO-FULL-OFFLINE
+  cancel-in-progress: false
+jobs:
+  build-full-complete-candidate-no-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify all scripts can run ONLY OFFLINE
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_full_payload_edge_preserve_all_urls_offline.py scripts/v23521_full_payload_edge_all_content_qa_offline.py
+          node --check scripts/v23521_full_payload_edge_all_url_js_qa.mjs
+          python3 - <<'PY'
+          from pathlib import Path
+          names=[
+            'scripts/v23521_full_payload_edge_preserve_all_urls_offline.py',
+            'scripts/v23521_full_payload_edge_all_content_qa_offline.py',
+            'scripts/v23521_full_payload_edge_all_url_js_qa.mjs']
+          for n in names:
+              x=Path(n).read_text('utf8')
+              assert not any(s in x for s in ['netlify deploy','api.netlify.com','urllib.request','--prod','requests.post'])
+          print('PASS_FULL_CANDIDATE_ALL_CODE_OFFLINE_NO_NETLIFY_UPLOAD',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-SHARDED-EDGE-FULL-158571-CANDIDATE-NO-DRAFT-NO-PROD
+          run-id: 39194321977
+          github-token: ${{ github.token }}
+          path: frozen-source
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-actual-sharded-all-files-SEO-sitemap-OG-Forms-QA-and-frozen-SHA
+          run-id: 39194321977
+          github-token: ${{ github.token }}
+          path: original-map
+      - name: Verify original SHA and build new full 180800-file Edge payload candidate
+        id: builder
+        run: |
+          set -euo pipefail
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          SRC=frozen-source/ENGLISHPT_v23.5.2.1_SHARDED_EDGE_NEW_CANDIDATE_NOT_DEPLOYED.tar.zst
+          echo "e27ffd3e94687e0f2fc58c3951ee1262bca8fd22bd684cf7b4bdb62d014326b1  $SRC" | sha256sum -c -
+          mkdir -p full-payload-release full-payload-qa
+          python3 scripts/v23521_full_payload_edge_preserve_all_urls_offline.py \
+            --source "$SRC" \
+            --source-map original-map/ORIGINAL_TO_SHARDED_ALL_FILE_SHA1_MAP.json.gz \
+            --output full-payload-release/ENGLISHPT_v23.5.2.1_FULL_158571_PAYLOAD_EDGE_NEW_NOT_DEPLOYED.tar.zst \
+            --map-output full-payload-qa/FULL_PAYLOAD_ORIGINAL_TO_FILE_SHA1_MAP.json.gz \
+            --report full-payload-qa/ACTUAL_FULL_PAYLOAD_BUILD_REPORT.json
+      - name: Verify every original byte all SEO 158571, index 21964/noindex 136607, XML44, Forms, OG29
+        id: content_qa
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_full_payload_edge_all_content_qa_offline.py \
+            --source full-payload-release/ENGLISHPT_v23.5.2.1_FULL_158571_PAYLOAD_EDGE_NEW_NOT_DEPLOYED.tar.zst \
+            --manifest full-payload-qa/FULL_PAYLOAD_ORIGINAL_TO_FILE_SHA1_MAP.json.gz \
+            --report full-payload-qa/FULL_SEO_CONTENT_AND_META_AUDIT.json \
+            --support-dir full-payload-qa/extracted
+      - name: Check actual built Edge router against ALL 158571 original URLs and samples
+        id: url_qa
+        run: |
+          set -euo pipefail
+          node scripts/v23521_full_payload_edge_all_url_js_qa.mjs \
+            full-payload-qa/FULL_PAYLOAD_ORIGINAL_TO_FILE_SHA1_MAP.json.gz \
+            full-payload-qa/extracted/shard-router.mjs \
+            full-payload-qa/extracted/_redirects \
+            full-payload-qa/FULL_EDGE_158571_URL_AND_RESPONSE_QA.json
+      - name: Final all-or-nothing quality gate BEFORE saving actual new site
+        id: final
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          a=Path('full-payload-qa')
+          b=json.loads((a/'ACTUAL_FULL_PAYLOAD_BUILD_REPORT.json').read_text('utf8'))
+          q=json.loads((a/'FULL_SEO_CONTENT_AND_META_AUDIT.json').read_text('utf8'))
+          r=json.loads((a/'FULL_EDGE_158571_URL_AND_RESPONSE_QA.json').read_text('utf8'))
+          assert b['status']=='PASS_158571_SEO_PAGES_PRESERVED_IN_FULL_PAYLOAD_CANDIDATE'
+          assert q['status']=='PASS_FULL_158571_PAYLOAD_SEO_URL_PARITY_AND_FOUR_HTML_NETLIFY'
+          assert r['status']=='PASS_158571_LEGACY_SEO_URLS_PRESERVED_VIA_DYNAMIC_PAYLOAD_EDGE'
+          assert b['new_full_payload_archive_sha256']==q['archive_sha256']
+          assert q['site_files_sha1_verified']==180800 and q['payload_original_html_count']==158571
+          assert q['static_html_count']==4 and q['indexable']==21964 and q['noindex']==136607
+          assert q['site_map_urls']==21964 and q['sitemaps']==45
+          assert q['png_total']==22088 and len(q['OG_29'])==29 and len(q['form_samples'])==6
+          assert r['tested_original_routes']==158571 and r['errors']==[]
+          assert b['root_files']==20 and b['max_directory_files']<54000
+          status={'status':'PASS_ACTUAL_FULL_158571_SEO_CANDIDATE_ONLY_FOUR_STATIC_HTML',
+            'archive_sha256':q['archive_sha256'],'archive_bytes':b['new_archive_bytes'],
+            'files_180800_verified':True,'all_158571_public_routes_preserved':True,
+            'indexable_21964':True,'noindex_136607':True,
+            '44_sitemaps_and_29_editorial_OG_verified':True,
+            'Netlify_live_large_Draft_not_approved_or_uploaded':True,
+            'Production_published':False,'real_Form_POST_email_unverified':True}
+          (a/'FINAL_PAYLOAD_FULL_RELEASE_GO_HOLD.json').write_text(json.dumps(status,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('PASS_FINAL_NO_DEPLOY_PAYLOAD_SITE_ALL_QA',json.dumps(status),flush=True)
+          PY
+      - name: Keep QA artifacts even if generation fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-full-payload-180800-SEO-Forms-OG-SHA1-QA
+          path: |
+            full-payload-qa/*.json
+            full-payload-qa/FULL_PAYLOAD_ORIGINAL_TO_FILE_SHA1_MAP.json.gz
+            full-payload-qa/extracted/shard-router.mjs
+            full-payload-qa/extracted/_redirects
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Store actual complete candidate ONLY if all offline QA PASS
+        if: ${{ success() && steps.final.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-FULL-158571-PAYLOAD-EDGE-4-STATIC-HTML-NOT-DEPLOYED
+          path: full-payload-release/ENGLISHPT_v23.5.2.1_FULL_158571_PAYLOAD_EDGE_NEW_NOT_DEPLOYED.tar.zst
+          retention-days: 30
+          if-no-files-found: error
