@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Strict zero writes: no search registration, no Google/Naver authenticated actions
+      - name: Strict GET-only no search submission or Netlify mutations
         run: |
           set -euo pipefail
           python3 -m py_compile scripts/v23521_search_engine_sitemap_public_GETONLY_audit.py
