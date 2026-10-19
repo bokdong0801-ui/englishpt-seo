@@ -1,0 +1,44 @@
+name: ENGLISH PT Frozen Site 158K Files Offline Upload Timeout Feasibility
+on:
+  push:
+    branches: [ops/v23521-timeout-root-cause-offline-20261019]
+    paths: ['.github/workflows/stage9-v23521-frozen-site-upload-timeout-profile-once.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  frozen-site-streamed-content-profile-no-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate read-only profiler and exact source
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_candidate_distribution_offline.py
+          ! grep -Eq 'netlify deploy|--prod|api.netlify.com|method="POST"' scripts/v23521_candidate_distribution_offline.py
+          echo 'PASS_ZERO_NETLIFY_DEPLOYS_OFFLINE_ONLY'
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-JSFIX-PRODUCTION-READY-158571-NOT-DEPLOYED
+          run-id: 38992648694
+          github-token: ${{ github.token }}
+          path: frozen-offline-site
+      - name: Verify frozen SHA256 then stream every file and compute upload SHA1 dedup and root/shard distribution
+        run: |
+          set -euo pipefail
+          FROZEN=frozen-offline-site/ENGLISHPT_v23.5.2.1_JSFIX_PRODUCTION_READY_NOT_DEPLOYED.tar.zst
+          printf '%s  %s\n' e06c6a7b33a3042c9c52e73e95f1ed8a25819dde8584873f939fa14cff9c4bba "$FROZEN" | sha256sum -c -
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y zstd -qq)
+          python3 scripts/v23521_candidate_distribution_offline.py "$FROZEN" --out offline-profile/FROZEN_SITE_UPLOAD_SHARD_PROFILE.json
+      - name: Upload profile only, NEVER site files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-offline-root-directory-file-size-SHA1-dedup-256-shard-profile
+          path: offline-profile/
+          retention-days: 30
+          if-no-files-found: warn
