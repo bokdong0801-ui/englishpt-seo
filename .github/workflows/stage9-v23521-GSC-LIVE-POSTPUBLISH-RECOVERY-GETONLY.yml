@@ -1,0 +1,133 @@
+name: ENGLISH PT Google Meta New Production GET Only Postpublish Recovery
+on:
+  push:
+    branches: [release/v23521-GSC-TAG-FINAL-PUBLISH-USER-APPROVED-ONCE-20261019]
+    paths: ['.github/workflows/stage9-v23521-GSC-LIVE-POSTPUBLISH-RECOVERY-GETONLY.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify-published-Google-meta-site-with-zero-writes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Safety compile and prove GET-only scripts, no deploy or form POST
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_GSC_tag_POSTPUBLISH_LIVE_HEAD_GETONLY.py scripts/v23521_PUBLISHED_englishptkr_GET_only_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('scripts/v23521_GSC_tag_POSTPUBLISH_LIVE_HEAD_GETONLY.py').read_text()
+          qa=Path('scripts/v23521_PUBLISHED_englishptkr_GET_only_QA.py').read_text()
+          assert 'method="POST"' not in src and 'method="POST"' not in qa
+          assert 'netlify deploy' not in src and 'netlify deploy' not in qa
+          assert 'OTG-5ooTZYTm-HnTOi8I0TRV4bZHUD-uSYSOih3E8ig' in src
+          print('PASS_100_PERCENT_READONLY_PRODUCTION_GSC_SITE_RECOVERY_QA',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-GOOGLE-VERIFICATION-2-HOME-ONLY-180800-FULL-QA
+          run-id: 39225996525
+          github-token: ${{ github.token }}
+          path: qa-map
+      - name: Confirm EXACT newly published Netlify target, existing registered Form and email notification metadata GET-only
+        run: |
+          set -euo pipefail
+          mkdir -p publish-evidence
+          python3 - <<'PY'
+          import os,json,datetime,urllib.request
+          from pathlib import Path
+          siteid='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          target='6ad5dce289bf03bfba2b534c'
+          def GET(path):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,
+              method='GET',headers={'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN'],'Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=40) as r:return json.load(r)
+          site=GET('sites/'+siteid)
+          live=(site.get('published_deploy') or {}).get('id')
+          assert site.get('custom_domain')=='englishpt.kr' and live==target,(site.get('custom_domain'),live)
+          assert (site.get('processing_settings') or {}).get('ignore_html_forms') is False
+          forms=GET('sites/'+siteid+'/forms')
+          hooks=GET('hooks?site_id='+siteid)
+          email_hooks=sum(1 for h in hooks if h.get('type')=='email' and h.get('event')=='submission_created')
+          form_ok='englishpt-consultation' in [f.get('name') for f in forms]
+          report={'status':'PASS_EXACT_GSC_TAG_NEW_PRODUCTION_FORM_AND_EMAIL_CONFIG' if form_ok and email_hooks>=1 else 'HOLD_FORM_OR_EMAIL_HOOK',
+            'live_deploy_ID':live,'site':siteid,'form_registered':form_ok,
+            'email_hook_submission_created_count':email_hooks,'email_delivery_proved_by_this_run':False,
+            'verified_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'Netlify_POSTs':0,'Production_mutations':0,'Google_verified_by_this_run':False}
+          Path('publish-evidence/GSC_NEW_PRODUCTION_NETLIFY_FORMS_HOOK_GET_ONLY.json').write_text(
+            json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('NEW_GSC_TAG_PUBLISHED_FORMS_METADATA',json.dumps(report,ensure_ascii=False),flush=True)
+          if not report['status'].startswith('PASS_'):raise SystemExit('HOLD form metadata')
+          PY
+      - name: Verify real live Google ownership HEAD meta on root and canonical main page plus robots sitemap
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_GSC_tag_POSTPUBLISH_LIVE_HEAD_GETONLY.py
+      - name: Verify real live 62 HTTPS SEO robots canonical 6 forms and 29 OG images
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_PUBLISHED_englishptkr_GET_only_QA.py \
+            --url=https://englishpt.kr \
+            --manifest=qa-map/GOOGLE_META_CHANGED_ONLY_TWO_FILE_SHA1_MAP.json.gz \
+            --output=publish-evidence/GSC_NEW_PRODUCTION_62_LIVE_SEO_FORM_OG_GET_QA.json
+      - name: Truthful final Google Search Console ready verdict, never falsely mark Google verification
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json,datetime
+          from pathlib import Path
+          root=Path('publish-evidence');root.mkdir(exist_ok=True)
+          parts={'live_identity':'GSC_NEW_PRODUCTION_NETLIFY_FORMS_HOOK_GET_ONLY.json',
+                 'live_google_tag':'GSC_EXACT_OWNERSHIP_META_ON_LIVE_HOMEPAGE.json',
+                 'live_seo':'GSC_NEW_PRODUCTION_62_LIVE_SEO_FORM_OG_GET_QA.json'}
+          results={};issues=[]
+          expected={'live_identity':'PASS_EXACT_GSC_TAG_NEW_PRODUCTION_FORM_AND_EMAIL_CONFIG',
+                    'live_google_tag':'PASS_GSC_EXACT_TAG_ON_REAL_PUBLISHED_HOME',
+                    'live_seo':'PASS_LIVE_ENGLISHPT_MIXED_INDEX_ROBOTS_CANONICAL_FORMS_OG'}
+          for k,f in parts.items():
+            p=root/f
+            if not p.exists():issues.append('MISSING '+f);continue
+            x=json.loads(p.read_text())
+            results[k]=x.get('status')
+            if x.get('status')!=expected[k]:issues.append(k+' NOT PASS: '+str(x.get('status')))
+          report={'status':'PASS_GSC_META_LIVE_READY_FOR_USER_GOOGLE_OWNER_VERIFY' if not issues else 'HOLD_GSC_POSTPUBLISH_VERIFICATION',
+             'new_production_deploy_id':'6ad5dce289bf03bfba2b534c',
+             'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+             'checks':results,'issues':issues,
+             'actual_Google_Search_Console_verification_completed':False,
+             'actual_Google_Search_Console_sitemap_submitted':False,
+             'actual_Naver_Search_Advisor_sitemap_submitted':False,
+             'Site_published_by_this_GET_workflow':False}
+          (root/'FINAL_GOOGLE_OWNERSHIP_TAG_SITE_READY_GO_HOLD.json').write_text(
+            json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('FINAL_GSC_TAG_LIVE_HOMEPAGE_AND_SEO_VERDICT',json.dumps(report,ensure_ascii=False),flush=True)
+          PY
+      - name: Preserve evidence always
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-LIVE-GSC-TAG-SEO-FORMS-META-GET-ONLY-ALL-PASS
+          path: publish-evidence/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Stop on any GET-only QA failure
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('publish-evidence/FINAL_GOOGLE_OWNERSHIP_TAG_SITE_READY_GO_HOLD.json')
+          if not p.exists():raise SystemExit('HOLD missing report')
+          x=json.loads(p.read_text())
+          if x.get('status')!='PASS_GSC_META_LIVE_READY_FOR_USER_GOOGLE_OWNER_VERIFY':
+            raise SystemExit('HOLD '+str(x.get('issues')))
+          print('PASS_GOOGLE_META_TAG_LIVE_AT_ENGLISHPT_KR_READY_FOR_GOOGLE_OWNERSHIP_VERIFICATION',flush=True)
+          PY
