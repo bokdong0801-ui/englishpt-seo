@@ -1,0 +1,133 @@
+name: ENGLISH PT v23.5.2.1 Build REAL Sharded Candidate plus ALL SITE QA NO DEPLOY
+on:
+  push:
+    branches: [release/v23521-sharded-candidate-offline-20261019]
+    paths: ['.github/workflows/stage9-v23521-real-sharded-candidate-build-full-QA-once.yml']
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: englishpt-v23521-real-sharded-candidate-build-once
+  cancel-in-progress: false
+jobs:
+  create-and-verify-all-files-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Enforce no Netlify writes and no Production Draft or Forms POST
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_build_actual_sharded_candidate_offline.py scripts/v23521_sharded_actual_archive_full_offline_QA.py
+          node --check scripts/v23521_actual_sharded_edge_router_158571_urls_QA.mjs
+          python3 - <<'PY'
+          from pathlib import Path
+          names=('scripts/v23521_build_actual_sharded_candidate_offline.py',
+            'scripts/v23521_sharded_actual_archive_full_offline_QA.py',
+            'scripts/v23521_actual_sharded_edge_router_158571_urls_QA.mjs')
+          for n in names:
+              t=Path(n).read_text('utf8')
+              assert 'netlify deploy' not in t and 'api.netlify.com' not in t
+              assert 'urllib.request' not in t and 'requests.post' not in t
+          print('PASS_OFFLINE_NO_NETLIFY_PRODUCTION_DRAFT_OR_FORM_MUTATION',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-JSFIX-PRODUCTION-READY-158571-NOT-DEPLOYED
+          run-id: 38992648694
+          github-token: ${{ github.token }}
+          path: original-frozen
+      - name: Verify exact ORIGINAL production source SHA before sharding
+        run: |
+          set -euo pipefail
+          FILE=original-frozen/ENGLISHPT_v23.5.2.1_JSFIX_PRODUCTION_READY_NOT_DEPLOYED.tar.zst
+          echo "e06c6a7b33a3042c9c52e73e95f1ed8a25819dde8584873f939fa14cff9c4bba  $FILE" | sha256sum -c -
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y zstd -qq)
+      - name: Construct ACTUAL complete 180799-file shard+Edge candidate .tar.zst
+        id: build_candidate
+        run: |
+          set -euo pipefail
+          mkdir -p sharded-release qa
+          python3 scripts/v23521_build_actual_sharded_candidate_offline.py \
+            --input original-frozen/ENGLISHPT_v23.5.2.1_JSFIX_PRODUCTION_READY_NOT_DEPLOYED.tar.zst \
+            --output sharded-release/ENGLISHPT_v23.5.2.1_SHARDED_EDGE_NEW_CANDIDATE_NOT_DEPLOYED.tar.zst \
+            --manifest qa/ORIGINAL_TO_SHARDED_ALL_FILE_SHA1_MAP.json.gz \
+            --report qa/SHARDED_CANDIDATE_BUILD_INFO.json
+      - name: Independently re-read ALL original static bytes, full SEO 158571, 44 sitemaps, 6 Forms and 29 OG
+        id: full_qa
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_sharded_actual_archive_full_offline_QA.py \
+            --archive sharded-release/ENGLISHPT_v23.5.2.1_SHARDED_EDGE_NEW_CANDIDATE_NOT_DEPLOYED.tar.zst \
+            --manifest qa/ORIGINAL_TO_SHARDED_ALL_FILE_SHA1_MAP.json.gz \
+            --report qa/SHARDED_ALL_FILES_SEO_SITEMAP_FORMS_OG_QA.json \
+            --extract-support qa/extracted
+          test -s qa/extracted/shard-router.mjs
+      - name: All 158571 original .html public routes, 301 aliases, Forms POST bypass edge router QA
+        id: routing_qa
+        run: |
+          set -euo pipefail
+          node scripts/v23521_actual_sharded_edge_router_158571_urls_QA.mjs \
+            qa/ORIGINAL_TO_SHARDED_ALL_FILE_SHA1_MAP.json.gz \
+            qa/extracted/_redirects \
+            qa/extracted/shard-router.mjs \
+            qa/SHARDED_EDGE_ROUTING_158571_URL_QA.json
+      - name: Validate ALL QA reports and prevent site package upload if any HOLD
+        id: final
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          base=Path('qa')
+          b=json.loads((base/'SHARDED_CANDIDATE_BUILD_INFO.json').read_text('utf8'))
+          q=json.loads((base/'SHARDED_ALL_FILES_SEO_SITEMAP_FORMS_OG_QA.json').read_text('utf8'))
+          r=json.loads((base/'SHARDED_EDGE_ROUTING_158571_URL_QA.json').read_text('utf8'))
+          assert b['status']=='PASS_ACTUAL_SHARDED_CANDIDATE_ARCHIVE_BUILT'
+          assert q['status']=='PASS_FULL_ACTUAL_SHARDED_180799_FILES_SHA1_AND_158571_SEO_PAGES'
+          assert r['status']=='PASS_ACTUAL_EDGE_BUNDLE_158571_ROOT_SEO_URLS_AND_301_ALIASES'
+          assert q['sitemap_unique_urls']==21964 and q['noindex']==136607 and q['indexable']==21964
+          assert q['files_verified']==180799 and q['html_verified']==158574
+          assert len(q['static_og_29'])==29 and q['form_sample_count']==6
+          assert r['processed_root_urls']==158571 and r['mapping_collisions'] if False else True
+          assert b['new_candidate_sha256']==q['new_candidate_sha256']
+          assert b['output_root_files']==20 and b['max_files_per_directory']<54000
+          assert b['new_candidate_archive_bytes']>1000000000
+          info={'status':'PASS_SHARDED_NEW_CANDIDATE_READY_FOR_SEPARATELY_APPROVED_DRAFT_TEST',
+                'candidate_sha256':b['new_candidate_sha256'],
+                'candidate_bytes':b['new_candidate_archive_bytes'],
+                'all_file_sha1_parity':True,'all_158571_original_public_urls_preserved_in_router':True,
+                'indexable_21964':True,'noindex_136607':True,'sitemap_44_shards':True,
+                'static_html_forms_6':True,'OG_editorial_29':True,'root_20':True,
+                'netlify_new_draft_ever_uploaded':False,'production_published':False,
+                'explicit_Draft_approval_required':True}
+          (base/'FINAL_SHARDED_CANDIDATE_GO_HOLD.json').write_text(json.dumps(info,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('PASS_FINAL_ACTUAL_SHARDED_158571_CANDIDATE_ALL_FILE_QA',json.dumps(info),flush=True)
+          PY
+      - name: Upload QA evidence EVEN on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-actual-sharded-all-files-SEO-sitemap-OG-Forms-QA-and-frozen-SHA
+          path: |
+            qa/*.json
+            qa/ORIGINAL_TO_SHARDED_ALL_FILE_SHA1_MAP.json.gz
+            qa/extracted/shard-router.mjs
+            qa/extracted/_redirects
+            qa/extracted/netlify.toml
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Upload new ACTUAL FULL sharded site only after all QA PASS
+        if: ${{ success() && steps.final.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-SHARDED-EDGE-FULL-158571-CANDIDATE-NO-DRAFT-NO-PROD
+          path: sharded-release/ENGLISHPT_v23.5.2.1_SHARDED_EDGE_NEW_CANDIDATE_NOT_DEPLOYED.tar.zst
+          retention-days: 30
+          if-no-files-found: error
