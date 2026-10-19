@@ -5,8 +5,8 @@ REVIEW="803550a8-03af-4776-bc8a-bd0bae85f5c7"
 PROD="98d96cc5-f0b7-4d3d-8072-6476d93e55a3"
 OLD_PROD="6ac4bd517c30220008bb9661"
 SHA="0f72556e20ed2e22b45f144b4ccf687937e1b15cedc4d2dd109819fef65db7e8"
-ALIAS="enpt23521fullpayloadrev1"
-MARKER="ENGLISHPT_V23521_PAYLOAD_FULL_REVIEW_ONCE_20261019"
+ALIAS="enpt23521fullpayloadrev2"
+MARKER="ENGLISHPT_V23521_PAYLOAD_FULL_REVIEW_V2_ONCE_20261019"
 OUT=pathlib.Path("small-draft-evidence");OUT.mkdir(parents=True,exist_ok=True)
 def get(path):
  request=urllib.request.Request("https://api.netlify.com/api/v1/"+path,headers={
