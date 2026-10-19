@@ -29,7 +29,7 @@ def main():
     if n.endswith(".html"):
      report["html_files"]+=1
      if "/" not in n:html_root+=1
-     if n not in ("index.html","404.html"):
+     if "/" not in n and n not in ("index.html","404.html"):
       buckets[bucket(n)]+=1
     if m.size>10000000:report["files_over_10MB"]+=1
     if m.size>5000000:report["files_over_5MB"]+=1
