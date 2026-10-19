@@ -1,0 +1,200 @@
+name: ENGLISH PT v23.5.2.1 USER REAPPROVED CORRECTED ONE SHARDED DRAFT NO PROD
+on:
+  push:
+    branches: [release/v23521-sharded-draft-REAPPROVED-ONCE-20261019]
+    paths: ['.github/workflows/stage9-v23521-sharded-USER-REAPPROVED-DRAFT-ONE-CORRECTED.yml']
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: ENGLISHPT-v23521-REAPPROVED-once-sharded-draft-20261019
+  cancel-in-progress: false
+jobs:
+  approved-one-draft-not-production:
+    if: ${{ github.ref == 'refs/heads/release/v23521-sharded-draft-REAPPROVED-ONCE-20261019' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 125
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      EXPECTED_CANDIDATE_SHA: e27ffd3e94687e0f2fc58c3951ee1262bca8fd22bd684cf7b4bdb62d014326b1
+      CANDIDATE_ARCHIVE: site-artifact/ENGLISHPT_v23.5.2.1_SHARDED_EDGE_NEW_CANDIDATE_NOT_DEPLOYED.tar.zst
+      BACKUP_ZIP: previous-site-backup/ENGLISHPT_ORIGINAL_PRODUCTION_6ac4bd517c30220008bb9661.zip
+      DRAFT_ALIAS: enptv23521shardretry1
+      DRAFT_MARKER: ENGLISHPT_V23521_SHARDED_DRAFT_REAPPROVED_ONCE_20261019
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: First fail-closed guard to ensure no Production permission and no auto retry
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/release/v23521-sharded-draft-REAPPROVED-ONCE-20261019"
+          python3 -m py_compile scripts/v23521_sharded_draft_preupload_gate_approved_once.py scripts/v23521_sharded_draft_afterattempt_readonly.py scripts/v23521_sharded_draft_live_get_only_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('.github/workflows/stage9-v23521-sharded-USER-REAPPROVED-DRAFT-ONE-CORRECTED.yml').read_text('utf8')
+          commands=[line.strip() for line in s.splitlines() if line.strip().startswith('stdbuf -oL -eL netlify deploy')]
+          assert len(commands)==1,commands
+          cli_block=s.split('\n          stdbuf -oL -eL netlify deploy \\',1)[1].split('\n          EXIT_CODE=',1)[0]
+          assert '--prod' not in cli_block and '--prod-if-unlocked' not in cli_block
+          assert '--alias="$DRAFT_ALIAS"' in cli_block
+          assert '--context' not in cli_block and '--no-build' in cli_block
+          assert 'timeout-minutes: 125' in s
+          print('PASS_EXACTLY_ONE_DRAFT_UPLOAD_CALL_NO_PROD_FLAGS',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-SHARDED-EDGE-FULL-158571-CANDIDATE-NO-DRAFT-NO-PROD
+          run-id: 39194321977
+          github-token: ${{ github.token }}
+          path: site-artifact
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-OLD-PRODUCTION-ORIGINAL-FULL-SHA-VERIFIED-BACKUP
+          run-id: 39005690268
+          github-token: ${{ github.token }}
+          path: previous-site-backup
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-actual-sharded-all-files-SEO-sitemap-OG-Forms-QA-and-frozen-SHA
+          run-id: 39194321977
+          github-token: ${{ github.token }}
+          path: site-qa
+      - name: Verify exact new candidate, original Production full ZIP, published rollback ID, credit and Form detection
+        id: preupload
+        run: |
+          set -euo pipefail
+          test -s "$CANDIDATE_ARCHIVE"
+          test -s "$BACKUP_ZIP"
+          python3 scripts/v23521_sharded_draft_preupload_gate_approved_once.py
+          unzip -tq "$BACKUP_ZIP" | tail -3
+          echo "PASS_OLD_ORIGINAL_SITE_BACKUP_ZIP_EXTRACTABILITY" 
+          printf '%s  %s\n' "$EXPECTED_CANDIDATE_SHA" "$CANDIDATE_ARCHIVE" | sha256sum -c -
+      - name: Unpack new SHA-verified site and check Edge bundle configuration without triggering builds
+        id: extract
+        run: |
+          set -euo pipefail
+          command -v zstd >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y zstd -qq)
+          mkdir -p upload-site
+          tar --zstd -xf "$CANDIDATE_ARCHIVE" -C upload-site
+          python3 - <<'PY'
+          from pathlib import Path
+          import tomllib,hashlib,json
+          p=Path('upload-site')
+          assert p.joinpath('index.html').is_file() and p.joinpath('404.html').is_file()
+          assert p.joinpath('netlify/edge-functions/shard-router.js').is_file()
+          toml=tomllib.loads(p.joinpath('netlify.toml').read_text('utf8'))
+          decl=toml.get('edge_functions')
+          assert len(decl)==1 and decl[0]['function']=='shard-router' and decl[0]['pattern']=='^/[^/]+[.]html$'
+          assert len(list(p.glob('*.html')))==2
+          assert len(list(p.glob('__pages/*')))==256
+          assert hashlib.sha256(p.joinpath('pilot.js').read_bytes()).hexdigest()=='d604994a74352a81978002fd6f6286c7d0f4f4c99278745bbf6dad1abce29ede'
+          qa=json.loads(Path('site-qa/FINAL_SHARDED_CANDIDATE_GO_HOLD.json').read_text('utf8'))
+          assert qa['status']=='PASS_SHARDED_NEW_CANDIDATE_READY_FOR_SEPARATELY_APPROVED_DRAFT_TEST'
+          assert qa['candidate_sha256']=='e27ffd3e94687e0f2fc58c3951ee1262bca8fd22bd684cf7b4bdb62d014326b1'
+          print('PASS_EXTRACTED_ACTUAL_EDGE_SITE_256_SHARDS_AND_FROZEN_SEO_QA',flush=True)
+          PY
+          df -h .
+      - name: Install documented Netlify CLI exactly once (no site deploy)
+        run: |
+          set -euo pipefail
+          npm install --global netlify-cli@27.13.0 --no-audit --no-fund
+          netlify --version
+      - name: ONE approved nonpublished Netlify Draft deploy, with verbose deploy phase progress, NEVER Production
+        id: one_draft_upload
+        run: |
+          set -euo pipefail
+          mkdir -p approved-draft-evidence
+          echo 'APPROVED_ONE_DRAFT_UPLOAD_ATTEMPT_START (NO PROD, NO RETRY)' | tee approved-draft-evidence/ONE_DRAFT_UPLOAD_LOG.txt
+          date -u +'%Y-%m-%dT%H:%M:%SZ' | tee approved-draft-evidence/DRAFT_UPLOAD_STARTED_UTC.txt
+          cd upload-site
+          set +e
+          stdbuf -oL -eL netlify deploy \
+            --site="$NETLIFY_SITE_ID" \
+            --dir=. \
+            --no-build \
+            --alias="$DRAFT_ALIAS" \
+                    --timeout=5100 \
+            --message="$DRAFT_MARKER" \
+            2>&1 | tee -a ../approved-draft-evidence/ONE_DRAFT_UPLOAD_LOG.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -e
+          cd ..
+          echo "draft_cli_exit=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+          echo "ONE_APPROVED_DRAFT_CLI_FINISHED_EXIT=$EXIT_CODE" | tee -a approved-draft-evidence/ONE_DRAFT_UPLOAD_LOG.txt
+          date -u +'%Y-%m-%dT%H:%M:%SZ' | tee approved-draft-evidence/DRAFT_UPLOAD_ENDED_UTC.txt
+          # Fail or succeed based on actual API state in following GET-only audit.
+          exit 0
+      - name: Read-only inspect the *one* new immutable Draft and ensure existing Production remains unchanged
+        id: after_get
+        if: ${{ always() && steps.one_draft_upload.outcome == 'success' }}
+        run: |
+          python3 scripts/v23521_sharded_draft_afterattempt_readonly.py
+      - name: Real GET-only Draft validation of public URLs and six consultation forms, OG29, robots, sitemap and patched JS
+        id: draft_get_qa
+        if: ${{ steps.after_get.outputs.ready == 'yes' }}
+        run: |
+          set -euo pipefail
+          MAP=site-qa/ORIGINAL_TO_SHARDED_ALL_FILE_SHA1_MAP.json.gz
+          test -s "$MAP"
+          python3 scripts/v23521_sharded_draft_live_get_only_QA.py \
+            --draft-url="${{ steps.after_get.outputs.draft_url }}" \
+            --map="$MAP" \
+            --report=approved-draft-evidence/REAL_DRAFT_EDGE_HTTP_SEO_FORMS_OG_GET_QA.json
+      - name: Final GO HOLD outcome, preserve original Production, never automatically try again
+        id: final
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path('approved-draft-evidence')
+          r={'status':'HOLD_ONE_DRAFT_APPROVED_ATTEMPT','old_Production_publication_authorized':False,
+             'new_Production_published':False,'form_submitted':False,'search_engine_registered':False,
+             'no_automatic_Draft_retries':True,'one_Draft_call_max':True}
+          source=p/'AFTER_ATTEMPT_NETLIFY_DRAFT_STATUS.json'
+          qfile=p/'REAL_DRAFT_EDGE_HTTP_SEO_FORMS_OG_GET_QA.json'
+          if source.exists():
+            old=json.loads(source.read_text('utf8'))
+            r.update({'current_published_deploy':old.get('actual_published_deploy_id'),
+                      'Netlify_Draft_id':old.get('draft_id'),
+                      'Netlify_Draft_state':old.get('draft_state'),
+                      'Netlify_Draft_URL':old.get('draft_url'),
+                      'Netlify_Form_registered':old.get('expected_form_registered'),
+                      'old_production_unmodified':old.get('existing_production_unmodified',False)})
+          if qfile.exists():
+            qa=json.loads(qfile.read_text('utf8'))
+            r.update({'Draft_HTTP_QA':qa.get('status'),'HTTP_Pages_200':qa.get('http200_pages'),
+                     'OG_29_count':qa.get('all_OG_1200x630')})
+            if qa.get('status','').startswith('PASS_') and r.get('old_production_unmodified'):
+              r['status']='PASS_READY_DRAFT_GET_ONLY_QA_PRODUCTION_UNCHANGED'
+          (p/'FINAL_ONE_DRAFT_NO_PROD_GO_HOLD.json').write_text(json.dumps(r,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('ONE_APPROVED_SHARDED_DRAFT_FINAL_STATUS',json.dumps(r,ensure_ascii=False),flush=True)
+          PY
+      - name: Preserve original upload log and read-only Draft QA on PASS or HOLD
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-ONE-REAPPROVED-CORRECTED-DRAFT-NOT-PROD-upload-and-real-HTTP-QA
+          path: approved-draft-evidence/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Mark GitHub run red when Draft not ready or HTTP QA not passed; never reissue upload
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('approved-draft-evidence/FINAL_ONE_DRAFT_NO_PROD_GO_HOLD.json')
+          if not p.exists():raise SystemExit('HOLD: no final evidence; no deploy retry')
+          s=json.loads(p.read_text('utf8'))
+          if s.get('status')!='PASS_READY_DRAFT_GET_ONLY_QA_PRODUCTION_UNCHANGED':
+            raise SystemExit('HOLD: '+str(s.get('status'))+'. No Draft retries or Production deploy.')
+          print('PASS_ONE_AUTHORIZED_DRAFT_READY_REAL_PUBLIC_QA_PRODUCTION_UNCHANGED',flush=True)
+          PY
