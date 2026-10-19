@@ -1,0 +1,41 @@
+name: ENGLISH PT Google and Naver Sitemap LIVE READ ONLY 44 XML Audit
+on:
+  push:
+    branches: [ops/v23521-search-registration-GETONLY-20261019]
+    paths: ['.github/workflows/stage9-v23521-GOOGLE-NAVER-SITEMAP-LIVE-GETONLY-PREFLIGHT.yml']
+permissions:
+  contents: read
+jobs:
+  public-live-sitemap-check-no-submissions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Strict zero writes: no search registration, no Google/Naver authenticated actions
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/v23521_search_engine_sitemap_public_GETONLY_audit.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/v23521_search_engine_sitemap_public_GETONLY_audit.py').read_text('utf8')
+          assert 'method="GET"' in s
+          assert 'method="POST"' not in s and 'method="PUT"' not in s
+          assert 'netlify deploy' not in s
+          assert 'indexnow_not_used' in s
+          print('PASS_PUBLIC_44_SITEMAP_AND_ROBOTS_GET_ONLY_ZERO_MUTATION',flush=True)
+          PY
+      - name: Audit all 44 child XML URLs and 24 real indexable public pages over HTTPS
+        run: |
+          set -euo pipefail
+          python3 scripts/v23521_search_engine_sitemap_public_GETONLY_audit.py
+      - name: Preserve audit evidence even when sitemap validation fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: englishpt-v23521-GOOGLE-NAVER-LIVE-SITEMAP-44-CHILD-21964-GETONLY-AUDIT
+          path: search-registration-evidence/
+          retention-days: 30
+          if-no-files-found: warn
