@@ -1,0 +1,94 @@
+name: ENGLISH PT ALL 21964 Indexed Square JPG Generation OFFLINE 12 Shards
+on:
+  push:
+    branches:
+      - ops/v23521-THUMBNAIL-21964-REAL-ROUTE-MAPPING-GETONLY-20261020
+    paths:
+      - .github/workflows/ENPT-21964-FULL-SQUARE-JPEG-OFFLINE-12-SHARD-BUILD-V1.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ENPT-ALL-21964-SQUARE-JPEG-OFFLINE-FIRST-RENDER-20261020
+  cancel-in-progress: false
+jobs:
+  full-indexable-thumbnails:
+    name: JPG 1200 square shard ${{ matrix.shard }} of 12
+    runs-on: ubuntu-latest
+    timeout-minutes: 37
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read-only retrieve exact signed 21964 mapping and 911 names from successful pilot QA run
+        uses: actions/download-artifact@v4
+        with:
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          run-id: 39360145172
+          github-token: ${{ github.token }}
+          path: map-source
+      - name: Static strict indexable and mapping validation before generation
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/thumbnail_v1_full_21964_JPEG_SHARD_OFFLINE.py
+          mkdir -p thumb-21964-outputs
+          cp map-source/ALL_21964_INDEXABLE_THUMBNAIL_MAP.csv thumb-21964-outputs/
+          python3 - <<'PY'
+          import csv,json
+          from pathlib import Path
+          p=Path('map-source/QA_21964_REAL_MAPPING_REPORT.json')
+          d=json.loads(p.read_text('utf8'))
+          assert (d['indexable_urls'],d['noindex_fence_count'])==(21964,136607)
+          assert d['mapping_status']=={'READY_METADATA_ONLY':21964}
+          assert d['unique_planned_image_paths']==21964
+          with Path('thumb-21964-outputs/ALL_21964_INDEXABLE_THUMBNAIL_MAP.csv').open(encoding='utf-8-sig') as f:
+            rows=list(csv.DictReader(f))
+          assert len(rows)==21964 and all(r['indexable']=='TRUE' and r['mapping_status']=='READY_METADATA_ONLY' for r in rows)
+          assert len({r['image_key'] for r in rows})==21964
+          print('PASS_SIGNED_21964_INDEXABLE_ONLY_IMAGE_GENERATION_INPUT',flush=True)
+          PY
+      - name: Install Korean typesetting fonts plus stable PIL renderer
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Render 1 of 12 exclusive JPEG images subsets and validate every glyph bbox and bytes offline
+        env:
+          ENPT_SHARD_ID: ${{ matrix.shard }}
+          ENPT_SHARD_COUNT: 12
+        run: |
+          set -euo pipefail
+          python3 scripts/thumbnail_v1_full_21964_JPEG_SHARD_OFFLINE.py
+      - name: Independent shard result proof
+        env:
+          ENPT_SHARD_ID: ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,pathlib
+          shard=int(os.environ['ENPT_SHARD_ID'])
+          base=pathlib.Path('thumb-21964-outputs')
+          r=json.loads((base/f'SHARD_{shard:02}_FULL_JPEG_QA.json').read_text('utf8'))
+          assert r['status']=='PASS_FULL_21964_JPEG_SHARD_QA' and r['shard_id']==shard
+          assert r['images_generated']==r['assigned'] and not r['issues']
+          assert not r['actual_deploy_or_upload_to_netlify']
+          assert len(list((base/'full-jpg').glob('*.jpg')))==r['assigned']
+          print('PASS_ALL_ASSIGNED_JPEG_1200_IMAGES_PIXELQA_SHARD',shard,r['assigned'],r['total_file_bytes'],flush=True)
+          PY
+      - name: Upload split immutable JPEG image shard for offline QA and future approved Netlify Draft
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_ALL21964_SQUARE_JPEG_SHARD_${{ matrix.shard }}
+          path: |
+            thumb-21964-outputs/full-jpg/*.jpg
+            thumb-21964-outputs/SHARD_*_FULL_JPEG_QA.json
+          retention-days: 7
+          if-no-files-found: warn
