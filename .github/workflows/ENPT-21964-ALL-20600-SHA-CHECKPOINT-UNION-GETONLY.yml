@@ -1,0 +1,90 @@
+name: ENPT 21964 FINAL 20600 Required SHA Union and Production GET only
+on:
+  push:
+    branches: [ops/v23521-OG21964-ASYNC-9206-SEQUENTIAL-FINISH-20261020]
+    paths: [.github/workflows/ENPT-21964-ALL-20600-SHA-CHECKPOINT-UNION-GETONLY.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21964-existing-async-draft-sha-replay-capped-one-at-a-time
+  cancel-in-progress: false
+jobs:
+  final-verified-20600-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate final stage script is GET-only
+        run: |
+          python3 -m py_compile scripts/ENPT_21964_ALL_20600_SHA_FINAL_GETONLY_RECONCILE.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_21964_ALL_20600_SHA_FINAL_GETONLY_RECONCILE.py').read_text()
+          assert "method=\"POST\"" not in s and "method=\"PUT\"" not in s
+          assert '20600' in s and '6ad708da374d457504481d5c' in s
+          print("PASS_NO_WRITE_FINAL_SHA_RECONCILIATION")
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_DIGEST_20600_REQUIRED_SHA_CATEGORIES_NO_UPLOAD
+          run-id: 39380353473
+          github-token: ${{ github.token }}
+          path: required-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_EXISTING_DRAFT_FIRST_200_SHA_BOUNDED_TRANSFER_QA
+          run-id: 39380807594
+          github-token: ${{ github.token }}
+          path: first200-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_DIGEST_NEXT_1200_SHA_CHECKPOINT_AND_QA
+          run-id: 39381420069
+          github-token: ${{ github.token }}
+          path: second1200-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_NONPUBLISHED_ASYNC_SHA_6000_SLOW_BACKOFF_CHECKPOINT
+          run-id: 39382123374
+          github-token: ${{ github.token }}
+          path: prior6000-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_DRAFT_NEXT_4000_SHA_CHECKPOINT_NO_PRODUCTION
+          run-id: 39385059578
+          github-token: ${{ github.token }}
+          path: prior4000a-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_DRAFT_4000_AFTER_11394_CHECKPOINT
+          run-id: 39386286186
+          github-token: ${{ github.token }}
+          path: prior4000b-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_DRAFT_4000_AFTER_15394_CHECKPOINT
+          run-id: 39386838490
+          github-token: ${{ github.token }}
+          path: prior4000c-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_FINAL_1206_AFTER_19394_COMPLETE_CHECKPOINT
+          run-id: 39386952824
+          github-token: ${{ github.token }}
+          path: final1206-snapshot
+      - name: Prove all 20600 original required SHA accounted by disjoint HTTP success evidence, Netlify current GET only
+        run: |
+          python3 scripts/ENPT_21964_ALL_20600_SHA_FINAL_GETONLY_RECONCILE.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_ALL_20600_REQUIRED_SHA_CHECKPOINT_UNION_GET_ONLY
+          path: final-20600-audit/
+          retention-days: 30
+          if-no-files-found: warn
