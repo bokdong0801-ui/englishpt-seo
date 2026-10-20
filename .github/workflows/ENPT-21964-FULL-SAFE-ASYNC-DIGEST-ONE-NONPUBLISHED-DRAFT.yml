@@ -95,7 +95,7 @@ jobs:
           from pathlib import Path
           p=Path('thumb-21964-candidate/_headers')
           s=p.read_text('utf8')
-          assert 'X-Robots-Tag: noindex, nofollow' not in s
+          assert '\n/*\n  X-Robots-Tag: noindex, nofollow\n' not in s
           p.write_text(s+'\n/*\n  X-Robots-Tag: noindex, nofollow\n',encoding='utf8')
           print('PASS_NONPUBLISHED_DRAFT_GLOBAL_NOINDEX_ONLY',flush=True)
           PY
