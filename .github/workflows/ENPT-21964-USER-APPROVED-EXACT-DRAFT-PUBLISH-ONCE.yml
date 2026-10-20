@@ -37,6 +37,7 @@ jobs:
           assert 'get("published_deploy")' in s and 'published_deploy' in s
           print('PASS_APPROVED_EXACT_ONE_IMMUTABLE_RESTORE_POST_NO_NEW_BUILD_OR_FORM_POST',flush=True)
           PY
+      # Corrected Netlify alias draft semantics: published_at + published_deploy ID are the decisive publish guards.
       - name: Preflight previous Production/Draft and publish only exact approved Draft via one POST, GET-only live QA
         run: |
           set -euo pipefail
