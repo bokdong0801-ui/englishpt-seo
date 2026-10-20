@@ -1,0 +1,116 @@
+name: ENPT 21964 Production Candidate SEO Noindex Sitemap Forms OFFLINE QA ONLY
+on:
+  push:
+    branches:
+      - qa/v23521-OG21964-PRODUCTION-SEO-SAFETY-OFFLINE-20261020
+    paths:
+      - .github/workflows/ENPT-21964-PRODUCTION-CANDIDATE-SEO-FORMS-OFFLINE-QA.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21964-prod-candidate-source-only-seo-preflight-20261020
+  cancel-in-progress: false
+jobs:
+  offline-complete-seo-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 42
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static guard, only local file operations and Netlify GET read-only
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_21964_DRAFT_CANDIDATE_ONLY_EDIT_OG_AND_PRESERVE_NOINDEX.py scripts/ENPT_21964_PRODUCTION_CANDIDATE_SEO_FORMS_OFFLINE_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          w=Path('.github/workflows/ENPT-21964-PRODUCTION-CANDIDATE-SEO-FORMS-OFFLINE-QA.yml').read_text('utf8')
+          assert 'netlify deploy' not in w and '--prod' not in w
+          assert "method='PUT'" not in w and "method='POST'" not in w
+          assert "actions/download-artifact@v4" in w
+          print('PASS_OFFLINE_ONLY_NO_SITE_UPLOAD_OR_PUBLISH',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: pristine-release
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          run-id: 39360145172
+          github-token: ${{ github.token }}
+          path: signed-route-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_COMPLETE_SQUARE_JPG_RECOVERED_ALL_SHA256_QA_NO_RERENDER_V1
+          run-id: 39361276955
+          github-token: ${{ github.token }}
+          path: all-jpeg-qa
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39360903334
+          pattern: ENPT_ALL21964_SQUARE_JPEG_SHARD_*
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          path: existing-jpegs
+      - name: Verify archived original exactly and reconstruct local production-intended 21964 OG candidate WITHOUT preview-only noindex
+        run: |
+          set -euo pipefail
+          mkdir -p thumb-21964-candidate thumb-draft-qa candidate-seo-safety-proof
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          file=pristine-release/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          printf '%s  %s\n' 6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884 "$file" | sha256sum -c -
+          tar --zstd -xf "$file" -C thumb-21964-candidate
+          python3 scripts/ENPT_21964_DRAFT_CANDIDATE_ONLY_EDIT_OG_AND_PRESERVE_NOINDEX.py
+          node --check thumb-21964-candidate/netlify/edge-functions/shard-router.js
+          echo "PASS_LOCAL_FULL_OG_CANDIDATE_REBUILT_WITH_ORIGINAL_EDGE_SOURCE_UNMODIFIED"
+      - name: Independently prove all noindex, canonical, 44 sitemaps, both owner tags, forms, 21964 OG URLs
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_PRODUCTION_CANDIDATE_SEO_FORMS_OFFLINE_QA.py
+      - name: GET-only Netlify Production untouched / approved baseline unchanged
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import urllib.request,json,os,pathlib,datetime
+          sid='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          t=os.environ['NETLIFY_AUTH_TOKEN']
+          req=urllib.request.Request('https://api.netlify.com/api/v1/sites/'+sid,
+            headers={'Authorization':'Bearer '+t,'Accept':'application/json'},method='GET')
+          with urllib.request.urlopen(req,timeout=30) as resp:s=json.load(resp)
+          current=(s.get('published_deploy') or {}).get('id')
+          proof={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'site_id':s.get('id'),'domain':s.get('custom_domain'),
+            'published_deploy_id':current,
+            'unchanged_since_original_published_production':current=='6ad5eb4918f9411c4d5e1ba4',
+            'no_form_POST':True,'no_Netlify_deploy':True,'READ_ONLY':True}
+          pathlib.Path('candidate-seo-safety-proof/NETLIFY_PRODUCTION_ID_GET_ONLY.json').write_text(
+            json.dumps(proof,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_SEO_QA_PRODUCTION_IDENTITY_GET_ONLY',json.dumps(proof,ensure_ascii=False))
+          if not proof['unchanged_since_original_published_production']:raise SystemExit('HOLD unexpected production drift')
+          PY
+      - name: Save candidate QA evidence ONLY, never upload full site files to public
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_PRODUCTION_CANDIDATE_ALL_SEO_NOINDEX_OWNER_SITEMAPS_FORMS_OFFLINE_QA
+          path: |
+            candidate-seo-safety-proof/
+            thumb-draft-qa/CANDIDATE_21964_SOURCE_PRESERVATION_QA.json
+          retention-days: 30
+          if-no-files-found: warn
