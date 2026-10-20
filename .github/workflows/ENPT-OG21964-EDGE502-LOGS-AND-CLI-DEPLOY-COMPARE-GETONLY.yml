@@ -1,0 +1,72 @@
+name: ENPT Edge 502 compare original 200 Canary and 502 Async Runtime Logs GET only
+on:
+  push:
+    branches: [ops/v23521-OG21964-EDGE502-ROOTCAUSE-GETONLY-20261020]
+    paths: [.github/workflows/ENPT-OG21964-EDGE502-LOGS-AND-CLI-DEPLOY-COMPARE-GETONLY.yml]
+permissions:
+  contents: read
+jobs:
+  compare-logs-and-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: GET latest edge invocation errors for broken Draft and working Canary and compare deployment metadata
+        run: |
+          set -euo pipefail
+          mkdir -p edge502-compare
+          python3 - <<'PY'
+          import os,datetime,urllib.request,urllib.error,urllib.parse,json,pathlib
+          site='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          t=os.environ['NETLIFY_AUTH_TOKEN']
+          ids={'broken_async_draft':'6ad708da374d457504481d5c',
+            'working_cli_canary':'6ad72092f7f53e00766113c9',
+            'published_production':'6ad5eb4918f9411c4d5e1ba4'}
+          def get(url,timeout=25):
+            q=urllib.request.Request(url,method='GET',
+              headers={'Authorization':'Bearer '+t,'Accept':'application/json'})
+            try:
+              with urllib.request.urlopen(q,timeout=timeout) as r:return {'status':r.status,'data':json.load(r)}
+            except urllib.error.HTTPError as e:return {'status':e.code,'error_body':e.read(300).decode('utf8',errors='replace')}
+            except Exception as e:return {'error':type(e).__name__+': '+str(e)[:150]}
+          now=datetime.datetime.now(datetime.timezone.utc)
+          fr=int((now-datetime.timedelta(minutes=90)).timestamp()*1000)
+          to=int(now.timestamp()*1000)
+          a='https://analytics.services.netlify.com/v2/sites/'+site+'/edge_function_logs'
+          out={'time_utc':now.isoformat(),'source':'Netlify CLI documented GET endpoints',
+               'no_post_or_put':True,'deploys':{},'edge_function_listing':{},'logs':{}}
+          for label,did in ids.items():
+            resp=get('https://api.netlify.com/api/v1/sites/'+site+'/deploys/'+did)
+            if resp.get('status')==200:
+              d=resp['data']
+              out['deploys'][label]={k:d.get(k) for k in ['id','state','title','created_at','updated_at','published_at',
+                'edge_functions_present','required_edge_functions','required','available_functions',
+                'deploy_ssl_url','site_id','branch','commit_ref','build_id','review_id','framework']}
+              out['deploys'][label]['edge_related_keys']={k:(v if not isinstance(v,(dict,list)) else str(type(v).__name__)+'('+str(len(v))+')') for k,v in d.items() if 'edge' in k or 'function' in k}
+            else:out['deploys'][label]={'error':resp}
+            b=get('https://api.netlify.com/api/v1/deploys/'+did+'/edge_functions')
+            if b.get('status')==200:out['edge_function_listing'][label]=b['data']
+            else:out['edge_function_listing'][label]={'status':b.get('status'),'error':b.get('error'),'message':b.get('error_body')}
+            query=urllib.parse.urlencode({'from':fr,'to':to,'deploy_id':did})
+            h=get(a+'?'+query,timeout=35)
+            if h.get('status')==200:
+              z=h['data'];logs=z.get('logs') if isinstance(z,dict) else []
+              out['logs'][label]={'count':len(logs),
+                'recent':[{k:row.get(k) for k in ('ts','level','function','name','message','request_path','netlify_request_id')}
+                  for row in logs[-40:]] if isinstance(logs,list) else [],
+                'pagination':z.get('pagination') if isinstance(z,dict) else None}
+            else:out['logs'][label]={'status':h.get('status'),'error':h.get('error'),'body':h.get('error_body')}
+          r=get('https://api.netlify.com/api/v1/sites/'+site)
+          out['production_identity_unchanged']=(r.get('data') or {}).get('published_deploy',{}).get('id')==ids['published_production']
+          assert out['production_identity_unchanged']
+          pathlib.Path('edge502-compare/NETLIFY_EDGE_LOGS_AND_METADATA_COMPARE.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_EDGE502_RUNTIME_LOGS_METADATA_COMPARE',json.dumps(out,ensure_ascii=False)[:23000])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_EDGE502_BROKEN_ASYNC_VS_CLI_CANARY_EDGE_LOGS_GETONLY
+          path: edge502-compare/
+          retention-days: 30
+          if-no-files-found: warn
