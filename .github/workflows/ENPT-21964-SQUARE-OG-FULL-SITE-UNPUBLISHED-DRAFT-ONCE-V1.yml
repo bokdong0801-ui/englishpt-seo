@@ -1,0 +1,226 @@
+name: ENGLISH PT 21964 Square Thumbnail Full-Site ONE Nonpublished Draft
+on:
+  push:
+    branches:
+      - ops/v23521-THUMBNAIL-21964-REAL-ROUTE-MAPPING-GETONLY-20261020
+    paths:
+      - .github/workflows/ENPT-21964-SQUARE-OG-FULL-SITE-UNPUBLISHED-DRAFT-ONCE-V1.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ENPT-FULL-21964-IMG-UNPUBLISHED-ONE-DRAFT-20261020
+  cancel-in-progress: false
+jobs:
+  preserve-original-site-and-try-one-unpublished-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 57
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      PUBLISHED_BASELINE: 6ad5eb4918f9411c4d5e1ba4
+      DRAFT_ALIAS: enptog21964reviewv1
+      DRAFT_MARKER: ENPT-21964-OG-DRAFT-ONLY-DO-NOT-PUBLISH-20261020
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static fail closed check no --prod and one Netlify deploy
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_21964_DRAFT_CANDIDATE_ONLY_EDIT_OG_AND_PRESERVE_NOINDEX.py
+          python3 - <<'PY'
+          from pathlib import Path
+          y=Path('.github/workflows/ENPT-21964-SQUARE-OG-FULL-SITE-UNPUBLISHED-DRAFT-ONCE-V1.yml').read_text()
+          assert y.count('timeout 660s netlify deploy')==1
+          candidate=y.split('timeout 660s netlify deploy')[1].split('> ../thumb-draft-qa/02_NETLIFY_CLI_LOG.txt',1)[0]
+          assert '--no-build' in candidate and '--alias="$DRAFT_ALIAS"' in candidate
+          assert '--prod' not in candidate and '--context' not in candidate
+          print('PASS_ONE_UNPUBLISHED_DRAFT_NO_PROD_CLI',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: verified-site
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          run-id: 39360145172
+          github-token: ${{ github.token }}
+          path: signed-route-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_COMPLETE_SQUARE_JPG_RECOVERED_ALL_SHA256_QA_NO_RERENDER_V1
+          run-id: 39361276955
+          github-token: ${{ github.token }}
+          path: all-jpeg-qa
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39360903334
+          github-token: ${{ github.token }}
+          pattern: ENPT_ALL21964_SQUARE_JPEG_SHARD_*
+          merge-multiple: true
+          path: existing-jpegs
+      - name: Validate archive immutable SHA and Netlify GET-only Production identity, credit, unique attempt
+        run: |
+          set -euo pipefail
+          mkdir -p thumb-draft-qa
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,urllib.request
+          p=pathlib.Path('verified-site/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst')
+          assert p.is_file(),'verified release archive missing'
+          h=hashlib.sha256()
+          with p.open('rb') as f:
+            for b in iter(lambda:f.read(8*1024*1024),b''):h.update(b)
+          assert h.hexdigest()=='6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884'
+          qa=json.loads(pathlib.Path('all-jpeg-qa/ALL21964_IMAGES_VERIFICATION_REPORT.json').read_text('utf8'))
+          assert qa['status']=='PASS_ALL_21964_IMAGES_RECOVERED_INTEGRITY_QA_NO_RERENDER'
+          token=os.environ['NETLIFY_AUTH_TOKEN'];site_id=os.environ['NETLIFY_SITE_ID']
+          assert token
+          def api(path):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,headers={
+              'Authorization':'Bearer '+token,'Accept':'application/json'},method='GET')
+            with urllib.request.urlopen(req,timeout=40) as r:return json.load(r)
+          s=api('sites/'+site_id)
+          assert s['id']==site_id and s['custom_domain']=='englishpt.kr'
+          assert s['published_deploy']['id']==os.environ['PUBLISHED_BASELINE'],'Production drift HOLD'
+          assert s['processing_settings']['ignore_html_forms'] is False
+          account=api('accounts/'+s['account_id'])
+          assert not account.get('usages_exceeded') and not account.get('configurable_limits_exceeded')
+          credit=account.get('capabilities',{}).get('credits',{})
+          if 'included' in credit and 'used' in credit:assert credit['included']>credit['used']
+          matches=[d for d in api('sites/'+site_id+'/deploys?per_page=100') if
+            os.environ['DRAFT_MARKER'] in str(d.get('title')) or
+            os.environ['DRAFT_ALIAS'] in str(d.get('deploy_ssl_url'))]
+          assert not matches,'Duplicate Draft attempt blocked'
+          result={'status':'PASS_SOURCE_SHA_CREDITS_OWNER_AND_DRAFT_UNIQUE_PRECHECK',
+            'published_id':s['published_deploy']['id'],
+            'remaining_credit_units':credit.get('included',0)-credit.get('used',0) if credit else 'UNKNOWN',
+            'full_180800_files_source_SHA256':h.hexdigest(),'Netlify_POSTs':0}
+          pathlib.Path('thumb-draft-qa/00_PREFLIGHT.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
+          print('ENPT_21964_PREPARE_DRAFT_PREFLIGHT',json.dumps(result,ensure_ascii=False),flush=True)
+          PY
+      - name: Extract exact prior 180800 member original full Production snapshot
+        run: |
+          set -euo pipefail
+          df -h .
+          mkdir -p thumb-21964-candidate
+          tar --zstd -xf verified-site/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst -C thumb-21964-candidate
+          test -f thumb-21964-candidate/_headers
+          test -f thumb-21964-candidate/index.html
+          df -h .
+      - name: Offline QA verify 21964 pages and JPG sha; protect all noindex, sitemap and Google Naver metas
+        id: patch
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_DRAFT_CANDIDATE_ONLY_EDIT_OG_AND_PRESERVE_NOINDEX.py
+      - name: Add global noindex to this Draft-only copy (never Production deploy this Draft)
+        if: ${{ steps.patch.outcome == 'success' }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('thumb-21964-candidate/_headers')
+          b=p.read_text('utf8')
+          assert '\n/*\n  X-Robots-Tag: noindex' not in b
+          p.write_text(b+'\n/*\n  X-Robots-Tag: noindex, nofollow\n',encoding='utf8')
+          print('PASS_PREVIEW_DRAFT_ONLY_GLOBAL_NOINDEX',flush=True)
+          PY
+      - name: Install proven Netlify CLI
+        if: ${{ steps.patch.outcome == 'success' }}
+        run: |
+          npm install -g netlify-cli@27.13.0 --no-audit --no-fund
+          netlify --version
+      - name: Make exactly one unique NONPUBLISHED alias Draft upload; no retry no Production
+        id: deploy
+        if: ${{ steps.patch.outcome == 'success' }}
+        run: |
+          mkdir -p thumb-draft-qa
+          echo "DRAFT_UPLOAD_ATTEMPT_STARTED_$(date -u +%FT%TZ)" > thumb-draft-qa/01_EXACT_ONE_UPLOAD_MARKER.txt
+          cd thumb-21964-candidate
+          timeout 660s netlify deploy \
+            --site="$NETLIFY_SITE_ID" \
+            --dir=. \
+            --no-build \
+            --alias="$DRAFT_ALIAS" \
+            --timeout=600 \
+            --message="$DRAFT_MARKER" \
+            > ../thumb-draft-qa/02_NETLIFY_CLI_LOG.txt 2>&1
+          printf 'NETLIFY_DRAFT_CLI_EXIT=0\n' >> ../thumb-draft-qa/01_EXACT_ONE_UPLOAD_MARKER.txt
+      - name: GET-only verify Ready unpublished Draft, actual HTTPS new square image and no Production change
+        if: ${{ steps.deploy.outcome == 'success' }}
+        run: |
+          python3 - <<'PY'
+          import csv,json,os,pathlib,time,urllib.request
+          id=os.environ['NETLIFY_SITE_ID'];old=os.environ['PUBLISHED_BASELINE']
+          alias=os.environ['DRAFT_ALIAS'];token=os.environ['NETLIFY_AUTH_TOKEN']
+          target=os.environ['DRAFT_MARKER'];out=pathlib.Path('thumb-draft-qa')
+          def api(p):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+p,headers={
+              'Authorization':'Bearer '+token,'Accept':'application/json'},method='GET')
+            with urllib.request.urlopen(req,timeout=40) as r:return json.load(r)
+          report={'status':'HOLD','errors':[],'image_requests':[],'html_requests':[],
+            'production_changed':False,'forms_submitted':0}
+          try:
+            draft=None
+            for i in range(25):
+              site=api('sites/'+id)
+              report['published_after']=site['published_deploy']['id']
+              if report['published_after']!=old:raise ValueError('Production changed: NOT ALLOWED')
+              matches=[x for x in api('sites/'+id+'/deploys?per_page=100') if
+                target in str(x.get('title')) or alias in str(x.get('deploy_ssl_url'))]
+              if len(matches)>1:raise ValueError('Duplicate Draft detected')
+              if matches and matches[0]['state']=='ready':draft=matches[0];break
+              time.sleep(3)
+            if not draft:raise ValueError('Unique nonpublished draft not READY')
+            if draft.get('published_at'):raise ValueError('Unexpected published_at for preview')
+            base='https://'+alias+'--englishpt-seo.netlify.app'
+            report['draft_id']=draft['id'];report['preview_url']=base
+            def read(path,limit=300000):
+              req=urllib.request.Request(base+path,method='GET')
+              with urllib.request.urlopen(req,timeout=40) as r:
+                if r.status!=200:raise ValueError('Non-200 '+path)
+                return r.read(limit),r.headers
+            for path in ('/index.html','/englishpt.html','/sitemap-index.xml',
+              '/station-419minjumyoji-toeic.html','/dalseo-songhyeondong-elem-tutor.html'):
+              b,headers=read(path)
+              if path in ('/index.html','/englishpt.html'):
+                assert b.count(b'meta name="google-site-verification"')==1
+                assert b.count(b'meta name="naver-site-verification"')==1
+              if path.endswith('.html') and b'og:image' not in b:raise ValueError('Missing image Meta '+path)
+              if path.endswith('.html') and 'noindex' not in headers.get('X-Robots-Tag','').lower():
+                raise ValueError('No Draft-only noindex header '+path)
+              report['html_requests'].append(path)
+            with pathlib.Path('signed-route-map/ALL_21964_INDEXABLE_THUMBNAIL_MAP.csv').open(encoding='utf-8-sig') as f:
+              rows=list(csv.DictReader(f))
+            for r in (rows[10],rows[800],rows[16000],rows[-1]):
+              path='/'+r['planned_image_path']
+              b,_=read(path,150000)
+              if not b.startswith(bytes.fromhex('ffd8ff')):raise ValueError('Invalid live Draft JPEG '+path)
+              report['image_requests'].append(path)
+            report['status']='PASS_FULL_21964_SQUARE_IMAGES_AND_158571_PAGES_NONPUBLISHED_DRAFT'
+          except Exception as e:report['errors'].append(type(e).__name__+': '+str(e)[:280])
+          (out/'03_DRAFT_HTTP_GET_ONLY_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_21964_REAL_DRAFT_HTTPS_QA',json.dumps(report,ensure_ascii=False),flush=True)
+          if report['errors']:raise SystemExit('HOLD no further draft upload')
+          PY
+      - name: Preserve complete QA small files plus logs, never include 2GB site snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_REAL_FULL_SITE_JPEG_NONPUBLISHED_DRAFT_ONCE_EVIDENCE
+          path: thumb-draft-qa/
+          retention-days: 30
+          if-no-files-found: warn
