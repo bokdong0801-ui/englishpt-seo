@@ -114,7 +114,9 @@ if pathlib.Path(chrome).exists():
     '--screenshot='+str(out/filename),BASE+uri],capture_output=True,timeout=45)
   result[filename]='PASS' if p.returncode==0 and (out/filename).is_file() else 'HOLD_SCREENSHOT_UNAVAILABLE'
 else:result['browser_screenshot']='HOLD_CHROME_NOT_AVAILABLE'
-result['status']='PASS_FINAL_DRAFT_150_LIVE_HTTP_JPEG_SHA_SEO_NOIDX' if len(passed)==150 and not result['errors'] else 'HOLD_FINAL_DRAFT_QA_NEEDS_FIX'
+if result.get('MOBILE_390PX_ENGLISHPT_HOME.png')!='PASS' or result.get('MOBILE_390PX_SAMPLE_SEO_PAGE.png')!='PASS':
+ result['errors'].append('390px real Chrome mobile screenshots were not both generated')
+result['status']='PASS_FINAL_DRAFT_150_LIVE_HTTP_JPEG_SHA_SEO_NOIDX_390PX_CHROME' if len(passed)==150 and not result['errors'] else 'HOLD_FINAL_DRAFT_QA_NEEDS_FIX'
 (out/'FINAL_150_LIVE_FULL_DRAFT_PAGE_IMAGE_MOBILE_QA.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
 print('ENPT_FINAL_21964_LIVE_150_SAMPLE_FULL_QA',json.dumps(result,ensure_ascii=False)[:19000],flush=True)
 if result['status'].startswith('HOLD'):raise SystemExit(1)
