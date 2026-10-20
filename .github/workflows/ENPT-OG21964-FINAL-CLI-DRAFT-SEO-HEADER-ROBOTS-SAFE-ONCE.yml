@@ -107,13 +107,33 @@ jobs:
             'headers.set("X-Robots-Tag", "noindex, nofollow"); // DRAFT ONLY, restore source for any production candidate')
           fp.write_text(after,encoding='utf8')
           hdr=root/'_headers';old=hdr.read_text('utf8')
-          assert old.startswith('/*\n  X-Content-Type-Options: nosniff\n'),'Unexpected original wildcard headers'
-          assert old.count('/*')==1,'Duplicate wildcard headers would lose noindex safety'
-          hdr.write_text(old.replace('/*\n  X-Content-Type-Options: nosniff\n',
-            '/*\n  X-Robots-Tag: noindex, nofollow\n  X-Content-Type-Options: nosniff\n',1),encoding='utf8')
+          lines=old.splitlines()
+          assert lines and lines[0].strip()=='/*','Unexpected original wildcard headers'
+          merged=[]
+          wildcards=0
+          for idx,line in enumerate(lines):
+            merged.append(line)
+            if line.strip()=='/*':
+              wildcards+=1
+              rest=[]
+              for nxt in lines[idx+1:]:
+                if nxt.startswith(' ') or not nxt.strip():
+                  rest.append(nxt)
+                else:
+                  break
+              has_robots=[v for v in rest if 'X-Robots-Tag:' in v]
+              if has_robots:
+                assert all('noindex' in v.lower() for v in has_robots),'Preexisting wildcard robots directive is not noindex'
+              else:
+                merged.append('  X-Robots-Tag: noindex, nofollow')
+          assert wildcards>=1,'No wildcard rule to protect preview'
+          patched='\n'.join(merged)+'\n'
+          hdr.write_text(patched,encoding='utf8')
+          assert patched.count('X-Robots-Tag: noindex, nofollow')>=wildcards
           robots=root/'robots.txt'
           robots.write_text('User-agent: *\nDisallow: /\n',encoding='utf8')
           assert robots.read_text('utf8').splitlines()==['User-agent: *','Disallow: /']
+          print('PASS_PROTECT_EVERY_ORIGINAL_WILDCARD_HEADER',wildcards,flush=True)
           image_dir=root/'assets/images/seo-square/v1'
           proof={'status':'PASS_DRAFT_ONLY_PROTECTED_HEADER_ORIGINAL_ROUTER_LOGIC',
             'image_count':len(list(image_dir.glob('*.jpg'))),
