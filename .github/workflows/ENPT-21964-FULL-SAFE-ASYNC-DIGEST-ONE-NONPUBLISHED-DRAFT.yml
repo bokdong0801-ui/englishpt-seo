@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Static safety review: user-approved nonpublished async draft only, no prod restore or full CLI reupload
+      - name: Static safety review for nonpublished async draft only with no prod restore
         run: |
           set -euo pipefail
           python3 -m py_compile scripts/ENPT_21964_NONPUBLISHED_ASYNC_DIGEST_SAFE_ONCE_20261020.py
