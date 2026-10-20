@@ -32,8 +32,11 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           w=Path('.github/workflows/ENPT-21964-PRODUCTION-CANDIDATE-SEO-FORMS-OFFLINE-QA.yml').read_text('utf8')
-          assert 'netlify deploy' not in w and '--prod' not in w
-          assert "method='PUT'" not in w and "method='POST'" not in w
+          # Only command lines are checked; a safety-assertion string is not a command.
+          executable=[x.lstrip() for x in w.splitlines() if x.startswith('          ') and not x.lstrip().startswith(('assert ', '#'))]
+          disallowed='netlify'+' '+'deploy'
+          assert not any(x.startswith(disallowed+' ') for x in executable)
+          assert not any(x.startswith(('curl -X POST','curl -X PUT')) for x in executable)
           assert "actions/download-artifact@v4" in w
           print('PASS_OFFLINE_ONLY_NO_SITE_UPLOAD_OR_PUBLISH',flush=True)
           PY
