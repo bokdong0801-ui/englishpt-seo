@@ -1,0 +1,57 @@
+name: ENPT 21964 ONE Real Consultation Submission to READY Nonpublished ProdSafe Draft + Netlify Inbox API
+on:
+  push:
+    branches:
+      - release/v23521-OG21964-PRODSAFE-FINAL-DRAFT-AND-FORM-QA-20261020
+    paths:
+      - .github/workflows/ENPT-OG21964-ONE-REAL-FORM-POST-NAVER-NOTIFICATION-QA.yml
+permissions:
+  contents: read
+concurrency:
+  group: enpt-21964-one-real-consultation-form-post-only-20261020
+  cancel-in-progress: false
+jobs:
+  one-synthetic-real-form-post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fail closed exactly one labeled synthetic sample and immutable published ID
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_OG21964_REAL_ONCE_CONSULTATION_EMAIL_TEST.py
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('scripts/ENPT_OG21964_REAL_ONCE_CONSULTATION_EMAIL_TEST.py').read_text('utf8')
+          assert src.count('route.continue_()')==2
+          assert 'and r["actual_submissions_sent"]==0' in src
+          assert 'ENPT_OG21964_FINAL_QA_SINGLE_20261020' in src
+          assert 'gyeongnam-milyang-naeidong-elem-tutor.html' in src
+          assert "method='PUT'" not in src and 'netlify deploy ' not in src and '--prod' not in src
+          assert 'naver_mailbox_received":None' in src and '"NOT_CONNECTED"' in src
+          print('PASS_ONE_SYNTHETIC_ONLY_FORM_POST_PRODUCTION_PUBLISH_FORBIDDEN')
+          PY
+      - name: Install browser QA dependencies
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --disable-pip-version-check playwright==1.58.0
+          test -x /usr/bin/google-chrome || command -v google-chrome
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-nanum
+      - name: Exactly one live browser POST to production-safe nonpublished Draft, GET Netlify verified submissions and notification hook
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_OG21964_REAL_ONCE_CONSULTATION_EMAIL_TEST.py
+      - name: Preserve HTTP receipt, Netlify verified submission record, email hook status (not mailbox delivery claim)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_OG21964_PRODSAFE_ONE_REAL_CONSULTATION_NETLIFY_SUBMISSION_NAVER_EMAIL_HOOK_QA
+          path: candidate-real-form-evidence/
+          retention-days: 20
+          if-no-files-found: warn
