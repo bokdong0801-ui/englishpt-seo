@@ -1,0 +1,218 @@
+#!/usr/bin/env python3
+# coding: utf-8
+"""Resume from Netlify's IMMUTABLE initial required-SHA snapshot, not empty required after partial PUT.
+
+Only existing nonpublished Draft 6ad708...; no images, no new deploy, no Production publish.
+One SHA file is sent once, at most BATCH_SIZE; checkpoint each 25 responses.
+"""
+import csv,gzip,hashlib,json,os,pathlib,sys,urllib.request,urllib.parse,urllib.error,concurrent.futures,datetime,threading,time
+ROOT=pathlib.Path.cwd()
+sys.path.insert(0,str(ROOT/'scripts'))
+import ENPT_21964_ASYNC_DRAFT_REQUIRED_SHA_BOUNDED_FIRST_BATCH as base
+OUT=ROOT/'resumable-sha-evidence';OUT.mkdir(exist_ok=True)
+SRC=ROOT/'resumable-original'
+DRAFT='6ad708da374d457504481d5c'
+MARKER='ENPT-21964-OG-ASYNC-DIGEST-ONE-DRAFT-NOT-PRODUCTION-20261020'
+SITE='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+PROD='6ad5eb4918f9411c4d5e1ba4'
+BATCH=int(os.environ.get('BATCH_SIZE','1206'))
+if not (1<=BATCH<=1206):raise SystemExit('HOLD: no more than 1206 verified files per run')
+def write(name,record):
+ (OUT/name).write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+ print('ENPT_RESUME_BATCH_STATE',name,json.dumps({k:v for k,v in record.items() if k not in ('completed','failed','ambiguous')},ensure_ascii=False)[:2000],flush=True)
+def now():return datetime.datetime.now(datetime.timezone.utc).isoformat()
+def h(data):return hashlib.sha1(data).hexdigest()
+def guard():
+ x=base.get('sites/'+SITE)
+ d=base.get('sites/'+SITE+'/deploys/'+DRAFT)
+ if x.get('id')!=SITE or x.get('custom_domain')!='englishpt.kr' or (x.get('published_deploy') or {}).get('id')!=PROD:
+  raise ValueError('Production drift; STOP')
+ if d.get('site_id')!=SITE or d.get('id')!=DRAFT or d.get('title')!=MARKER or d.get('published_at') is not None or d.get('draft') is False:
+  raise ValueError('Draft identity or publish changed; STOP')
+ if d.get('state') not in ('prepared','uploading'):
+  raise ValueError('Draft state not eligible for further one-time file SHA PUT: '+str(d.get('state')))
+ return d
+def find_one(top,name):
+ a=list(pathlib.Path(top).rglob(name))
+ if len(a)!=1:raise ValueError('Expected exactly one '+name+' inside '+top+'; found '+str(len(a)))
+ return a[0]
+def ledger_select():
+ d=guard()
+ all_file=find_one('required-snapshot','REQUIRED_SHA_TO_PATHS.csv')
+ rows=list(csv.DictReader(all_file.open(encoding='utf-8-sig',newline='')))
+ if len(rows)!=20600 or len({r['required_sha1'] for r in rows})!=20600:
+  raise ValueError('Initial required SHA1 snapshot not full 20600')
+ initial=find_one('first200-snapshot','03_BATCH_SHA_PUT_CHECKPOINT.json')
+ first=json.loads(initial.read_text('utf8'))
+ done=first['completed_files']
+ if first['status']!='PASS_ALL_REQUESTED_FIRST_BATCH_UPLOAD_HTTP' or len(done)!=200 or first['verified_http_PUTs']!=200 or first['unknown_status_PUTs'] or first['failed_PUTs']:
+  raise ValueError('First 200 proof not signed PASS')
+ done_set={x['sha'] for x in done}
+ if len(done_set)!=200:raise ValueError('Duplicate first200 SHA')
+ second_file=find_one('second1200-snapshot','03_RESUMABLE_PUT_PROGRESS.json')
+ second=json.loads(second_file.read_text('utf8'))
+ if second['status']!='HOLD_PARTIAL_OR_UNCERTAIN_UPLOAD_DO_NOT_REPEAT' or second['attempted']!=1200 or second['http_success']!=1194 or second['failed'] or len(second['ambiguous'])!=6:
+  raise ValueError('Prior 1200 SHA evidence differs; STOP')
+ if any('HTTP Error 429' not in a.get('error','') for a in second['ambiguous']):
+  raise ValueError('Only explicit HTTP429 may be scheduled later, no other ambiguous retry')
+ second_done={x['sha'] for x in second['completed']}
+ if len(second_done)!=1194 or second_done&done_set:raise ValueError('Overlap in successfully uploaded hashes')
+ done_set.update(second_done)
+ third_file=find_one('prior6000-snapshot','03_RESUMABLE_PUT_PROGRESS.json')
+ third=json.loads(third_file.read_text('utf8'))
+ if third['status']!='PASS_NEXT_BATCH_ALL_REQUIRED_SHA_ACCEPTED' or third['attempted']!=6000 or third['http_success']!=6000 or third['ambiguous'] or third['failed']:
+  raise ValueError('Prior 6000 SHA checkpoint was not fully HTTP-success validated')
+ third_done={x['sha'] for x in third['completed']}
+ if len(third_done)!=6000 or third_done&done_set:raise ValueError('Prior 6000 SHA checkpoint overlaps or duplicates previously verified files')
+ done_set.update(third_done)
+ fourth_file=find_one('prior4000-snapshot','03_RESUMABLE_PUT_PROGRESS.json')
+ fourth=json.loads(fourth_file.read_text('utf8'))
+ if fourth['status']!='PASS_NEXT_BATCH_ALL_REQUIRED_SHA_ACCEPTED' or fourth['attempted']!=4000 or fourth['http_success']!=4000 or fourth['ambiguous'] or fourth['failed']:
+  raise ValueError('Prior 4000 SHA checkpoint not fully validated')
+ fourth_done={x['sha'] for x in fourth['completed']}
+ if len(fourth_done)!=4000 or fourth_done&done_set:raise ValueError('Prior 4000 SHA overlaps or duplicates verified uploads')
+ done_set.update(fourth_done)
+ fifth_file=find_one('prior4000b-snapshot','03_RESUMABLE_PUT_PROGRESS.json')
+ fifth=json.loads(fifth_file.read_text('utf8'))
+ if fifth['status']!='PASS_NEXT_BATCH_ALL_REQUIRED_SHA_ACCEPTED' or fifth['attempted']!=4000 or fifth['http_success']!=4000 or fifth['ambiguous'] or fifth['failed']:
+  raise ValueError('Next 4000 SHA checkpoint not fully validated')
+ fifth_done={x['sha'] for x in fifth['completed']}
+ if len(fifth_done)!=4000 or fifth_done&done_set:raise ValueError('Next 4000 SHA overlaps or duplicates verified uploads')
+ done_set.update(fifth_done)
+ sixth_file=find_one('prior4000c-snapshot','03_RESUMABLE_PUT_PROGRESS.json')
+ sixth=json.loads(sixth_file.read_text('utf8'))
+ if sixth['status']!='PASS_NEXT_BATCH_ALL_REQUIRED_SHA_ACCEPTED' or sixth['attempted']!=4000 or sixth['http_success']!=4000 or sixth['ambiguous'] or sixth['failed']:
+  raise ValueError('Third 4000 SHA checkpoint not fully validated')
+ sixth_done={x['sha'] for x in sixth['completed']}
+ if len(sixth_done)!=4000 or sixth_done&done_set:raise ValueError('Third 4000 SHA overlaps or duplicates verified uploads')
+ done_set.update(sixth_done)
+ original={r['required_sha1']:r['url_path'].lstrip('/') for r in rows}
+ if any(x not in original for x in done_set):raise ValueError('Previously uploaded SHA absent from original initial required snapshot')
+ pending=[(r['url_path'].lstrip('/'),r['required_sha1']) for r in rows if r['required_sha1'] not in done_set]
+ if len(pending)!=1206:raise ValueError('Expected 1206 remaining after 19394 verified files, got '+str(len(pending)))
+ batch=pending[:BATCH]
+ for p,sha in batch:
+  if not p.startswith('__pages/') or not p.endswith('.page'):
+   raise ValueError('Only indexed physical SEO pages may be uploaded now: '+p)
+ digest=find_one('prior-digest','FULL_202765_STATIC_SHA1_DIGEST.json.gz')
+ with gzip.open(digest,'rt',encoding='utf8') as f:sha_paths=json.load(f)
+ if len(sha_paths)!=202765:raise ValueError('Signed static SHA manifest changed')
+ for p,sha in batch:
+  if sha_paths.get('/'+p)!=sha:raise ValueError('SHA1/path not in original initial digest '+p)
+ (OUT/'WANTED_ORIGINAL_PATHS.txt').write_text(''.join(p+'\n' for p,_ in batch),encoding='utf8')
+ (OUT/'BATCH_SHA_LIST.json').write_text(json.dumps([{'path':p,'sha1':s} for p,s in batch],ensure_ascii=False,indent=2),encoding='utf8')
+ r={'timestamp':now(),'status':'PASS_INITIAL_NETLIFY_DIFF_LEDGER_SELECTED',
+  'original_required_sha':len(rows),'previously_HTTP200_verified':len(done_set),
+  'outstanding_from_original_snapshot':len(pending),
+  'chosen_batch_count':len(batch),'ready_after_this_if_all_complete':False,
+  'published_id_verified':PROD,'existing_Draft_id':DRAFT,
+  'current_state':d.get('state'),'currently_returned_required_length':len(d.get('required') or []),
+  'new_netlify_deploy_POSTs':0,'images_uploaded':0,'production_publish_attempts':0}
+ write('01_IMMUTABLE_REQUIRED_SHA_BATCH_PLAN.json',r)
+ return batch,sha_paths
+def reconstruct(pairs):
+ if not SRC.exists():raise ValueError('Original files not extracted')
+ mapp=find_one('signed-route-map','ALL_21964_INDEXABLE_THUMBNAIL_MAP.csv')
+ rows={r['source_edge_path']:r for r in csv.DictReader(mapp.open(encoding='utf-8-sig',newline=''))}
+ if len(rows)!=21964:raise ValueError('Indexed mapping must be 21964')
+ signed=find_one('signed-qa-map','NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz')
+ with gzip.open(signed,'rt',encoding='utf8') as f:orig=json.load(f)['original_public_html_to_data_payload']
+ if len(orig)!=158571:raise ValueError('Sharded original routes not 158571')
+ cache={}
+ total=0
+ for p,sha in pairs:
+  row=rows.get(p)
+  if row is None:raise ValueError('Requested source not in indexed map '+p)
+  doc=orig.get(row['route'])
+  if not doc or doc['noindex'] or doc['to']!=p:raise ValueError('noindex or route mapping changed '+p)
+  original=(SRC/p).read_bytes()
+  if h(original)!=row['source_page_sha1'] or h(original)!=doc['sha1']:
+   raise ValueError('Original signed Edge page SHA1 mismatch '+p)
+  modified=base.patch_img(original,row)
+  if h(modified)!=sha:raise ValueError('Exact planned og:image patched SHA mismatch '+p)
+  cache[p]=(sha,modified)
+  total+=len(modified)
+ if total>260000000:
+  raise ValueError('Batch >260MB safety cap')
+ status={'timestamp':now(),'status':'PASS_REBUILT_REQUESTED_PAGE_BYTES_SHA1',
+    'selected':len(pairs),'bytes':total,'indexed_source_verification':True,'images_uploaded':0,
+    'netlify_deploys_created':0,'published_production_changed':False}
+ write('02_VERIFIED_RECONSTRUCTION_QA.json',status)
+ return cache
+def send(pairs):
+ d=guard()
+ result={'timestamp':now(),'status':'HOLD',
+  'target_existing_Draft':DRAFT,'attempted':0,'http_success':0,
+  'ambiguous':[],'failed':[],'completed':[],
+  'bytes_sent':0,'new_draft_posts':0,'production_changes':0,'image_puts':0,
+  'http429_retry_count':0,'batches_committed':0,'max_workers':4,'expected_new_draft':False}
+ write('03_RESUMABLE_PUT_PROGRESS.json',result)
+ token=os.environ.get('NETLIFY_AUTH_TOKEN')
+ if not token:raise ValueError('No token')
+ def fn(item):
+  rel,(sha,body)=item
+  target='https://api.netlify.com/api/v1/deploys/'+DRAFT+'/files/'+urllib.parse.quote(rel,safe='/')
+  for attempt in range(5):
+   req=urllib.request.Request(target,method='PUT',data=body,headers={
+       'Authorization':'Bearer '+token,'Content-Type':'application/octet-stream'})
+   try:
+    with urllib.request.urlopen(req,timeout=48) as response:
+     code=response.status
+     response.read(100)
+    return rel,sha,code,None,attempt
+   except urllib.error.HTTPError as e:
+    if e.code!=429:
+     return rel,sha,None,'HTTP Error '+str(e.code)+' '+str(e)[:140],attempt
+    if attempt>=4:
+     return rel,sha,None,'HTTP Error 429 after capped retry (5 total)',attempt
+    delay=[4,8,16,30][attempt]
+    retry_after=e.headers.get('Retry-After') if e.headers else None
+    if retry_after:
+     try:delay=min(35,max(delay,float(retry_after)))
+     except (ValueError,TypeError):pass
+    time.sleep(delay)
+   except Exception as e:
+    return rel,sha,None,type(e).__name__+': '+str(e)[:180],attempt
+  return rel,sha,None,'Retry logic exhausted unexpectedly',5
+ # Upload sequential chunks to re-check production identity and stop promptly on unexpected errors.
+ pairs_list=list(pairs.items())
+ for offset in range(0,len(pairs_list),200):
+  guard()
+  chunk=pairs_list[offset:offset+200]
+  with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+   futures=[executor.submit(fn,item) for item in chunk]
+   for f in concurrent.futures.as_completed(futures):
+    rel,sha,code,error,retries=f.result()
+    result['attempted']+=1;result['bytes_sent']+=len(pairs[rel][1])
+    result['http429_retry_count']+=retries
+    if error:result['ambiguous'].append({'path':rel,'sha':sha,'error':error})
+    elif code not in (200,201,202,204):result['failed'].append({'path':rel,'sha':sha,'http':code})
+    else:
+     result['http_success']+=1
+     result['completed'].append({'path':rel,'sha':sha})
+    if result['attempted']%50==0 or result['attempted']==len(pairs):
+     write('03_RESUMABLE_PUT_PROGRESS.json',result)
+  result['batches_committed']+=1
+  write('03_RESUMABLE_PUT_PROGRESS.json',result)
+  if result['ambiguous'] or result['failed']:
+   result['status']='HOLD_PARTIAL_OR_AMBIGUOUS_NO_BULK_RETRY'
+   write('03_RESUMABLE_PUT_PROGRESS.json',result)
+   break
+ if not result['ambiguous'] and not result['failed']:
+  result['status']='PASS_NEXT_BATCH_ALL_REQUIRED_SHA_ACCEPTED'
+ write('03_RESUMABLE_PUT_PROGRESS.json',result)
+ latest=guard()
+ result['state_after']=latest.get('state')
+ result['current_API_required_count_after']=len(latest.get('required') or [])
+ result['remaining_from_original_snapshot_estimate']=1206-len(result['completed'])
+ result['needs_followup_batch']=result['remaining_from_original_snapshot_estimate']>0
+ write('04_POST_BATCH_PUBLISHED_UNCHANGED.json',result)
+ if result['status'].startswith('HOLD_'):raise SystemExit('HOLD; no blind retry or unverified reupload')
+
+if __name__=='__main__':
+ mode=sys.argv[1] if len(sys.argv)>1 else 'select'
+ if mode=='select':ledger_select()
+ elif mode=='upload':
+  a,b=ledger_select()
+  send(reconstruct(a))
+ else:raise ValueError('Invalid mode')
