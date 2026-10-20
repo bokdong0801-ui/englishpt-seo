@@ -138,8 +138,10 @@ try:
             names={x.get("name") for x in parser.inputs}
             ensure({"form-name","requestType","subject","consent"} <= names,
                    "Required consultation fields absent "+route)
-            ensure(parser.open_buttons>0 and parser.ctas>0,
-                   "Consultation CTA or submit markup absent "+route)
+            # Tutor pages intentionally use an anchored in-page form
+            # (#consultation-preview), not the modal data-open-form CTA.
+            ensure(parser.ctas>0 and b'id="consultation-preview"' in data,
+                   "In-page consultation section or submit CTA absent "+route)
         return {"route":route,"source_noindex":actual_noindex,"og_mapped":route in mapping,
                 "form_present":route in FORMS,"bytes":len(data)}
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
@@ -212,28 +214,29 @@ try:
                 response=page.goto(BASE+"/"+route,wait_until="domcontentloaded",timeout=65000)
                 ensure(response is not None and response.status==200,
                        "Browser returned non200 "+route)
-                page.locator("[data-open-form]").first.click(timeout=15000)
-                dialog=page.locator("#applyModal")
-                dialog.wait_for(state="visible",timeout=12000)
-                ensure(dialog.get_attribute("aria-hidden")=="false",
-                       "Consultation modal aria-hidden did not switch on open")
-                ensure(page.locator("#leadForm input[name=name]").count()==1 and
-                       page.locator("#leadForm input[name=phone]").count()==1,
-                       "Modal name/phone input not available")
-                ensure(page.locator("#leadForm button[type=submit]").count()==1,
-                       "Modal submit button not available")
-                fp=OUT/("LIVE_"+str(width)+"PX_CONSULTATION_OPEN.png")
+                # Real tutor CTA jumps to in-page form section, never opens modal.
+                anchor=page.locator('a[href="#consultation-preview"]').first
+                ensure(anchor.count()==1,"In-page consultation CTA missing "+route)
+                anchor.click(timeout=16000)
+                page.wait_for_timeout(350)
+                ensure(page.url.endswith("#consultation-preview"),"CTA anchor did not navigate to form "+route)
+                form=page.locator("#consultation-preview form#leadForm")
+                form.wait_for(state="visible",timeout=12000)
+                ensure(page.locator('#leadForm input[name="name"]').count()==1 and
+                       page.locator('#leadForm input[name="phone"]').count()==1,
+                       "Consultation form name/phone missing "+route)
+                ensure(page.locator('#leadForm button[type="submit"]').count()==1,
+                       "Consultation form submit button missing "+route)
+                ensure(form.is_visible(),"Consultation form is not visible after anchor click "+route)
+                fp=OUT/("LIVE_"+str(width)+"PX_CONSULTATION_IN_PAGE.png")
                 page.screenshot(path=str(fp),full_page=False)
                 R["screenshots"].append(fp.name)
-                page.locator("[data-close-form]").last.click(timeout=14000)
-                ensure(dialog.get_attribute("aria-hidden")=="true",
-                       "Form modal failed to close")
                 ensure(blocked[0]==0,"Browser attempted a nonGET request unexpectedly")
                 ctx.close()
         finally:
             browser.close()
-    R["live_mobile_390px"]="PASS_REAL_CLICK_MODAL_OPEN_CLOSE_NO_FORM_POST"
-    R["live_desktop_1440px"]="PASS_REAL_CLICK_MODAL_OPEN_CLOSE_NO_FORM_POST"
+    R["live_mobile_390px"]="PASS_REAL_CTA_ANCHOR_SCROLL_FORM_VISIBLE_NO_POST"
+    R["live_desktop_1440px"]="PASS_REAL_CTA_ANCHOR_SCROLL_FORM_VISIBLE_NO_POST"
     R["status"]="PASS_EXISTING_PREVIEW_MIXED_SEO_EDGE_FORMS_LIVE_BROWSER_NO_POST"
 except Exception as e:
     R["status"]="HOLD_EXISTING_PREVIEW_RUNTIME_QA"
