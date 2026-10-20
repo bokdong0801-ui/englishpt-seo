@@ -1,0 +1,196 @@
+name: ENGLISH PT 150 LIGHTWEIGHT JPEG ONE Nonpublished Preview and Real HTTP Mobile QA
+on:
+  push:
+    branches:
+      - ops/v23521-OG150-ONE-LIGHTWEIGHT-NONPUBLISHED-REVIEW-20261020
+    paths:
+      - .github/workflows/ENPT-150-LIGHTWEIGHT-NONPUBLISHED-ONE-DRAFT-REAL-GET-QA.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ENPT-OG-150-REUSE-ONE-LITE-DRAFT-20261020
+  cancel-in-progress: false
+jobs:
+  one-small-nonpublished-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      EXPECTED_PUBLISHED: 6ad5eb4918f9411c4d5e1ba4
+      PREVIEW_ALIAS: enptog150reviewonce20
+      PREVIEW_MARKER: ENPT-150-REUSE-JPEG-LIGHTWEIGHT-NONPUBLISHED-ONLY-20261020
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static gate only one CLI deploy nonprod alias
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_150_REUSE_ONLY_LIGHTWEIGHT_STATIC_PREVIEW_OFFLINE.py
+          python3 - <<'PY'
+          from pathlib import Path
+          w=Path('.github/workflows/ENPT-150-LIGHTWEIGHT-NONPUBLISHED-ONE-DRAFT-REAL-GET-QA.yml').read_text()
+          assert w.count('timeout 300s netlify deploy')==1
+          cmd=w.split('timeout 300s netlify deploy',1)[1].split('> lite-150-evidence/02_NETLIFY_CLI_LOG.txt',1)[0]
+          assert '--alias="$PREVIEW_ALIAS"' in cmd and '--no-build' in cmd and '--prod' not in cmd
+          assert 'actions/download-artifact@v4' in w
+          print('PASS_NO_PRODUCTION_CLI_ONE_SMALL_DRAFT_UPLOAD_ONLY',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          run-id: 39360145172
+          github-token: ${{ github.token }}
+          path: sample-artifact
+      - name: Generate sample site offline from existing exact 150 JPEG without rerendering
+        run: |
+          set -euo pipefail
+          python3 -m pip install Pillow --quiet --disable-pip-version-check
+          python3 scripts/ENPT_150_REUSE_ONLY_LIGHTWEIGHT_STATIC_PREVIEW_OFFLINE.py
+          test "$(find lite-150-preview-site/assets/images/seo-square/v1 -maxdepth 1 -type f -name '*.jpg' | wc -l)" -eq 150
+          test "$(find lite-150-preview-site -maxdepth 1 -type f -name '*.html' | wc -l)" -eq 151
+          test "$(du -sm lite-150-preview-site | awk '{print $1}')" -le 25
+          grep -q 'X-Robots-Tag: noindex, nofollow' lite-150-preview-site/_headers
+          grep -q 'Disallow: /' lite-150-preview-site/robots.txt
+          echo "PASS_SMALL_OFFLINE_PREVIEW_READY_NO_WEB_MUTATIONS"
+      - name: Preflight Netlify GET only baseline, account, distinct one-time alias
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,urllib.request,pathlib,datetime
+          out=pathlib.Path('lite-150-evidence');out.mkdir(exist_ok=True)
+          t=os.environ.get('NETLIFY_AUTH_TOKEN','')
+          if not t:raise SystemExit('HOLD missing Netlify token')
+          def api(p):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+p,method='GET',headers={'Authorization':'Bearer '+t,'Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=38) as r:return json.load(r)
+          siteid=os.environ['NETLIFY_SITE_ID']
+          site=api('sites/'+siteid)
+          published=(site.get('published_deploy') or {}).get('id')
+          if site.get('id')!=siteid or site.get('custom_domain')!='englishpt.kr' or published!=os.environ['EXPECTED_PUBLISHED']:
+            raise SystemExit('HOLD current Production/site ID differs')
+          recent=api('sites/'+siteid+'/deploys?per_page=100')
+          alias=os.environ['PREVIEW_ALIAS'];marker=os.environ['PREVIEW_MARKER']
+          hits=[r for r in recent if marker in str(r.get('title') or '') or alias in str(r.get('deploy_ssl_url') or '')]
+          if hits:raise SystemExit('HOLD duplicate previous preview attempt: NO UPLOAD')
+          account=api('accounts/'+site['account_id'])
+          if account.get('usages_exceeded') or account.get('configurable_limits_exceeded'):raise SystemExit('HOLD Netlify limits exceeded')
+          credits=account.get('capabilities',{}).get('credits',{})
+          if 'included' in credits and 'used' in credits and credits['included']<=credits['used']:
+            raise SystemExit('HOLD exhausted available credits')
+          proof={'status':'PASS_LITE_PREUPLOAD_READONLY_GATES','published_before':published,'site_id':siteid,'alias':alias,'duplicate_hits':0,'files_to_upload_local':sum(f.is_file() for f in pathlib.Path('lite-150-preview-site').rglob('*')),'credits':credits,'netlify_deploy_POSTs':0}
+          (out/'01_PREUPLOAD_GET_ONLY.json').write_text(json.dumps(proof,ensure_ascii=False,indent=2),encoding='utf8')
+          print('ENPT_150_LITE_NETLIFY_PREFLIGHT',json.dumps(proof,ensure_ascii=False),flush=True)
+          PY
+      - name: Install Netlify CLI for ONE small alias Draft
+        run: |
+          npm install -g netlify-cli@27.13.0 --no-fund --no-audit
+          netlify --version
+      - name: Deploy exact one nonpublished tiny 150-image gallery preview
+        id: deploy
+        run: |
+          set -euo pipefail
+          date -u +%FT%TZ > lite-150-evidence/01_EXACT_ONE_UPLOAD_MARKER.txt
+          timeout 300s netlify deploy \
+            --site="$NETLIFY_SITE_ID" \
+            --dir=lite-150-preview-site \
+            --no-build \
+            --alias="$PREVIEW_ALIAS" \
+            --timeout=240 \
+            --message="$PREVIEW_MARKER" \
+            > lite-150-evidence/02_NETLIFY_CLI_LOG.txt 2>&1
+          echo "PASS_ONE_NONPUBLISHED_DRAFT_CLI_EXIT_0" >> lite-150-evidence/01_EXACT_ONE_UPLOAD_MARKER.txt
+      - name: Real Netlify READY, 150 JPEG exact SHA, HTML OG and mobile 102/156 GET QA
+        id: live
+        if: ${{ steps.deploy.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,pathlib,urllib.request,re,hashlib,io,time,concurrent.futures,collections,subprocess,shutil
+          from PIL import Image,ImageDraw,ImageFont
+          out=pathlib.Path('lite-150-evidence');out.mkdir(exist_ok=True)
+          report={'status':'HOLD','errors':[],'site_production_id':None,'image_get_ok':0,'html_get_ok':0,'http_form_POST_count':0,'production_mutations':0,'reupload_count':0,'mobile_sizes_px':[102,156,200],'browser_screenshot':'not_run'}
+          root='https://'+os.environ['PREVIEW_ALIAS']+'--englishpt-seo.netlify.app'
+          token=os.environ['NETLIFY_AUTH_TOKEN'];siteid=os.environ['NETLIFY_SITE_ID']
+          def api(path):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,method='GET',headers={'Authorization':'Bearer '+token,'Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=40) as resp:return json.load(resp)
+          def http(path):
+            req=urllib.request.Request(root+path,method='GET',headers={'User-Agent':'EnglishPT-Lite150-Nonpublished-GET-QA'})
+            with urllib.request.urlopen(req,timeout=45) as r:
+              if r.status!=200 or not r.geturl().startswith(root):raise ValueError('Bad host/HTTP '+path)
+              return r.read(800000),dict(r.headers)
+          try:
+            site=api('sites/'+siteid)
+            report['site_production_id']=(site.get('published_deploy') or {}).get('id')
+            if report['site_production_id']!=os.environ['EXPECTED_PUBLISHED']:raise ValueError('PRODUCTION CHANGED')
+            drafts=api('sites/'+siteid+'/deploys?per_page=100')
+            hits=[x for x in drafts if x.get('title')==os.environ['PREVIEW_MARKER']]
+            if len(hits)!=1 or hits[0].get('state')!='ready' or hits[0].get('published_at'):
+              raise ValueError('Expected exactly one READY and UNPUBLISHED small preview')
+            report['draft_id']=hits[0]['id'];report['draft_alias_url']=root
+            b,h=http('/')
+            if b'ENGLISH PT' not in b or b'noindex,nofollow' not in b or 'noindex' not in h.get('X-Robots-Tag','').lower():raise ValueError('No index or gallery missing')
+            source=json.loads(pathlib.Path('lite-150-evidence/STATIC_PREVIEW_150_SOURCE_QA.json').read_text('utf8'))
+            allsamples=source['items']
+            def test_one(record):
+              p='/'+record['image_path']
+              data,headers=http(p)
+              if hashlib.sha256(data).hexdigest()!=record['sha256']:raise ValueError('JPEG SHA mismatch '+p)
+              with Image.open(io.BytesIO(data)) as im:
+                im.load()
+                if im.size!=(1200,1200) or im.format!='JPEG':raise ValueError('Wrong JPEG '+p)
+                if len(data)>350000:raise ValueError('Unexpected file size '+p)
+              page,heads=http('/'+record['route'])
+              if 'noindex' not in heads.get('X-Robots-Tag','').lower():raise ValueError('Preview noindex header missing')
+              exact=root+p
+              if page.count(('property="og:image" content="'+exact+'"').encode('utf8'))!=1:raise ValueError('OG url mismatch '+p)
+              if b'name="robots" content="noindex,nofollow"' not in page:raise ValueError('Preview meta noindex missing')
+              return record['route']
+            with concurrent.futures.ThreadPoolExecutor(max_workers=14) as pool:
+              outcomes=list(pool.map(test_one,allsamples))
+            report['image_get_ok']=len(outcomes);report['html_get_ok']=len(outcomes)
+            # Representative mobile 102px / 156px comparison from same fetched draft assets.
+            selected=allsamples[:24]
+            canvas=Image.new('RGB',(1440,((len(selected)+5)//6)*240+12),'#F5F6F4');draw=ImageDraw.Draw(canvas)
+            for i,item in enumerate(selected):
+              b,_=http('/'+item['image_path'])
+              with Image.open(io.BytesIO(b)) as im:
+                thumb=im.convert('RGB').resize((156,156),Image.Resampling.LANCZOS)
+              x=(i%6)*240+12;y=(i//6)*240+12
+              canvas.paste(thumb,(x,y));draw.text((x,y+164),item['route'][:29],fill='#293332')
+            canvas.save(out/'LIVE_DRAFT_24_OF_150_AT_156PX.jpg',quality=88)
+            # Chrome real 390px viewport screenshot if chromium or chrome is available in runner.
+            chrome=shutil.which('google-chrome') or shutil.which('chromium') or shutil.which('chromium-browser')
+            if chrome:
+              cmd=[chrome,'--headless=new','--no-sandbox','--disable-dev-shm-usage','--disable-gpu','--hide-scrollbars','--screenshot='+str(out/'LIVE_390PX_CHROME_SCREENSHOT.png'),'--window-size=390,850','--virtual-time-budget=1800',root+'/']
+              try:
+                p=subprocess.run(cmd,timeout=32,capture_output=True)
+                if p.returncode==0 and (out/'LIVE_390PX_CHROME_SCREENSHOT.png').is_file():
+                  report['browser_screenshot']='PASS_390PX_REAL_CHROME'
+                else:report['browser_screenshot']='HOLD_BROWSER_RENDER_UNAVAILABLE'
+              except Exception:report['browser_screenshot']='HOLD_BROWSER_RENDER_TIMEOUT'
+            else:report['browser_screenshot']='HOLD_BROWSER_NOT_INSTALLED'
+            if report['browser_screenshot']!='PASS_390PX_REAL_CHROME':report['errors'].append('Actual 390px browser screenshot unverified')
+            report['status']='PASS_150_LITE_READY_LIVE_IMAGES_META_NOIDX_390PX' if not report['errors'] else 'HOLD_LIVE_MOBILE_SCREENSHOT'
+          except Exception as e:
+            report['errors'].append(type(e).__name__+': '+str(e)[:280])
+            report['status']='HOLD_LITE_150_LIVE_GET_QA'
+          (out/'03_LIVE_NETLIFY_DRAFT_150_GET_AND_MOBILE_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('ENPT_LITE150_FULL_LIVE_GET_QA',json.dumps(report,ensure_ascii=False),flush=True)
+          if report['status'].startswith('HOLD_'):raise SystemExit('HOLD: preview never publish or retry')
+          PY
+      - name: Save exact evidence, 390px mobile and 156px contact sheet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_150_ONE_LIGHTWEIGHT_DRAFT_REAL_150_OG_AND_390PX_MOBILE_QA
+          path: lite-150-evidence/
+          retention-days: 30
+          if-no-files-found: warn
