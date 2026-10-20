@@ -5,7 +5,7 @@
 Only existing nonpublished Draft 6ad708...; no images, no new deploy, no Production publish.
 One SHA file is sent once, at most BATCH_SIZE; checkpoint each 25 responses.
 """
-import csv,gzip,hashlib,json,os,pathlib,sys,urllib.request,urllib.parse,concurrent.futures,datetime,threading,time
+import csv,gzip,hashlib,json,os,pathlib,sys,urllib.request,urllib.parse,urllib.error,concurrent.futures,datetime,threading,time
 ROOT=pathlib.Path.cwd()
 sys.path.insert(0,str(ROOT/'scripts'))
 import ENPT_21964_ASYNC_DRAFT_REQUIRED_SHA_BOUNDED_FIRST_BATCH as base
@@ -16,7 +16,7 @@ MARKER='ENPT-21964-OG-ASYNC-DIGEST-ONE-DRAFT-NOT-PRODUCTION-20261020'
 SITE='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
 PROD='6ad5eb4918f9411c4d5e1ba4'
 BATCH=int(os.environ.get('BATCH_SIZE','1000'))
-if not (1<=BATCH<=1500):raise SystemExit('HOLD: no more than 1500 files per run')
+if not (1<=BATCH<=6500):raise SystemExit('HOLD: no more than 6500 verified files per run')
 def write(name,record):
  (OUT/name).write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
  print('ENPT_RESUME_BATCH_STATE',name,json.dumps({k:v for k,v in record.items() if k not in ('completed','failed','ambiguous')},ensure_ascii=False)[:2000],flush=True)
@@ -49,10 +49,19 @@ def ledger_select():
   raise ValueError('First 200 proof not signed PASS')
  done_set={x['sha'] for x in done}
  if len(done_set)!=200:raise ValueError('Duplicate first200 SHA')
+ second_file=find_one('second1200-snapshot','03_RESUMABLE_PUT_PROGRESS.json')
+ second=json.loads(second_file.read_text('utf8'))
+ if second['status']!='HOLD_PARTIAL_OR_UNCERTAIN_UPLOAD_DO_NOT_REPEAT' or second['attempted']!=1200 or second['http_success']!=1194 or second['failed'] or len(second['ambiguous'])!=6:
+  raise ValueError('Prior 1200 SHA evidence differs; STOP')
+ if any('HTTP Error 429' not in a.get('error','') for a in second['ambiguous']):
+  raise ValueError('Only explicit HTTP429 may be scheduled later, no other ambiguous retry')
+ second_done={x['sha'] for x in second['completed']}
+ if len(second_done)!=1194 or second_done&done_set:raise ValueError('Overlap in successfully uploaded hashes')
+ done_set.update(second_done)
  original={r['required_sha1']:r['url_path'].lstrip('/') for r in rows}
  if any(x not in original for x in done_set):raise ValueError('Previously uploaded SHA absent from original initial required snapshot')
  pending=[(r['url_path'].lstrip('/'),r['required_sha1']) for r in rows if r['required_sha1'] not in done_set]
- if len(pending)!=20400:raise ValueError('Expected 20400 remaining, got '+str(len(pending)))
+ if len(pending)!=19206:raise ValueError('Expected 19206 remaining after 1394 verified files, got '+str(len(pending)))
  batch=pending[:BATCH]
  for p,sha in batch:
   if not p.startswith('__pages/') or not p.endswith('.page'):
@@ -95,8 +104,8 @@ def reconstruct(pairs):
   if h(modified)!=sha:raise ValueError('Exact planned og:image patched SHA mismatch '+p)
   cache[p]=(sha,modified)
   total+=len(modified)
- if total>55000000:
-  raise ValueError('Batch >55MB safety cap')
+ if total>260000000:
+  raise ValueError('Batch >260MB safety cap')
  status={'timestamp':now(),'status':'PASS_REBUILT_REQUESTED_PAGE_BYTES_SHA1',
     'selected':len(pairs),'bytes':total,'indexed_source_verification':True,'images_uploaded':0,
     'netlify_deploys_created':0,'published_production_changed':False}
@@ -107,43 +116,71 @@ def send(pairs):
  result={'timestamp':now(),'status':'HOLD',
   'target_existing_Draft':DRAFT,'attempted':0,'http_success':0,
   'ambiguous':[],'failed':[],'completed':[],
-  'bytes_sent':0,'new_draft_posts':0,'production_changes':0,'image_puts':0}
+  'bytes_sent':0,'new_draft_posts':0,'production_changes':0,'image_puts':0,
+  'http429_retry_count':0,'batches_committed':0,'max_workers':4,'expected_new_draft':False}
  write('03_RESUMABLE_PUT_PROGRESS.json',result)
  token=os.environ.get('NETLIFY_AUTH_TOKEN')
  if not token:raise ValueError('No token')
  def fn(item):
   rel,(sha,body)=item
-  req=urllib.request.Request('https://api.netlify.com/api/v1/deploys/'+DRAFT+'/files/'+urllib.parse.quote(rel,safe='/'),
-    method='PUT',data=body,headers={'Authorization':'Bearer '+token,'Content-Type':'application/octet-stream'})
-  try:
-   with urllib.request.urlopen(req,timeout=50) as response:
-    code=response.status
-    response.read(150)
-   return rel,sha,code,None
-  except Exception as e:return rel,sha,None,str(e)[:200]
- with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-  futures=[executor.submit(fn,item) for item in pairs.items()]
-  for f in concurrent.futures.as_completed(futures):
-   rel,sha,code,error=f.result()
-   result['attempted']+=1;result['bytes_sent']+=len(pairs[rel][1])
-   if error:result['ambiguous'].append({'path':rel,'sha':sha,'error':error})
-   elif code not in (200,201,202,204):result['failed'].append({'path':rel,'sha':sha,'http':code})
-   else:
-    result['http_success']+=1
-    result['completed'].append({'path':rel,'sha':sha})
-   if result['attempted']%25==0 or result['attempted']==len(pairs):
-    write('03_RESUMABLE_PUT_PROGRESS.json',result)
- if result['ambiguous'] or result['failed']:
-  result['status']='HOLD_PARTIAL_OR_UNCERTAIN_UPLOAD_DO_NOT_REPEAT'
- else:result['status']='PASS_NEXT_BATCH_ALL_REQUIRED_SHA_ACCEPTED'
+  target='https://api.netlify.com/api/v1/deploys/'+DRAFT+'/files/'+urllib.parse.quote(rel,safe='/')
+  for attempt in range(5):
+   req=urllib.request.Request(target,method='PUT',data=body,headers={
+       'Authorization':'Bearer '+token,'Content-Type':'application/octet-stream'})
+   try:
+    with urllib.request.urlopen(req,timeout=48) as response:
+     code=response.status
+     response.read(100)
+    return rel,sha,code,None,attempt
+   except urllib.error.HTTPError as e:
+    if e.code!=429:
+     return rel,sha,None,'HTTP Error '+str(e.code)+' '+str(e)[:140],attempt
+    if attempt>=4:
+     return rel,sha,None,'HTTP Error 429 after capped retry (5 total)',attempt
+    delay=[4,8,16,30][attempt]
+    retry_after=e.headers.get('Retry-After') if e.headers else None
+    if retry_after:
+     try:delay=min(35,max(delay,float(retry_after)))
+     except (ValueError,TypeError):pass
+    time.sleep(delay)
+   except Exception as e:
+    return rel,sha,None,type(e).__name__+': '+str(e)[:180],attempt
+  return rel,sha,None,'Retry logic exhausted unexpectedly',5
+ # Upload sequential chunks to re-check production identity and stop promptly on unexpected errors.
+ pairs_list=list(pairs.items())
+ for offset in range(0,len(pairs_list),200):
+  guard()
+  chunk=pairs_list[offset:offset+200]
+  with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+   futures=[executor.submit(fn,item) for item in chunk]
+   for f in concurrent.futures.as_completed(futures):
+    rel,sha,code,error,retries=f.result()
+    result['attempted']+=1;result['bytes_sent']+=len(pairs[rel][1])
+    result['http429_retry_count']+=retries
+    if error:result['ambiguous'].append({'path':rel,'sha':sha,'error':error})
+    elif code not in (200,201,202,204):result['failed'].append({'path':rel,'sha':sha,'http':code})
+    else:
+     result['http_success']+=1
+     result['completed'].append({'path':rel,'sha':sha})
+    if result['attempted']%50==0 or result['attempted']==len(pairs):
+     write('03_RESUMABLE_PUT_PROGRESS.json',result)
+  result['batches_committed']+=1
+  write('03_RESUMABLE_PUT_PROGRESS.json',result)
+  if result['ambiguous'] or result['failed']:
+   result['status']='HOLD_PARTIAL_OR_AMBIGUOUS_NO_BULK_RETRY'
+   write('03_RESUMABLE_PUT_PROGRESS.json',result)
+   break
+ if not result['ambiguous'] and not result['failed']:
+  result['status']='PASS_NEXT_BATCH_ALL_REQUIRED_SHA_ACCEPTED'
  write('03_RESUMABLE_PUT_PROGRESS.json',result)
  latest=guard()
  result['state_after']=latest.get('state')
  result['current_API_required_count_after']=len(latest.get('required') or [])
- result['remaining_from_original_snapshot_estimate']=20400-len(result['completed'])
+ result['remaining_from_original_snapshot_estimate']=19206-len(result['completed'])
  result['needs_followup_batch']=result['remaining_from_original_snapshot_estimate']>0
  write('04_POST_BATCH_PUBLISHED_UNCHANGED.json',result)
- if result['status'].startswith('HOLD_'):raise SystemExit('HOLD; no ambiguous retries')
+ if result['status'].startswith('HOLD_'):raise SystemExit('HOLD; no blind retry or unverified reupload')
+
 if __name__=='__main__':
  mode=sys.argv[1] if len(sys.argv)>1 else 'select'
  if mode=='select':ledger_select()
