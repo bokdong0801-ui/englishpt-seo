@@ -1,0 +1,110 @@
+name: ENPT 21964 Async Draft Rate Limited 6000 Verified SHA Batch
+on:
+  push:
+    branches:
+      - ops/v23521-OG21964-ASYNC-DIGEST-DRAFT-ONLY-ONCE-20261020
+    paths:
+      - .github/workflows/ENPT-21964-ASYNC-INITIAL-SHA-SNAPSHOT-6000-429-BACKOFF.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21964-existing-async-draft-sha-replay-capped-one-at-a-time
+  cancel-in-progress: false
+jobs:
+  continue-only-known-missing-seo-page-sha:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      BATCH_SIZE: 6000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static safety read exact 20600 SHA initial server requirements and 1394 prior HTTP success, no new deploy
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_21964_ASYNC_SHA_SNAPSHOT_RESUME_BATCH.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_21964_ASYNC_SHA_SNAPSHOT_RESUME_BATCH.py').read_text()
+          assert "BATCH=int(os.environ.get('BATCH_SIZE','1000'))" in s
+          assert "if not (1<=BATCH<=6500)" in s
+          assert "DRAFT='6ad708da374d457504481d5c'" in s
+          assert "PROD='6ad5eb4918f9411c4d5e1ba4'" in s
+          assert "second['http_success']!=1194" in s
+          assert "HTTP Error 429" in s and "max_workers=4" in s
+          assert "method='POST'" not in s and '/restore' not in s
+          print('PASS_SIGNED_PENDING_SHA_6000_ONLY_429_SLOW_BACKOFF_PROD_GUARD')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_DIGEST_20600_REQUIRED_SHA_CATEGORIES_NO_UPLOAD
+          run-id: 39380353473
+          github-token: ${{ github.token }}
+          path: required-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_EXISTING_DRAFT_FIRST_200_SHA_BOUNDED_TRANSFER_QA
+          run-id: 39380807594
+          github-token: ${{ github.token }}
+          path: first200-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_DIGEST_NEXT_1200_SHA_CHECKPOINT_AND_QA
+          run-id: 39381420069
+          github-token: ${{ github.token }}
+          path: second1200-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_REAL_ALL_SHA256_HASH_NONPUBLISHED_ASYNC_DIGEST_ONE_SHOT
+          run-id: 39379746225
+          github-token: ${{ github.token }}
+          path: prior-digest
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          run-id: 39360145172
+          github-token: ${{ github.token }}
+          path: signed-route-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - name: Pick no more than 6000 known remaining HTML SHA from original Netlify async digest reply
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_ASYNC_SHA_SNAPSHOT_RESUME_BATCH.py select
+          test "$(wc -l < resumable-sha-evidence/WANTED_ORIGINAL_PATHS.txt)" -eq 6000
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-original
+      - name: Verify exact full original tar archive SHA then extract only these 6000 requested files
+        run: |
+          set -euo pipefail
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          ARCHIVE=signed-original/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          printf '%s  %s\n' 6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884 "$ARCHIVE" | sha256sum -c -
+          mkdir -p resumable-original
+          tar --zstd -xf "$ARCHIVE" -C resumable-original -T resumable-sha-evidence/WANTED_ORIGINAL_PATHS.txt
+          test -d resumable-original/__pages
+          echo "PASS_ORIGINAL_EXACT_SHA_AND_6000_SELECTED_SOURCE_PAGES_ONLY"
+      - name: Reconstruct exact intended OG page bytes SHA1; limit PUT rate; retry only explicit 429; checkpoint each 50
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_ASYNC_SHA_SNAPSHOT_RESUME_BATCH.py upload
+      - name: Keep durable per-SHA progress and evidence even on STOP, never upload full source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_NONPUBLISHED_ASYNC_SHA_6000_SLOW_BACKOFF_CHECKPOINT
+          path: resumable-sha-evidence/
+          retention-days: 30
+          if-no-files-found: warn
