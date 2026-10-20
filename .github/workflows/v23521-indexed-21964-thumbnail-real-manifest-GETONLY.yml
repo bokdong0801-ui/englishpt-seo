@@ -2,7 +2,7 @@ name: ENGLISH PT Indexed 21964 Real URL Square Thumbnail Mapping ReadOnly
 on:
   push:
     branches:
-      - ops/v23521-THUMBNAIL-21964-REAL-ROUTE-MAPPING-GETONLY-20261020
+      - ops/v23521-THUMBNAIL-21964-MAPPING-FIXED-AND-RENDER-QA-20261020
     paths:
       - .github/workflows/v23521-indexed-21964-thumbnail-real-manifest-GETONLY.yml
 permissions:
