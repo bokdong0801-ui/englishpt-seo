@@ -1,0 +1,48 @@
+name: ENPT OG150 Existing READY Draft Static HTML Route ReadOnly Inspection
+on:
+  push:
+    branches:
+      - ops/v23521-OG150-READY-HTTP-DNS-DIAGNOSTIC-GETONLY-20261020
+    paths:
+      - .github/workflows/ENPT-OG150-EXISTING-READY-HTML-REDIRECT-GETONLY.yml
+permissions:
+  contents: read
+jobs:
+  inspect-html:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Compare HTTP GET HTML titles effective URLs redirect headers and exact image samples
+        run: |
+          set -euo pipefail
+          mkdir -p html-diagnostic
+          python3 - <<'PY'
+          import subprocess,json,re,pathlib,datetime,hashlib
+          d=pathlib.Path('html-diagnostic');base='https://enptog150reviewonce20--englishpt-seo.netlify.app'
+          targets=['/','/index.html','/englishpt.html','/courses.html','/station-419minjumyoji-toeic.html','/robots.txt','/style.css','/assets/images/seo-square/v1/49d1a4cf976b8dcba192.jpg']
+          output={'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'results':[],'http_mutations':0}
+          for path in targets:
+            resp=d/('response-'+str(len(output['results']))+'.txt')
+            cmd=['curl','-sS','--connect-timeout','6','--max-time','15','-D','-','-o','/dev/null','-w','\nEFFECTIVE=%{url_effective} STATUS=%{http_code} REDIRECTS=%{num_redirects} BYTES=%{size_download}\n',base+path]
+            p=subprocess.run(cmd,capture_output=True,text=True,timeout=18)
+            trace=p.stdout[-2200:]
+            cmd2=['curl','-sS','-L','--connect-timeout','6','--max-time','15','-w','\nEFFECTIVE=%{url_effective} STATUS=%{http_code} REDIRECTS=%{num_redirects} BYTES=%{size_download}\n',base+path]
+            b=subprocess.run(cmd2,capture_output=True,timeout=18)
+            body=b.stdout
+            mime='image' if path.endswith('.jpg') else 'html'
+            head=body[:1600].decode('utf8',errors='replace') if mime!='image' else 'JPEG bytes'
+            title=re.search(r'<title[^>]*>(.*?)</title>',head,re.I|re.S)
+            output['results'].append({'path':path,'header_trace':trace,'curl_exit':p.returncode,
+              'curl_effective':b.stdout[-250:].decode('utf8',errors='replace'),
+              'body_sha256':hashlib.sha256(body).hexdigest(),
+              'title':title.group(1) if title else None,
+              'body_start':head[:800] if mime!='image' else None,
+              'body_total_bytes':len(body)})
+          (d/'EXISTING_OG150_HTML_ROUTING.json').write_text(json.dumps(output,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('ENPT_150_OG_EXISTING_DRAFT_HTML_ROUTE_RESULT',json.dumps(output,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_150_EXISTING_READY_DRAFT_HTML_ROUTE_REDIRECT_GETONLY
+          path: html-diagnostic/
+          retention-days: 30
