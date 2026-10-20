@@ -1,0 +1,161 @@
+name: ENPT 21964 FULL SAFE ASYNC DIGEST Nonpublished Draft Once
+on:
+  push:
+    branches:
+      - ops/v23521-OG21964-ASYNC-DIGEST-DRAFT-ONLY-ONCE-20261020
+    paths:
+      - .github/workflows/ENPT-21964-FULL-SAFE-ASYNC-DIGEST-ONE-NONPUBLISHED-DRAFT.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21964-full-async-digest-draft-only-20261020-one
+  cancel-in-progress: false
+jobs:
+  signed-source-safety-and-one-async-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 52
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static safety review: user-approved nonpublished async draft only, no prod restore or full CLI reupload
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_21964_NONPUBLISHED_ASYNC_DIGEST_SAFE_ONCE_20261020.py
+          python3 -m py_compile scripts/ENPT_21964_DRAFT_CANDIDATE_ONLY_EDIT_OG_AND_PRESERVE_NOINDEX.py
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('scripts/ENPT_21964_NONPUBLISHED_ASYNC_DIGEST_SAFE_ONCE_20261020.py').read_text('utf8')
+          assert "payload={'files':files,'edge_functions':edge,'draft':True,'async':True" in src
+          assert "MAX_ASSET_UPLOADS=250" in src and "MAX_ASSET_UPLOAD_BYTES=16000000" in src
+          assert "original_404_Draft_left_untouched" in src
+          assert "POST_ATTEMPTED_DO_NOT_RETRY_UNTIL_GET_RECONCILIATION" in src
+          assert "site_and_deploy_guard(draft)" in src
+          assert "X-Robots-Tag: noindex, nofollow" in src
+          print('PASS_EXACT_ONCE_ASYNC_TRUE_DRAFT_TRUE_NO_PRODUCTION_DANGER',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: pristine-release
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          run-id: 39360145172
+          github-token: ${{ github.token }}
+          path: signed-route-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_COMPLETE_SQUARE_JPG_RECOVERED_ALL_SHA256_QA_NO_RERENDER_V1
+          run-id: 39361276955
+          github-token: ${{ github.token }}
+          path: all-jpeg-qa
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39360903334
+          github-token: ${{ github.token }}
+          pattern: ENPT_ALL21964_SQUARE_JPEG_SHARD_*
+          merge-multiple: true
+          path: existing-jpegs
+      - name: SHA256-exact original archive, extract only to a LOCAL draft candidate
+        run: |
+          set -euo pipefail
+          ARCHIVE=pristine-release/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          printf '%s  %s\n' 6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884 "$ARCHIVE" | sha256sum -c -
+          mkdir -p thumb-21964-candidate async-og-21964-evidence
+          tar --zstd -xf "$ARCHIVE" -C thumb-21964-candidate
+          test -s thumb-21964-candidate/index.html
+          test -s thumb-21964-candidate/netlify/edge-functions/shard-router.js
+          echo "PASS_ORIGINAL_PRODUCTION_SOURCE_SHA_NO_MODIFY_PRODUCTION"
+      - name: Apply 21964 page OG tags and exact 21964 JPEG to copied source only
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_DRAFT_CANDIDATE_ONLY_EDIT_OG_AND_PRESERVE_NOINDEX.py
+          test -s thumb-draft-qa/CANDIDATE_21964_SOURCE_PRESERVATION_QA.json
+      - name: Add unpublishable global noindex only to private Draft, NEVER to Production
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('thumb-21964-candidate/_headers')
+          s=p.read_text('utf8')
+          assert 'X-Robots-Tag: noindex, nofollow' not in s
+          p.write_text(s+'\n/*\n  X-Robots-Tag: noindex, nofollow\n',encoding='utf8')
+          print('PASS_NONPUBLISHED_DRAFT_GLOBAL_NOINDEX_ONLY',flush=True)
+          PY
+      - name: Build exact TAR and companion ESZIP Edge router digests from original config for digest registration
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund --no-save netlify-cli@27.13.0
+          cat > exact-both-edge.mjs <<'JS'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import crypto from 'node:crypto';
+          import {createRequire} from 'node:module';
+          const require=createRequire(import.meta.url);
+          const pkg=require.resolve('@netlify/edge-bundler',{paths:[path.resolve('node_modules/netlify-cli'),process.cwd()]});
+          const {bundle}=await import('file://'+pkg);
+          const src=path.resolve('thumb-21964-candidate');
+          const out=path.resolve('async-og-21964-private-bundles');
+          fs.mkdirSync(out,{recursive:true});
+          const declarations=[{function:'shard-router',pattern:'^/[^/]+[.]html$'}];
+          const b=await bundle([path.join(src,'netlify/edge-functions')],out,declarations,{
+            basePath:src,rootPath:src,featureFlags:{edge_bundler_generate_tarball:true}
+          });
+          const map={};
+          for(const f of b.manifest?.bundles||[]){
+            const file=path.join(out,f.asset);
+            const sha=crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+            if(f.asset!==sha+'.'+(f.format==='tar'?'tar.gz':'eszip'))throw Error('Incorrect Edge filename '+f.asset);
+            map[f.format]=sha;
+          }
+          const expected='1359b9c72eadd149ad8cde014235de40b91e0d33e2132c2d5609bf76a6e4653b';
+          if(map.tar!==expected||!map.eszip2||b.manifest.routes?.[0]?.pattern!=='^/[^/]+[.]html$'){
+            throw Error('Signed Edge TAR SHA or exact SEO routing regex mismatch');
+          }
+          const dest=path.join(src,'.netlify/internal/edge-functions/manifest.json');
+          fs.mkdirSync(path.dirname(dest),{recursive:true});
+          fs.writeFileSync(dest,JSON.stringify(b.manifest));
+          const report={status:'PASS_ORIGINAL_EDGE_TAR_SHA_EXACT_ESZIP_COMPANION_BOTH_FORMATS',
+            edge_functions:map,manifest_sha1:crypto.createHash('sha1').update(fs.readFileSync(dest)).digest('hex'),
+            exact_html_route_pattern:b.manifest.routes[0].pattern,netlify_post_attempts:0,
+            generated_on_local_candidate_only:true};
+          fs.writeFileSync('async-og-21964-evidence/EDGE_ASSET_MANIFEST_OFFLINE.json',JSON.stringify(report,null,2)+'\n');
+          console.log('PASS_FULL_SITE_EDGE_DIGEST_MANIFEST',JSON.stringify(report));
+          JS
+          timeout 140s node exact-both-edge.mjs
+      - name: Generate all 202765 SHA1 digests and verify SEO/noindex/Forms/search owners before any Netlify mutation
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_NONPUBLISHED_ASYNC_DIGEST_SAFE_ONCE_20261020.py preflight
+      - name: One guarded POST async=true draft=true; GET diff; upload ONLY small missing SHA bounded by pre-agreed limits
+        id: asyncdeploy
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_NONPUBLISHED_ASYNC_DIGEST_SAFE_ONCE_20261020.py deploy
+      - name: Save digest evidence and deploy state only (not 2GB full candidate)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_REAL_ALL_SHA256_HASH_NONPUBLISHED_ASYNC_DIGEST_ONE_SHOT
+          path: |
+            async-og-21964-evidence/
+            thumb-draft-qa/CANDIDATE_21964_SOURCE_PRESERVATION_QA.json
+          retention-days: 30
+          if-no-files-found: warn
