@@ -1,0 +1,93 @@
+name: ENPT 21964 Async Draft First 200 Required SHA Only Test
+on:
+  push:
+    branches:
+      - ops/v23521-OG21964-ASYNC-DIGEST-DRAFT-ONLY-ONCE-20261020
+    paths:
+      - .github/workflows/ENPT-21964-ASYNC-DRAFT-REQUIRED-SHA-ONLY-FIRST-200-ONCE.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21964-existing-async-draft-sha-replay-capped-one-at-a-time
+  cancel-in-progress: false
+jobs:
+  pilot-200-page-digest-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      BATCH_SIZE: 200
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fail closed protections to not create or publish or upload images, and run exact 200 SHA cap
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_21964_ASYNC_DRAFT_REQUIRED_SHA_BOUNDED_FIRST_BATCH.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_21964_ASYNC_DRAFT_REQUIRED_SHA_BOUNDED_FIRST_BATCH.py').read_text()
+          assert "DRAFT_ID=\"6ad708da374d457504481d5c\"" in s
+          assert "PROD_ID=\"6ad5eb4918f9411c4d5e1ba4\"" in s
+          assert "if not(1<=maxnum<=300)" in s
+          assert "max_workers=6" in s
+          assert "def guard()" in s
+          assert "method='POST'" not in s and "publish" not in s.lower().split("def upload_only(")[1]
+          print('PASS_CAPPED_200_SHA_EXISTING_DRAFT_ONLY_NO_NEW_DEPLOY_NO_PROD',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39379746225
+          name: ENPT_21964_REAL_ALL_SHA256_HASH_NONPUBLISHED_ASYNC_DIGEST_ONE_SHOT
+          github-token: ${{ github.token }}
+          path: prior-digest
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39234109195
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39360145172
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          github-token: ${{ github.token }}
+          path: signed-route-map
+      - name: Select at most 200 required SHA, permit only Edge pages and exact two site-config files
+        run: |
+          set -euo pipefail
+          find prior-digest -name FULL_202765_STATIC_SHA1_DIGEST.json.gz -print
+          test -s prior-digest/async-og-21964-evidence/FULL_202765_STATIC_SHA1_DIGEST.json.gz
+          python3 scripts/ENPT_21964_ASYNC_DRAFT_REQUIRED_SHA_BOUNDED_FIRST_BATCH.py select
+          test -s bounded-sha-upload-evidence/WANTED_ORIGINAL_PATHS.txt
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39234109195
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          github-token: ${{ github.token }}
+          path: pristine-archive
+      - name: Verify original 180800-member archive SHA and selectively extract only required original pages
+        run: |
+          set -euo pipefail
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          ARCHIVE=pristine-archive/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          printf '%s  %s\n' 6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884 "$ARCHIVE" | sha256sum -c -
+          mkdir -p bounded-original
+          tar --zstd -xf "$ARCHIVE" -C bounded-original -T bounded-sha-upload-evidence/WANTED_ORIGINAL_PATHS.txt
+          test -d bounded-original/__pages
+          echo "PASS_EXTRACT_ONLY_200_ORIGINAL_REQUIRED_SHA_FILES_NO_FULL_2GB_SITE"
+      - name: Reconstruct and PUT only missing 200 approved SHA content to existing nonpublished Draft with checkpoint
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_ASYNC_DRAFT_REQUIRED_SHA_BOUNDED_FIRST_BATCH.py upload
+      - name: Archive only SHA checkpoint and Netlify GET reconciliation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_EXISTING_DRAFT_FIRST_200_SHA_BOUNDED_TRANSFER_QA
+          path: bounded-sha-upload-evidence/
+          retention-days: 30
+          if-no-files-found: warn
