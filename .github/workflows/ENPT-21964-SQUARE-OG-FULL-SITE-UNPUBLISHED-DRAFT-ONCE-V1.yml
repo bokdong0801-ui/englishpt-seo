@@ -36,8 +36,8 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           y=Path('.github/workflows/ENPT-21964-SQUARE-OG-FULL-SITE-UNPUBLISHED-DRAFT-ONCE-V1.yml').read_text()
-          assert y.count('timeout 660s netlify deploy')==1
-          candidate=y.split('timeout 660s netlify deploy')[1].split('> ../thumb-draft-qa/02_NETLIFY_CLI_LOG.txt',1)[0]
+          assert y.count('\n          timeout 660s netlify deploy')==1
+          candidate=y.split('\n          timeout 660s netlify deploy',1)[1].split('> ../thumb-draft-qa/02_NETLIFY_CLI_LOG.txt',1)[0]
           assert '--no-build' in candidate and '--alias="$DRAFT_ALIAS"' in candidate
           assert '--prod' not in candidate and '--context' not in candidate
           print('PASS_ONE_UNPUBLISHED_DRAFT_NO_PROD_CLI',flush=True)
