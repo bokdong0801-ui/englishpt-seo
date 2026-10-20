@@ -1,0 +1,142 @@
+name: ENPT 150 Existing READY Preview Exact All JPEG HTML HTTP and 390px Screenshot GET Only
+on:
+  push:
+    branches:
+      - ops/v23521-OG150-READY-HTTP-DNS-DIAGNOSTIC-GETONLY-20261020
+    paths:
+      - .github/workflows/ENPT-OG150-EXISTING-READY-ALL-150-FINAL-GET-MOBILE-QA.yml
+permissions:
+  contents: read
+  actions: read
+jobs:
+  final-get-only-150:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_150_ONE_LIGHTWEIGHT_DRAFT_REAL_150_OG_AND_390PX_MOBILE_QA
+          run-id: 39372236662
+          github-token: ${{ github.token }}
+          path: previous-evidence
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: GET only 150 JPEG SHA256, 150 sample OG head, x-robots noindex, and real 390px Chrome viewport
+        run: |
+          set -euo pipefail
+          python3 -m pip install Pillow --quiet --disable-pip-version-check
+          mkdir -p existing-150-final-qa
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image,ImageDraw
+          import json,os,datetime,urllib.request,hashlib,subprocess,tempfile,concurrent.futures,io,shutil
+          base='https://enptog150reviewonce20--englishpt-seo.netlify.app'
+          out=Path('existing-150-final-qa')
+          data=json.loads(Path('previous-evidence/STATIC_PREVIEW_150_SOURCE_QA.json').read_text('utf8'))
+          source=data['items']
+          expected='6ad6f4c0202aee7c32247e88'
+          siteid='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          prod='6ad5eb4918f9411c4d5e1ba4'
+          tok=os.environ['NETLIFY_AUTH_TOKEN']
+          def api(p):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+p,method='GET',
+                headers={'Authorization':'Bearer '+tok,'Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=25) as r:return json.load(r)
+          report={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+           'status':'HOLD','errors':[],'draft_id':expected,'expected_published_id':prod,
+           'sample_pages_expected':len(source),'jpeg_200_sha256_verified':0,'html_200_og_verified':0,
+           'mobile_sizes':[102,156,200],'full_site_published':False,'production_mutations':0,
+           'file_reupload_count':0,'form_post_count':0,'root_redirect_issue_known':True,
+           'gallery_path':'/index.html','actual_browser_screenshot':'not_checked'}
+          try:
+            s=api('sites/'+siteid)
+            d=api('sites/'+siteid+'/deploys/'+expected)
+            report['actual_production_id']=(s.get('published_deploy') or {}).get('id')
+            if report['actual_production_id']!=prod or d.get('state')!='ready' or d.get('published_at'):
+              raise ValueError('Production ID drift, Draft unpublished state, or readiness mismatch')
+            if len(source)!=150 or len({r['route'] for r in source})!=150:
+              raise ValueError('Source 150 routes not unique')
+            def run_curl(path):
+              with tempfile.TemporaryDirectory() as temp:
+                body=Path(temp)/'body';head=Path(temp)/'head'
+                cmd=['curl','-sS','--fail','--connect-timeout','7','--max-time','19',
+                   '--header','Accept: text/html,image/jpeg,*/*','-D',str(head),'-o',str(body),base+path]
+                r=subprocess.run(cmd,capture_output=True,text=True,timeout=23)
+                if r.returncode!=0:
+                  raise ValueError('HTTP GET failed '+path+' '+r.stderr[-140:])
+                return body.read_bytes(),head.read_text('utf8',errors='replace')
+            idx,hh=run_curl('/index.html')
+            if b'150' not in idx or b'ENGLISH PT' not in idx or len(idx)<100000:
+              raise ValueError('Gallery HTML is not complete')
+            if 'x-robots-tag: noindex' not in hh.lower():raise ValueError('Gallery missing noindex HTTP header')
+            rb,rh=run_curl('/robots.txt')
+            if b'Disallow: /' not in rb:raise ValueError('Preview robots not blocking crawler')
+            def test(row):
+              path='/'+row['image_path']
+              imgbytes,imgheaders=run_curl(path)
+              if 'content-type: image/jpeg' not in imgheaders.lower():raise ValueError('JPG MIME '+path)
+              if hashlib.sha256(imgbytes).hexdigest()!=row['sha256']:raise ValueError('JPEG altered '+path)
+              with Image.open(io.BytesIO(imgbytes)) as image:
+                image.load()
+                if image.size!=(1200,1200) or image.format!='JPEG':raise ValueError('JPG dimensions '+path)
+              page,headers=run_curl('/'+row['route'])
+              if 'x-robots-tag: noindex' not in headers.lower():raise ValueError('Missing noindex header '+row['route'])
+              meta='<meta property="og:image" content="'+base+path+'">'
+              if page.count(meta.encode('utf8'))!=1:raise ValueError('Expected unique OG link missing '+row['route'])
+              if b'<meta name="robots" content="noindex,nofollow">' not in page:raise ValueError('Preview noindex meta missing '+row['route'])
+              return imgbytes
+            with concurrent.futures.ThreadPoolExecutor(max_workers=18) as pool:
+              allbytes=list(pool.map(test,source))
+            report['jpeg_200_sha256_verified']=len(allbytes)
+            report['html_200_og_verified']=len(allbytes)
+            sample=source[:30]
+            sheet=Image.new('RGB',(6*206,5*236),'#F5F7F5');brush=ImageDraw.Draw(sheet)
+            for i,(meta,imgbytes) in enumerate(zip(source,allbytes)):
+              if i>=30:break
+              with Image.open(io.BytesIO(imgbytes)) as img:
+                im=img.convert('RGB').resize((156,156),Image.Resampling.LANCZOS)
+              x=(i%6)*206+12;y=(i//6)*236+10
+              sheet.paste(im,(x,y))
+              brush.text((x,y+167),meta['route'][:25],fill='#1E2927')
+            sheet.save(out/'30_LIVE_IMAGES_156px.jpg',quality=90)
+            img=Image.open(io.BytesIO(allbytes[0])).convert('RGB')
+            one=Image.new('RGB',(550,330),'white')
+            it=ImageDraw.Draw(one)
+            one.paste(img.resize((102,102)),(14,10))
+            one.paste(img.resize((156,156)),(160,10))
+            one.paste(img.resize((200,200)),(336,10))
+            it.text((14,230),'102px',fill='#333')
+            it.text((160,230),'156px',fill='#333')
+            it.text((336,230),'200px',fill='#333')
+            one.save(out/'SAME_REAL_IMAGE_102_156_200.png')
+            chrome=shutil.which('google-chrome') or shutil.which('chromium') or shutil.which('chromium-browser')
+            if chrome:
+              cmd=[chrome,'--headless=new','--no-sandbox','--disable-dev-shm-usage','--disable-gpu',
+                '--hide-scrollbars','--screenshot='+str(out/'LIVE_GALLERY_390PX_MOBILE.png'),
+                '--window-size=390,844','--virtual-time-budget=2500',base+'/index.html']
+              try:
+                v=subprocess.run(cmd,capture_output=True,timeout=35)
+                if v.returncode==0 and (out/'LIVE_GALLERY_390PX_MOBILE.png').is_file():
+                  report['actual_browser_screenshot']='PASS_REAL_CHROME_390PX'
+                else:report['actual_browser_screenshot']='BROWSER_SCREENSHOT_UNAVAILABLE'
+              except Exception as e:report['actual_browser_screenshot']='BROWSER_RENDER_ERROR_'+type(e).__name__
+            else:report['actual_browser_screenshot']='BROWSER_CHROME_NOT_INSTALLED'
+            report['status']='PASS_150_EXACT_LIVE_JPEG_SHA256_HTML_OG_NOINDEX' if len(allbytes)==150 else 'HOLD_INCOMPLETE'
+          except Exception as e:
+            report['errors'].append(type(e).__name__+': '+str(e)[:260])
+            report['status']='HOLD_EXISTING_150_GET_ONLY'
+          (out/'FINAL_150_PREVIEW_HTTP_MOBILE_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('ENPT_FINAL_150_DRAFT_ALL_REAL_LIVE_HTTP_MOBILE_QA',json.dumps(report,ensure_ascii=False),flush=True)
+          if report['status'].startswith('HOLD_'):raise SystemExit('HOLD QA only: never redeploy')
+          PY
+      - name: Archive GET-only evidence and mobile screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_150_EXISTING_READY_DRAFT_ALL_HTTP_MOBILE_VERIFICATION
+          path: existing-150-final-qa/
+          retention-days: 30
+          if-no-files-found: warn
