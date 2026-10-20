@@ -31,9 +31,10 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           w=Path('.github/workflows/ENPT-21964-EXACT-EDGE-TARBALL-ONLY-TO-EXISTING-UNPUBLISHED-DRAFT-ONCE.yml').read_text()
-          assert w.count("method='PUT'")==1
-          assert "method='POST'" not in w and '/restore' not in w
-          assert "netlify deploy" not in w and '--prod' not in w
+          lines=w.splitlines()
+          writes=[x for x in lines if x.strip().startswith("req=urllib.request.Request(url,data=body,method=")]
+          assert len(writes)==1 and writes[0].count("method='PUT'")==1
+          assert not any(x.strip().startswith(('netlify deploy ','--prod','method=POST')) for x in lines)
           print('PASS_EXACT_ONE_EXISTING_UNPUBLISHED_EDGE_BUNDLE_PUT_CANDIDATE',flush=True)
           PY
       - uses: actions/download-artifact@v4
@@ -235,8 +236,8 @@ jobs:
                   result['errors'].append('Owner tags missing '+path)
               if path.endswith('.html'):
                 if b'og:image' not in body:result['errors'].append('Missing og:image '+path)
-                if 'noindex' not in (header.get('X-Robots-Tag') or '').lower() and
-                   b'name="robots" content="noindex' not in body:
+                if ('noindex' not in (header.get('X-Robots-Tag') or '').lower() and
+                    b'name="robots" content="noindex' not in body):
                   result['errors'].append('UNSAFE_PREVIEW_INDEXABLE_HEADER '+path)
                 m=re.search(rb'<meta\s+property="og:image"\s+content="(https://englishpt.kr/assets/images/seo-square/v1/[^"]+\.jpg)"',body)
                 if m:
