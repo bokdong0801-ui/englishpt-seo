@@ -100,7 +100,7 @@ def preflight():
  if len(sha_index)!=158571 or sum(not z['noindex'] for z in sha_index.values())!=21964:hold("SEO original route/source count drift")
  # global Draft-only crawler shield; never pass this source to Production.
  header= (SITE/'_headers').read_text('utf8')
- if not header.endswith("\n/*\n  X-Robots-Tag: noindex, nofollow\n") or header.count("X-Robots-Tag: noindex, nofollow")!=1:
+ if not header.endswith("\n/*\n  X-Robots-Tag: noindex, nofollow\n") or header.count("\n/*\n  X-Robots-Tag: noindex, nofollow\n")!=1:
   hold("Draft-only global noindex missing or duplicated")
  original=(ROOT/'signed-qa-map/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz')
  old_header_sha=signed['target_SHA1_by_path']['_headers']
