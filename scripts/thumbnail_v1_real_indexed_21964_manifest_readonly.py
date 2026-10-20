@@ -170,14 +170,15 @@ for route in actual_indexed:
    slug=part;intent="station-hub"
    keyword="역별 영어수업";lines=["영어","수업 안내"];subtitle="역 주변 · 과정 찾기";category="region";mode="안내"
   else:
-   for x in sorted(STATION_INTENTS,key=len,reverse=True):
-    suffix="-"+x
-    if part.endswith(suffix):
-     cand=part[:-len(suffix)]
-     if cand in station_by_slug:slug=cand;intent=x;break
-   if slug:
+   # Exact prefix against the verified canonical 911 station slugs, then exact intent.
+   # Avoid a wrong intent from suffix collisions and keep the station slug untouched.
+   matches=[(candidate,part[len(candidate)+1:]) for candidate in station_by_slug
+            if part.startswith(candidate+"-") and part[len(candidate)+1:] in STATION_INTENTS]
+   if len(matches)==1:
+    slug,intent=matches[0]
     category,keyword,mode,lines,subtitle=STATION_INTENTS[intent]
-   else:hold="UNKNOWN_STATION_SLUG_OR_INTENT"
+   else:
+    hold="UNKNOWN_OR_AMBIGUOUS_STATION_SLUG_OR_INTENT"
   if slug:
    loc=station_by_slug[slug]["name"]
    if not loc:hold="MISSING_OFFICIAL_STATION_NAME"
