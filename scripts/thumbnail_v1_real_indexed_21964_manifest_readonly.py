@@ -229,8 +229,20 @@ if counts["station"]!=21864 or counts["regional"]!=94 or counts["national_hub"]!
 by_station=collections.Counter(unused)
 if len(by_station)!=911 or any(v!=24 for v in by_station.values()):
  errors.append("Every station must have exactly 24 indexable URL routes")
-for x in STATION_INTENTS:
- if intents[x]!=911:errors.append("Station intent count not 911: "+x)
+# The signed route inventory, rather than an incidental suffix count, is authoritative.
+expected_station_routes={f"station-{slug}.html" for slug in station_by_slug}
+expected_station_routes.update(f"station-{slug}-{intent}.html" for slug in station_by_slug for intent in STATION_INTENTS)
+if set(station_paths)!=expected_station_routes:
+ errors.append("Actual station route keys differ from authoritative exact 911 by 24 cross product")
+# Every mapped row must retain the same station name and exact intent as its route.
+for row in result:
+ if row["route_type"]!="station":continue
+ expected_station=f"station-{row['location_slug']}"
+ expected_route=expected_station+(".html" if row["intent_slug"]=="station-hub" else f"-{row['intent_slug']}.html")
+ if row["route"]!=expected_route:
+  errors.append("Incorrect station/intent decomposition: "+row["route"])
+  if len(errors)>=25:break
+# These independent checks catch mistakes while allowing the original map to be rebuilt.
 if intents["station-hub"]!=911:errors.append("Station hub count not 911")
 if len(held)>0 and any(x["route_type"]=="station" for x in held):
  errors.append("Station routes unexpectedly HOLD")
