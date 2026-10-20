@@ -1,0 +1,46 @@
+name: ENPT 21964 Source Form CTA Exact Live HTML Syntax Diagnosis GET Only
+on:
+  push:
+    branches: [qa/v23521-OG21964-PRODUCTION-SEO-SAFETY-OFFLINE-20261020]
+    paths: [.github/workflows/ENPT-21964-REAL-LIVE-CTA-DOM-STRUCTURE-DIAGNOSTIC-GETONLY.yml]
+permissions:
+  contents: read
+jobs:
+  one-form-GET:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Diagnose HTML form submit variants and CTA without any POST or publish
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          import urllib.request,datetime,json,pathlib
+          class Inspect(HTMLParser):
+            def __init__(self):super().__init__();self.buttons=[];self.forms=[];self.inputs=[];self.links=[]
+            def handle_starttag(self,tag,attrs):
+              d=dict(attrs)
+              if tag=='button':self.buttons.append({k:d.get(k) for k in ('type','class','data-open-form','data-close-form')})
+              if tag=='form':self.forms.append({k:d.get(k) for k in ('id','name','method','data-netlify')})
+              if tag=='input':self.inputs.append({k:d.get(k) for k in ('name','id','type')})
+              if tag=='a' and any(k in d for k in ('data-open-form','data-trial-cta')):self.links.append({k:d.get(k) for k in ('href','data-open-form','data-trial-cta')})
+          base='https://enptog21964clifinalqa20--englishpt-seo.netlify.app'
+          names=['gyeongnam-milyang-naeidong-elem-tutor.html','seoul-jongno-sajikdong-high-tutor.html']
+          obj={'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'results':[],'netlify_mutations':0,'form_submissions':0}
+          for name in names:
+            req=urllib.request.Request(base+'/'+name,method='GET',headers={'User-Agent':'ENPT-form-CTA-dom-diagnostic-GET'})
+            with urllib.request.urlopen(req,timeout=35) as r:data=r.read(1800000).decode('utf8','replace')
+            p=Inspect();p.feed(data)
+            obj['results'].append({'route':name,'buttons':p.buttons[:20],
+              'forms':p.forms,'inputs':p.inputs[:20],'special_links':p.links,
+              'data_open_form_count':data.count('data-open-form'),'submit_lead_count':data.count('submit-lead'),
+              'form_exists':bool(p.forms)})
+          pathlib.Path('FORM_CTA_LIVE_DOM_DIAGNOSTIC.json').write_text(json.dumps(obj,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_REAL_FORM_BUTTON_DOM_READONLY',json.dumps(obj,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_REAL_LIVE_FORM_BUTTON_DOM_DIAGNOSTIC_GET_ONLY
+          path: FORM_CTA_LIVE_DOM_DIAGNOSTIC.json
+          retention-days: 20
+          if-no-files-found: warn
