@@ -42,7 +42,7 @@ jobs:
           assert (siteInfo.get('published_deploy') or {}).get('id')==prod and siteInfo['custom_domain']=='englishpt.kr'
           assert d.get('site_id')==site and d.get('id')==draft and d.get('title')==marker
           assert d.get('published_at') is None and d.get('state') in ('preparing','prepared','uploading','uploaded','ready')
-          digest='prior-signed/FULL_202765_STATIC_SHA1_DIGEST.json.gz'
+          digest=next(pathlib.Path('prior-signed').rglob('FULL_202765_STATIC_SHA1_DIGEST.json.gz'))
           with gzip.open(digest,'rt',encoding='utf8') as f: paths=json.load(f)
           assert len(paths)==202765
           bysha=collections.defaultdict(list)
