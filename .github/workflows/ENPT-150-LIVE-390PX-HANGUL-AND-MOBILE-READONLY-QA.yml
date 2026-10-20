@@ -1,0 +1,54 @@
+name: ENPT Existing 150 READY Draft Korean Font 390px Visual QA GET ONLY
+on:
+  push:
+    branches:
+      - ops/v23521-OG150-READY-HTTP-DNS-DIAGNOSTIC-GETONLY-20261020
+    paths:
+      - .github/workflows/ENPT-150-LIVE-390PX-HANGUL-AND-MOBILE-READONLY-QA.yml
+permissions:
+  contents: read
+jobs:
+  korean-mobile-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Install test-runner Korean fonts, no site changes
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-nanum
+          fc-cache -f >/dev/null
+          fc-match 'sans:lang=ko' | head -1
+          mkdir -p korean-mobile-evidence
+      - name: Chrome screenshot of existing READY Draft 390px, with real Korean glyphs
+        run: |
+          set -euo pipefail
+          BROWSER="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          test -n "$BROWSER"
+          timeout 45 "$BROWSER" --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu \
+            --hide-scrollbars --virtual-time-budget=2500 --window-size=390,844 \
+            --screenshot="$(pwd)/korean-mobile-evidence/EXISTING_DRAFT_390PX_HANGUL.png" \
+            https://enptog150reviewonce20--englishpt-seo.netlify.app/index.html \
+            > korean-mobile-evidence/CHROME_STDOUT.log 2>&1
+          test -s korean-mobile-evidence/EXISTING_DRAFT_390PX_HANGUL.png
+          python3 -m pip install Pillow --quiet --disable-pip-version-check
+          python3 - <<'PY'
+          from PIL import Image
+          import json,datetime,pathlib
+          img=Image.open('korean-mobile-evidence/EXISTING_DRAFT_390PX_HANGUL.png')
+          report={'status':'PASS_390PX_CHROME_KOREAN_GLYPH_SCREENSHOT_READY' if img.width==390 and img.height==844 else 'HOLD_VIEWPORT_DIMENSIONS',
+           'width':img.width,'height':img.height,'actual_page_url':'https://enptog150reviewonce20--englishpt-seo.netlify.app/index.html',
+           'production_changed':False,'netlify_uploads':0,'Netlify_POST_count':0,
+           'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+           'korean_font_installed_on_test_runner':'Nanum'}
+          pathlib.Path('korean-mobile-evidence/FINAL_HANGUL_MOBILE_VISUAL_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_EXISTING_OG150_KOREAN_390PX_VISUAL',json.dumps(report,ensure_ascii=False))
+          if report['status'].startswith('HOLD_'):raise SystemExit(1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_150_EXISTING_READY_DRAFT_KOREAN_390PX_CHROME_SCREENSHOT_GETONLY
+          path: korean-mobile-evidence/
+          retention-days: 30
+          if-no-files-found: warn
