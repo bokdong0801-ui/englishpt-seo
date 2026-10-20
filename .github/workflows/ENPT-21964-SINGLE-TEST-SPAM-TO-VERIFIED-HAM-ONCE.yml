@@ -1,0 +1,84 @@
+name: ENPT 21964 Reclassify Exact ONE Synthetic QA Spam Submission Verified — No Second POST
+on:
+  push:
+    branches: [release/v23521-OG21964-PRODSAFE-FINAL-DRAFT-AND-FORM-QA-20261020]
+    paths: [.github/workflows/ENPT-21964-SINGLE-TEST-SPAM-TO-VERIFIED-HAM-ONCE.yml]
+permissions:
+  contents: read
+concurrency:
+  group: enpt-21964-single-QA-submission-reclassify-verification-one
+  cancel-in-progress: false
+jobs:
+  verified-existing-test-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: Check exact archived QA spam submission identity, PUT only /ham once; inspect notification hook and Production safety
+        run: |
+          set -euo pipefail
+          mkdir -p one-form-verification
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.error,datetime,pathlib
+          sid='98d96cc5-f0b7-4d3d-8072-6476d93e55a3';prior='6ad5eb4918f9411c4d5e1ba4'
+          formid='6ad31619a0da0424ffd54af9'
+          submitid='6ad751390919add0ec06f61c'
+          marker='ENPT_OG21964_FINAL_QA_SINGLE_20261020'
+          token=os.environ['NETLIFY_AUTH_TOKEN'];base='https://api.netlify.com/api/v1/'
+          record={'checked_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+           'submission_id':submitid,'form_id':formid,'marker':marker,
+           'status':'HOLD','new_form_submissions':0,'publication_mutations':0,
+           'ham_PUT_attempts':0,'verified_backend':False,'naver_email_hook_configured':False,
+           'naver_inbox_delivered':None,'errors':[]}
+          def req(path,method='GET'):
+            q=urllib.request.Request(base+path,method=method,headers={
+              'Authorization':'Bearer '+token,'Accept':'application/json'})
+            with urllib.request.urlopen(q,timeout=32) as r:
+              content=r.read(1000000)
+              return r.status,json.loads(content) if content else None
+          try:
+            _,site=req('sites/'+sid)
+            assert site.get('id')==sid and (site.get('published_deploy') or {}).get('id')==prior
+            _,forms=req('sites/'+sid+'/forms')
+            assert any(x.get('id')==formid and x.get('name')=='englishpt-consultation' for x in forms)
+            _,spams=req('forms/'+formid+'/submissions?state=spam&per_page=100')
+            _,verified=req('forms/'+formid+'/submissions?per_page=100')
+            def match(rows):
+              return [x for x in rows if x.get('id')==submitid and marker in json.dumps(x.get('data') or {},ensure_ascii=False)]
+            v=match(verified);b=match(spams)
+            if v:
+              record['status']='PASS_ALREADY_VERIFIED_SKIP_PUT'
+            else:
+              assert len(b)==1,'Target synthetic QA submission absent or not uniquely matching; no PUT'
+              assert b[0].get('site_url','').startswith('https://enptog21964prodsafereview20--englishpt-seo.netlify.app')
+              record['ham_PUT_attempts']=1
+              code,_=req('submissions/'+submitid+'/ham',method='PUT')
+              assert code in (200,201,202,204),'Netlify reject exact ham PUT'
+              record['ham_PUT_status']=code
+              record['status']='HAM_PUT_ACCEPTED_VERIFY_BACKEND'
+            _,verified_after=req('forms/'+formid+'/submissions?per_page=100')
+            record['verified_backend']=len(match(verified_after))==1
+            _,hooks=req('hooks?site_id='+sid)
+            record['naver_email_hook_configured']=any(
+              x.get('event')=='submission_created' and x.get('type')=='email' and
+              'cicada3865@naver.com' in json.dumps(x.get('data') or {},ensure_ascii=False) for x in hooks)
+            _,finalsite=req('sites/'+sid)
+            assert (finalsite.get('published_deploy') or {}).get('id')==prior,'Unexpected Production drift'
+            if record['verified_backend'] and record['naver_email_hook_configured']:
+              record['status']='PASS_ONE_TEST_NOW_VERIFIED_BACKEND_AND_NAVER_HOOK_CONFIGURED_INBOX_UNVERIFIED'
+            else:record['status']='HOLD_BACKEND_OR_MAIL_HOOK_NOT_VERIFIED'
+          except Exception as e:
+            record['errors'].append(type(e).__name__+': '+str(e)[:220])
+            record['status']='HOLD_NO_RETRY_SINGLE_TEST_RECLASSIFICATION'
+          pathlib.Path('one-form-verification/ONE_SYNTHETIC_QA_FORM_NOW_VERIFIED_NAVER_HOOK_GET_QA.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\\n',encoding='utf8')
+          print('ENPT_QA_SUBMISSION_SPAM_RECLASSIFY_EXACT_ONE_RESULT',json.dumps(record,ensure_ascii=False),flush=True)
+          if record['status'].startswith('HOLD'):raise SystemExit(1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_ONE_SYNTHETIC_QA_SUBMISSION_MARKED_VERIFIED_NO_SECOND_POST
+          path: one-form-verification/
+          retention-days: 20
+          if-no-files-found: warn
