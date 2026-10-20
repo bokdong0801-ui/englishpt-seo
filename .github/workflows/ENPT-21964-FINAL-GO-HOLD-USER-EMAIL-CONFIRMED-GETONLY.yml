@@ -87,7 +87,10 @@ jobs:
               ensure(hp.meta1('property','og:image') and len(hp.meta1('property','og:image'))==1,
                      'Missing/duplicate OG '+p)
               c=[v.get('href') for v in hp.links if v.get('rel')=='canonical']
-              ensure(c==['https://englishpt.kr'+p],'Canonical wrong '+p)
+              # Root /index.html correctly canonicals to the single /englishpt.html homepage.
+              # Verify original deployed source contract instead of assuming self-canonical.
+              canonical_expected='https://englishpt.kr/englishpt.html' if p=='/index.html' else 'https://englishpt.kr'+p
+              ensure(c==[canonical_expected],'Canonical wrong '+p)
               ensure(len(hp.meta1('name','robots'))==1,'Page robots meta missing/duplicate '+p)
               if p in ['/index.html','/englishpt.html']:
                 ensure(hp.meta1('name','google-site-verification')==['OTG-5ooTZYTm-HnTOi8I0TRV4bZHUD-uSYSOih3E8ig'], 'Google owner tag missing '+p)
