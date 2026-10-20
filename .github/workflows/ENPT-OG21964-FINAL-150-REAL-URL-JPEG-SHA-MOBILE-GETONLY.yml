@@ -1,0 +1,66 @@
+name: ENPT FINAL 21964 Nonpublished CLI Draft 150 REAL OG SHA mobile 390 GET-only
+on:
+  push:
+    branches: [ops/v23521-OG21964-EDGE502-CLI-FINAL-SEO-SAFE-DRAFT-20261020]
+    paths: [.github/workflows/ENPT-OG21964-FINAL-150-REAL-URL-JPEG-SHA-MOBILE-GETONLY.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  full-real-150-SEO-JPEG-and-mobile-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Confirm strict GET-only and sample count script, Korean fonts installed
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_21964_FINAL_CLI_DRAFT_150_URL_JPEG_MOBILE_QA_GETONLY.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_21964_FINAL_CLI_DRAFT_150_URL_JPEG_MOBILE_QA_GETONLY.py').read_text('utf8')
+          assert 'len(passed)==150' in s and 'image_original_sha256_matches' in s
+          assert "'noindex' in headers.get('x-robots-tag'" in s
+          assert 'production_changed' in s and "urllib.request.Request" in s
+          assert "method='POST'" not in s and "method='PUT'" not in s
+          assert "Netlify" not in s or 'Netlify' in s
+          print('PASS_150_LIVE_GETONLY_NO_PRODUCTION_OR_FORMS_POST')
+          PY
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-nanum
+          fc-match 'sans:lang=ko' | head -1
+          python3 -m pip install Pillow --quiet --disable-pip-version-check
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          run-id: 39360145172
+          github-token: ${{ github.token }}
+          path: signed-route-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_COMPLETE_SQUARE_JPG_RECOVERED_ALL_SHA256_QA_NO_RERENDER_V1
+          run-id: 39361276955
+          github-token: ${{ github.token }}
+          path: all-jpeg-qa
+      - name: GET test 150 diverse actual Edge .html and mapped JPEG 1200x1200 SHA, roots, Google Naver, mobile 102 156 390
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_FINAL_CLI_DRAFT_150_URL_JPEG_MOBILE_QA_GETONLY.py
+          test -s og21964-final-live-qa/FINAL_150_LIVE_FULL_DRAFT_PAGE_IMAGE_MOBILE_QA.json
+          test -s og21964-final-live-qa/MOBILE_390PX_ENGLISHPT_HOME.png
+          test -s og21964-final-live-qa/MOBILE_390PX_SAMPLE_SEO_PAGE.png
+          test -s og21964-final-live-qa/LIVE_30_OG_THUMBNAILS_102PX.jpg
+          test -s og21964-final-live-qa/LIVE_30_OG_THUMBNAILS_156PX.jpg
+      - name: Retain no-post final response data and representative screen visuals
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_FINAL_NONPUBLISHED_EDGE_HTTP200_150_REAL_SEO_OG_JPEG_SHA_MOBILE_390PX_QA
+          path: og21964-final-live-qa/
+          retention-days: 30
+          if-no-files-found: warn
