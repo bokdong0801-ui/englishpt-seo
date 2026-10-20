@@ -1,0 +1,90 @@
+name: ENGLISH PT 21964 Full Transfer Netlify Digest and Edge Safety GET ONLY
+on:
+  push:
+    branches: [ops/v23521-21964-FULL-TRANSFER-READONLY-PREFLIGHT-20261020]
+    paths:
+      - .github/workflows/ENPT-21964-NETLIFY-DIGEST-CAPABILITY-GET-ONLY.yml
+permissions:
+  contents: read
+jobs:
+  netlify-digest-and-edge-safety-get:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: GET existing 21964 stalled draft, real 150 ready preview, production, file requirements and Edge metadata
+        run: |
+          set -euo pipefail
+          mkdir -p full-transfer-preflight
+          python3 - <<'PY'
+          import os,json,pathlib,datetime,urllib.request,urllib.error
+          site='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          ids={'production':'6ad5eb4918f9411c4d5e1ba4','old_full_stalled':'6ad6daf01389db1fbe596f74','ready_150_preview':'6ad6f4c0202aee7c32247e88'}
+          t=os.environ['NETLIFY_AUTH_TOKEN']
+          if not t:raise ValueError('Missing Netlify read credentials')
+          def get(path,timeout=32):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,method='GET',headers={'Authorization':'Bearer '+t,'Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=timeout) as r:return json.load(r)
+          report={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'status':'HOLD',
+                  'netlify_requests_only_GET':True,'deploy_uploads':0,'production_publish_attempts':0,
+                  'site_id':site,'expected_production_id':ids['production'],'errors':[],'deploys':{}}
+          s=get('sites/'+site)
+          report['site']={
+            'id':s.get('id'),'custom_domain':s.get('custom_domain'),
+            'published_deploy_id':(s.get('published_deploy') or {}).get('id'),
+            'ignore_html_forms':(s.get('processing_settings') or {}).get('ignore_html_forms')
+          }
+          if report['site']['published_deploy_id']!=ids['production'] or report['site']['custom_domain']!='englishpt.kr':
+            report['errors'].append('PRODUCTION_IDENTITY_DRIFT')
+          for k,v in ids.items():
+            try:
+              d=get('sites/'+site+'/deploys/'+v)
+              row={key:d.get(key) for key in ['id','site_id','state','created_at','updated_at','published_at',
+                'title','error_message','branch','required_count','uploaded_files','skipped_files','skipped',
+                'review_id','commit_ref','ssl_url','deploy_ssl_url']}
+              for listkey in ('required','required_functions','required_edge_functions'):
+                val=d.get(listkey)
+                row[listkey+'_count']=len(val) if isinstance(val,(list,dict)) else None
+                row[listkey+'_sample']=list(val)[:3] if isinstance(val,(list,dict)) else None
+              for attr in ('edge_functions','edge_functions_manifest','functions','processing_settings','deploy_lifecycle','flags'):
+                val=d.get(attr)
+                row[attr+'_type']=type(val).__name__
+                row[attr+'_count']=len(val) if isinstance(val,(list,dict)) else None
+              row['keys_related_to_function']=[x for x in d if 'edge' in x.lower() or 'function' in x.lower()]
+              report['deploys'][k]=row
+            except Exception as e:
+              report['errors'].append(k+'_GET_ERROR_'+type(e).__name__+':'+str(e)[:100])
+          try:
+            p=get('deploys/'+ids['old_full_stalled'])
+            report['old_full_api_deploy']={
+              'state':p.get('state'),'required_count':len(p.get('required',[])) if isinstance(p.get('required'),list) else None,
+              'required_edge_functions_count':len(p.get('required_edge_functions',[])) if isinstance(p.get('required_edge_functions'),list) else None,
+              'required_functions_count':len(p.get('required_functions',[])) if isinstance(p.get('required_functions'),list) else None,
+              'uploaded_files':p.get('uploaded_files'),'deploy_state_keys':[k for k in p.keys() if 'file' in k or 'edge' in k or 'function' in k or 'required' in k]}
+          except Exception as e:report['old_full_api_deploy_error']=str(e)[:170]
+          try:
+            a=get('accounts/'+s['account_id'])
+            c=(a.get('capabilities') or {}).get('credits') or {}
+            report['netlify_account']={'usages_exceeded':a.get('usages_exceeded'),
+              'limits_exceeded':a.get('configurable_limits_exceeded'),
+              'credits_included':c.get('included'),'credits_used':c.get('used')}
+          except Exception as e:report['netlify_account_error']=str(e)[:140]
+          if report['site']['ignore_html_forms'] is not False:
+            report['errors'].append('NETLIFY_FORM_PROCESSING_SETTING_UNEXPECTED')
+          if report['deploys'].get('ready_150_preview',{}).get('state')!='ready':
+            report['errors'].append('PREVIEW_150_NOT_READY')
+          report['status']='PASS_NETLIFY_EXISTING_DEPLOY_GET_ONLY_DIAGNOSTIC' if not report['errors'] else 'HOLD_REQUIRE_INVESTIGATION'
+          path=pathlib.Path('full-transfer-preflight/NETLIFY_21964_EXISTING_DEPLOYS_DIGEST_EDGE_READONLY.json')
+          path.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('ENPT_FULL21964_NETLIFY_DIGEST_READONLY_RESULT',json.dumps(report,ensure_ascii=False),flush=True)
+          if report['errors']:raise SystemExit('HOLD diagnostic findings')
+          PY
+      - name: Save read-only Netlify state without tokens
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_NETLIFY_EXISTING_DRAFT_DIGEST_EDGE_GETONLY_QA
+          path: full-transfer-preflight/
+          retention-days: 30
+          if-no-files-found: warn
