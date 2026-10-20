@@ -1,0 +1,99 @@
+name: ENGLISH PT Verified 21964 Indexable Thumbnail Full Map and 150 Square Pilot QA v3
+on:
+  push:
+    branches:
+      - ops/v23521-THUMBNAIL-21964-REAL-ROUTE-MAPPING-GETONLY-20261020
+    paths:
+      - .github/workflows/v23521-INDEXABLE-21964-THUMBNAIL-MAP-AND-PILOT-150-OFFLINE-V3.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21964-indexable-square-thumbnail-v3-getonly
+  cancel-in-progress: false
+jobs:
+  verified-full-map-and-editorial-pilot:
+    name: Actual 21964 route mapping plus 150 square mobile safe-area pilot QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fail closed syntax precheck
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/thumbnail_v1_real_indexed_21964_manifest_readonly.py scripts/thumbnail_v1_square_pilot_150_images_OFFLINE.py
+      - name: Download original 158571 SEO URL inventory verified before approved Google plus Naver production release
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: qa-source
+      - name: Read-only actual 911 station names and 21964 URL mapping
+        run: |
+          set -euo pipefail
+          python3 scripts/thumbnail_v1_real_indexed_21964_manifest_readonly.py
+      - name: Independently verify URL manifest, station intentions and noindex exclusion
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import csv,gzip,json,collections
+          from pathlib import Path
+          root=Path('thumb-21964-outputs')
+          rep=json.loads((root/'QA_21964_REAL_MAPPING_REPORT.json').read_text('utf8'))
+          assert rep['status']=='PASS_REAL_21964_ROUTE_MAPPING_SOURCE_VERIFIED_WITH_REVIEW_HOLDS'
+          assert (rep['original_public_urls'],rep['indexable_urls'],rep['noindex_fence_count'])==(158571,21964,136607)
+          assert rep['indexed_family_counts']=={'national_hub':6,'regional':94,'station':21864}
+          assert (rep['station_count'],rep['station_course_intents'],rep['station_urls_per_station'])==(911,23,24)
+          assert rep['unique_accent_colors']==21964 and rep['unique_planned_image_paths']==21964
+          with (root/'ALL_21964_INDEXABLE_THUMBNAIL_MAP.csv').open(encoding='utf-8-sig',newline='') as f: rows=list(csv.DictReader(f))
+          assert len(rows)==21964
+          assert len({r['route'] for r in rows})==21964
+          assert len({r['planned_image_path'] for r in rows})==21964
+          assert len({r['accent_hex'] for r in rows})==21964
+          assert all(r['indexable']=='TRUE' and r['canonical_url']=='https://englishpt.kr/'+r['route'] for r in rows)
+          assert all(r['mapping_status']=='READY_METADATA_ONLY' for r in rows if r['route_type']=='station')
+          assert all(r['source_page_sha1'] and r['source_edge_path'].startswith('__pages/') for r in rows)
+          with gzip.open('qa-source/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz','rt',encoding='utf8') as f:
+            idx={k for k,v in json.load(f)['original_public_html_to_data_payload'].items() if not v['noindex']}
+          assert idx=={r['route'] for r in rows}
+          counts=collections.Counter(r['intent_slug'] for r in rows if r['route_type']=='station')
+          assert len(counts)==24 and all(n==911 for n in counts.values()),counts
+          print('PASS_VERIFIED_REAL_21964_INDEXABLE_MAPPING_911_REAL_STATION_NAMES_24_PER_STATION_NO_NOIDX',flush=True)
+          PY
+      - name: Install exact Korean-capable font and image renderer
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Generate 150 category+long-station keyword square images, optimized JPEG and pixel-level safe-area mobile QA
+        run: |
+          set -euo pipefail
+          python3 scripts/thumbnail_v1_square_pilot_150_images_OFFLINE.py
+      - name: Independent no writes and exact image QA report checks
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          r=json.loads(Path('thumb-21964-outputs/PILOT_150_IMAGE_QA_REPORT.json').read_text('utf8'))
+          assert r['status']=='PASS_150_JPEG_SQUARE_PILOT_QA',r['issues'][:10]
+          assert r['rendered']==150 and r['size']==[1200,1200] and r['test_mobile_width_px']==102
+          assert r['max_jpeg_bytes']<350000 and r['production_changed'] is False
+          imgs=list(Path('thumb-21964-outputs/pilot-jpg').glob('*.jpg'))
+          assert len(imgs)==150
+          assert Path('thumb-21964-outputs/PILOT_102PX_MOBILE.jpg').is_file()
+          print('PASS_150_REAL_URL_JPEG_MOBILE_SAFEAREA_IMAGE_PILOT_NO_PRODUCTION_WRITES',flush=True)
+          PY
+      - name: Upload evidence mapping 21964 and 150 thumbnails even if pilot QA fails
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          path: thumb-21964-outputs/
+          retention-days: 30
+          if-no-files-found: warn
