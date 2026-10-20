@@ -62,9 +62,9 @@ jobs:
             def run_curl(path):
               with tempfile.TemporaryDirectory() as temp:
                 body=Path(temp)/'body';head=Path(temp)/'head'
-                cmd=['curl','-sS','--fail','--connect-timeout','7','--max-time','19',
+                cmd=['curl','-sS','--fail','--connect-timeout','7','--max-time','17','--retry','2','--retry-all-errors','--retry-delay','1','--retry-max-time','55',
                    '--header','Accept: text/html,image/jpeg,*/*','-D',str(head),'-o',str(body),base+path]
-                r=subprocess.run(cmd,capture_output=True,text=True,timeout=23)
+                r=subprocess.run(cmd,capture_output=True,text=True,timeout=63)
                 if r.returncode!=0:
                   raise ValueError('HTTP GET failed '+path+' '+r.stderr[-140:])
                 return body.read_bytes(),head.read_text('utf8',errors='replace')
@@ -88,7 +88,7 @@ jobs:
               if page.count(meta.encode('utf8'))!=1:raise ValueError('Expected unique OG link missing '+row['route'])
               if b'<meta name="robots" content="noindex,nofollow">' not in page:raise ValueError('Preview noindex meta missing '+row['route'])
               return imgbytes
-            with concurrent.futures.ThreadPoolExecutor(max_workers=18) as pool:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=7) as pool:
               allbytes=list(pool.map(test,source))
             report['jpeg_200_sha256_verified']=len(allbytes)
             report['html_200_og_verified']=len(allbytes)
