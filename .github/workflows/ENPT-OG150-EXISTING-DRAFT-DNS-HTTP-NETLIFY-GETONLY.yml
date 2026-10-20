@@ -1,0 +1,63 @@
+name: ENPT Existing 150 READY Draft DNS HTTP and Netlify API GET Only
+on:
+  push:
+    branches:
+      - ops/v23521-OG150-READY-HTTP-DNS-DIAGNOSTIC-GETONLY-20261020
+    paths:
+      - .github/workflows/ENPT-OG150-EXISTING-DRAFT-DNS-HTTP-NETLIFY-GETONLY.yml
+permissions:
+  contents: read
+jobs:
+  diagnose-preview-host:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: Read-only exact READY deploy, compare alias and immutable deploy URLs via HTTP GET
+        run: |
+          python3 - <<'PY'
+          import os,datetime,json,pathlib,urllib.request,socket,concurrent.futures,subprocess
+          p=pathlib.Path('og150-dns-qa');p.mkdir(exist_ok=True)
+          t=os.environ['NETLIFY_AUTH_TOKEN']
+          site='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          dep='6ad6f4c0202aee7c32247e88'
+          def api(x):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+x,method='GET',headers={'Authorization':'Bearer '+t})
+            with urllib.request.urlopen(req,timeout=25) as r:return json.load(r)
+          s=api('sites/'+site)
+          d=api('sites/'+site+'/deploys/'+dep)
+          result={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+             'production_id':s.get('published_deploy',{}).get('id'),
+             'expected_prod_unchanged':s.get('published_deploy',{}).get('id')=='6ad5eb4918f9411c4d5e1ba4',
+             'draft':{k:d.get(k) for k in ('id','state','url','deploy_ssl_url','ssl_url','name','title','created_at','updated_at','published_at','error_message')},
+             'mutations':0,'hosts':[]}
+          image='/assets/images/seo-square/v1/49d1a4cf976b8dcba192.jpg'
+          testhosts=[
+             'https://enptog150reviewonce20--englishpt-seo.netlify.app',
+             'https://6ad6f4c0202aee7c32247e88--englishpt-seo.netlify.app',
+             'https://englishpt-seo.netlify.app',
+             'https://englishpt.kr']
+          def test(host,path):
+            u=host+path
+            cmd=['curl','-sS','-L','--connect-timeout','7','--max-time','12','-o','/dev/null','-w','http=%{http_code} remote_ip=%{remote_ip} redirect=%{redirect_url} ssl_verify=%{ssl_verify_result} size=%{size_download} duration=%{time_total}',u]
+            x=subprocess.run(cmd,text=True,capture_output=True,timeout=18)
+            return {'url':u,'exitcode':x.returncode,'result':x.stdout[-300:],'stderr':x.stderr[-350:]}
+          targets=[(h,p) for h in testhosts for p in ('/','/englishpt.html',image) if h not in ('https://englishpt-seo.netlify.app','https://englishpt.kr') or p=='/']
+          with concurrent.futures.ThreadPoolExecutor(max_workers=9) as pool:
+            result['hosts']=list(pool.map(lambda x:test(*x),targets))
+          try:
+            fs=api('deploys/'+dep+'/files')
+            result['deploy_files_count']=len(fs) if isinstance(fs,list) else None
+            result['deploy_file_names_sample']=[x.get('path') or x.get('name') for x in fs[:6]] if isinstance(fs,list) else []
+          except Exception as e:result['deploy_file_endpoint_error']=str(e)[:160]
+          (p/'DRAFT_READY_HOST_HTTP_GET_DIAGNOSTIC.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_EXISTING_150_DRAFT_DNS_DIAG',json.dumps(result,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_OG150_EXISTING_DRAFT_REAL_HOST_DNS_HTTP_GET_DIAGNOSTIC
+          path: og150-dns-qa/
+          retention-days: 30
+          if-no-files-found: warn
