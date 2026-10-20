@@ -1,0 +1,41 @@
+name: ENPT 21964 existing async digest Draft checkpoint current GET ONLY
+on:
+  push:
+    branches: [ops/v23521-OG21964-ASYNC-6000-CHECKPOINT-READONLY-20261020]
+    paths: [.github/workflows/ENPT-21964-EXISTING-ASYNC-6000-CHECKPOINT-GETONLY.yml]
+permissions:
+  contents: read
+jobs:
+  existing-async-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: Netlify existing draft + production identity GET, no new deploy or upload
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request,datetime,pathlib
+          t=os.environ["NETLIFY_AUTH_TOKEN"]
+          site="98d96cc5-f0b7-4d3d-8072-6476d93e55a3"
+          did="6ad708da374d457504481d5c"
+          def get(p):
+            req=urllib.request.Request("https://api.netlify.com/api/v1/"+p,method="GET",headers={"Authorization":"Bearer "+t})
+            with urllib.request.urlopen(req,timeout=30) as r:return json.load(r)
+          s=get("sites/"+site);d=get("sites/"+site+"/deploys/"+did)
+          report={"checked_at":datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "draft_id":did,"state":d.get("state"),"title":d.get("title"),"published_at":d.get("published_at"),
+            "remaining_required_count":len(d.get("required") or []),
+            "remaining_required_edge_count":len(d.get("required_edge_functions") or []),
+            "published_production_id":(s.get("published_deploy") or {}).get("id"),
+            "production_unchanged":(s.get("published_deploy") or {}).get("id")=="6ad5eb4918f9411c4d5e1ba4",
+            "draft_url":d.get("deploy_ssl_url"),"error_message":d.get("error_message"),"actions":"GET_ONLY"}
+          assert report["production_unchanged"] and d.get("published_at") is None and d.get("id")==did
+          pathlib.Path("CHECKPOINT_EXISTING_21964_ASYNC_DRAFT_GETONLY.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n")
+          print("ENPT_ASYNC_EXISTING_DRAFT_CURRENT",json.dumps(report,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_ASYNC_21964_EXISTING_DRAFT_CURRENT_GETONLY
+          path: CHECKPOINT_EXISTING_21964_ASYNC_DRAFT_GETONLY.json
+          retention-days: 30
