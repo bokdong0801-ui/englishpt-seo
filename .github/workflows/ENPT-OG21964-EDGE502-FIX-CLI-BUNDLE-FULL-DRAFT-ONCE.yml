@@ -1,0 +1,211 @@
+name: ENPT 21964 Fix Edge502 by CLI-bundled FULL Nonpublished Draft ONCE
+on:
+  push:
+    branches: [ops/v23521-OG21964-EDGE502-CLI-FULL-NONPUBLISHED-ONCE-20261020]
+    paths: [.github/workflows/ENPT-OG21964-EDGE502-FIX-CLI-BUNDLE-FULL-DRAFT-ONCE.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21964-full-CLIbundle-new-nonprod-EDGE502-fix-once-20261020
+  cancel-in-progress: false
+jobs:
+  full-site-fixed-bundling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 37
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      PREVIOUS_PRODUCTION: 6ad5eb4918f9411c4d5e1ba4
+      ALIAS: enptog21964cliedgefixonce20
+      MARKER: ENPT-21964-EDGE502-CLI-BUNDLE-FULL-DRAFT-NONPUBLISHED-ONLY-20261020
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static freeze, only CLI draft allowed, one attempt
+        run: |
+          python3 -m py_compile scripts/ENPT_21964_DRAFT_CANDIDATE_ONLY_EDIT_OG_AND_PRESERVE_NOINDEX.py
+          python3 - <<'PY'
+          from pathlib import Path
+          y=Path('.github/workflows/ENPT-OG21964-EDGE502-FIX-CLI-BUNDLE-FULL-DRAFT-ONCE.yml').read_text()
+          a=[i for i,s in enumerate(y.splitlines()) if s.strip().startswith('timeout 1050s netlify deploy ')]
+          assert len(a)==1,'HOLD must be exactly one CLI deploy'
+          assert all('--prod' not in s for s in y.splitlines()[a[0]:a[0]+10])
+          assert '--alias="$ALIAS"' in y
+          assert "netlify --version" in y
+          print('PASS_ONLY_ONE_CLI_NONPUBLISHED_FULL_DRAFT_EXPECTED')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: pristine-release
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          run-id: 39360145172
+          github-token: ${{ github.token }}
+          path: signed-route-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_COMPLETE_SQUARE_JPG_RECOVERED_ALL_SHA256_QA_NO_RERENDER_V1
+          run-id: 39361276955
+          github-token: ${{ github.token }}
+          path: all-jpeg-qa
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39360903334
+          pattern: ENPT_ALL21964_SQUARE_JPEG_SHARD_*
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          path: existing-jpegs
+      - name: Recreate exact 21964 OG meta from signed original archive; no image rerender and 136607 noindex unchanged
+        run: |
+          set -euo pipefail
+          mkdir -p thumb-21964-candidate thumb-draft-qa edge502-cli-proof
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          f=pristine-release/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          echo "6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884  $f" | sha256sum -c -
+          tar --zstd -xf "$f" -C thumb-21964-candidate
+          python3 scripts/ENPT_21964_DRAFT_CANDIDATE_ONLY_EDIT_OG_AND_PRESERVE_NOINDEX.py
+          test -s thumb-draft-qa/CANDIDATE_21964_SOURCE_PRESERVATION_QA.json
+          test "$(find thumb-21964-candidate/assets/images/seo-square/v1 -type f -name '*.jpg' | wc -l)" -eq 21964
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          r=json.loads(Path('thumb-draft-qa/CANDIDATE_21964_SOURCE_PRESERVATION_QA.json').read_text())
+          assert r['status']=='PASS_DRAFT_CANDIDATE_21964_REAL_OG_LINKS_ALL_NOIDX_PRESERVED'
+          assert r['all_136607_noindex_edge_files_sha1_identical']==136607
+          assert r['new_image_count']==21964 and r['actual_site_page_count']==158571
+          assert r['both_google_naver_owner_tags_preserved']
+          print('PASS_ORIGINAL_180800_AND_NEW_21964_CANDIDATE_OG_QA',flush=True)
+          PY
+      - name: Preview-only noindex, Edge header protection and original Netlify CLI router bundling
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json
+          root=Path('thumb-21964-candidate')
+          assert not (root/'.netlify/internal/edge-functions/manifest.json').exists(),'HOLD stale bundled Edge manifest'
+          fp=root/'netlify/edge-functions/shard-router.js'
+          before=fp.read_text('utf8')
+          assert before.count('headers.delete("X-Robots-Tag");')==1
+          after=before.replace('headers.delete("X-Robots-Tag");',
+            'headers.set("X-Robots-Tag", "noindex, nofollow"); // DRAFT ONLY, restore source for any production candidate')
+          fp.write_text(after,encoding='utf8')
+          hdr=root/'_headers';old=hdr.read_text('utf8')
+          assert '\\n/*\\n  X-Robots-Tag: noindex, nofollow\\n' not in old
+          hdr.write_text(old+'\\n/*\\n  X-Robots-Tag: noindex, nofollow\\n',encoding='utf8')
+          robots=root/'robots.txt';robots.write_text('User-agent: *\\nDisallow: /\\n',encoding='utf8')
+          image_dir=root/'assets/images/seo-square/v1'
+          proof={'status':'PASS_DRAFT_ONLY_PROTECTED_HEADER_ORIGINAL_ROUTER_LOGIC',
+            'image_count':len(list(image_dir.glob('*.jpg'))),
+            'edge_source_sha_before':hashlib.sha256(before.encode()).hexdigest(),
+            'edge_source_sha_preview':hashlib.sha256(after.encode()).hexdigest(),
+            'preview_edge_header_noindex':True,
+            'never_use_preview_edge_router_for_production':True,
+            'global_noindex_header':True,'robots_txt_disallow_all':True,
+            'cli_will_bundle_edge_from_config':True,
+            'no_manual_edge_tar_api_upload':True,'production_mutations':0}
+          assert proof['image_count']==21964
+          Path('edge502-cli-proof/01_CLIBUNDLE_PREVIEW_NOINDEX_GATES.json').write_text(json.dumps(proof,indent=2)+'\\n')
+          print('ENPT_21964_PREVIEW_ONLY_EDGE_NOINDEX_QA',json.dumps(proof),flush=True)
+          PY
+          node --check thumb-21964-candidate/netlify/edge-functions/shard-router.js
+      - name: GET-only account/site Production identity and uniqueness gate before new Draft
+        run: |
+          python3 - <<'PY'
+          import os,urllib.request,json,pathlib
+          site=os.environ['SITE_ID'];t=os.environ['NETLIFY_AUTH_TOKEN']
+          def get(p):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+p,method='GET',
+              headers={'Authorization':'Bearer '+t,'Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=35) as r:return json.load(r)
+          s=get('sites/'+site)
+          assert s['id']==site and s.get('custom_domain')=='englishpt.kr'
+          assert (s.get('published_deploy') or {}).get('id')==os.environ['PREVIOUS_PRODUCTION']
+          a=get('accounts/'+s['account_id'])
+          assert not a.get('usages_exceeded') and not a.get('configurable_limits_exceeded'),'HOLD account credit over limit'
+          history=get('sites/'+site+'/deploys?per_page=100')
+          if any(x.get('title')==os.environ['MARKER'] or os.environ['ALIAS'] in str(x.get('deploy_ssl_url') or '') for x in history):
+            raise SystemExit('HOLD same full-CLI attempt already exists; no duplicate')
+          proof={'status':'PASS_ONE_CLI_PRODUCTION_IDENTITY_UNCHANGED_AND_ALIAS_NOT_PREVIOUSLY_USED',
+            'site_id':site,'production_id':os.environ['PREVIOUS_PRODUCTION'],'draft_marker':os.environ['MARKER'],
+            'predeploy_netlify_POSTs':0}
+          pathlib.Path('edge502-cli-proof/02_API_GETONLY_PREDEPLOY_IDENTITY.json').write_text(json.dumps(proof,indent=2)+'\\n')
+          print('ENPT_21964_CLI_FULL_DRAFT_SAFE_PREFLIGHT',json.dumps(proof),flush=True)
+          PY
+      - name: Pin same Netlify CLI version as successful 200 HTTP router Canary
+        run: |
+          npm install -g netlify-cli@27.13.0 --no-fund --no-audit
+          netlify --version
+      - name: ONE full Draft by correct Netlify CLI bundler with already-hosted SHA reuse; NEVER --prod
+        run: |
+          set -euo pipefail
+          cd thumb-21964-candidate
+          echo "START_ONE_CLI_FULL_DRAFT $(date -u +%FT%TZ)" > ../edge502-cli-proof/03_ONE_FULL_CLI_DRAFT_ATTEMPT.txt
+          timeout 1050s netlify deploy --site="$SITE_ID" --dir=. --no-build --alias="$ALIAS" --timeout=900 --message="$MARKER" > ../edge502-cli-proof/04_CLI_DEPLOY_OUTPUT.txt 2>&1
+          echo "PASS_CLI_FULL_DRAFT_SUCCESS_$(date -u +%FT%TZ)" >> ../edge502-cli-proof/03_ONE_FULL_CLI_DRAFT_ATTEMPT.txt
+      - name: GET-only actual site HTML, Edge route, index noindex, JPEG content and immutable Production
+        if: success()
+        run: |
+          python3 - <<'PY'
+          import os,urllib.request,urllib.error,datetime,json,pathlib,subprocess
+          s=os.environ['SITE_ID'];t=os.environ['NETLIFY_AUTH_TOKEN']
+          def get_api(p):
+            q=urllib.request.Request('https://api.netlify.com/api/v1/'+p,method='GET',
+              headers={'Authorization':'Bearer '+t,'Accept':'application/json'})
+            with urllib.request.urlopen(q,timeout=30) as r:return json.load(r)
+          site=get_api('sites/'+s)
+          assert (site.get('published_deploy') or {}).get('id')==os.environ['PREVIOUS_PRODUCTION']
+          list_=get_api('sites/'+s+'/deploys?per_page=100')
+          found=[x for x in list_ if x.get('title')==os.environ['MARKER']]
+          assert len(found)==1 and found[0].get('state')=='ready' and found[0].get('published_at') is None
+          did=found[0]['id']
+          base='https://'+os.environ['ALIAS']+'--englishpt-seo.netlify.app'
+          paths=['/index.html','/englishpt.html','/robots.txt','/sitemap-index.xml',
+            '/station-419minjumyoji-toeic.html','/station-419minjumyoji-ielts.html',
+            '/__pages/23/englishpt.page']
+          res={'draft_id':did,'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+               'base':base,'published_unchanged':True,'nonpublished':True,
+               'status':'HOLD','requests':[],'mutations_after_deploy':0,
+               'draft_only_router_noindex':True}
+          for path in paths:
+            c=subprocess.run(['curl','-sS','--connect-timeout','8','--max-time','22','-D','-',
+                  '-w','\\nSTATUS=%{http_code} BYTES=%{size_download}',base+path],
+                  capture_output=True,timeout=26)
+            body=c.stdout[:1700].decode('utf8',errors='replace')
+            st=c.stdout[-130:].decode('utf8',errors='replace')
+            res['requests'].append({'path':path,'exit_code':c.returncode,'head_excerpt':body[:600],
+              'result':st,'html_og':b'og:image' in c.stdout})
+          if all('STATUS=200' in x['result'] for x in res['requests']):
+            if not all('x-robots-tag: noindex' in x['head_excerpt'].lower() for x in res['requests'][:2]):
+              res['status']='HOLD_PREVIEW_HTML_NOINDEX_HEADER_MISSING'
+            else:res['status']='PASS_FULL_21964_CLI_BUNDLED_EDGE_LIVE_HTTP_200_AND_DRAFT_NOINDEX'
+          else:res['status']='HOLD_FULL_21964_CLI_BUNDLED_EDGE_STILL_HTTP_ERRORS'
+          pathlib.Path('edge502-cli-proof/05_FULL_DRAFT_REAL_HTTP_QA.json').write_text(json.dumps(res,ensure_ascii=False,indent=2)+'\\n')
+          print('ENPT_CLI_FULL_21964_FIXED_EDGE_LIVE_QA',json.dumps(res,ensure_ascii=False)[:18000],flush=True)
+          PY
+      - name: Evidence with no secrets or gigabyte uploads
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_NONPROD_CLI_BUNDLED_EDGE_502_FULL_FIX_ONCE_RESULT
+          path: |
+            edge502-cli-proof/
+            thumb-draft-qa/CANDIDATE_21964_SOURCE_PRESERVATION_QA.json
+          retention-days: 30
+          if-no-files-found: warn
