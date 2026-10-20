@@ -1,0 +1,101 @@
+name: ENPT 21964 USER APPROVED Publish Exact READY Draft to englishpt.kr ONCE and Live SEO QA
+on:
+  push:
+    branches:
+      - ops/v23521-OG21964-APPROVED-PUBLISH-EXACT-DRAFT-ONCE-20261020
+    paths:
+      - .github/workflows/ENPT-21964-USER-APPROVED-EXACT-DRAFT-PUBLISH-ONCE.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21964-user-approved-exact-draft-publication-ONCE-20261020
+  cancel-in-progress: false
+jobs:
+  restore-exact-approved-draft-one-request-then-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Source safety compile and immutable explicit authorization guard
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_21964_USER_APPROVED_EXACT_DRAFT_PUBLISH_AND_LIVE_QA_ONCE.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_21964_USER_APPROVED_EXACT_DRAFT_PUBLISH_AND_LIVE_QA_ONCE.py').read_text('utf8')
+          assert 'DRAFT="6ad7506cdeb778280a54ee2a"' in s
+          assert 'PRODUCTION_BEFORE="6ad5eb4918f9411c4d5e1ba4"' in s
+          assert 'SITE="98d96cc5-f0b7-4d3d-8072-6476d93e55a3"' in s
+          assert s.count('method="POST"')==1,'Must make only one potential Netlify restore POST'
+          assert s.count("urllib.request.urlopen(req,timeout=65)")==1
+          assert 'automatic_rollback_attempts":0' in s and 'form_submissions":0' in s
+          assert '/restore' in s and 'PAGES=[' in s and 'sitemap_shards' in s
+          assert 'get("published_deploy")' in s and 'published_deploy' in s
+          print('PASS_APPROVED_EXACT_ONE_IMMUTABLE_RESTORE_POST_NO_NEW_BUILD_OR_FORM_POST',flush=True)
+          PY
+      - name: Preflight previous Production/Draft and publish only exact approved Draft via one POST, GET-only live QA
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_USER_APPROVED_EXACT_DRAFT_PUBLISH_AND_LIVE_QA_ONCE.py
+      - name: Actual public mobile and desktop consultation CTA click smoke without submitting
+        if: success()
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --disable-pip-version-check playwright==1.58.0
+          python3 - <<'PY'
+          import json,pathlib
+          from shutil import which
+          from playwright.sync_api import sync_playwright
+          p=pathlib.Path('approved-publish-evidence')
+          url='https://englishpt.kr/gyeongnam-milyang-naeidong-elem-tutor.html'
+          chrome=which('google-chrome') or which('chromium') or which('chromium-browser')
+          assert chrome,'Chromium executable missing; do not claim visual pass'
+          results=[]
+          with sync_playwright() as pw:
+            browser=pw.chromium.launch(headless=True,executable_path=chrome,
+                      args=['--no-sandbox','--disable-dev-shm-usage'])
+            try:
+              for width in (390,1440):
+                ctx=browser.new_context(viewport={'width':width,'height':850})
+                def read_only(route):
+                  if route.request.method not in ('GET','HEAD'):
+                    route.abort()
+                  else:
+                    route.continue_()
+                ctx.route('**/*',read_only)
+                page=ctx.new_page()
+                resp=page.goto(url,wait_until='domcontentloaded',timeout=60000)
+                assert resp is not None and resp.status==200, 'Production tutor HTML non200'
+                cta=page.locator('a[href="#consultation-preview"]').first
+                assert cta.count()==1,'Consultation CTA anchor missing'
+                cta.click(timeout=18000)
+                page.locator('#consultation-preview form#leadForm').wait_for(state='visible',timeout=16000)
+                assert page.url.endswith('#consultation-preview'),'Consultation CTA scroll failed'
+                assert page.locator('#leadForm input[name="name"]').count()==1
+                assert page.locator('#leadForm input[name="phone"]').count()==1
+                assert page.locator('#leadForm button[type="submit"]').count()==1
+                screenshot=p/('PRODUCTION_'+str(width)+'PX_FORM_CTA_OPEN.png')
+                page.screenshot(path=str(screenshot),full_page=False)
+                results.append({'viewport_width':width,'HTTP':200,'consultation_CTA':'PASS',
+                   'name_and_phone_inputs':'PASS','submit_button_present':True,
+                   'form_POSTs_sent':0,'screenshot':screenshot.name})
+                ctx.close()
+            finally:
+              browser.close()
+          (p/'PRODUCTION_390_1440_REAL_CTA_BROWSER_QA.json').write_text(
+              json.dumps({'status':'PASS_PRODUCTION_MOBILE_DESKTOP_REAL_CTA_NO_FORM_POST',
+                 'items':results},ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_LIVE_PRODUCTION_MOBILE_DESKTOP_CTA_QA',json.dumps(results,ensure_ascii=False))
+          PY
+      - name: Archive status and real live evidence; do not publish again on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_USER_APPROVED_EXACT_DRAFT_PRODUCTION_PUBLISH_AND_LIVE_HTTP_SEO_FORMS_QA
+          path: approved-publish-evidence/
+          retention-days: 90
+          if-no-files-found: warn
