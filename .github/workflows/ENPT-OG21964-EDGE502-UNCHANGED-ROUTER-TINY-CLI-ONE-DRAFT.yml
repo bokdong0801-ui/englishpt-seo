@@ -1,0 +1,139 @@
+name: ENPT Edge 502 Exact Router Tiny Nonpublished CLI Canary Once
+on:
+  push:
+    branches: [ops/v23521-OG21964-EDGE502-ROOTCAUSE-GETONLY-20261020]
+    paths: [.github/workflows/ENPT-OG21964-EDGE502-UNCHANGED-ROUTER-TINY-CLI-ONE-DRAFT.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ENPT-EDGE502-TINY-UNCHANGED-ROUTER-ONLY-ONCE-20261020
+  cancel-in-progress: false
+jobs:
+  unchanged-original-edge-router-compiler-and-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      SITE: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      PREVIOUS_PRODUCTION: 6ad5eb4918f9411c4d5e1ba4
+      ALIAS: enptedge502canaryonce20
+      MARKER: ENPT-EDGE502-EXACT-ORIGINAL-ROUTER-TINY-CLI-NONPUBLISHED-ONCE-20261020
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-source
+      - name: Exact-original-router unchanged into tiny static canary, noindex protection
+        run: |
+          set -euo pipefail
+          mkdir -p edge-canary/netlify/edge-functions edge-canary/site/__pages/23 edge-canary-proof
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          archive=signed-source/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          echo "6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884  $archive" | sha256sum -c -
+          mkdir -p signed-extract
+          tar --zstd -xf "$archive" -C signed-extract --wildcards '*netlify/edge-functions/shard-router.js' '*__pages/23/englishpt.page'
+          cp signed-extract/netlify/edge-functions/shard-router.js edge-canary/netlify/edge-functions/shard-router.js
+          cp signed-extract/__pages/23/englishpt.page edge-canary/site/__pages/23/englishpt.page
+          cat > edge-canary/netlify.toml <<'EOT'
+          [build]
+            publish = "site"
+          [build.processing]
+            skip_processing = true
+          [[edge_functions]]
+            function = "shard-router"
+            pattern = "^/[^/]+[.]html$"
+          EOT
+          cat > edge-canary/site/index.html <<'EOT'
+          <!doctype html><html lang="ko"><head><meta charset="utf-8"><title>EDGE ROUTER CANARY UNCHANGED</title><meta name="robots" content="noindex,nofollow"></head><body>UNCHANGED_ROUTER_INDEX_BYPASS_OK</body></html>
+          EOT
+          printf "/*\n  X-Robots-Tag: noindex, nofollow\n" > edge-canary/site/_headers
+          printf 'User-agent: *\nDisallow: /\n' > edge-canary/site/robots.txt
+          node --check edge-canary/netlify/edge-functions/shard-router.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import tomllib,json,hashlib
+          s=Path("signed-extract/netlify/edge-functions/shard-router.js").read_bytes()
+          c=Path("edge-canary/netlify/edge-functions/shard-router.js").read_bytes()
+          assert s==c
+          cfg=tomllib.loads(Path("edge-canary/netlify.toml").read_text())
+          assert cfg["edge_functions"]==[{"function":"shard-router","pattern":"^/[^/]+[.]html$"}]
+          proof={"exact_original_edge_source":True,"source_sha256":hashlib.sha256(s).hexdigest(),
+            "canary_site_bytes":sum(x.stat().st_size for x in Path("edge-canary/site").rglob("*") if x.is_file()),
+            "production_changed":False,"only_nonpublished_new_canary_draft":True}
+          Path('edge-canary-proof/01_SOURCE_AND_CONFIG.json').write_text(json.dumps(proof,indent=2))
+          print('ENPT_EDGE_TINY_CANARY_SOURCE_PROOF',json.dumps(proof))
+          PY
+      - name: Fail-closed account and Production identity + no prior alias via GET-only
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request,pathlib
+          t=os.environ['NETLIFY_AUTH_TOKEN'];siteid=os.environ['SITE']
+          def api(p):
+            q=urllib.request.Request('https://api.netlify.com/api/v1/'+p,method='GET',
+              headers={'Authorization':'Bearer '+t})
+            with urllib.request.urlopen(q,timeout=30) as r:return json.load(r)
+          s=api('sites/'+siteid)
+          assert s.get('id')==siteid and s.get('custom_domain')=='englishpt.kr'
+          assert (s.get('published_deploy') or {}).get('id')==os.environ['PREVIOUS_PRODUCTION']
+          all=api('sites/'+siteid+'/deploys?per_page=100')
+          assert not any(os.environ['MARKER'] in str(x.get('title') or '') or
+             os.environ['ALIAS'] in str(x.get('deploy_ssl_url') or '') for x in all),'HOLD prior same alias already deployed'
+          ac=api('accounts/'+s['account_id'])
+          assert not ac.get('usages_exceeded') and not ac.get('configurable_limits_exceeded')
+          print('PASS_ONE_TINY_NONPUBLISHED_CANARY_ELIGIBLE_PROD_ID_STILL_SAME')
+          PY
+      - name: Netlify CLI one tiny nonproduction alias without build or publish
+        run: |
+          set -euo pipefail
+          npm install -g netlify-cli@27.13.0 --no-fund --no-audit
+          cd edge-canary
+          timeout 270s netlify deploy --site="$SITE" --dir=site --no-build --alias="$ALIAS" --timeout=230 --message="$MARKER" > ../edge-canary-proof/02_ONE_TINY_NONPROD_CLI_DEPLOY_LOG.txt 2>&1
+          echo 'PASS_NONPROD_TINY_CANARY_CLI_EXIT_ZERO'
+      - name: GET-only HTML bypass and exact original router rewrite canary smoke QA
+        if: success()
+        run: |
+          python3 - <<'PY'
+          import os,json,pathlib,urllib.request,urllib.error,datetime,subprocess
+          siteid=os.environ['SITE'];tok=os.environ['NETLIFY_AUTH_TOKEN']
+          def api(p):
+            q=urllib.request.Request('https://api.netlify.com/api/v1/'+p,method='GET',headers={'Authorization':'Bearer '+tok})
+            with urllib.request.urlopen(q,timeout=30) as r:return json.load(r)
+          s=api('sites/'+siteid)
+          assert (s.get('published_deploy') or {}).get('id')==os.environ['PREVIOUS_PRODUCTION']
+          ds=api('sites/'+siteid+'/deploys?per_page=100')
+          matches=[d for d in ds if d.get('title')==os.environ['MARKER']]
+          if len(matches)!=1:raise SystemExit('HOLD canary draft identity ambiguous')
+          d=matches[0]
+          assert d['state']=='ready' and d.get('published_at') is None
+          base='https://'+os.environ['ALIAS']+'--englishpt-seo.netlify.app'
+          out={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'state':d['state'],'draft_id':d['id'],'published':False,'prod_unchanged':True,
+            'host':base,'tested':[],'production_mutations':0}
+          for path in ['/index.html','/englishpt.html','/__pages/23/englishpt.page','/robots.txt']:
+            try:
+              p=subprocess.run(['curl','-sS','--connect-timeout','8','--max-time','20',
+                '-D','-','-w','\nSTATUS=%{http_code} BYTES=%{size_download}',base+path],capture_output=True,timeout=24)
+              s=p.stdout[:1000].decode('utf8',errors='replace')
+              end=p.stdout[-500:].decode('utf8',errors='replace')
+              out['tested'].append({'path':path,'exit':p.returncode,'body_start':s,'body_end':end})
+            except Exception as e:out['tested'].append({'path':path,'error':str(e)})
+          ix=out['tested'][0]['body_end']
+          pt=out['tested'][1]['body_end']
+          out['status']='PASS_UNCHANGED_ROUTER_CANARY_INDEX_AND_REWRITE' if 'STATUS=200' in ix and 'STATUS=200' in pt else 'HOLD_ORIGINAL_EDGE_ROUTER_CANARY_HTTP_FAILURE'
+          pathlib.Path('edge-canary-proof/03_TINY_ORIGINAL_ROUTER_LIVE_HTTP_DIAG.json').write_text(json.dumps(out,ensure_ascii=False,indent=2))
+          print('ENPT_EDGE_TINY_CANARY_LIVE_SMOKE',json.dumps(out,ensure_ascii=False)[:11500])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_EDGE_502_TINY_UNCHANGED_ROUTER_NONPUBLISHED_ONE_CANARY_DIAG
+          path: edge-canary-proof/
+          retention-days: 30
+          if-no-files-found: warn
