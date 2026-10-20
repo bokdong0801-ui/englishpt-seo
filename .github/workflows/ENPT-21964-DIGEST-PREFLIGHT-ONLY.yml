@@ -1,0 +1,65 @@
+name: ENPT 21964 full SHA1 digest verification before async draft
+on:
+  push:
+    branches: [ops/v23521-21964-ASYNC-DIGEST-ONE-UNPUBLISHED-PREFLIGHT-20261020]
+    paths: [.github/workflows/ENPT-21964-DIGEST-PREFLIGHT-ONLY.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  sha1-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39234109195
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          github-token: ${{ github.token }}
+          path: original
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39234109195
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39360145172
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          github-token: ${{ github.token }}
+          path: signed-route-map
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39361276955
+          name: ENPT_21964_COMPLETE_SQUARE_JPG_RECOVERED_ALL_SHA256_QA_NO_RERENDER_V1
+          github-token: ${{ github.token }}
+          path: all-jpeg-qa
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39360903334
+          pattern: ENPT_ALL21964_SQUARE_JPEG_SHARD_*
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          path: existing-jpegs
+      - name: Reuse signed old release and image SHA evidence
+        run: |
+          set -euo pipefail
+          mkdir -p thumb-21964-candidate
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          file=original/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          echo "6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884  $file" | sha256sum -c -
+          tar --zstd -xf "$file" -C thumb-21964-candidate
+          python3 scripts/ENPT_21964_DRAFT_CANDIDATE_ONLY_EDIT_OG_AND_PRESERVE_NOINDEX.py
+          python3 scripts/ENPT_full_202764_SHA1_digest_preflight.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_202764_VERIFIED_FILE_SHA1_DIGEST_NO_WRITE
+          path: async-digest-evidence/
+          if-no-files-found: warn
+          retention-days: 30
