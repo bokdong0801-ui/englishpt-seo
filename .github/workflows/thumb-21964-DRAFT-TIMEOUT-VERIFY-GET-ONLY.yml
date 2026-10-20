@@ -1,0 +1,47 @@
+name: ENGLISH PT Thumbnail Draft Timeout Netlify Status GET ONLY
+on:
+  push:
+    branches:
+      - ops/v23521-THUMBNAIL-21964-DEPLOY-STATUS-GETONLY-20261020
+    paths:
+      - .github/workflows/thumb-21964-DRAFT-TIMEOUT-VERIFY-GET-ONLY.yml
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: GET actual Netlify deployments after timed-out 43932-file upload (never POST)
+        run: |
+          python3 - <<'PY'
+          import os,urllib.request,json,datetime,pathlib
+          site='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          out=pathlib.Path('thumb-draft-status');out.mkdir(exist_ok=True)
+          token=os.environ['NETLIFY_AUTH_TOKEN']
+          def get(endpoint):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+endpoint,headers={'Authorization':'Bearer '+token,'Accept':'application/json'},method='GET')
+            with urllib.request.urlopen(req,timeout=45) as resp:return json.load(resp)
+          site_data=get('sites/'+site)
+          all_deploys=get('sites/'+site+'/deploys?per_page=100')
+          matched=[]
+          for d in all_deploys:
+            hay=' '.join(str(d.get(k) or '') for k in ('title','name','deploy_ssl_url','alias','commit_ref','id'))
+            if any(x in hay.lower() for x in ('thumb','square','21964','enpt21964','ogv1')):
+              matched.append({k:d.get(k) for k in ('id','state','title','name','alias','deploy_ssl_url','url','created_at','published_at','error_message')})
+          report={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+          'production_published_id':(site_data.get('published_deploy') or {}).get('id'),
+          'production_unchanged':(site_data.get('published_deploy') or {}).get('id')=='6ad5eb4918f9411c4d5e1ba4',
+          'candidate_drafts':matched,'recent_deploys':[{k:d.get(k) for k in ('id','state','title','name','alias','deploy_ssl_url','published_at')} for d in all_deploys[:12]],
+          'status':'GETONLY_COMPLETE','Netlify_mutations':0}
+          (out/'NETLIFY_21964_DRAFT_STATUS_GET_ONLY.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_21964_DRAFT_NETLIFY_GET_ONLY',json.dumps(report,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_TIMEDOUT_DRAFT_DEPLOY_STATUS_GET_ONLY
+          path: thumb-draft-status/
+          if-no-files-found: warn
