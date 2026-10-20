@@ -1,0 +1,224 @@
+name: ENPT 21964 Async Draft Edge TAR Exact Only After ALL 20600 SHA HTTP Success
+on:
+  push:
+    branches: [ops/v23521-OG21964-ASYNC-EDGE-ONE-TAR-NONPUBLISHED-20261020]
+    paths: [.github/workflows/ENPT-21964-ASYNC-EXACT-EDGE-TAR-ONLY-AFTER-20600-ONE-PUT.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21964-existing-async-draft-sha-replay-capped-one-at-a-time
+  cancel-in-progress: false
+jobs:
+  recover-one-unpublished-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      TARGET_SITE: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      TARGET_DRAFT: 6ad708da374d457504481d5c
+      PROD_BASELINE: 6ad5eb4918f9411c4d5e1ba4
+      EDGE_SHA: 1359b9c72eadd149ad8cde014235de40b91e0d33e2132c2d5609bf76a6e4653b
+      EXPECT_DRAFT_TITLE: ENPT-21964-OG-ASYNC-DIGEST-ONE-DRAFT-NOT-PRODUCTION-20261020
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fail-closed API write safety guard exactly one existing Draft PUT, no POST or RESTORE
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          w=Path('.github/workflows/ENPT-21964-ASYNC-EXACT-EDGE-TAR-ONLY-AFTER-20600-ONE-PUT.yml').read_text()
+          lines=w.splitlines()
+          writes=[x for x in lines if x.strip().startswith("req=urllib.request.Request(url,data=body,method=")]
+          assert len(writes)==1 and writes[0].count("method='PUT'")==1
+          assert not any(x.strip().startswith(('netlify deploy ','--prod','method=POST')) for x in lines)
+          print('PASS_EXACT_ONE_EXISTING_UNPUBLISHED_EDGE_BUNDLE_PUT_CANDIDATE',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ALL_20600_REQUIRED_SHA_CHECKPOINT_UNION_GET_ONLY
+          run-id: 39388218253
+          github-token: ${{ github.token }}
+          path: required-sha-fullproof
+      - name: Hard gate all original 20600 SHA verified HTTP200 and no missing prior to Edge PUT
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,pathlib
+          files=list(pathlib.Path('required-sha-fullproof').rglob('FULL_ORIGINAL_20600_NETLIFY_REQUIRED_SHA_CHECKPOINT_UNION_QA.json'))
+          assert len(files)==1
+          r=json.loads(files[0].read_text('utf8'))
+          assert r['status']=='PASS_ALL_INITIAL_20600_REQUIRED_SHA_HTTP_SUCCESS_AND_PRODUCTION_UNCHANGED'
+          assert r['unique_confirmed_http_success_sha']==20600 and r['missing_sha_count']==0
+          assert r['production_id']=='6ad5eb4918f9411c4d5e1ba4'
+          assert r['existing_async_draft_id']=='6ad708da374d457504481d5c'
+          assert r['draft_published'] is False
+          print('PASS_ALL_20600_DISTINCT_INITIAL_REQUIRED_SHA_VERIFIED_GATE_EDGE_ONLY')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: pristine-archive
+      - name: Reconstruct exact small edge TAR from SHA-verified original full release, nothing else
+        run: |
+          set -euo pipefail
+          mkdir -p thumb-21964-candidate edge-one-restore-evidence
+          ARCHIVE=pristine-archive/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          printf '%s  %s\n' 6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884 "$ARCHIVE" | sha256sum -c -
+          tar --zstd -xf "$ARCHIVE" -C thumb-21964-candidate --wildcards '*netlify.toml' '*netlify/edge-functions/shard-router.js'
+          test -s thumb-21964-candidate/netlify.toml
+          test -s thumb-21964-candidate/netlify/edge-functions/shard-router.js
+          python3 - <<'PY'
+          import pathlib,tomllib
+          c=tomllib.loads(pathlib.Path('thumb-21964-candidate/netlify.toml').read_text('utf8'))
+          assert c['edge_functions']==[{'function':'shard-router','pattern':'^/[^/]+[.]html$'}]
+          print('PASS_IDENTICAL_ORIGINAL_ROUTER_REGEXP_FROM_SOURCE_ARCHIVE',flush=True)
+          PY
+      - name: Install exact Netlify bundler used on first full-site Draft
+        run: |
+          npm install --no-audit --no-fund --no-save netlify-cli@27.13.0
+      - name: Build and validate original TAR archive exact 64-char required SHA, fail if even one byte differs
+        run: |
+          set -euo pipefail
+          cat > reconstruct-one.mjs <<'JS'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import crypto from 'node:crypto';
+          import {createRequire} from 'node:module';
+          const require=createRequire(import.meta.url);
+          const filename=require.resolve('@netlify/edge-bundler',{paths:[path.resolve('node_modules/netlify-cli'),process.cwd()]});
+          const {bundle}=await import('file://'+filename);
+          const sha=process.env.EDGE_SHA;
+          const root=path.resolve('thumb-21964-candidate');
+          const dst=path.resolve('one-edge-tar-private');
+          fs.mkdirSync(dst,{recursive:true});
+          const result=await bundle([path.join(root,'netlify/edge-functions')],dst,
+            [{function:'shard-router',pattern:'^/[^/]+[.]html$'}],
+            {basePath:root,rootPath:root,featureFlags:{edge_bundler_generate_tarball:true}});
+          const bundlePath=path.join(dst,sha+'.tar.gz');
+          if(!fs.existsSync(bundlePath))throw Error('Exact expected TAR bundle does not exist');
+          const buf=fs.readFileSync(bundlePath);
+          const observed=crypto.createHash('sha256').update(buf).digest('hex');
+          if(observed!==sha || !result.manifest?.bundles?.some(x=>x.asset===sha+'.tar.gz' && x.format==='tar')){
+            throw Error('Required TAR code SHA mismatch');
+          }
+          const meta={status:'PASS_EXACT_EXPECTED_EDGE_TAR_BUNDLE_FOR_UNPUBLISHED_DRAFT_ONLY',sha256:observed,bytes:buf.length,
+           verified_original_archive_sha256:'6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884',
+           bundle_format:'tar',bundle_version:result.manifest?.bundler_version,netlify_requests:0};
+          fs.writeFileSync('edge-one-restore-evidence/01_RECONSTRUCTED_EDGE_BUNDLE_PROOF.json',JSON.stringify(meta,null,2)+'\n');
+          console.log('ENPT_EXACT_MATCHED_EDGE_TAR_SHA_ONCE',JSON.stringify(meta));
+          JS
+          timeout 125s node reconstruct-one.mjs
+      - name: Preflight exact existing-site Draft API identity and missing SHA only — GET no changes
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,datetime,urllib.request,json,pathlib
+          token=os.environ['NETLIFY_AUTH_TOKEN']
+          site=os.environ['TARGET_SITE'];draft=os.environ['TARGET_DRAFT'];prod=os.environ['PROD_BASELINE']
+          need=os.environ['EDGE_SHA'];marker=os.environ['EXPECT_DRAFT_TITLE']
+          def get(endpoint):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+endpoint,method='GET',
+              headers={'Authorization':'Bearer '+token,'Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=30) as r:return json.load(r)
+          s=get('sites/'+site);d=get('sites/'+site+'/deploys/'+draft)
+          status={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+             'site_id':s.get('id'),'production_id':(s.get('published_deploy') or {}).get('id'),
+             'draft_id':d.get('id'),'draft_state':d.get('state'),'title':d.get('title'),
+             'draft_published_at':d.get('published_at'),
+             'required_static_files':d.get('required'),'required_edge_functions':d.get('required_edge_functions'),
+             'required_functions':d.get('required_functions'),
+             'status':'HOLD'}
+          assert s['id']==site and s.get('custom_domain')=='englishpt.kr'
+          assert (s.get('published_deploy') or {}).get('id')==prod,'Production drift'
+          assert d['id']==draft and d['site_id']==site and d['title']==marker and d.get('published_at') is None
+          assert not (d.get('required') or []),'Static files still missing: HOLD'
+          assert not (d.get('required_functions') or []),'Non-edge functions missing: HOLD'
+          assert d.get('state') in ('uploading','ready'),'Draft state unexpectedly changed'
+          if d.get('state')=='uploading':
+            assert d.get('required_edge_functions')==[need], 'Unexpected Edge SHA requirement'
+            status['status']='PASS_ONE_REQUIRED_EDGE_TAR_SHA_UPLOAD_ALLOWED'
+          else:
+            assert not d.get('required_edge_functions'), 'Ready Draft with missing Edge'
+            status['status']='PASS_DRAFT_ALREADY_READY_SKIP_PUT'
+          pathlib.Path('edge-one-restore-evidence/02_NETLIFY_PREFLIGHT_NO_WRITE.json').write_text(json.dumps(status,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_EXACT_EXISTING_DRAFT_EDGE_SHA_PREUPLOAD',json.dumps(status,ensure_ascii=False),flush=True)
+          PY
+      - name: If exactly missing, one Netlify PUT of only 2137-byte TAR to existing nonpublished Draft, NEVER Production
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,pathlib,urllib.request,urllib.error,datetime
+          p=pathlib.Path('edge-one-restore-evidence')
+          f=json.loads((p/'02_NETLIFY_PREFLIGHT_NO_WRITE.json').read_text('utf8'))
+          src=pathlib.Path('one-edge-tar-private')/(os.environ['EDGE_SHA']+'.tar.gz')
+          body=src.read_bytes()
+          status={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+              'target_draft_id':os.environ['TARGET_DRAFT'],
+              'edge_sha':os.environ['EDGE_SHA'],'edge_bytes':len(body),
+              'netlify_EDGE_PUT_attempts':0,'netlify_deploy_creations':0,
+              'production_publish_attempts':0,'status':'HOLD'}
+          if f['status']=='PASS_DRAFT_ALREADY_READY_SKIP_PUT':
+            status['status']='NO_PUT_DRAFT_ALREADY_READY'
+          else:
+            if f['status']!='PASS_ONE_REQUIRED_EDGE_TAR_SHA_UPLOAD_ALLOWED':raise SystemExit('HOLD not authorized by preflight')
+            url='https://api.netlify.com/api/v1/deploys/'+os.environ['TARGET_DRAFT']+'/edge_functions/'+os.environ['EDGE_SHA']
+            req=urllib.request.Request(url,data=body,method='PUT',headers={
+             'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN'],
+             'Content-Type':'application/octet-stream'})
+            status['netlify_EDGE_PUT_attempts']=1
+            try:
+              with urllib.request.urlopen(req,timeout=45) as response:
+                status['response_code']=response.status
+                status['response_bytes']=len(response.read(10000))
+              if status['response_code'] not in (200,201,202,204):raise ValueError('Unexpected upload code')
+              status['status']='ONE_EXISTING_DRAFT_EDGE_UPLOAD_ACCEPTED'
+            except urllib.error.HTTPError as err:
+              status['response_code']=err.code
+              status['response_excerpt']=err.read(500).decode('utf8',errors='replace')
+              status['status']='HOLD_EDGE_PUT_REJECTED_NO_RETRY'
+            except Exception as err:
+              status['status']='HOLD_EDGE_PUT_UNCERTAIN_NO_RETRY'
+              status['error']=str(err)[:300]
+          (p/'03_EXACT_ONE_EDGE_TAR_PUT_RESULT.json').write_text(json.dumps(status,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_EXACT_ONE_EXISTING_EDGE_TAR_UPLOAD_RESULT',json.dumps(status,ensure_ascii=False),flush=True)
+          if status['status'].startswith('HOLD_'):raise SystemExit('HOLD; no repeat uploads')
+          PY
+      - name: GET-only after exact one Edge TAR PUT, no second attempt and do not claim READY prematurely
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os,json,urllib.request,pathlib,datetime
+          t=os.environ['NETLIFY_AUTH_TOKEN']
+          site=os.environ['TARGET_SITE'];draft=os.environ['TARGET_DRAFT']
+          def api(path):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,method='GET',
+                headers={'Authorization':'Bearer '+t,'Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=35) as resp:return json.load(resp)
+          s=api('sites/'+site);d=api('sites/'+site+'/deploys/'+draft)
+          pub=(s.get('published_deploy') or {}).get('id')
+          assert pub==os.environ['PROD_BASELINE'] and d.get('published_at') is None
+          r={'checked_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+             'state':d.get('state'),'target_draft_id':draft,
+             'remaining_static_count':len(d.get('required') or []),
+             'remaining_edge_count':len(d.get('required_edge_functions') or []),
+             'published_deploy_id':pub,'production_unchanged':True,
+             'READY':d.get('state')=='ready',
+             'do_not_production_publish':True}
+          pathlib.Path('edge-one-restore-evidence/04_AFTER_EDGE_PUT_ASYNC_DRAFT_GET_ONLY.json').write_text(json.dumps(r,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_NEW_ASYNC_AFTER_EDGE_ONE_PUT_GET_STATUS',json.dumps(r,ensure_ascii=False),flush=True)
+          PY
+      - name: Preserve reproducible small proof and Netlify state, never upload TAR source secrets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_DRAFT_20600_SHA_VERIFIED_EXACT_EDGE_TAR_ONE_PUT
+          path: edge-one-restore-evidence/
+          retention-days: 30
+          if-no-files-found: warn
