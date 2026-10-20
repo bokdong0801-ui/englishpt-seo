@@ -1,0 +1,133 @@
+name: ENGLISH PT RECOVER and VERIFY all 21964 JPEG IMAGE SHARDS GET ONLY
+on:
+  push:
+    branches:
+      - ops/v23521-THUMBNAIL-21964-REAL-ROUTE-MAPPING-GETONLY-20261020
+    paths:
+      - .github/workflows/ENPT-RECOVER-ALL21964-JPG-SHARDS-VERIFY-NO-RERENDER-V1.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ENPT-RECOVER-21964-EXISTING-SHARDS-WITHOUT-RENDER-20261020
+  cancel-in-progress: false
+jobs:
+  verify-existing-jpeg-shard-artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download all twelve already rendered image batches without rerendering
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 39360903334
+          github-token: ${{ github.token }}
+          pattern: ENPT_ALL21964_SQUARE_JPEG_SHARD_*
+          merge-multiple: true
+          path: existing-jpegs
+      - name: Download signed-off real 21964 page image source mapping
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 39360145172
+          github-token: ${{ github.token }}
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          path: signed-route-map
+      - name: Install JPEG verification / contact sheet tools only - NO image regeneration
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --disable-pip-version-check pillow==11.3.0
+      - name: Independently compare JPEG bytes and route manifest ALL 21964, representative mobile preview
+        run: |
+          set -euo pipefail
+          mkdir -p full-image-QA-evidence
+          python3 - <<'PY'
+          import csv,collections,datetime,gzip,hashlib,json,math,pathlib,random,statistics
+          from PIL import Image,ImageDraw,ImageFont
+          SOURCE=pathlib.Path('signed-route-map')
+          IMAGES=pathlib.Path('existing-jpegs')
+          OUT=pathlib.Path('full-image-QA-evidence')
+          rows=list(csv.DictReader((SOURCE/'ALL_21964_INDEXABLE_THUMBNAIL_MAP.csv').open(encoding='utf-8-sig',newline='')))
+          expected={r['image_key']+'.jpg':r for r in rows}
+          images=list(IMAGES.rglob('*.jpg'))
+          files={p.name:p for p in images}
+          issues=[]
+          if len(rows)!=21964 or len(expected)!=21964:issues.append('Signed URL map 21964 mismatch')
+          if len(images)!=21964 or len(files)!=21964:issues.append('Exact 21964 shard images missing or duplicate')
+          missing=set(expected)-set(files);extras=set(files)-set(expected)
+          if missing:issues.append('Missing images: '+str(sorted(missing)[:3])+', total '+str(len(missing)))
+          if extras:issues.append('Unexpected images: '+str(sorted(extras)[:3])+', total '+str(len(extras)))
+          sizes=[];unique_hash=set();sha_map=[]
+          for i,(name,row) in enumerate(expected.items(),1):
+            p=files.get(name)
+            if p is None:continue
+            b=p.read_bytes()
+            sizes.append(len(b)); digest=hashlib.sha256(b).hexdigest()
+            if digest in unique_hash:issues.append('Duplicate JPEG image contents '+name)
+            unique_hash.add(digest)
+            if not b.startswith(bytes.fromhex('ffd8ff')) or b[-2:]!=bytes.fromhex('ffd9'):
+              issues.append('Incorrect JPEG signature '+name)
+            if not (5000<=len(b)<350000):issues.append('JPEG size outside guard '+name)
+            if i<=300 or i%101==0:
+              try:
+                with Image.open(p) as im:
+                  if im.size!=(1200,1200) or im.format!='JPEG':issues.append('Bad image dimensions '+name)
+                  im.verify()
+              except Exception as e:issues.append('Unreadable JPEG '+name+' '+str(e)[:100])
+            sha_map.append({'url_path':row['route'],'image_path':row['planned_image_path'],'sha256':digest,'size_bytes':len(b)})
+            if i%4000==0:print('ENPT_RECOVERY_QA_PROGRESS',i,flush=True)
+          station=collections.Counter(row['location_slug'] for row in rows if row['route_type']=='station')
+          if len(station)!=911 or any(n!=24 for n in station.values()):issues.append('911 station 24 URLs distribution violation')
+          if any(row['indexable']!='TRUE' or row['mapping_status']!='READY_METADATA_ONLY' for row in rows):
+            issues.append('HOLD indexability or mapping mismatch')
+          if len(unique_hash)!=21964:issues.append('Nonunique images')
+          # Verify deliberate 102px downsizing and no bottom-edge clipping in examples.
+          selected=[]
+          cats=set()
+          for row in rows:
+            if row['category'] not in cats:
+              cats.add(row['category']);selected.append(row)
+          sorted_stations=sorted([r for r in rows if r['route_type']=='station'],key=lambda r:len(r['location_name']),reverse=True)
+          selected+=sorted_stations[:15]
+          rng=random.Random(20261020); selected+=rng.sample(rows,20)
+          selected=selected[:48]
+          f='/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'
+          font=ImageFont.truetype(f,22)
+          sheet=Image.new('RGB',(880,len(selected)*116+35),'#FAFAF9')
+          d=ImageDraw.Draw(sheet)
+          for i,row in enumerate(selected):
+            path=files[row['image_key']+'.jpg']
+            with Image.open(path) as img: small=img.resize((102,102),Image.Resampling.LANCZOS)
+            y=15+i*116
+            sheet.paste(small,(15,y))
+            label=(row['location_name']+' · '+row['search_keyword'])[:45]
+            d.text((137,y+19),label,font=font,fill='#273038')
+          sheet.save(OUT/'ALL_INDEXABLE_48_MOBILE_102PX_SAMPLE.jpg',quality=86,optimize=True)
+          with (OUT/'ALL21964_IMAGE_HASH_AND_URL.csv').open('w',encoding='utf-8-sig',newline='') as f:
+            w=csv.DictWriter(f,fieldnames=['url_path','image_path','sha256','size_bytes']);w.writeheader();w.writerows(sha_map)
+          report={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+           'status':'PASS_ALL_21964_IMAGES_RECOVERED_INTEGRITY_QA_NO_RERENDER' if not issues else 'HOLD_FULL_SHARD_RECOVERY_ISSUES',
+           'real_indexable_urls':len(rows),'actual_jpg_files':len(files),'sha256_unique':len(unique_hash),
+           'tested_jpeg_decoder_at_sample_interval':True,
+           'count_station_names':len(station),'url_per_station':24,
+           'average_bytes':round(statistics.mean(sizes)) if sizes else 0,
+           'total_bytes':sum(sizes),'maximum_bytes':max(sizes) if sizes else 0,
+           'image_files_regenerated_in_this_job':0,
+           'netlify_draft_deploys_created':0,'netlify_production_deploys_created':0,
+           'full_site_edge_pages_og_metadata_modified':0,'issues':issues[:30]}
+          (OUT/'ALL21964_IMAGES_VERIFICATION_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('ENPT_ALL21964_IMAGE_SALVAGED_QA',json.dumps(report,ensure_ascii=False),flush=True)
+          if issues:raise SystemExit('HOLD: recovered images require review; never rebuild or deploy automatically')
+          PY
+      - name: Upload compact all-image proof and actual mobile 102px test without expensive 1GB re-upload
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_COMPLETE_SQUARE_JPG_RECOVERED_ALL_SHA256_QA_NO_RERENDER_V1
+          path: full-image-QA-evidence/
+          retention-days: 30
+          if-no-files-found: warn
