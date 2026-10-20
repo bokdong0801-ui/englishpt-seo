@@ -1,0 +1,107 @@
+name: ENPT 21964 Edge SHA256 Exact Router Pattern + Source Path Offline Reproduce 2
+on:
+  push:
+    branches: [ops/v23521-21964-EDGE-MISSING-SHA-OFFLINE-20261020]
+    paths: [.github/workflows/ENPT-21964-EDGE-SHA-EXACT-PATTERN-PATH-FORENSIC-V2.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  test-original-config-and-original-cli-bundle-source-path:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-source
+      - name: Extract exact original edge function and configuration into original production candidate path
+        run: |
+          set -euo pipefail
+          mkdir -p thumb-21964-candidate edge-v2-audit
+          ARCHIVE=signed-source/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          printf '%s  %s\n' 6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884 "$ARCHIVE" | sha256sum -c -
+          tar --zstd -xf "$ARCHIVE" -C thumb-21964-candidate --wildcards '*netlify.toml' '*netlify/edge-functions/shard-router.js'
+          test -s thumb-21964-candidate/netlify.toml
+          test -s thumb-21964-candidate/netlify/edge-functions/shard-router.js
+          python3 - <<'PY'
+          import pathlib,tomllib,json
+          p=pathlib.Path('thumb-21964-candidate/netlify.toml')
+          c=tomllib.loads(p.read_text('utf8'))
+          decl=c['edge_functions']
+          assert len(decl)==1 and decl[0]=={'function':'shard-router','pattern':'^/[^/]+[.]html$'}
+          pathlib.Path('edge-v2-audit/ORIGINAL_EDGE_ROUTING_CONFIG.json').write_text(json.dumps({'verified_source':True,'declaration':decl[0]},indent=2)+'\n')
+          print('PASS_ORIGINAL_ROUTE_REGEX_SHARD_ONLY',decl,flush=True)
+          PY
+      - name: Install identical CLI and bundled Edge build version
+        run: |
+          npm install --no-save --no-audit --no-fund netlify-cli@27.13.0
+          node -p "require('./node_modules/netlify-cli/package.json').version"
+      - name: Rebuild edge eszip with original regex, source path and multiple config declaration encodings — OFFLINE ONLY
+        run: |
+          set -euo pipefail
+          cat > offline-variants.mjs <<'JS'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import crypto from 'node:crypto';
+          import {createRequire} from 'node:module';
+          const require=createRequire(import.meta.url);
+          const pkg=require.resolve('@netlify/edge-bundler',{paths:[path.resolve('node_modules/netlify-cli'),process.cwd()]});
+          const {bundle}=await import('file://'+pkg);
+          const target='1359b9c72eadd149ad8cde014235de40b91e0d33e2132c2d5609bf76a6e4653b';
+          const original=path.resolve('thumb-21964-candidate/netlify/edge-functions');
+          const alt=path.resolve('edge-v2-source/netlify/edge-functions');
+          fs.mkdirSync(alt,{recursive:true});
+          fs.copyFileSync(path.join(original,'shard-router.js'),path.join(alt,'shard-router.js'));
+          const variations=[
+            ['original-pattern-on-original-root',original,[{function:'shard-router',pattern:'^/[^/]+[.]html$'}]],
+            ['original-pattern-with-path-original-root',original,[{function:'shard-router',path:'^/[^/]+[.]html$'}]],
+            ['glob-html-path-original-root',original,[{function:'shard-router',path:'/*.html'}]],
+            ['glob-root-path-original-root',original,[{function:'shard-router',path:'/*'}]],
+            ['original-pattern-copy-root',alt,[{function:'shard-router',pattern:'^/[^/]+[.]html$'}]],
+            ['original-pattern-plus-inline-root',original,[{function:'shard-router',pattern:'^/[^/]+[.]html$',path:'/*.html'}]]
+          ];
+          const report={target_code_sha256:target,candidates:[],errors:[],netlify_POSTs:0,netlify_PUTs:0,netlify_new_deploys:0,status:'HOLD_NOT_REPRODUCED'};
+          for(const [label,folder,declarations] of variations){
+            const dir=path.resolve('edge-v2-audit/dist-'+label);
+            fs.mkdirSync(dir,{recursive:true});
+            const row={label,source_path:folder,declarations};
+            try{
+              const result=await bundle([folder],dir,declarations);
+              row.bundle_manifest=result?.manifest||null;
+              row.bundles=[];
+              for(const f of fs.readdirSync(dir)){
+                const file=path.join(dir,f);
+                if(!fs.statSync(file).isFile())continue;
+                const content=fs.readFileSync(file);
+                const sha=crypto.createHash('sha256').update(content).digest('hex');
+                row.bundles.push({filename:f,size_bytes:content.length,sha256:sha,matches_expected:sha===target});
+              }
+            }catch(e){row.error=String(e).slice(0,1000);report.errors.push(label+': '+row.error);}
+            report.candidates.push(row);
+          }
+          report.matches=report.candidates.flatMap(x=>(x.bundles||[]).filter(y=>y.matches_expected).map(y=>x.label+'/'+y.filename));
+          report.status=report.matches.length?'PASS_REQUIRED_SHA256_EXACT_OFFLINE_MATCH':'HOLD_OFFLINE_SHA256_MISMATCH_NO_UPLOAD';
+          // NEVER upload bundle bytes or full source: only minimal metadata and hashes.
+          fs.writeFileSync('edge-v2-audit/EXACT_EDGE_SHA256_REPRODUCTION_V2_QA.json',JSON.stringify(report,null,2)+'\n');
+          console.log('ENPT_21964_EDGE_SHA256_V2_OFFLINE',JSON.stringify(report).slice(0,22000));
+          JS
+          timeout 150s node offline-variants.mjs
+          echo "PASS_OFFLINE_REPRODUCTION_VARIANTS_COVERED_WITH_ZERO_NETLIFY_WRITES"
+      - name: Retain only SHA reports, not edge source bundle bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_EDGE_REQUIRED_SHA256_V2_REAL_PATTERN_AND_SOURCE_PATH_GETONLY
+          path: |
+            edge-v2-audit/EXACT_EDGE_SHA256_REPRODUCTION_V2_QA.json
+            edge-v2-audit/ORIGINAL_EDGE_ROUTING_CONFIG.json
+          retention-days: 30
+          if-no-files-found: warn
