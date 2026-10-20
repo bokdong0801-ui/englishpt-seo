@@ -1,0 +1,68 @@
+name: ENPT 21964 AFTER Exact Edge Repair Draft Postprocess and Live URL GET Only
+on:
+  push:
+    branches: [ops/v23521-21964-EDGE-MISSING-SHA-OFFLINE-20261020]
+    paths: [.github/workflows/ENPT-21964-AFTER-EDGE-TAR-REPAIR-STATUS-LIVE-GETONLY.yml]
+permissions:
+  contents: read
+jobs:
+  exact-stalled-draft-postprocess-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: Netlify only GET inspect exact existing Draft after all required hashes satisfied
+        run: |
+          set -euo pipefail
+          mkdir -p after-edge-restore
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.error,datetime,concurrent.futures,subprocess,pathlib
+          sid='98d96cc5-f0b7-4d3d-8072-6476d93e55a3';did='6ad6daf01389db1fbe596f74'
+          old='6ad5eb4918f9411c4d5e1ba4';token=os.environ['NETLIFY_AUTH_TOKEN']
+          base='https://enptog21964reviewv1--englishpt-seo.netlify.app'
+          report={'time_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'target_draft_id':did,'zero_mutations':True,'GETs_only':True,'status':'HOLD',
+            'site':{},'deploy':{},'http':[],'errors':[]}
+          def api(path):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,method='GET',
+              headers={'Authorization':'Bearer '+token,'Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=25) as r:return json.load(r)
+          s=api('sites/'+sid);d=api('sites/'+sid+'/deploys/'+did)
+          report['site']={'id':s.get('id'),'published_id':(s.get('published_deploy') or {}).get('id'),'custom_domain':s.get('custom_domain')}
+          report['deploy']={k:d.get(k) for k in ('id','state','site_id','created_at','updated_at','published_at','error_message','title','review_url','deploy_ssl_url','required','required_edge_functions','required_functions','required_server','edge_functions_present','skipped')}
+          assert s.get('id')==sid and report['site']['published_id']==old and s.get('custom_domain')=='englishpt.kr','Production drift'
+          assert d.get('id')==did and d.get('site_id')==sid and d.get('published_at') is None,'unexpected deploy identity'
+          targets=['/index.html','/englishpt.html','/sitemap-index.xml','/robots.txt',
+            '/station-419minjumyoji-toeic.html','/station-419minjumyoji-ielts.html',
+            '/gyeongnam-milyang-naeidong-elem-tutor.html',
+            '/assets/images/seo-square/v1/49d1a4cf976b8dcba192.jpg']
+          def reqone(p):
+            cmd=['curl','-sS','--connect-timeout','6','--max-time','13','-o','/dev/null','-D','-',
+              '-w','\\nHTTP=%{http_code} REDIRECT=%{redirect_url} SIZE=%{size_download} RESPONSE_TIME=%{time_total} EFFECTIVE_URL=%{url_effective}',base+p]
+            x=subprocess.run(cmd,capture_output=True,text=True,timeout=16)
+            headers=x.stdout[:1500]
+            result=x.stdout[-250:]
+            return {'path':p,'exit_code':x.returncode,'http_info':result,'headers':headers[:850],'stderr':x.stderr[-180:]}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:report['http']=list(pool.map(reqone,targets))
+          report['state']=d.get('state')
+          report['required_sha_counts']={'static':len(d.get('required') or []),
+            'edge':len(d.get('required_edge_functions') or []),
+            'functions':len(d.get('required_functions') or []),
+            'server':len(d.get('required_server') or [])}
+          if d.get('state')=='ready' and all(q==0 for q in report['required_sha_counts'].values()):
+            report['status']='PASS_EXISTING_FULL_DRAFT_READY_AFTER_EDGE_BUNDLE_RESTORED'
+          elif d.get('state')=='uploading' and all(q==0 for q in report['required_sha_counts'].values()):
+            report['status']='HOLD_NETLIFY_UPLOAD_STATE_STUCK_AFTER_ALL_DIGESTS_SATISFIED'
+          else:report['status']='HOLD_UNEXPECTED_NETLIFY_DEPLOY_STATE_OR_REMAINING_DIGESTS'
+          path=pathlib.Path('after-edge-restore/EXACT_FULL_DRAFT_POSTPUT_NETLIFY_HTTP_READONLY.json')
+          path.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('ENPT_21964_AFTER_EDGE_RESTORE_GETONLY',json.dumps(report,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_EXACT_DRAFT_AFTER_EDGE_TAR_PUT_READONLY_STATUS_HTTP
+          path: after-edge-restore/
+          retention-days: 30
+          if-no-files-found: warn
