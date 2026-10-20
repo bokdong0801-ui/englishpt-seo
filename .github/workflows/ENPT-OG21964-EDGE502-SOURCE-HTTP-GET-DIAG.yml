@@ -1,0 +1,97 @@
+name: ENPT Edge 502 Source and HTTP GET Root Cause ReadOnly
+on:
+  push:
+    branches: [ops/v23521-OG21964-EDGE502-ROOTCAUSE-GETONLY-20261020]
+    paths: [.github/workflows/ENPT-OG21964-EDGE502-SOURCE-HTTP-GET-DIAG.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect-edge-502-no-write:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-source
+      - name: Verify release source full archive and extract Edge JS, TOML, headers and homepage mapping only
+        run: |
+          set -euo pipefail
+          mkdir -p edge502-diagnostic/source edge502-diagnostic/report
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          file=signed-source/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          echo "6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884  $file" | sha256sum -c -
+          tar --zstd -tf "$file" | grep -E '(^|/)netlify/edge-functions/|(^|/)(netlify.toml|_headers|_redirects|index.html|englishpt.html)$' | head -30
+          tar --zstd -xf "$file" -C edge502-diagnostic/source --wildcards '*netlify/edge-functions/shard-router.js' '*netlify.toml' '*_headers' '*_redirects' '*index.html' '*__pages/23/englishpt.page'
+          test -s edge502-diagnostic/source/netlify/edge-functions/shard-router.js
+          sha256sum edge502-diagnostic/source/netlify/edge-functions/shard-router.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import tomllib,hashlib,json,re
+          root=Path('edge502-diagnostic/source')
+          c=tomllib.loads((root/'netlify.toml').read_text('utf8'))
+          js=(root/'netlify/edge-functions/shard-router.js').read_text('utf8')
+          out={'original_edge_config':c.get('edge_functions'),'router_code_bytes':len(js),
+               'router_source_sha256':hashlib.sha256(js.encode()).hexdigest(),
+               'imports':re.findall(r'^import .*$',js,re.M),'fetch_references':len(re.findall(r'\bfetch\(',js)),
+               'input_sha_checked':True,'source_netlify_mutations':0}
+          (root.parent/'report/SOURCE_EDGE_ROUTER_CONTENT.txt').write_text(js,encoding='utf8')
+          (root.parent/'report/SOURCE_EDGE_ROUTER_CONFIG_QA.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_EDGE502_SOURCE_SUMMARY',json.dumps(out,ensure_ascii=False))
+          print('ENPT_EDGE502_SOURCE_CODE_BEGIN\n'+js[:13500]+'\nENPT_EDGE502_SOURCE_CODE_END')
+          PY
+      - name: Probe current 502 response, corresponding shard and immutable deploy host with only GET
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,os,urllib.request,urllib.error,datetime,pathlib,concurrent.futures,subprocess
+          t=os.environ['NETLIFY_AUTH_TOKEN']
+          site='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          did='6ad708da374d457504481d5c'
+          def api(path):
+           req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,method='GET',headers={'Authorization':'Bearer '+t,'Accept':'application/json'})
+           with urllib.request.urlopen(req,timeout=25) as r:return json.load(r)
+          s=api('sites/'+site);d=api('sites/'+site+'/deploys/'+did)
+          assert (s.get('published_deploy') or {}).get('id')=='6ad5eb4918f9411c4d5e1ba4'
+          assert d.get('id')==did and d.get('state')=='ready' and d.get('published_at') is None
+          hosts=['https://enptog21964asyncdigestonce20--englishpt-seo.netlify.app',
+                 'https://6ad708da374d457504481d5c--englishpt-seo.netlify.app',
+                 'https://englishpt.kr']
+          paths=['/index.html','/englishpt.html','/__pages/23/englishpt.page',
+                 '/station-419minjumyoji-toeic.html','/robots.txt',
+                 '/sitemap-index.xml','/assets/images/seo-square/v1/49d1a4cf976b8dcba192.jpg']
+          tasks=[(h,p) for h in hosts for p in paths if h!='https://englishpt.kr' or p in ('/englishpt.html','/robots.txt')]
+          def get_one(pair):
+            host,path=pair;cmd=['curl','-sS','--connect-timeout','7','--max-time','15','-D','-',
+                      '-w','\nSTAT:%{http_code}|TIME:%{time_total}|URL:%{url_effective}|SIZE:%{size_download}',host+path]
+            try:
+              r=subprocess.run(cmd,capture_output=True,text=True,timeout=19)
+              body=r.stdout
+              return {'host':host,'path':path,'exit':r.returncode,'headers_body_start':body[:800],
+                 'response_tail':body[-340:],'error':r.stderr[-200:]}
+            except Exception as e:return {'host':host,'path':path,'error':str(e)[:100]}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+            results=list(pool.map(get_one,tasks))
+          report={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'draft_id':did,'draft_state':d.get('state'),
+            'published_id':(s.get('published_deploy') or {}).get('id'),
+            'edge_mappings_count':len(d.get('edge_functions') or []) if isinstance(d.get('edge_functions'),list) else None,
+            'deploy_keys_related_edge':[k for k in d if 'edge' in k.lower() or 'function' in k.lower()],
+            'code_verification':'signed archive SHA256','requests':results,
+            'netlify_writes':0,'production_changed':False}
+          pathlib.Path('edge502-diagnostic/report/EDGE502_LIVE_RESPONSE_AND_ROUTER_CAUSE_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_EDGE502_LIVE_GET_RESPONSE',json.dumps(report,ensure_ascii=False)[:23000])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_EDGE502_SOURCE_LIVE_REQUEST_DIAGNOSTIC_GETONLY
+          path: edge502-diagnostic/report/
+          retention-days: 30
+          if-no-files-found: warn
