@@ -1,0 +1,51 @@
+name: ENPT 21964 Published Production GET Only Final HTTP SEO Form Browser QA
+on:
+  push:
+    branches: [ops/v23521-OG21964-APPROVED-PUBLISH-EXACT-DRAFT-ONCE-20261020]
+    paths: [.github/workflows/ENPT-21964-POSTPUBLISH-GETONLY-SAFETY-QA.yml]
+permissions:
+  contents: read
+concurrency:
+  group: enpt-21964-readonly-postpublished-site-qa-once-20261020
+  cancel-in-progress: false
+jobs:
+  verify-already-published-with-zero-writes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and confirm zero write code
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_21964_POSTPUBLISH_PRODUCTION_GETONLY_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_21964_POSTPUBLISH_PRODUCTION_GETONLY_QA.py').read_text()
+          assert 'EXPECTED="6ad7506cdeb778280a54ee2a"' in s
+          assert 'ROLLBACK="6ad5eb4918f9411c4d5e1ba4"' in s
+          assert 'method="POST"' not in s and "method='POST'" not in s
+          assert 'method="PUT"' not in s and "method='PUT'" not in s
+          assert 'consultation_POSTs":0' in s and 'netlify_write_actions":0' in s
+          print('PASS_GET_ONLY_QA_NO_DEPLOY_OR_FORM_POST')
+          PY
+      - name: Install live image/browser QA
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --disable-pip-version-check Pillow playwright==1.58.0
+          test -x /usr/bin/google-chrome || command -v google-chrome
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-nanum
+      - name: Verify published production exact Draft and rollback, live HTTP SEO JPEG Forms and Chrome 390 1440 with GET only
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_POSTPUBLISH_PRODUCTION_GETONLY_QA.py
+      - name: Retain real Production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_PRODUCTION_EXACT_DEPLOY_READONLY_POSTLIVE_HTTP_SEO_IMAGE_FORMS_CHROME_390_1440
+          path: production-readonly-verification/
+          retention-days: 90
+          if-no-files-found: warn
