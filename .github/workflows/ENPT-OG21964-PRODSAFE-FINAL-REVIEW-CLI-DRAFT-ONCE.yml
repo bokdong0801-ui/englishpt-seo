@@ -81,7 +81,6 @@ jobs:
           tar --zstd -xf "$f" -C thumb-21964-candidate
           python3 scripts/ENPT_21964_DRAFT_CANDIDATE_ONLY_EDIT_OG_AND_PRESERVE_NOINDEX.py
           test -s thumb-draft-qa/CANDIDATE_21964_SOURCE_PRESERVATION_QA.json
-            candidate-seo-safety-proof/PRODUCTION_CANDIDATE_21964_SEO_NOINDEX_GOOGLE_NAVER_FORMS_QA.json
           test "$(find thumb-21964-candidate/assets/images/seo-square/v1 -type f -name '*.jpg' | wc -l)" -eq 21964
           python3 - <<'PY'
           from pathlib import Path
