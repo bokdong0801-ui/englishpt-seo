@@ -1,0 +1,55 @@
+name: ENPT 21964 Netlify CLI Exact Edge Bundle Code SHA Packaging ReadOnly Inspector
+on:
+  push:
+    branches: [ops/v23521-21964-EDGE-MISSING-SHA-OFFLINE-20261020]
+    paths: [.github/workflows/ENPT-21964-CLI-EDGE-CODE-SHA-IMPLEMENTATION-GETONLY.yml]
+permissions:
+  contents: read
+jobs:
+  inspect-bundle-hash-algorithm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Pin exact deployed CLI and locate edge bundle upload hash construction (no NETLIFY TOKEN)
+        run: |
+          set -euo pipefail
+          mkdir -p cli-edge-hash-audit
+          npm install --no-save --no-audit --no-fund netlify-cli@27.13.0
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,json
+          base=Path('node_modules/netlify-cli')
+          phrases=('required_edge_functions','code_sha','edgeFunctions','edge_functions','eszip2','edgeFunctionBundles')
+          candidates=[]
+          for path in base.rglob('*'):
+            if not path.is_file() or path.suffix not in ('.js','.mjs','.cjs','.ts'):
+              continue
+            if '/node_modules/' in str(path.relative_to(base)):
+              continue
+            if path.stat().st_size>3000000:continue
+            try:txt=path.read_text('utf-8')
+            except Exception:continue
+            if any(p in txt for p in phrases):
+              lines=txt.splitlines()
+              snippets=[]
+              for i,line in enumerate(lines):
+                if any(p in line for p in phrases):
+                  if len(snippets)>=8:break
+                  snippets.append({'line':i+1,'excerpt':'\n'.join(lines[max(0,i-2):min(len(lines),i+3)])[:2000]})
+              if snippets:
+                candidates.append({'file':str(path),'snippets':snippets})
+          report={'source_package':'netlify-cli@27.13.0','code_files_with_edge_bundle_references':len(candidates),
+                  'files':candidates[:60],'API_requests_sent':0,'production_modified':False}
+          Path('cli-edge-hash-audit/CLI_PINNED_DEPLOY_EDGE_BUNDLE_SOURCE_REFERENCES.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_CLI_EDGE_CODE_SHA_SOURCE_INSPECTION',json.dumps({'count':len(candidates),'files':[x['file'] for x in candidates[:35]]},ensure_ascii=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_NETLIFY_CLI_27130_EDGE_SHA_CODE_INSPECTION_ONLY
+          path: cli-edge-hash-audit/
+          retention-days: 30
+          if-no-files-found: warn
