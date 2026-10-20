@@ -1,0 +1,68 @@
+name: ENPT 21964 Existing READY Preview Live Mixed Robots Forms CTA 390px 1440px GET ONLY
+on:
+  push:
+    branches: [qa/v23521-OG21964-PRODUCTION-SEO-SAFETY-OFFLINE-20261020]
+    paths: [.github/workflows/ENPT-21964-REAL-LIVE-PREAPPROVAL-FORMS-ROUTE-MOBILE-GETONLY.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect-existing-full-preview-without-netlify-writes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify GET-only and no new upload/publish instructions
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_21964_LIVE_EXISTING_PREVIEW_FORM_ROUTE_REAL_BROWSER_GETONLY_QA.py
+          test ! -e .github/workflows/ENPT-21964-REAL-LIVE-PREAPPROVAL-FORMS-ROUTE-MOBILE-GETONLY.yml.bak
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_21964_LIVE_EXISTING_PREVIEW_FORM_ROUTE_REAL_BROWSER_GETONLY_QA.py').read_text('utf8')
+          assert 'method="GET"' in s and 'method="POST"' not in s and "method='POST'" not in s
+          assert 'page.locator("[data-open-form]").first.click' in s
+          assert 'form_POST_submissions":0' in s
+          print('PASS_STATIC_GET_ONLY_NO_PRODUCTION_DEPLOY_OR_FORMS_SUBMIT')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39234109195
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39360145172
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          github-token: ${{ github.token }}
+          path: signed-route-map
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39361276955
+          name: ENPT_21964_COMPLETE_SQUARE_JPG_RECOVERED_ALL_SHA256_QA_NO_RERENDER_V1
+          github-token: ${{ github.token }}
+          path: all-jpeg-qa
+      - name: Install nonpublishing QA utilities with real local Chrome
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check playwright==1.58.0 Pillow
+          test -x /usr/bin/google-chrome || command -v google-chrome
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-nanum
+      - name: Verify existing READY draft live Edge HTTP, mixed robots metadata and six form CTA clicks on 390px and 1440px
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_LIVE_EXISTING_PREVIEW_FORM_ROUTE_REAL_BROWSER_GETONLY_QA.py
+      - name: Archive live HTTP and real browser screenshot evidence, no Netlify publish
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_EXISTING_READY_PREVIEW_MIXED_NOINDEX_EDGE_FORMS_390_1440_REAL_GETONLY
+          path: qa-live-runtime/
+          retention-days: 30
+          if-no-files-found: warn
