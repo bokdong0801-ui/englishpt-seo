@@ -1,0 +1,51 @@
+name: ENPT 21964 Netlify Forms and Naver Email Hook GET ONLY
+on:
+  push:
+    branches: [release/v23521-OG21964-PRODSAFE-FINAL-DRAFT-AND-FORM-QA-20261020]
+    paths: [.github/workflows/ENPT-21964-CONSULTATION-FORMS-EMAIL-HOOKS-READONLY.yml]
+permissions:
+  contents: read
+jobs:
+  check-form-notification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: Inspect actual Netlify Forms registration and submission_created email hook — no submission
+        run: |
+          set -euo pipefail
+          mkdir -p naver-form-hook-evidence
+          python3 - <<'PY'
+          import os,json,urllib.request,pathlib,datetime
+          sid='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          def api(p):
+            q=urllib.request.Request('https://api.netlify.com/api/v1/'+p,
+              headers={'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN'],'Accept':'application/json'},method='GET')
+            with urllib.request.urlopen(q,timeout=30) as r:return json.load(r)
+          site=api('sites/'+sid)
+          assert site.get('id')==sid and (site.get('published_deploy') or {}).get('id')=='6ad5eb4918f9411c4d5e1ba4'
+          forms=api('sites/'+sid+'/forms')
+          hooks=api('hooks?site_id='+sid)
+          expected='cicada3865@naver.com'
+          f=[{'id':x.get('id'),'name':x.get('name'),'submission_count':x.get('submission_count'),
+              'fields':[y.get('name') for y in (x.get('fields') or [])]} for x in forms if x.get('name')=='englishpt-consultation']
+          h=[{'id':x.get('id'),'type':x.get('type'),'event':x.get('event'),
+              'has_expected_naver_email':expected in json.dumps(x.get('data') or {},ensure_ascii=False),
+              'has_email_recipient':bool((x.get('data') or {}).get('email'))} for x in hooks if x.get('event')=='submission_created']
+          record={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+           'status':'PASS_READONLY_FORMS_AND_NOTIFICATION_HOOKS_AUDITED',
+           'published_deploy_id':site['published_deploy']['id'],
+           'form_processing_disabled':(site.get('processing_settings') or {}).get('ignore_html_forms'),
+           'matching_forms':f,'submission_created_hooks':h,'expected_naver_email_hook_exists':any(x['has_expected_naver_email'] for x in h),
+           'emails_delivered_confirmed':False,'test_submissions':0,'api_writes':0}
+          pathlib.Path('naver-form-hook-evidence/EMAIL_HOOKS_AND_FORM_REGISTRATION_READONLY.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_EXISTING_NAVER_FORM_HOOKS_GETONLY',json.dumps(record,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_NAVER_FORM_NOTIFICATION_HOOK_GETONLY_PRETEST
+          path: naver-form-hook-evidence/
+          retention-days: 20
+          if-no-files-found: warn
