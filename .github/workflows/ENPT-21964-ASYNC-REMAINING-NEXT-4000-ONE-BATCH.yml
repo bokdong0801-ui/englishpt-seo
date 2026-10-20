@@ -1,0 +1,107 @@
+name: ENPT async Draft resume NEXT 4000 SHA after verified first 7394
+on:
+  push:
+    branches: [ops/v23521-OG21964-ASYNC-EXCLUDE-6000-NEW-BATCH-20261020]
+    paths: [.github/workflows/ENPT-21964-ASYNC-REMAINING-NEXT-4000-ONE-BATCH.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21964-existing-async-draft-sha-replay-capped-one-at-a-time
+  cancel-in-progress: false
+jobs:
+  continue-only-known-missing-seo-page-sha:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      BATCH_SIZE: 4000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fail closed prior to transfer
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_21964_ASYNC_SHA_RESUME_AFTER_6000_CHECKPOINT.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/ENPT_21964_ASYNC_SHA_RESUME_AFTER_6000_CHECKPOINT.py').read_text()
+          assert "DRAFT='6ad708da374d457504481d5c'" in p
+          assert "PROD='6ad5eb4918f9411c4d5e1ba4'" in p
+          assert "len(third_done)!=6000 or third_done&done_set" in p
+          assert "len(pending)!=13206" in p
+          assert "method='POST'" not in p and "/restore" not in p
+          print('PASS_7394_PREVIOUS_SHA_EXCLUSION_4000_ONLY_NO_NEW_DEPLOY')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_DIGEST_20600_REQUIRED_SHA_CATEGORIES_NO_UPLOAD
+          run-id: 39380353473
+          github-token: ${{ github.token }}
+          path: required-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_EXISTING_DRAFT_FIRST_200_SHA_BOUNDED_TRANSFER_QA
+          run-id: 39380807594
+          github-token: ${{ github.token }}
+          path: first200-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_ASYNC_DIGEST_NEXT_1200_SHA_CHECKPOINT_AND_QA
+          run-id: 39381420069
+          github-token: ${{ github.token }}
+          path: second1200-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_NONPUBLISHED_ASYNC_SHA_6000_SLOW_BACKOFF_CHECKPOINT
+          run-id: 39382123374
+          github-token: ${{ github.token }}
+          path: prior6000-snapshot
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_REAL_ALL_SHA256_HASH_NONPUBLISHED_ASYNC_DIGEST_ONE_SHOT
+          run-id: 39379746225
+          github-token: ${{ github.token }}
+          path: prior-digest
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          run-id: 39360145172
+          github-token: ${{ github.token }}
+          path: signed-route-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - name: Select only next 4000 SHA absent in 7394 verified checkpoint
+        run: |
+          python3 scripts/ENPT_21964_ASYNC_SHA_RESUME_AFTER_6000_CHECKPOINT.py select
+          test "$(wc -l < resumable-sha-evidence/WANTED_ORIGINAL_PATHS.txt)" -eq 4000
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-original
+      - name: Verify exact archive hash and extract only 4000 required original SEO page files
+        run: |
+          set -euo pipefail
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          f=signed-original/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          echo "6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884  $f" | sha256sum -c -
+          mkdir -p resumable-original
+          tar --zstd -xf "$f" -C resumable-original -T resumable-sha-evidence/WANTED_ORIGINAL_PATHS.txt
+      - name: Recreate exact requested OG bytes; one SHA at most once, 429 backoff, checkpoint each 50
+        run: |
+          python3 scripts/ENPT_21964_ASYNC_SHA_RESUME_AFTER_6000_CHECKPOINT.py upload
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_ASYNC_DRAFT_NEXT_4000_SHA_CHECKPOINT_NO_PRODUCTION
+          path: resumable-sha-evidence/
+          retention-days: 30
+          if-no-files-found: warn
