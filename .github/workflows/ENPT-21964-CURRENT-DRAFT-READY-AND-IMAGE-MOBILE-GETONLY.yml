@@ -1,0 +1,159 @@
+name: ENGLISH PT 21964 Existing Draft READY and Mobile Image GET Only
+on:
+  push:
+    branches:
+      - ops/v23521-21964-OG-READY-STATUS-MOBILE-GETONLY-20261020
+    paths:
+      - .github/workflows/ENPT-21964-CURRENT-DRAFT-READY-AND-IMAGE-MOBILE-GETONLY.yml
+permissions:
+  contents: read
+concurrency:
+  group: ENPT-21964-CURRENT-DRAFT-READY-AND-IMAGE-MOBILE-GETONLY-20261020
+  cancel-in-progress: false
+jobs:
+  inspect-current-draft-GETonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: GET Netlify exact deploy and production status without reupload
+        run: |
+          set -euo pipefail
+          mkdir -p existing-draft-audit
+          cat > /tmp/og_current_readonly.py <<'PY'
+          import os,json,urllib.request,urllib.error,datetime,pathlib,io,time,re,hashlib,struct
+          out=pathlib.Path('existing-draft-audit');out.mkdir(exist_ok=True)
+          site='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          dep='6ad6daf01389db1fbe596f74'
+          prior='6ad5eb4918f9411c4d5e1ba4'
+          base='https://enptog21964reviewv1--englishpt-seo.netlify.app'
+          title='ENPT-21964-OG-DRAFT-ONLY-DO-NOT-PUBLISH-20261020'
+          token=os.environ['NETLIFY_AUTH_TOKEN']
+          record={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'target_draft_id':dep,'production_target_baseline':prior,
+            'status':'HOLD','issues':[],'netlify_POST_requests':0,'image_upload_attempts':0,
+            'production_publish_attempts':0,'consultation_form_submissions':0,
+            'tested_pages':[],'tested_og_images':[],'test_sizes_px':[102,156,200,400],
+            'all_21964_pages_live_tested':False}
+          def api(p):
+            q=urllib.request.Request('https://api.netlify.com/api/v1/'+p,headers={'Authorization':'Bearer '+token,'Accept':'application/json'},method='GET')
+            with urllib.request.urlopen(q,timeout=38) as resp:return json.load(resp)
+          try:
+            s=api('sites/'+site)
+            r=api('sites/'+site+'/deploys/'+dep)
+            record['production_id']=(s.get('published_deploy') or {}).get('id')
+            record['production_unchanged']=record['production_id']==prior
+            if not record['production_unchanged']:raise ValueError('Published production changed; stop QA')
+            record['draft']={k:r.get(k) for k in
+              ['id','state','title','name','deploy_ssl_url','created_at','updated_at','published_at','error_message',
+               'required','required_count','uploaded_files','skipped','locked','review_id','branch']}
+            record['draft']['site_id']=r.get('site_id')
+            if r.get('id')!=dep or r.get('site_id')!=site:raise ValueError('Unrecognized exact Draft or site')
+            if title!=r.get('title'):raise ValueError('Unexpected Draft marker')
+            if r.get('published_at') is not None:raise ValueError('Draft unexpectedly published')
+            state=r.get('state')
+            if state!='ready':
+              record['status']='HOLD_DRAFT_NOT_READY_'+str(state).upper()
+              print('EXISTING_21964_DRAFT_STATUS',json.dumps(record,ensure_ascii=False),flush=True)
+            else:
+              record['status']='DRAFT_READY_VERIFY_HTTP'
+              def get(path,lim=550000):
+                req=urllib.request.Request(base+path,headers={'User-Agent':'EnglishPT-existing-21964-draft-getonly-QA','Accept':'text/html,image/jpeg,*/*'},method='GET')
+                with urllib.request.urlopen(req,timeout=40) as resp:
+                  if resp.status!=200:return None,'status '+str(resp.status)
+                  if not resp.geturl().startswith(base):return None,'redirected host'
+                  return (resp.read(lim),dict(resp.headers)),None
+              paths=[
+                '/index.html','/englishpt.html','/courses.html','/student-english.html',
+                '/exam-english.html','/english-conversation.html',
+                '/station-419minjumyoji-toeic.html',
+                '/station-419minjumyoji-toeic-speaking.html',
+                '/station-419minjumyoji-opic-academy.html',
+                '/station-419minjumyoji-ielts.html',
+                '/station-419minjumyoji-elem-tutor.html',
+                '/station-ganeung-worker-english-conv-academy.html',
+                '/dalseo-songhyeondong-elem-tutor.html',
+                '/sitemap-index.xml','/robots.txt'
+              ]
+              ogs={}
+              for p in paths:
+                val,error=get(p,lim=900000 if p.endswith('.html') else 700000)
+                if error:record['issues'].append(p+': '+error);continue
+                b,h=val
+                if p.endswith('.html'):
+                  if 'noindex' not in h.get('X-Robots-Tag','').lower():
+                    record['issues'].append('Draft preview-only X-Robots-Tag noindex absent '+p)
+                  if b'og:image' not in b:
+                    record['issues'].append('OG missing '+p)
+                  else:
+                    matches=re.findall(rb'<meta\s+property="og:image"\s+content="([^"]+)"',b,re.I)
+                    if len(matches)!=1:record['issues'].append('OG count '+p)
+                    else:
+                      og=matches[0].decode('utf8',errors='replace')
+                      record['tested_pages'].append({'page':p,'og_image':og})
+                      if og.startswith('https://englishpt.kr/assets/images/seo-square/v1/') and og.endswith('.jpg'):
+                        ogs[p]=og[len('https://englishpt.kr'):]
+                      else:record['issues'].append('Unexpected image target '+p+': '+og)
+                  if p in ('/index.html','/englishpt.html'):
+                    if b.count(b'google-site-verification')!=1 or b.count(b'naver-site-verification')!=1:
+                      record['issues'].append('Google/Naver ownership meta mismatch '+p)
+                else:record['tested_pages'].append({'page':p,'http_status':200})
+              # Fetch candidate images from the *unpublished preview* directly,
+              # not from the existing production og:image URL.
+              def image_samples():
+                try:
+                  from PIL import Image,ImageOps,ImageDraw,ImageFont
+                except ImportError:
+                  return False
+                tiles=[]
+                for page,path in sorted(ogs.items()):
+                  raw,err=get(path,lim=400000)
+                  if err:record['issues'].append('JPEG '+path+': '+err);continue
+                  blob,_=raw
+                  try:
+                    image=Image.open(io.BytesIO(blob)).convert('RGB')
+                    if image.size!=(1200,1200):raise ValueError('Wrong image dimensions '+str(image.size))
+                    item={'page':page,'image_path':path,'size':len(blob),
+                          'dimensions':list(image.size),'sha256':hashlib.sha256(blob).hexdigest()}
+                    record['tested_og_images'].append(item)
+                    for size in (102,156):
+                      tn=image.resize((size,size),Image.Resampling.LANCZOS)
+                      tiles.append((page,size,tn))
+                    if len(record['tested_og_images'])<=3:
+                      (out/('thumb_'+str(len(record['tested_og_images']))+'_1200.jpg')).write_bytes(blob)
+                  except Exception as e:record['issues'].append('Image decode '+path+': '+str(e))
+                if tiles:
+                  wide=1300;h=((len(tiles)+5)//6)*265+70
+                  sheet=Image.new('RGB',(wide,h),'#F5F6F5'); d=ImageDraw.Draw(sheet)
+                  for i,(pg,sz,im) in enumerate(tiles):
+                    x=(i%6)*215+8;y=(i//6)*265+8
+                    sheet.paste(im,(x,y))
+                    d.text((x,y+165),pg[1:25],fill='#222222')
+                    d.text((x,y+187),str(sz)+'px centered square',fill='#555555')
+                  sheet.save(out/'LIVE_DRAFT_102PX_156PX_MOBILE_CONTACT.jpg',quality=90)
+                  return True
+                return False
+              imaged=image_samples()
+              if len(record['tested_pages'])!=len(paths) or len(record['tested_og_images'])<8 or not imaged:
+                record['issues'].append('Draft URL/OG sample coverage insufficient')
+              if not record['issues']:
+                record['status']='PASS_READY_DRAFT_LIVE_OG_AND_102_156_MOBILE_SAMPLE_QA'
+              else:record['status']='HOLD_READY_BUT_LIVE_QA_ISSUES'
+          except Exception as e:
+            record['status']='HOLD_READ_ONLY_ERROR'
+            record['issues'].append(type(e).__name__+': '+str(e)[:320])
+          (out/'EXACT_EXISTING_DRAFT_READY_AND_IMAGE_MOBILE_GETONLY.json').write_text(json.dumps(record,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('EXISTING_21964_DRAFT_LIVE_GETONLY_RESULT',json.dumps(record,ensure_ascii=False),flush=True)
+          if record['status']=='HOLD_READ_ONLY_ERROR':raise SystemExit(1)
+          PY
+          python3 -m pip install Pillow --quiet --disable-pip-version-check
+          python3 /tmp/og_current_readonly.py
+      - name: Retain current exact Draft state and all HTTP/mobile evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_EXISTING_DRAFT_CURRENT_READINESS_AND_102_156_MOBILE_GETONLY
+          path: existing-draft-audit/
+          retention-days: 30
+          if-no-files-found: error
