@@ -1,0 +1,74 @@
+name: ENPT 21964 after all SHA plus Edge Ready and HTTP GET only
+on:
+  push:
+    branches: [ops/v23521-OG21964-AFTER-ALL-SHA-EDGE-READY-GETONLY-20261020]
+    paths: [.github/workflows/ENPT-21964-AFTER-ALL-FILES-EDGE-READY-HTTP-GETONLY.yml]
+permissions:
+  contents: read
+jobs:
+  read-exact-async-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: Poll only GET exact async Draft state and check actual preview responses without POST or PUT
+        run: |
+          set -euo pipefail
+          mkdir -p final-draft-state-audit
+          python3 - <<'PY'
+          import os,json,pathlib,urllib.request,urllib.error,datetime,time,subprocess
+          t=os.environ['NETLIFY_AUTH_TOKEN']
+          site='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          draftid='6ad708da374d457504481d5c'
+          oldprod='6ad5eb4918f9411c4d5e1ba4'
+          base='https://enptog21964asyncdigestonce20--englishpt-seo.netlify.app'
+          def api(path):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,method='GET',headers={'Authorization':'Bearer '+t})
+            with urllib.request.urlopen(req,timeout=30) as resp:return json.load(resp)
+          r={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+             'draft_id':draftid,'published_baseline':oldprod,'status':'HOLD',
+             'states':[],'actual_http_results':[],
+             'netlify_API_mutations':0,'netlify_reuploads':0,'production_publishes':0}
+          for i in range(12):
+            s=api('sites/'+site);d=api('sites/'+site+'/deploys/'+draftid)
+            current=(s.get('published_deploy') or {}).get('id')
+            assert current==oldprod and s.get('id')==site and s.get('custom_domain')=='englishpt.kr'
+            assert d.get('id')==draftid and d.get('site_id')==site and d.get('published_at') is None
+            assert d.get('title')=='ENPT-21964-OG-ASYNC-DIGEST-ONE-DRAFT-NOT-PRODUCTION-20261020'
+            row={'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'state':d.get('state'),
+                 'required_static':len(d.get('required') or []),
+                 'required_edge':len(d.get('required_edge_functions') or []),
+                 'required_functions':len(d.get('required_functions') or []),
+                 'last_updated_at':d.get('updated_at'),'error_message':d.get('error_message')}
+            r['states'].append(row)
+            if d.get('state')=='ready' and not (d.get('required') or []) and not (d.get('required_edge_functions') or []):
+              r['status']='DRAFT_READY_CHECK_HTTP'
+              break
+            if d.get('state') in ('error','failed','canceled'):
+              r['status']='HOLD_DRAFT_SERVER_ERROR'
+              break
+            if i<11:time.sleep(5)
+          targets=['/index.html','/englishpt.html','/robots.txt','/sitemap-index.xml',
+             '/station-419minjumyoji-toeic.html','/station-419minjumyoji-ielts.html']
+          for path in targets:
+            proc=subprocess.run(['curl','--silent','--show-error','--connect-timeout','8','--max-time','18',
+              '-o','/dev/null','-w','HTTP=%{http_code} BYTES=%{size_download} REDIRECT=%{redirect_url}',base+path],
+              capture_output=True,text=True,timeout=22)
+            r['actual_http_results'].append({'url':base+path,'curl_exit':proc.returncode,
+                'response':proc.stdout.strip(),'stderr':proc.stderr[-100:]})
+          statuses=[x['response'].split(' ')[0] for x in r['actual_http_results']]
+          if r['status']=='DRAFT_READY_CHECK_HTTP':
+            r['status']='PASS_READY_AND_REAL_HTTP_200' if all(y=='HTTP=200' for y in statuses) else 'HOLD_DRAFT_READY_BUT_SAMPLE_HTTP_NON200'
+          else:r['status']=r['status'] if r['status']!='HOLD' else 'HOLD_UPLOAD_STATE_STUCK_AFTER_ALL_20600_SHA_AND_EDGE'
+          r['final_state']=r['states'][-1]
+          pathlib.Path('final-draft-state-audit/EXACT_ASYNC_DRAFT_ALL_REQUIRED_ZERO_LIVE_HTTP_GET_QA.json').write_text(json.dumps(r,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('ENPT_21964_ALL_SHA_PLUS_EDGE_FINAL_GETONLY',json.dumps(r,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_POST_ALL_SHA_AND_EDGE_READY_STATUS_HTTP_GETONLY
+          path: final-draft-state-audit/
+          retention-days: 30
+          if-no-files-found: warn
