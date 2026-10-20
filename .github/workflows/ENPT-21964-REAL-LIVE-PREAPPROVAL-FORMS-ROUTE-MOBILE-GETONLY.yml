@@ -1,4 +1,4 @@
-name: ENPT 21964 Existing READY Preview Live Mixed Robots Forms CTA 390px 1440px GET ONLY
+name: ENPT 21964 Existing READY Preview Live Real In-Page Forms Anchor 390px 1440px GET Only
 on:
   push:
     branches: [qa/v23521-OG21964-PRODUCTION-SEO-SAFETY-OFFLINE-20261020]
@@ -26,7 +26,8 @@ jobs:
           from pathlib import Path
           s=Path('scripts/ENPT_21964_LIVE_EXISTING_PREVIEW_FORM_ROUTE_REAL_BROWSER_GETONLY_QA.py').read_text('utf8')
           assert 'method="GET"' in s and 'method="POST"' not in s and "method='POST'" not in s
-          assert 'page.locator("[data-open-form]").first.click' in s
+          assert 'anchor.click(timeout=16000)' in s
+          assert 'a[href="#consultation-preview"]' in s
           assert 'form_POST_submissions":0' in s
           print('PASS_STATIC_GET_ONLY_NO_PRODUCTION_DEPLOY_OR_FORMS_SUBMIT')
           PY
