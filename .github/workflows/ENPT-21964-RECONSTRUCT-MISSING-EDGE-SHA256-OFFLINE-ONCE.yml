@@ -1,0 +1,140 @@
+name: ENPT 21964 Reconstruct Missing Edge Function SHA256 FULL OFFLINE NO NETLIFY WRITE
+on:
+  push:
+    branches:
+      - ops/v23521-21964-EDGE-MISSING-SHA-OFFLINE-20261020
+    paths:
+      - .github/workflows/ENPT-21964-RECONSTRUCT-MISSING-EDGE-SHA256-OFFLINE-ONCE.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21964-edge-sha-offline-once
+  cancel-in-progress: false
+jobs:
+  offline-edge-hash-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download previously verified original full release tar artifact, no deployment
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 39234109195
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          github-token: ${{ github.token }}
+          path: read-only-source
+      - name: Extract only exact original router and its Netlify TOML, verify full archive hash
+        run: |
+          set -euo pipefail
+          mkdir -p edge-recreate/source edge-recreate/evidence
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          ARCHIVE=read-only-source/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          test -s "$ARCHIVE"
+          printf "%s  %s\n" 6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884 "$ARCHIVE" | sha256sum -c -
+          echo "SELECTED_ARCHIVE_PATHS"
+          tar --zstd -tf "$ARCHIVE" | grep -E '(^|/)(netlify.toml|netlify/edge-functions/shard-router.js)$' | head -20
+          tar --zstd -xf "$ARCHIVE" -C edge-recreate/source --wildcards '*netlify.toml' '*netlify/edge-functions/shard-router.js'
+          find edge-recreate/source -type f -print
+          test -s edge-recreate/source/netlify.toml
+          test -s edge-recreate/source/netlify/edge-functions/shard-router.js
+          sha256sum edge-recreate/source/netlify.toml edge-recreate/source/netlify/edge-functions/shard-router.js
+          cp edge-recreate/source/netlify.toml edge-recreate/evidence/ORIGINAL_NETLIFY_TOML_EXACT.txt
+          python3 - <<'PY'
+          from pathlib import Path
+          import tomllib,json,re
+          root=Path('edge-recreate/source')
+          cfg=tomllib.loads((root/'netlify.toml').read_text('utf8'))
+          js=(root/'netlify/edge-functions/shard-router.js').read_text('utf8')
+          vals=cfg.get('edge_functions',[])
+          print('ORIGINAL_EDGE_DECLARATIONS',json.dumps(vals,ensure_ascii=False),flush=True)
+          if not isinstance(vals,list) or len(vals)!=1 or vals[0].get('function')!='shard-router':
+            raise SystemExit('HOLD: original Edge declaration not exactly one expected shard-router')
+          print('JS_SIZE',len(js),'CONFIG_EXPORT','export const config' in js)
+          if 'X-Robots-Tag' not in js:
+            raise SystemExit('HOLD: source router missing robots header guard')
+          Path('edge-recreate/evidence/ORIGINAL_EDGE_DECLARATION_QA.json').write_text(
+            json.dumps({'original_edge_functions':vals,'js_length':len(js),'archive_sha_verified':True,
+                        'source_mutated':False,'netlify_API_mutations':0},ensure_ascii=False,indent=2)+'\n')
+          PY
+      - name: Install pinned Netlify CLI bundler, build exact one Edge asset locally without calling Netlify API
+        run: |
+          set -euo pipefail
+          cd edge-recreate
+          npm install --no-save --no-audit --no-fund netlify-cli@27.13.0
+          node - <<'JS'
+          const fs=require('fs'),path=require('path');
+          const main=path.resolve('node_modules/netlify-cli');
+          const keys=['@netlify/edge-bundler','@netlify/build'];
+          const result={cli_version:require(path.join(main,'package.json')).version,modules:{}};
+          for(const k of keys){
+            try{
+              const resolved=require.resolve(k,{paths:[main,process.cwd()]});
+              result.modules[k]={file:resolved,package_root:path.dirname(resolved)};
+            }catch(e){result.modules[k]={error:String(e).slice(0,160)}}
+          }
+          fs.writeFileSync('evidence/NETLIFY_CLI_BUNDLER_DISCOVERY.json',JSON.stringify(result,null,2)+'\n');
+          console.log('NETLIFY_CLI_BUNDLER_DISCOVERY',JSON.stringify(result));
+          JS
+      - name: Attempt reproducible Edge bundle for both allowed Netlify bundle formats without any deploy call
+        run: |
+          set -euo pipefail
+          cd edge-recreate
+          cat > offline-bundle-recreate.mjs <<'JS'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import crypto from 'node:crypto';
+          import {createRequire} from 'node:module';
+          const require=createRequire(import.meta.url);
+          const TOML=fs.readFileSync('source/netlify.toml','utf8');
+          const target='1359b9c72eadd149ad8cde014235de40b91e0d33e2132c2d5609bf76a6e4653b';
+          const declarations=[{function:'shard-router',path:'/*'}];
+          const result={expected_code_sha256:target,discovery:JSON.parse(fs.readFileSync('evidence/NETLIFY_CLI_BUNDLER_DISCOVERY.json','utf8')),
+             sha256_matches:[],candidate_files:[],errors:[],netlify_GETs:0,netlify_POSTs:0,netlify_PUTs:0,
+             original_config_fragment:TOML.slice(0,3200)};
+          let resolved;
+          try{resolved=require.resolve('@netlify/edge-bundler',{paths:[path.resolve('node_modules/netlify-cli'),process.cwd()]});}catch(e){
+            result.errors.push('No matched bundler resolution '+String(e));
+          }
+          if(resolved){
+            try{
+              const bundler=await import('file://'+resolved);
+              result.bundler_exports=Object.keys(bundler).slice(0,45);
+              const dsrc=[path.resolve('source/netlify/edge-functions')];
+              const dest=path.resolve('dist-edge');
+              fs.mkdirSync(dest,{recursive:true});
+              const b=await bundler.bundle(dsrc,dest,declarations);
+              result.bundle_response=JSON.stringify(b,(_k,v)=>typeof v==='bigint'?String(v):v).slice(0,12000);
+            }catch(e){result.errors.push('Bundle error: '+String(e).slice(0,1800))}
+          }
+          function scan(dir){
+            if(!fs.existsSync(dir))return;
+            for(const f of fs.readdirSync(dir,{withFileTypes:true})){
+              const p=path.join(dir,f.name);
+              if(f.isDirectory())scan(p);
+              else if(f.isFile()){
+                const data=fs.readFileSync(p);const digest=crypto.createHash('sha256').update(data).digest('hex');
+                result.candidate_files.push({path:p,bytes:data.length,sha256:digest});
+                if(digest===target)result.sha256_matches.push(p);
+              }
+            }
+          }
+          scan('dist-edge');
+          result.status=result.sha256_matches.length>0?'PASS_EXACT_EDGE_CODE_SHA_REPRODUCED_OFFLINE':'HOLD_EDGE_CODE_SHA_NOT_REPRODUCED';
+          fs.writeFileSync('evidence/RECONSTRUCT_EDGE_SHA_ONLY_REPORT.json',JSON.stringify(result,null,2)+'\n');
+          console.log('ENPT_EDGE_SHA_OFFLINE_FORENSIC',JSON.stringify(result).slice(0,18000));
+          JS
+          timeout 180s node offline-bundle-recreate.mjs
+          test -s evidence/RECONSTRUCT_EDGE_SHA_ONLY_REPORT.json
+          echo "PASS_OFFLINE_EDGE_SHA_RECONSTRUCTION_ATTEMPT_RECORDED_WITH_ZERO_NETLIFY_POST"
+      - name: Preserve script findings only, do not upload edge bundles or secrets to artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_EDGE_REQUIRED_SHA256_OFFLINE_RECONSTRUCTION_AUDIT_ZERO_NETLIFY_WRITE
+          path: edge-recreate/evidence/
+          retention-days: 30
+          if-no-files-found: warn
