@@ -11,7 +11,6 @@ out.mkdir(exist_ok=True)
 source=root/'signed-route-map'
 ledger=root/'all-jpeg-qa'
 BASE='https://enptog21964clifinalqa20--englishpt-seo.netlify.app'
-DRAFT='6ad727......'  # dynamic matched via Netlify title; never trust an imagined ID
 SITE='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
 PROD='6ad5eb4918f9411c4d5e1ba4'
 MARKER='ENPT-21964-FINAL-CLI-BUNDLE-SEO-HEADER-ROBOTS-FIX-DRAFT-ONLY-20261020'
@@ -55,7 +54,7 @@ def verify(record):
  assert data.count(og.encode('utf8'))==1,(route,'og:image unique mismatch')
  assert b'meta property="og:image:width" content="1200"' in data
  assert b'meta property="og:image:height" content="1200"' in data
- assert item['search_keyword'].replace(' ','').encode('utf8') not in b'X-DO-NOT-CHECK'  # mapping row guard only
+ assert item['search_keyword'] and item['header_label'],('empty mapped keyword/location',route)
  assert b'<link rel="canonical"' in data or b'rel="canonical"' in data
  raw,ih=get(BASE+'/'+item['planned_image_path'])
  if not ih.get('content-type','').lower().startswith('image/jpeg'):raise ValueError('JPEG mime mismatch '+route)
