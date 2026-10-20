@@ -216,7 +216,8 @@ for route in actual_indexed:
   "mapping_status":status,"mapping_evidence":source_kind,"hold_reason":hold
  }
  result.append(record)
- counts[typ]+=1;intents[intent]+=1;statuses[status]+=1
+ counts[typ]+=1;statuses[status]+=1
+ if typ=="station":intents[intent]+=1
  if hold:held.append(record)
  if typ=="station":unused.append(slug)
 if len(result)!=21964 or len(set(x["route"] for x in result))!=21964:
