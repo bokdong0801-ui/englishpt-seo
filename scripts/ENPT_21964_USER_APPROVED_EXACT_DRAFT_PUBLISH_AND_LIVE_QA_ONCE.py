@@ -172,7 +172,12 @@ try:
           "Candidate Draft is not currently READY and unpublished")
     for key in ["required","required_functions","required_edge_functions","required_server"]:
         check(not draft.get(key),"Draft incomplete pending "+key)
-    check(draft.get("draft") is True,"Target must still be Netlify draft")
+    # Netlify sometimes reports draft=false for an unpublished READY --alias deploy.
+    # The authoritative publish safety conditions are published_at=null,
+    # the original published_deploy id, exact immutable Draft id/title and zero required SHA.
+    # They are checked above and again immediately before the POST.
+    check(draft.get("id")!=PRODUCTION_BEFORE and draft.get("published_at") is None,
+          "Approved target is not an unpublished distinct deploy")
     report["preflight"]["draft_ready_unpublished"]="PASS"
     preview_pages={p:check_live_pair(p) for p in PAGES}
     report["preflight"]["live_preview_pages"]=len(preview_pages)
