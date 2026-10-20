@@ -1,0 +1,68 @@
+name: ENPT 21964 ProdSafe Exact READY Draft Final 42 Mixed Index Noindex and Browser Form GET QA
+on:
+  push:
+    branches: [release/v23521-OG21964-PRODSAFE-FINAL-DRAFT-AND-FORM-QA-20261020]
+    paths: [.github/workflows/ENPT-21964-PRODSAFE-READY-MIXED-42-SEO-AND-FORM-GETONLY.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  final-real-prod-semantics-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static guard no POSTs, no new deployments, only GET / 390px / 1440px form navigation
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_21964_PRODSAFE_DRAFT_LIVE_42_ROUTES_MIXED_NOINDEX_FORM_CTA_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          code=Path('scripts/ENPT_21964_PRODSAFE_DRAFT_LIVE_42_ROUTES_MIXED_NOINDEX_FORM_CTA_QA.py').read_text()
+          assert "method='POST'" not in code and 'method="POST"' not in code
+          assert 'form_POST_submissions":0' in code
+          assert 'enptog21964prodsafereview20--englishpt-seo.netlify.app' in code
+          assert 'headers.get("x-robots-tag","").lower()' in code
+          print("PASS_NO_NETLIFY_FORM_POST_OR_PRODUCTION_PUBLISH")
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          run-id: 39360145172
+          github-token: ${{ github.token }}
+          path: signed-route-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_COMPLETE_SQUARE_JPG_RECOVERED_ALL_SHA256_QA_NO_RERENDER_V1
+          run-id: 39361276955
+          github-token: ${{ github.token }}
+          path: all-jpeg-qa
+      - name: Install browser validation without touching production
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --disable-pip-version-check playwright==1.58.0 Pillow
+          test -x /usr/bin/google-chrome || command -v google-chrome
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-nanum
+      - name: Execute actual production-semantic mixed-robots canonical OG and 390/1440px forms GET-only
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_PRODSAFE_DRAFT_LIVE_42_ROUTES_MIXED_NOINDEX_FORM_CTA_QA.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_PRODSAFE_FINAL_READY_DRAFT_LIVE_42_MIXED_SEO_390_1440_BROWSER_QA
+          path: qa-live-prod-safe-runtime/
+          retention-days: 30
+          if-no-files-found: warn
