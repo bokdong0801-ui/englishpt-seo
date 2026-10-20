@@ -1,0 +1,153 @@
+name: ENPT 21964 FINAL Go Hold Production Preflight GET ONLY - User Confirmed Email
+on:
+  push:
+    branches: [release/v23521-OG21964-PRODSAFE-FINAL-DRAFT-AND-FORM-QA-20261020]
+    paths: [.github/workflows/ENPT-21964-FINAL-GO-HOLD-USER-EMAIL-CONFIRMED-GETONLY.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  final-prod-preapproval-go-hold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - name: Read-only final QA; no build, deploy, file PUT, form POST, or publication
+        run: |
+          set -euo pipefail
+          mkdir -p final-release-preflight-evidence
+          python3 - <<'PY'
+          import os,json,pathlib,datetime,re,time,urllib.request,urllib.error,hashlib,xml.etree.ElementTree as ET
+          from html.parser import HTMLParser
+          siteid='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          candidate='6ad7506cdeb778280a54ee2a'
+          base='https://enptog21964prodsafereview20--englishpt-seo.netlify.app'
+          production='6ad5eb4918f9411c4d5e1ba4'
+          formid='6ad31619a0da0424ffd54af9'
+          submission='6ad751390919add0ec06f61c'
+          testmarker='ENPT_OG21964_FINAL_QA_SINGLE_20261020'
+          candidate_title='ENPT-21964-PRODSAFE-ORIGINAL-ROBOTS-CLI-FULL-NONPUBLISHED-ONCE-20261020'
+          o=pathlib.Path('final-release-preflight-evidence')
+          report={'status':'HOLD','checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'candidate_draft_id':candidate,'draft_url':base,'original_production_id':production,
+            'google_naver_email_received':'USER_REPORTED_2026_10_20_NOT_INDEPENDENT_MAILBOX_READ',
+            'user_approved_production_publish':False,
+            'production_publish_attempts':0,'netlify_upload_attempts':0,'form_POST_attempts':0,
+            'checks':{},'live_pages':[],'errors':[]}
+          def ensure(flag,msg):
+            if not flag:raise RuntimeError(msg)
+          def get_api(path):
+            u='https://api.netlify.com/api/v1/'+path
+            q=urllib.request.Request(u,method='GET',
+               headers={'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN'],'Accept':'application/json'})
+            with urllib.request.urlopen(q,timeout=28) as r:return json.load(r)
+          def get_github_run(runid):
+            u='https://api.github.com/repos/bokdong0801-ui/englishpt-seo/actions/runs/'+str(runid)
+            q=urllib.request.Request(u,method='GET',headers={'Authorization':'Bearer '+os.environ['GITHUB_TOKEN'],
+                'Accept':'application/vnd.github+json','User-Agent':'ENPT-Final-GO-HOLD-GET-ONLY'})
+            with urllib.request.urlopen(q,timeout=25) as r:return json.load(r)
+          def live(path):
+            q=urllib.request.Request(base+path,method='GET',headers={'User-Agent':'ENPT-production-preapproval-GET-only'})
+            with urllib.request.urlopen(q,timeout=27) as r:
+              ensure(r.status==200 and r.geturl().startswith(base),'Live GET bad status/redirect '+path)
+              return r.read(2500000),{k.lower():v for k,v in r.headers.items()}
+          class Head(HTMLParser):
+            def __init__(self):super().__init__();self.meta=[];self.links=[];self.forms=[]
+            def handle_starttag(self,tag,attrs):
+              d=dict(attrs)
+              if tag=='meta':self.meta.append(d)
+              if tag=='link':self.links.append(d)
+              if tag=='form':self.forms.append(d)
+            def meta1(self,a,b):return [e.get('content') for e in self.meta if e.get(a)==b]
+          try:
+            s=get_api('sites/'+siteid)
+            ensure(s.get('id')==siteid and s.get('custom_domain')=='englishpt.kr','Wrong Netlify site/domain')
+            current=(s.get('published_deploy') or {}).get('id')
+            ensure(current==production,'STOP: published Production has drifted')
+            report['checks']['production']='PASS_UNCHANGED_PUBLISHED_ID_'+current
+            draft=get_api('sites/'+siteid+'/deploys/'+candidate)
+            ensure(draft.get('id')==candidate and draft.get('site_id')==siteid,'Candidate Draft identity mismatch')
+            ensure(draft.get('title')==candidate_title,'Candidate title/bytes reference mismatch')
+            ensure(draft.get('state')=='ready' and draft.get('published_at') is None,'Draft not READY or was already published')
+            ensure(not draft.get('required') and not draft.get('required_edge_functions'),'Required Draft assets missing')
+            report['checks']['candidate']='PASS_READY_EXACT_NONPUBLISHED_DRAFT_ID_NO_REQUIRED_UPLOADS'
+            for rid in [39399897235,39414952403,39416389999,39414278964,39416071957]:
+              r=get_github_run(rid)
+              ensure(r.get('conclusion')=='success' and r.get('status')=='completed','Prior signed QA job failed '+str(rid))
+            report['checks']['signed_QA']='PASS_5_PRIOR_REQUIRED_ACTIONS_CONCLUDED_SUCCESS'
+            paths=['/index.html','/englishpt.html','/station-419minjumyoji-toeic.html',
+                   '/station-419minjumyoji-ielts.html','/gyeongnam-milyang-naeidong-elem-tutor.html']
+            for p in paths:
+              body,h=live(p)
+              ensure(h.get('content-type','').lower().startswith('text/html'),'HTML MIME mismatch '+p)
+              ensure('noindex' not in h.get('x-robots-tag','').lower(),'Leaked global preview noindex '+p)
+              hp=Head();hp.feed(body.decode('utf8',errors='replace'))
+              ensure(hp.meta1('property','og:image') and len(hp.meta1('property','og:image'))==1,
+                     'Missing/duplicate OG '+p)
+              c=[v.get('href') for v in hp.links if v.get('rel')=='canonical']
+              ensure(c==['https://englishpt.kr'+p],'Canonical wrong '+p)
+              ensure(len(hp.meta1('name','robots'))==1,'Page robots meta missing/duplicate '+p)
+              if p in ['/index.html','/englishpt.html']:
+                ensure(hp.meta1('name','google-site-verification')==['OTG-5ooTZYTm-HnTOi8I0TRV4bZHUD-uSYSOih3E8ig'], 'Google owner tag missing '+p)
+                ensure(hp.meta1('name','naver-site-verification')==['340f4e7dc8c5f3ec806e68f6f09b9949f941a0de'],'Naver owner tag missing '+p)
+              if 'tutor' in p:
+                ensure(any(f.get('name')=='englishpt-consultation' for f in hp.forms),
+                       'Netlify HTML form missing '+p)
+              report['live_pages'].append({'path':p,'HTTP':200,'robots_meta':hp.meta1('name','robots'),
+                  'no_global_index_block':True,'canonical':c[0],'OG':hp.meta1('property','og:image')[0]})
+            report['checks']['live_main_and_edge']='PASS_5_LIVE_ROUTES_OG_CANONICAL_META_AND_BOTH_OWNER_TAGS'
+            # Check the original robots and sitemap without interpreting internal assets as public.
+            robots,_=live('/robots.txt');robots=robots.decode('utf8',errors='replace')
+            ensure(not re.search(r'(?im)^\s*Disallow:\s*/\s*$',robots),'Whole site disallowed in robots.txt')
+            ensure('Sitemap: https://englishpt.kr/sitemap-index.xml' in robots,'Canonical sitemap directive missing')
+            sitemap,_=live('/sitemap-index.xml')
+            root=ET.fromstring(sitemap)
+            smurls=[x.text for x in root.iter() if x.tag.endswith('loc')]
+            ensure(len(smurls)==44 and len(set(smurls))==44,'44 sitemap shards missing')
+            report['checks']['robots_sitemaps']='PASS_PUBLIC_ROBOTS_ALLOWED_AND_44_UNIQUE_SITEMAP_SHARDS'
+            raw,h=live('/__pages/23/englishpt.page')
+            ensure('noindex' in h.get('x-robots-tag','').lower(),'Internal Edge .page not noindex')
+            report['checks']['internal_assets']='PASS_INTERNAL_RAW_EDGE_PAYLOAD_NOINDEX'
+            # Real signed image from live OG; URL must be production-domain absolute but use same path on Draft.
+            imgurl=report['live_pages'][2]['OG']
+            ensure(imgurl.startswith('https://englishpt.kr/assets/images/seo-square/v1/') and imgurl.endswith('.jpg'),
+                   'Mapped JPEG OG URL outside own assets')
+            ipath=imgurl.removeprefix('https://englishpt.kr')
+            data,h=live(ipath)
+            ensure(h.get('content-type','').lower().startswith('image/jpeg') and data[:2]==b'\xff\xd8',
+                   'Real JPEG missing or wrong MIME')
+            report['checks']['OG_asset_GET']='PASS_REAL_JPEG_200_'+hashlib.sha256(data).hexdigest()[:16]
+            forms=get_api('sites/'+siteid+'/forms')
+            ensure(any(f.get('id')==formid and f.get('name')=='englishpt-consultation' for f in forms),
+                   'Consultation form not registered')
+            submissions=get_api('forms/'+formid+'/submissions?per_page=100')
+            matching=[z for z in submissions if z.get('id')==submission and
+                       testmarker in json.dumps(z.get('data') or {},ensure_ascii=False)]
+            ensure(len(matching)==1,'Already tested submission not found as verified (do not resubmit)')
+            hooks=get_api('hooks?site_id='+siteid)
+            ensure(any(h.get('type')=='email' and h.get('event')=='submission_created' and
+                       'cicada3865@naver.com' in json.dumps(h.get('data') or {},ensure_ascii=False) for h in hooks),
+                   'Naver email notification hook missing')
+            report['checks']['forms_email']='PASS_EXISTING_ONE_TEST_VERIFIED_BACKEND_AND_NAVER_HOOK_USER_CONFIRMED_EMAIL'
+            # Recheck published ID after all live GET.
+            s2=get_api('sites/'+siteid)
+            ensure((s2.get('published_deploy') or {}).get('id')==production,'STOP: production modified during QA')
+            report['checks']['production_after']='PASS_UNCHANGED'
+            report['status']='PASS_TECHNICAL_GO_AWAIT_EXPLICIT_PRODUCTION_PUBLISH_APPROVAL'
+          except Exception as e:
+            report['status']='HOLD_DO_NOT_PUBLISH'
+            report['errors'].append(type(e).__name__+': '+str(e)[:430])
+          output=o/'ENPT_21964_LAST_GO_HOLD_BEFORE_EXPLICIT_PROD_APPROVAL.json'
+          output.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_FINAL_PRODUCTION_PREAPPROVAL_GO_HOLD_GETONLY',json.dumps(report,ensure_ascii=False)[:13500],flush=True)
+          if report['status']=='HOLD_DO_NOT_PUBLISH':raise SystemExit(1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_FINAL_TECHNICAL_GO_NO_PUBLISH_USER_EMAIL_CONFIRMED
+          path: final-release-preflight-evidence/
+          retention-days: 30
+          if-no-files-found: warn
