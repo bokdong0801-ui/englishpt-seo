@@ -1,0 +1,66 @@
+name: ENPT Async 21964 After First 200 SHA Netlify Storage and READY GETONLY
+on:
+  push:
+    branches: [ops/v23521-OG21964-ASYNC-DIGEST-DRAFT-ONLY-ONCE-20261020]
+    paths: [.github/workflows/ENPT-ASYNC-21964-FIRST200-FILE-STORAGE-AND-READY-GETONLY.yml]
+permissions:
+  contents: read
+jobs:
+  independent-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: GET only Draft current state and limited file-list metadata, compare alias HTTP
+        run: |
+          set -euo pipefail
+          mkdir -p async-200-post-audit
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.error,subprocess,pathlib,datetime
+          sid='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          did='6ad708da374d457504481d5c'
+          prod='6ad5eb4918f9411c4d5e1ba4'
+          token=os.environ['NETLIFY_AUTH_TOKEN']
+          def get(path):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,method='GET',
+              headers={'Authorization':'Bearer '+token,'Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=27) as r:return json.load(r),dict(r.headers)
+          site,_=get('sites/'+sid);d,_=get('sites/'+sid+'/deploys/'+did)
+          assert (site.get('published_deploy') or {}).get('id')==prod
+          assert d.get('id')==did and d.get('site_id')==sid and d.get('published_at') is None
+          r={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+             'production_id':prod,'draft_id':did,'state':d.get('state'),
+             'required_static_len':len(d.get('required') or []),
+             'required_edge_len':len(d.get('required_edge_functions') or []),
+             'published_at':d.get('published_at'),'updated_at':d.get('updated_at'),
+             'GET_ONLY':True,'writes':0}
+          filesApi=[]
+          for endpoint in ('deploys/'+did+'/files?per_page=3',
+                           'deploys/'+did+'/files?per_page=100'):
+            try:
+              body,headers=get(endpoint)
+              filesApi.append({'endpoint':endpoint,'kind':type(body).__name__,
+                'count_of_returned_entries':len(body) if isinstance(body,list) else None,
+                'first_files':[{k:v for k,v in row.items() if k in ('id','path','sha','size','mime_type')} for row in body[:8]] if isinstance(body,list) else str(body)[:250],
+                'link_header':headers.get('Link')})
+            except Exception as e:
+              filesApi.append({'endpoint':endpoint,'error':str(e)[:250]})
+          r['files_API_metadata']=filesApi
+          base='https://6ad708da374d457504481d5c--englishpt-seo.netlify.app'
+          urls=['/index.html','/englishpt.html','/station-419minjumyoji-toeic.html',
+            '/sitemap-index.xml','/assets/images/seo-square/v1/49d1a4cf976b8dcba192.jpg']
+          r['HTTP_GET']=[]
+          for path in urls:
+            cmd=['curl','-sS','--connect-timeout','4','--max-time','9','-o','/dev/null',
+                '-w','HTTP=%{http_code} SIZE=%{size_download} TIME=%{time_total}',base+path]
+            proc=subprocess.run(cmd,text=True,capture_output=True,timeout=13)
+            r['HTTP_GET'].append({'path':path,'code':proc.returncode,'result':proc.stdout,'error':proc.stderr[-180:]})
+          pathlib.Path('async-200-post-audit/AFTER_200_SHA_DRAFT_GETONLY.json').write_text(json.dumps(r,ensure_ascii=False,indent=2)+'\n')
+          print('ENPT_21964_AFTER_PILOT200_GETONLY',json.dumps(r,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_21964_AFTER_200_DRAFT_STATUS_AND_NETLIFY_FILE_LIST_GETONLY
+          path: async-200-post-audit/
+          retention-days: 30
