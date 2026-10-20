@@ -51,7 +51,9 @@ jobs:
               record['status']='PASS_ALREADY_VERIFIED_SKIP_PUT'
             else:
               assert len(b)==1,'Target synthetic QA submission absent or not uniquely matching; no PUT'
-              assert b[0].get('site_url','').startswith('https://enptog21964prodsafereview20--englishpt-seo.netlify.app')
+              # Netlify submission.site_url is the site's canonical URL, not necessarily the review alias.
+              # Exact submission ID + unique test marker + form ID are stronger identity checks.
+              assert b[0].get('id')==submitid and marker in json.dumps(b[0].get('data') or {},ensure_ascii=False), 'Submitted QA record mismatch'
               record['ham_PUT_attempts']=1
               code,_=req('submissions/'+submitid+'/ham',method='PUT')
               assert code in (200,201,202,204),'Netlify reject exact ham PUT'
