@@ -1,0 +1,93 @@
+name: ENPT 21964 Edge Missing SHA256 Tarball vs ESZIP Offline V3
+on:
+  push:
+    branches: [ops/v23521-21964-EDGE-MISSING-SHA-OFFLINE-20261020]
+    paths: [.github/workflows/ENPT-21964-EDGE-VERIFY-TARBALL-VS-ESZIP-SHA-OFFLINE-V3.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  exact-cli-edge-tarball:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-original
+      - name: SHA-check original production candidate and recover unchanged Edge source alone
+        run: |
+          set -euo pipefail
+          mkdir -p thumb-21964-candidate edge-v3-audit
+          ARCHIVE=signed-original/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          printf '%s  %s\n' 6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884 "$ARCHIVE" | sha256sum -c -
+          tar --zstd -xf "$ARCHIVE" -C thumb-21964-candidate --wildcards '*netlify.toml' '*netlify/edge-functions/shard-router.js'
+          test -s thumb-21964-candidate/netlify.toml
+          test -s thumb-21964-candidate/netlify/edge-functions/shard-router.js
+      - name: Install exact CLI dependency versions
+        run: |
+          npm install --no-audit --no-fund --no-save netlify-cli@27.13.0
+      - name: Reproduce edge TAR and ESZIP target SHA from original TOML route (zero Netlify uploads)
+        run: |
+          set -euo pipefail
+          cat > reconstruct-tar.mjs <<'JS'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import crypto from 'node:crypto';
+          import {createRequire} from 'node:module';
+          const require=createRequire(import.meta.url);
+          const mod=require.resolve('@netlify/edge-bundler',{paths:[path.resolve('node_modules/netlify-cli'),process.cwd()]});
+          const {bundle}=await import('file://'+mod);
+          const target='1359b9c72eadd149ad8cde014235de40b91e0d33e2132c2d5609bf76a6e4653b';
+          const src=path.resolve('thumb-21964-candidate/netlify/edge-functions');
+          const decl=[{function:'shard-router',pattern:'^/[^/]+[.]html$'}];
+          const variants=[
+            ['tar-only-enabled',{edge_bundler_generate_tarball:true}],
+            ['tar-with-cli-flags',{edge_bundler_generate_tarball:true,edge_functions_config_export:true,edge_functions_npm_modules:true,edge_functions_read_deno_config:true}],
+            ['eszip-with-cli-flags',{edge_functions_config_export:true,edge_functions_npm_modules:true,edge_functions_read_deno_config:true}]
+          ];
+          const out={status:'HOLD_NOT_MATCHED',wanted_sha256:target,variants:[],verified_original_archive:true,
+            netlify_API_mutations:0,netlify_prod_changes:0,matched:[]};
+          for(const [name,flags] of variants){
+            const folder=path.resolve('edge-v3-audit/asset-'+name);
+            fs.mkdirSync(folder,{recursive:true});
+            const r={name,flags};
+            try{
+              const res=await bundle([src],folder,decl,{featureFlags:flags,
+                 basePath:path.resolve('thumb-21964-candidate'),rootPath:path.resolve('thumb-21964-candidate')});
+              r.manifest=res.manifest;
+              r.files=[];
+              for(const file of fs.readdirSync(folder)){
+                const full=path.join(folder,file);
+                if(!fs.statSync(full).isFile())continue;
+                const bytes=fs.readFileSync(full);
+                const sha=crypto.createHash('sha256').update(bytes).digest('hex');
+                r.files.push({basename:file,bytes:bytes.length,sha256:sha,matched:sha===target});
+                if(sha===target)out.matched.push({name,file,sha});
+              }
+            }catch(e){r.error=String(e).slice(0,2200)}
+            out.variants.push(r);
+            console.log('TARBALL_SHA_VARIANT',JSON.stringify(r).slice(0,9000));
+          }
+          out.status=out.matched.length?'PASS_EXPECTED_REQUIRED_EDGE_SHA_MATCH':'HOLD_REQUIRED_EDGE_SHA_MISMATCH_NO_UPLOAD';
+          fs.writeFileSync('edge-v3-audit/EDGE_SHA256_ESZIP_TARBALL_V3_REPORT.json',JSON.stringify(out,null,2)+'\n');
+          console.log('ENPT_ORIGINAL_EDGE_TARBALL_SHA_RESULT',JSON.stringify({
+            status:out.status,expected:target,matches:out.matched,
+            variants:out.variants.map(x=>({name:x.name,files:x.files,error:x.error})),
+            netlify_API_mutations:0}));
+          JS
+          timeout 360s node reconstruct-tar.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_21964_ORIGINAL_EDGE_TAR_ESZIP_SHA256_V3_OFFLINE_ONLY
+          path: edge-v3-audit/EDGE_SHA256_ESZIP_TARBALL_V3_REPORT.json
+          retention-days: 30
+          if-no-files-found: warn
