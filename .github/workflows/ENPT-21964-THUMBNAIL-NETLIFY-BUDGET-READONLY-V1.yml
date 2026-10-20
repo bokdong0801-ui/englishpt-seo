@@ -1,0 +1,86 @@
+name: ENGLISH PT Thumbnail Full 21964 Build Netlify GET-ONLY Budget Preflight
+on:
+  push:
+    branches:
+      - ops/v23521-THUMBNAIL-21964-REAL-ROUTE-MAPPING-GETONLY-20261020
+    paths:
+      - .github/workflows/ENPT-21964-THUMBNAIL-NETLIFY-BUDGET-READONLY-V1.yml
+permissions:
+  contents: read
+concurrency:
+  group: ENPT-THUMBNAIL-21964-NETLIFY-READONLY-BUDGET-20261020
+  cancel-in-progress: false
+jobs:
+  netlify-budget-and-current-deploy-get:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: NETLIFY REST GET ONLY audit live published site, draft status, account credit; never POST
+        run: |
+          set -euo pipefail
+          mkdir -p thumbnail-budget-qa
+          python3 - <<'PY'
+          import datetime,json,os,urllib.request,pathlib
+          out=pathlib.Path('thumbnail-budget-qa')
+          SITE='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          LAST='6ad5eb4918f9411c4d5e1ba4'
+          token=os.environ.get('NETLIFY_AUTH_TOKEN','')
+          report={'checked_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'status':'HOLD','production_changed':False,'api_mutations':0,'file_uploads':0,
+            'anticipated_added_images':21964,'estimated_added_square_JPEG_bytes':1364389916,
+            'questions_for_next_stage':[], 'issues':[]}
+          def get(path):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,
+              method='GET',headers={'Authorization':'Bearer '+token,'Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=30) as r:
+              if r.status!=200:raise ValueError('Netlify GET non200 '+path)
+              return json.load(r)
+          try:
+            if not token:raise ValueError('Netlify API secret absent; cannot verify budget')
+            site=get('sites/'+SITE)
+            if site.get('id')!=SITE or site.get('custom_domain')!='englishpt.kr':raise ValueError('Unexpected site identity')
+            report['published_deploy_id']=(site.get('published_deploy') or {}).get('id')
+            report['last_approved_deploy_id']=LAST
+            report['current_site_production_matches_previous_approved']=report['published_deploy_id']==LAST
+            report['netlify_processing_enabled']=(site.get('processing_settings') or {}).get('ignore_html_forms') is False
+            account=get('accounts/'+site['account_id'])
+            capabilities=account.get('capabilities') or {}
+            credit=capabilities.get('credits') or {}
+            report['netlify_operational_mode']=account.get('in_operational_mode')
+            report['netlify_usage_exceeded']=account.get('usages_exceeded')
+            report['netlify_config_limit_exceeded']=account.get('configurable_limits_exceeded')
+            report['credit_known']=('included' in credit and 'used' in credit)
+            report['credit_included']=credit.get('included')
+            report['credit_used']=credit.get('used')
+            if report['credit_known']:report['remaining_credit_units']=credit['included']-credit['used']
+            report['published_deploy_get_fields']={k:(site.get('published_deploy') or {}).get(k) for k in ('state','size','created_at','published_at','branch')}
+            report['questions_for_next_stage']=[
+             'Draft validation needs existing 180800-member 1.17GB website preserved, not a partial replacement site.',
+             'Estimated additional images are 1.36 GB; test available site/account plan limits and total deploy size before full generation.',
+             'Do not publish 21964 indexable og:image URLs before corresponding image assets exist and HTTP 200.',
+             'Production owner Google and Naver tokens, forms, canonical, 44 sitemap shard unchanged.'
+            ]
+            if not report['current_site_production_matches_previous_approved']:
+              raise ValueError('Published deploy changed, needs new baseline proof before Draft')
+            if report['netlify_usage_exceeded'] or report['netlify_config_limit_exceeded']:
+              raise ValueError('Netlify credits or limits exceeded')
+            if report['credit_known'] and report['remaining_credit_units']<=0:
+              raise ValueError('Netlify credit balance exhausted')
+            report['status']='PASS_GETONLY_STABLE_PRODUCTION_BUDGET_NOT_EXCEEDED'
+          except Exception as e:
+            report['issues'].append(type(e).__name__+': '+str(e)[:240])
+          (out/'NETLIFY_THUMBNAIL_FULL_BUILD_BUDGET_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+          print('ENPT_NETLIFY_THUMBNAIL_BUDGET_READONLY',json.dumps(report,ensure_ascii=False),flush=True)
+          if report['issues']:raise SystemExit('HOLD NO NETLIFY MUTATION')
+          PY
+      - name: Preserve private quota notes as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_THUMBNAIL_21964_NETLIFY_READONLY_SIZE_CREDITS_BUDGET_REPORT
+          path: thumbnail-budget-qa/
+          retention-days: 30
+          if-no-files-found: warn
