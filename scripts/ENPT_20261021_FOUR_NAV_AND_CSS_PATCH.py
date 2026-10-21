@@ -49,22 +49,23 @@ def student(s):
  s=s.replace("중등 지역별 과외 상세페이지는 준비 중입니다.","지역별 중학생 영어과외 상세페이지에서 내용을 먼저 살펴보세요.")
  s=s.replace("고등 지역별 과외 상세페이지는 준비 중입니다.","지역별 고등학생 영어과외 상세페이지에서 내용을 먼저 살펴보세요.")
  pat=r'<button class="route-cta" type="button" data-open-form data-course="국제학교 영어">.*?</button>'
- s,n=re.subn(pat,'<a class="route-cta" href="/international-school-english.html">국제학교 영어 자세히 보기 →</a>',s,count=1);assert n==1
+ s,n=re.subn(pat,'<a class="route-cta" href="/guides/international-school-english.html">국제학교 영어 자세히 보기 →</a>',s,count=1);assert n==1
  assert all('value="'+x+'"' in s for x,_ in STUDENT)
  assert 'data-course="국제학교 영어"' not in s
  return s
 def homepage(s):
  assert 'href="english-conversation.html#senior"' in s
- return s.replace('href="english-conversation.html#senior"','href="/senior-english.html"')
+ return s.replace('href="english-conversation.html#senior"','href="/guides/senior-english.html"')
 def conversation(s):
  pat=r'<button class="route-cta" type="button" data-open-form data-course="시니어 영어">.*?</button>'
- new,n=re.subn(pat,'<a class="route-cta" href="/senior-english.html">시니어 영어 과정 자세히 보기 →</a>',s,count=1)
+ new,n=re.subn(pat,'<a class="route-cta" href="/guides/senior-english.html">시니어 영어 과정 자세히 보기 →</a>',s,count=1)
  assert n==1
  return new
 changes=[patch_hub("student-english.html",student),patch_hub("englishpt.html",homepage),patch_hub("english-conversation.html",conversation)]
 # Clone existing, working branded shell + consultation form from a real hub.
 def write_guide(sourcehub,slug,title,desc,h1,parts):
  path=SITE/slug
+ path.parent.mkdir(parents=True,exist_ok=True)
  assert not path.exists(),("NEW_GUIDE_COLLIDES_EXISTING",slug)
  src=read_route(sourcehub).read_text("utf8")
  assert src.count('name="englishpt-consultation"')==1
@@ -97,13 +98,13 @@ def write_guide(sourcehub,slug,title,desc,h1,parts):
  path.write_text(src,"utf8")
  return {"route":slug,"sha256":hashlib.sha256(src.encode()).hexdigest(),"robots":"noindex,follow","has_form":True}
 new_pages=[
- write_guide("student-english.html","international-school-english.html","국제학교 영어 | 발표·에세이·수업 이해","국제학교에서 필요한 수업 참여, 영어 발표, 읽기·쓰기 과정을 현재 수준에 맞춰 살펴보세요.","국제학교 영어",[
+ write_guide("student-english.html","guides/international-school-english.html","국제학교 영어 | 발표·에세이·수업 이해","국제학교에서 필요한 수업 참여, 영어 발표, 읽기·쓰기 과정을 현재 수준에 맞춰 살펴보세요.","국제학교 영어",[
   ("국제학교 영어에서 먼저 확인할 기준","수업 언어에 익숙한지, 교과 내용을 읽고 이해하는지, 자신의 의견을 말과 글로 표현하는지 구분해 살펴봅니다. 해외 학교 경험이 없어도 현재 수준을 확인하면서 시작할 수 있습니다."),
   ("영어로 발표하고 토론하기","발표문을 외우는 것과 질문에 자기 생각을 답하는 것은 다릅니다. 짧은 의견 제시와 근거 문장 만들기를 단계적으로 연습할 수 있습니다."),
   ("에세이와 읽기","글을 읽고 중요한 정보 찾기, 주장·예시 구분, 간단한 단락 쓰기를 차례로 확인합니다. 실제 학교 과제 형식과 마감 일정에 맞춰 우선순위를 정합니다."),
   ("학부모 확인 사항","입학 준비, 학교 수업 적응, 교과영어 중 무엇이 필요한지 확인하고 재학 학교와 학년, 실제 과제 샘플을 상담에 준비하세요.")
  ]),
- write_guide("english-conversation.html","senior-english.html","시니어 영어회화 | 왕초보·여행·일상영어","시니어 학습자를 위한 영어 시작 기준, 여행·일상회화와 부담 없는 복습 방법을 안내합니다.","시니어 영어",[
+ write_guide("english-conversation.html","guides/senior-english.html","시니어 영어회화 | 왕초보·여행·일상영어","시니어 학습자를 위한 영어 시작 기준, 여행·일상회화와 부담 없는 복습 방법을 안내합니다.","시니어 영어",[
   ("기초부터 시작하는 시니어 영어","영어를 오랫동안 사용하지 않았다면 친숙한 인사, 자기소개, 이름과 숫자 읽기처럼 실제 사용할 수 있는 표현부터 시작합니다."),
   ("여행과 일상에서 쓰는 영어","공항, 숙소, 길 찾기, 주문 등 필요한 상황을 먼저 골라 짧은 문장을 듣고 말하는 연습을 해봅니다. 모든 주제를 한꺼번에 학습할 필요는 없습니다."),
   ("속도와 반복 조절하기","한 번에 외울 표현 수보다 이해하고 직접 써보는 횟수를 중요하게 살펴봅니다. 발음·듣기 어려움과 문장 만들기 어려움을 별도로 확인합니다."),
