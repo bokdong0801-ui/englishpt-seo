@@ -2,7 +2,7 @@ name: ENPT 20261021 ALL 6060 Localities 36360 Student Routes Signed Audit Readon
 on:
   push:
     branches: [qa/enpt-four-navigation-css-regression-20261021]
-    paths: [.github/workflows/ENPT-20261021-ALL-STUDENT-ROUTES-SIGNED-QA.yml]
+    paths: [.github/workflows/ENPT-20261021-ALL-STUDENT-ROUTES-SIGNED-QA.yml, scripts/ENPT_20261021_SIX_COURSES_6060_LOCALITIES_SIGNED_QA.py]
 permissions:
   contents: read
   actions: read
