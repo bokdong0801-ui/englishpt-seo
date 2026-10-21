@@ -1,0 +1,28 @@
+name: ENPT P2 Probe Actual Elementary HTML Sections GET Only
+on:
+  push:
+    branches: [qa/enpt-p2-elem910-englodam-preview-20261021]
+    paths: [.github/workflows/ENPT-P2-PROBE-ACTUAL-SECTIONS.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: GET source markup and section list only
+        run: |
+          python3 - <<'PY'
+          import urllib.request,re,json
+          url='https://enptp1stationsreview20261021--englishpt-seo.netlify.app/station-419minjumyoji-elem-tutor.html'
+          with urllib.request.urlopen(urllib.request.Request(url,method='GET'),timeout=40) as r:
+            s=r.read().decode('utf8')
+          sections=re.findall(r'<section[^>]*>',s,re.I)
+          print('PAGE_BYTES',len(s))
+          print('SECTION_OPENINGS',json.dumps(sections[:90],ensure_ascii=False))
+          print('MASS_CONTEXT_COUNT',s.count('mass-context'))
+          print('DECISION_NOTE_COUNT',s.count('local-decision-note'))
+          print('P1_SECTION_COUNT',s.count('data-enpt-learning-evidence="20261021"'))
+          print('STATION_CONTEXT_COUNT',s.count('station-context'))
+          print('FORM_COUNT',s.count('name="englishpt-consultation"'))
+          PY
