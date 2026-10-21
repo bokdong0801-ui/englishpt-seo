@@ -1,0 +1,49 @@
+name: ENPT 20261021 Four Nav International Senior and All Context Center Browser QA
+on:
+  push:
+    branches: [qa/enpt-four-navigation-css-regression-20261021]
+    paths: [.github/workflows/ENPT-20261021-FOUR-NAV-CHROMIUM-READONLY.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: enpt-four-nav-actual-browser-getonly-20261021
+  cancel-in-progress: false
+jobs:
+  live-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/enpt-four-navigation-css-regression-20261021
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: GET-only policy, hangul font and Playwright
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_20261021_FOUR_NAV_CHROMIUM_GETONLY_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          x=Path('scripts/ENPT_20261021_FOUR_NAV_CHROMIUM_GETONLY_QA.py').read_text()
+          for forbidden in ('netlify deploy','--prod','requests.post','method="POST"'):
+            assert forbidden not in x,forbidden
+          assert 'r.request.method not in ("GET","HEAD")' in x
+          print('PASS_BROWSER_GET_ONLY_NO_POST')
+          PY
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --quiet playwright
+          command -v google-chrome || command -v chromium
+      - name: Actual 390 768 1440 search navigation international senior and comparison alignment tests
+        run: python3 scripts/ENPT_20261021_FOUR_NAV_CHROMIUM_GETONLY_QA.py
+      - name: Keep browser screenshots and all independent QA observations
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261021_FOUR_NAV_MOBILE_6REGIONS_SENIOR_INTERNATIONAL_CENTER_QA
+          path: four-nav-browser-qa/
+          retention-days: 90
+          if-no-files-found: warn
