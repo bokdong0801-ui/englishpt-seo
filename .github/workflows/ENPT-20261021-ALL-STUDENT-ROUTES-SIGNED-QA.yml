@@ -1,0 +1,37 @@
+name: ENPT 20261021 ALL 6060 Localities 36360 Student Routes Signed Audit Readonly
+on:
+  push:
+    branches: [qa/enpt-four-navigation-css-regression-20261021]
+    paths: [.github/workflows/ENPT-20261021-ALL-STUDENT-ROUTES-SIGNED-QA.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  signed-routes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/enpt-four-navigation-css-regression-20261021
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - name: Validate all real six regional HTML destinations and existing noindex policy
+        run: |
+          python3 -m py_compile scripts/ENPT_20261021_SIX_COURSES_6060_LOCALITIES_SIGNED_QA.py
+          python3 scripts/ENPT_20261021_SIX_COURSES_6060_LOCALITIES_SIGNED_QA.py
+      - name: Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_ALL_6060_TIMES_6_STUDENT_SIGNED_URL_AUDIT
+          path: four-route-qa/
+          retention-days: 90
+          if-no-files-found: warn
