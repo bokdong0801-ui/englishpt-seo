@@ -14,7 +14,7 @@ checks=[];errors=[];blocked=[]
 from shutil import which
 bin=which("google-chrome") or which("chromium") or which("chromium-browser")
 assert bin
-paths=["/elementary-english-guide.html","/station-ganeung-elem-tutor.html","/station-donong-elem-tutor.html","/station-geumgok-elem-tutor.html","/station-ganeung.html","/stations.html"]
+paths=["/guides/elementary-english.html","/station-ganeung-elem-tutor.html","/station-donong-elem-tutor.html","/station-geumgok-elem-tutor.html","/station-ganeung.html","/stations.html"]
 with sync_playwright() as pw:
  browser=pw.chromium.launch(executable_path=bin,headless=True,args=["--no-sandbox","--disable-dev-shm-usage"])
  for width in (390,768,1440):
@@ -32,12 +32,12 @@ with sync_playwright() as pw:
     robots:document.querySelector('meta[name="robots"]')?.content,
     formCount:document.querySelectorAll('form[name="englishpt-consultation"]').length,
     p3Count:document.querySelectorAll('[data-enpt-elemdir="20261021"]').length,
-    guideLinks:document.querySelectorAll('a[href="/elementary-english-guide.html"]').length,
+    guideLinks:document.querySelectorAll('a[href="/guides/elementary-english.html"]').length,
     canonical:document.querySelector('link[rel="canonical"]')?.href})""")
     row.update(p)
     if p["scroll"]>width+12:row["issues"].append("OVERFLOW")
     if not p["canonical"] or not p["canonical"].startswith("https://englishpt.kr/"):row["issues"].append("CANONICAL")
-    if path.endswith("/elementary-english-guide.html"):
+    if path.endswith("/guides/elementary-english.html"):
      if "noindex" not in (p["robots"] or ""):row["issues"].append("GUIDE_MUST_NOINDEX_PREVIEW")
      for id in ("reading","grammar","routine","consult"):
       if page.locator("#"+id).count()!=1:row["issues"].append("GUIDE_HEADING_"+id)
@@ -46,8 +46,8 @@ with sync_playwright() as pw:
      if p["formCount"]!=1:row["issues"].append("FORM_MISSING")
      if "noindex" in (p["robots"] or ""):row["issues"].append("STATION_INDEX_CHANGED")
      # Click cross page link without making consultation POST.
-     page.locator('a[href="/elementary-english-guide.html"]').first.click()
-     page.wait_for_url("**/elementary-english-guide.html",timeout=15000)
+     page.locator('a[href="/guides/elementary-english.html"]').first.click()
+     page.wait_for_url("**/guides/elementary-english.html",timeout=15000)
      if "초등 영어" not in page.locator("body").inner_text():row["issues"].append("SHARED_GUIDE_NAV")
      row["guide_link_click"]="PASS"
     elif path=="/stations.html":
@@ -60,7 +60,7 @@ with sync_playwright() as pw:
      if field.input_value():row["issues"].append("SEARCH_CLEAR_FAIL")
     elif path=="/station-ganeung.html":
      if p["formCount"]!=1:row["issues"].append("HUB_FORM")
-    if width in (390,1440) and path in ("/station-ganeung-elem-tutor.html","/elementary-english-guide.html"):
+    if width in (390,1440) and path in ("/station-ganeung-elem-tutor.html","/guides/elementary-english.html"):
      if path.endswith("-elem-tutor.html"):page.goto(BASE+path,wait_until="domcontentloaded")
      f=str(OUT/("P3_"+str(width)+"_"+path.rsplit("/",1)[-1].replace(".html","")+".png"))
      page.screenshot(path=f,full_page=False);row["screenshot"]=f
