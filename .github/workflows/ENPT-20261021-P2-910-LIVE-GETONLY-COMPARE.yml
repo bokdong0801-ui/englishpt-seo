@@ -1,0 +1,40 @@
+name: ENPT P2 910 Live HTML Originality Before After GET-only
+on:
+  push:
+    branches: [qa/enpt-elementary-distinct-20261021]
+    paths: [.github/workflows/ENPT-20261021-P2-910-LIVE-GETONLY-COMPARE.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: enpt-p2-910-comparison-unique
+  cancel-in-progress: false
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/enpt-elementary-distinct-20261021
+      - name: Source-only GET safety
+        run: |
+          python3 -m py_compile scripts/ENPT_20261021_P2_910_LIVE_HTML_P1_VS_P2_READONLY.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("scripts/ENPT_20261021_P2_910_LIVE_HTML_P1_VS_P2_READONLY.py").read_text()
+          assert 'method="GET"' in s
+          for x in ('netlify deploy','requests.post','--prod'):
+            assert x not in s
+          print("PASS_GET_ONLY")
+          PY
+      - name: All 910 P1 and P2 exact HTTP source comparison
+        run: python3 scripts/ENPT_20261021_P2_910_LIVE_HTML_P1_VS_P2_READONLY.py
+      - name: Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261021_P2_910_REAL_HTML_P1_VS_P2_SEO_REPETITION
+          path: p2-910-draft-realhtml-qa/
+          retention-days: 90
+          if-no-files-found: warn
