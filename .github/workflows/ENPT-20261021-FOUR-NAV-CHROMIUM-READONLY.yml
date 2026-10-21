@@ -2,7 +2,7 @@ name: ENPT 20261021 Four Nav International Senior and All Context Center Browser
 on:
   push:
     branches: [qa/enpt-four-navigation-css-regression-20261021]
-    paths: [.github/workflows/ENPT-20261021-FOUR-NAV-CHROMIUM-READONLY.yml]
+    paths: [.github/workflows/ENPT-20261021-FOUR-NAV-CHROMIUM-READONLY.yml, scripts/ENPT_20261021_FOUR_NAV_CHROMIUM_GETONLY_QA.py]
   workflow_dispatch:
 permissions:
   contents: read
