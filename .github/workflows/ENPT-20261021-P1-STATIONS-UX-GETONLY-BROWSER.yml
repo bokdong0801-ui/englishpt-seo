@@ -1,0 +1,50 @@
+name: ENPT 20261021 P1 Stations UX 390 768 1440 Readonly Browser QA
+on:
+  push:
+    branches: [qa/enpt-p1-1815-stations-ux-official15-20261021]
+    paths: [.github/workflows/ENPT-20261021-P1-STATIONS-UX-GETONLY-BROWSER.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: enpt-p1-stations-ux-browser-getonly-20261021
+  cancel-in-progress: false
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      NETLIFY_AUTH_${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}: TOKEN
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/enpt-p1-1815-stations-ux-official15-20261021
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static GET-only policy and Korean font
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_20261021_P1_STATIONS_SEARCH_REAL_BROWSER_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_20261021_P1_STATIONS_SEARCH_REAL_BROWSER_QA.py').read_text()
+          for banned in ('netlify deploy','--prod','requests.post','page.locator("button[type=submit]").click'):
+            assert banned not in s,banned
+          assert 'route.request.method in ("GET","HEAD")' in s
+          print('PASS_NO_PROD_NO_POST')
+          PY
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --quiet playwright
+          command -v google-chrome || command -v chromium
+      - name: Chromium actual UX and consultation tests mobile tablet desktop
+        run: |
+          python3 scripts/ENPT_20261021_P1_STATIONS_SEARCH_REAL_BROWSER_QA.py
+      - name: Archive screenshots and results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261021_P1_STATIONS_UX_390_768_1440_CHROMIUM_QA
+          path: p1-20261021-browser-qa/
+          retention-days: 90
+          if-no-files-found: warn
