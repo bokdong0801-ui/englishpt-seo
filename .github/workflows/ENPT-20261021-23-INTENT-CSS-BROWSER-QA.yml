@@ -1,0 +1,33 @@
+name: ENPT 20261021 All 23 Regional Intent Types Centered Copy Readonly Browser QA
+on:
+  push:
+    branches: [qa/enpt-four-navigation-css-regression-20261021]
+    paths: [.github/workflows/ENPT-20261021-23-INTENT-CSS-BROWSER-QA.yml]
+permissions:
+  contents: read
+jobs:
+  sample-every-type:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/enpt-four-navigation-css-regression-20261021
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Korean fonts and read-only Playwright
+        run: |
+          python3 -m py_compile scripts/ENPT_20261021_23_LOCAL_INTENTS_CSS_CENTER_GETONLY.py
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --quiet playwright
+      - name: Actual all 23 course intent styles and form presence at 390 and 1440
+        run: python3 scripts/ENPT_20261021_23_LOCAL_INTENTS_CSS_CENTER_GETONLY.py
+      - name: Preserve intent screenshots / computation facts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_ALL_23_INTENTS_390_1440_GLOBAL_COMPARISON_CSS_QA
+          path: four-intent-style-qa/
+          retention-days: 90
+          if-no-files-found: warn
