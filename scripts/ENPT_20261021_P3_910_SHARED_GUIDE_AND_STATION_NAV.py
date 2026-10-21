@@ -56,7 +56,7 @@ def menu(st):
  f'{status}'
  '<div class="enpt-dir-panel"><h3>학부모를 위한 초등 영어 학습 가이드</h3>'
  '<p>읽기·어휘·문장 이해·복습 점검까지, 필요한 기준을 한 페이지에서 확인할 수 있습니다.</p>'
- '<a class="btn" href="/elementary-english-guide.html">초등 영어 학습 가이드 자세히 보기 →</a></div>'
+ '<a class="btn" href="/guides/elementary-english.html">초등 영어 학습 가이드 자세히 보기 →</a></div>'
  f'<div class="enpt-dir-panel"><h3>{name} 다른 영어 과정</h3><nav aria-label="역별 다른 영어 과정">{chips}<a class="enpt-route-chip" href="{first}">이 역의 전체 과정 보기</a></nav></div>'
  f'<div class="enpt-dir-panel"><h3>다른 역으로 찾아보기</h3><nav aria-label="같은 노선의 다른 역">{near}'
  '<a class="enpt-route-chip" href="/stations.html">911개 역 전체 검색하기</a></nav></div>'
@@ -69,7 +69,7 @@ def check_head(old,new,route):
   assert old.count(marker)==new.count(marker),route+":"+marker
  assert '<meta name="robots" content="index,follow' in new,route+":index"
  assert new.count('data-enpt-elemdir="20261021"')==1,route+":navigation"
- assert "elementary-english-guide.html" in new,route+":guide-link"
+ assert "guides/elementary-english.html" in new,route+":guide-link"
  assert len(re.findall(r'<section\b',new,re.I))==len(re.findall(r'</section\s*>',new,re.I)),route+":unbalanced-sections"
 def simplify(old,st):
  removed=[]
@@ -105,7 +105,7 @@ for st in DATA:
  new,removed=simplify(old,st)
  check_head(old,new,route)
  page.write_text(new,"utf8")
- rows.append({"route":route,"old_chars":len(old),"new_chars":len(new),"removed_sections":"|".join(removed),"validated_official_station":st["slug"] in VERIFIED,"old_sha256":sha(old),"new_sha256":sha(new),"new_guide_link":"/elementary-english-guide.html"})
+ rows.append({"route":route,"old_chars":len(old),"new_chars":len(new),"removed_sections":"|".join(removed),"validated_official_station":st["slug"] in VERIFIED,"old_sha256":sha(old),"new_sha256":sha(new),"new_guide_link":"/guides/elementary-english.html"})
 assert len(rows)==910
 GUIDE=r'''<!doctype html>
 <html lang="ko"><head>
@@ -113,7 +113,7 @@ GUIDE=r'''<!doctype html>
 <title>초등 영어과외 학습 가이드 | 읽기·문장·복습 단계별 안내</title>
 <meta name="description" content="초등 영어과외를 알아보는 학부모를 위한 읽기·문장 이해·쓰기·복습 점검과 상담 준비 가이드입니다.">
 <meta name="robots" content="noindex,follow">
-<link rel="canonical" href="https://englishpt.kr/elementary-english-guide.html">
+<link rel="canonical" href="https://englishpt.kr/guides/elementary-english.html">
 <link rel="stylesheet" href="/assets/styles.css">
 <style>
 body{background:#f2faf6;color:#183c2c} .eg-wrap{max-width:920px;margin:auto;padding:24px}
@@ -150,8 +150,9 @@ body{background:#f2faf6;color:#183c2c} .eg-wrap{max-width:920px;margin:auto;padd
 <p class="eg-note"><strong>안내:</strong> 본 페이지는 일반적인 학습 정보입니다. 학생의 실제 상태를 진단하거나 특정 수업의 성과를 보장하지 않습니다.</p>
 <a class="btn" href="/stations.html">역 목록으로 돌아가서 과정 비교하기 →</a></section>
 </div></main><footer class="eg-wrap"><a href="/englishpt.html">홈페이지</a> · <a href="/stations.html">전국 역 찾기</a></footer></body></html>'''
-GUIDEFILE=SITE/"elementary-english-guide.html"
+GUIDEFILE=SITE/"guides/elementary-english.html"
 assert not GUIDEFILE.exists()
+GUIDEFILE.parent.mkdir(parents=True,exist_ok=True)
 GUIDEFILE.write_text(GUIDE,encoding="utf8")
 assert 'name="robots" content="noindex,follow"' in GUIDE
 for file,contents in oldcrit.items():
@@ -167,6 +168,6 @@ with (OUT/"ALL_910_NAVIGATION_PATCH.csv").open("w",newline="",encoding="utf-8-si
 c=Counter()
 for r in rows:
  for x in r["removed_sections"].split("|"):c[x]+=1
-summary={"status":"PASS_P3_910_CONTENT_CONSOLIDATION_GUIDE_AND_NAV","station_pages":910,"shared_guide_path":"/elementary-english-guide.html","shared_guide_robots":"noindex,follow","guide_added_to_sitemap":False,"station_index_policy_changed":False,"canonical_and_form_unchanged":True,"136607_noindex_source_unchanged":True,"158571_edge_page_count_preserved":True,"removed_sections":dict(c),"production_published":False}
+summary={"status":"PASS_P3_910_CONTENT_CONSOLIDATION_GUIDE_AND_NAV","station_pages":910,"shared_guide_path":"/guides/elementary-english.html","shared_guide_robots":"noindex,follow","guide_added_to_sitemap":False,"station_index_policy_changed":False,"canonical_and_form_unchanged":True,"136607_noindex_source_unchanged":True,"158571_edge_page_count_preserved":True,"removed_sections":dict(c),"production_published":False}
 (OUT/"P3_GUIDE_NAV_QA.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding="utf8")
 print("P3_910_GUIDE_NAV_FINAL",json.dumps(summary,ensure_ascii=False),flush=True)
