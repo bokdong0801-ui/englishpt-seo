@@ -1,0 +1,62 @@
+name: ENPT 20261021 21864 HTML Source-only Duplicate and Region QA
+on:
+  push:
+    branches:
+      - qa/enpt-20261021-station-content-readonly
+    paths:
+      - .github/workflows/ENPT-20261021-STATION-21864-READONLY-AUDIT.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-21864-readonly-audit-20261021
+  cancel-in-progress: false
+jobs:
+  audit-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/enpt-20261021-station-content-readonly
+      - name: Verify exact source-only script and no deploy commands
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_20261021_STATION_21864_READONLY_CONTENT_AND_REGION_AUDIT.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_20261021_STATION_21864_READONLY_CONTENT_AND_REGION_AUDIT.py').read_text()
+          for word in ('netlify deploy','--prod','requests.post','urllib.request','api.netlify.com'):
+            assert word not in s,word
+          print('PASS_SOURCE_READONLY_NO_DEPLOY_NO_POST')
+          PY
+      - name: Download frozen original source ONLY (no deployment)
+        uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-SHARDED-EDGE-FULL-158571-CANDIDATE-NO-DRAFT-NO-PROD
+          run-id: 39194321977
+          github-token: ${{ github.token }}
+          path: frozen-source
+      - name: Run 21864 exact archived HTML and all 911 region data audit
+        run: |
+          set -euo pipefail
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          python3 scripts/ENPT_20261021_STATION_21864_READONLY_CONTENT_AND_REGION_AUDIT.py
+          python3 - <<'PY'
+          import json,pathlib
+          root=pathlib.Path('readonly-station-audit')
+          s=json.loads((root/'AUDIT_SUMMARY.json').read_text())
+          assert s['status']=='PASS_SOURCE_ONLY_21864_HTML_AUDITED'
+          assert s['urls_examined']==21864 and s['stations']==911
+          assert not s['published_or_original_modified']
+          print('PASS_USER_REQUEST_21864_READONLY_CONTENT_SCREEN_AND_911_REGION_CANDIDATES')
+          PY
+      - name: Retain audit report and problem URLs, even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261021_21864_ACTUAL_HTML_READONLY_DUPLICATE_AND_911_REGION_REPORT
+          path: readonly-station-audit/
+          retention-days: 90
+          if-no-files-found: warn
