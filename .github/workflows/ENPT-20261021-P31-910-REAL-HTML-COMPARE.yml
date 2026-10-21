@@ -1,0 +1,42 @@
+name: ENPT 20261021 P31 910 Real HTML and Nested Guide GET-only
+on:
+  push:
+    branches: [qa/enpt-p3-elementary-guide-navigation-20261021]
+    paths: [.github/workflows/ENPT-20261021-P31-910-REAL-HTML-COMPARE.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: enpt-p31-910-real-html-readonly-20261021
+  cancel-in-progress: false
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 42
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/enpt-p3-elementary-guide-navigation-20261021
+      - name: No-write audit static controls
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_20261021_P3_910_P1_VS_P3_LIVE_GETONLY_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_20261021_P3_910_P1_VS_P3_LIVE_GETONLY_QA.py').read_text()
+          assert 'method="GET"' in s
+          for keyword in ('netlify deploy','--prod','requests.post'):
+            assert keyword not in s,keyword
+          print('PASS_READONLY_COMPARE')
+          PY
+      - name: Exact 910 P1 and 910 P3 HTML GET-only validation
+        run: |
+          python3 scripts/ENPT_20261021_P3_910_P1_VS_P3_LIVE_GETONLY_QA.py
+      - name: Save audited URL list and summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261021_P31_910_SHARED_GUIDE_NAV_CONTENT_AUDIT
+          path: p3-live-910-comparison/
+          retention-days: 90
+          if-no-files-found: warn
