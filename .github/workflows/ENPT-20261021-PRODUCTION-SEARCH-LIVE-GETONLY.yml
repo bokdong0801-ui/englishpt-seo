@@ -1,0 +1,71 @@
+name: ENPT 20261021 Production Search Bot and Full Sitemap Live ReadOnly
+on:
+  push:
+    branches: [release/enpt-production-promote-6ad87e6-20261021]
+    paths: [.github/workflows/ENPT-20261021-PRODUCTION-SEARCH-LIVE-GETONLY.yml]
+permissions:
+  contents: read
+jobs:
+  public-indexing-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: GET-only verify all 44 production sitemaps and 21964 indexable locs, plus Googlebot and Naver Yeti user agents
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.parse,hashlib,xml.etree.ElementTree as ET,json,pathlib,datetime,re
+          root='https://englishpt.kr';out=pathlib.Path('search-live-qa');out.mkdir(exist_ok=True)
+          report={'status':'HOLD','utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'site':'englishpt.kr','requests':[],'user_agents':[],'errors':[]}
+          def get(path,ua='Mozilla/5.0',limit=6000000):
+            url=(root+path) if path.startswith('/') else path
+            req=urllib.request.Request(url,headers={'User-Agent':ua})
+            with urllib.request.urlopen(req,timeout=25) as r:
+              data=r.read(limit);status=r.status;headers={k.lower():v for k,v in r.headers.items()}
+            return data,status,headers
+          try:
+            body,status,headers=get('/sitemap-index.xml'); assert status==200
+            idx=ET.fromstring(body)
+            children=[x.text for x in idx.iter() if x.tag.endswith('loc')]
+            assert len(children)==44 and len(set(children))==44,('CHILD_SITEMAP_COUNT',len(children))
+            seen=set();total=0
+            for i,url in enumerate(children):
+              assert url.startswith(root+'/sitemaps/'),('UNEXPECTED_SITEMAP_URL',url)
+              body,status,headers=get(url)
+              assert status==200,('SITEMAP_HTTP',url,status)
+              el=ET.fromstring(body);locs=[z.text for z in el.iter() if z.tag.endswith('loc')]
+              for loc in locs:
+                assert loc.startswith(root+'/'),('BAD_HOST',loc)
+                assert loc not in seen,('DUPLICATE_LOC',loc)
+                seen.add(loc)
+              total+=len(locs)
+              report['requests'].append({'child':i+1,'loc_count':len(locs),'http':status})
+            assert total==21964,('INDEXABLE_SITEMAP_EXPECTED_21964',total)
+            assert all(not x.endswith('/guides/international-school-english.html') and not x.endswith('/guides/senior-english.html') for x in seen)
+            report['sitemap_urls']=total;report['child_sitemap_count']=44
+            for ua in ['Googlebot/2.1 (+http://www.google.com/bot.html)','Yeti/1.1 (+http://help.naver.com/robots/)']:
+              for path in ['/robots.txt','/','/sitemap-index.xml']:
+                data,status,h=get(path,ua)
+                assert status==200,('BOT_USER_AGENT_HTTP',ua,path,status)
+                if path=='/':
+                  s=data.decode('utf8','replace')
+                  assert 'rel="canonical"' in s and 'property="og:image"' in s
+                  assert 'noindex' not in h.get('x-robots-tag','').lower()
+                  assert not re.search(r'<meta\s+name="robots"\s+content="[^"]*noindex',s,re.I)
+                  assert 'google-site-verification' in s and 'naver-site-verification' in s
+                report['user_agents'].append({'ua':ua.split('/')[0],'path':path,'http':status})
+            report['status']='PASS_ALL_44_LIVE_SITEMAPS_21964_URLS_AND_GOOGLE_NAVER_UA_HTTP'
+          except Exception as e:
+            report['errors'].append(repr(e)[:350])
+          finally:
+            (out/'PROD_LIVE_SEARCH_READONLY_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+            print('ENPT_PROD_SEARCH_LIVE_QA',json.dumps({k:v for k,v in report.items() if k!='requests'},ensure_ascii=False),flush=True)
+            if report['errors']:raise SystemExit(1)
+          PY
+      - name: Save public read-only results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_PROD_20261021_GOOGLE_NAVER_44_SITEMAPS_READONLY
+          path: search-live-qa/
+          retention-days: 30
+          if-no-files-found: warn
