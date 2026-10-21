@@ -28,7 +28,7 @@ def test_student(p,rec):
  got=[x.get_attribute("value") for x in opts.all() if x.get_attribute("value")]
  need=["elem-tutor","elem-conv","mid-tutor","mid-conv","high-tutor","high-conv"]
  assert got==need,(got,need)
- intl=p.locator('article#international a.route-cta[href="/international-school-english.html"]')
+ intl=p.locator('article#international a.route-cta[href="/guides/international-school-english.html"]')
  assert intl.count()==1,"INTERNATIONAL_LINK"
  mid=p.locator('article#middle-tutor a[data-region-preset="mid-tutor"]')
  hi=p.locator('article#high-tutor a[data-region-preset="high-tutor"]')
@@ -36,10 +36,10 @@ def test_student(p,rec):
  rec["six_intents"]=got
 def test_home(p,rec):
  valid_html(p,rec)
- assert p.locator('a[href="/senior-english.html"]').count()>=1,"SENIOR_LINK_MISSING"
+ assert p.locator('a[href="/guides/senior-english.html"]').count()>=1,"SENIOR_LINK_MISSING"
 def test_conv(p,rec):
  valid_html(p,rec)
- assert p.locator('article#senior a[href="/senior-english.html"]').count()==1
+ assert p.locator('article#senior a[href="/guides/senior-english.html"]').count()==1
 def test_guide(p,rec,slug):
  valid_html(p,rec)
  assert p.locator('meta[name="robots"]').get_attribute("content")=="noindex,follow"
@@ -95,8 +95,8 @@ with sync_playwright() as pw:
    ("/student-english.html#region",test_student),
    ("/englishpt.html#audience-path",test_home),
    ("/english-conversation.html#senior",test_conv),
-   ("/international-school-english.html",lambda p,r:test_guide(p,r,"intl")),
-   ("/senior-english.html",lambda p,r:test_guide(p,r,"senior")),
+   ("/guides/international-school-english.html",lambda p,r:test_guide(p,r,"intl")),
+   ("/guides/senior-english.html",lambda p,r:test_guide(p,r,"senior")),
    ("/ulsan-buk-nongso2dong-beginner-english-conv.html",test_center),
    ("/ulsan-buk-nongso2dong-toeic.html",test_center),
    ("/ulsan-buk-nongso2dong-adult-english-conv-academy.html",test_center),
@@ -104,7 +104,7 @@ with sync_playwright() as pw:
    resp=page.goto(BASE+path,wait_until="domcontentloaded",timeout=70000)
    assert resp and resp.status==200,(path,resp.status if resp else None)
    record(width,page,path,lambda rec,cb=fn:cb(page,rec))
-   if width in (390,1440) and path in ("/student-english.html#region","/ulsan-buk-nongso2dong-beginner-english-conv.html","/international-school-english.html","/senior-english.html"):
+   if width in (390,1440) and path in ("/student-english.html#region","/ulsan-buk-nongso2dong-beginner-english-conv.html","/guides/international-school-english.html","/guides/senior-english.html"):
     page.screenshot(path=str(ROOT/(path.split("/")[-1].split(".html")[0]+"_"+str(width)+".png")),full_page=False)
   if width==390:
    page.goto(BASE+"/student-english.html#region",wait_until="domcontentloaded")
