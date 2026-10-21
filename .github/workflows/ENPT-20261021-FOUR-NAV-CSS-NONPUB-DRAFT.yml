@@ -2,7 +2,7 @@ name: ENPT 20261021 Four Main Nav Links and Comparison Alignment Nonpublished Dr
 on:
   push:
     branches: [qa/enpt-four-navigation-css-regression-20261021]
-    paths: [.github/workflows/ENPT-20261021-FOUR-NAV-CSS-NONPUB-DRAFT.yml, scripts/ENPT_20261021_P3_910_SHARED_GUIDE_AND_STATION_NAV.py]
+    paths: [.github/workflows/ENPT-20261021-FOUR-NAV-CSS-NONPUB-DRAFT.yml, scripts/ENPT_20261021_FOUR_NAV_AND_CSS_PATCH.py]
 permissions:
   contents: read
   actions: read
