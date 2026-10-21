@@ -35,7 +35,7 @@ def fetch(item):
  assert 'name="englishpt-consultation"' in raw,path
  if era=="P3":
   assert raw.count('data-enpt-elemdir="20261021"')==1,path
-  assert 'href="/elementary-english-guide.html"' in raw,path
+  assert 'href="/guides/elementary-english.html"' in raw,path
   assert 'class="section mass-context"' not in raw and 'data-enpt-p0="20261021"' not in raw,path
  else:
   assert 'data-enpt-p0="20261021"' in raw,path
@@ -76,7 +76,7 @@ rows=[{"url":"https://englishpt.kr/"+p,"P1_chars":before[p]["chars"],"P3_chars":
  "P3_body_hash":after[p]["full_hash"]} for p,_ in PATHS]
 with (OUT/"ALL_910_P1_VS_P3_REAL_HTML.csv").open("w",encoding="utf-8-sig",newline="") as f:
  w=csv.DictWriter(f,list(rows[0]));w.writeheader();w.writerows(rows)
-guide_req=urllib.request.Request(SITES["P3"]+"/elementary-english-guide.html",method="GET")
+guide_req=urllib.request.Request(SITES["P3"]+"/guides/elementary-english.html",method="GET")
 with urllib.request.urlopen(guide_req,timeout=40) as r:
  guide=r.read(500000).decode("utf8","replace")
  assert r.status==200 and "text/html" in r.headers.get("content-type","")
