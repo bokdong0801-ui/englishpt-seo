@@ -2,7 +2,7 @@ name: ENPT P0 Draft Real Chromium 390 768 1440 CTA Readonly QA
 on:
   push:
     branches: [qa/enpt-p0-hub-elementary-draft-20261021]
-    paths: [.github/workflows/ENPT-20261021-P0-CHROMIUM-CTA-READONLY.yml]
+    paths: [.github/workflows/ENPT-20261021-P0-CHROMIUM-CTA-READONLY.yml, scripts/ENPT_20261021_P0_DRAFT_BROWSER_390_768_1440_GETONLY.py]
   workflow_dispatch:
 permissions:
   contents: read
@@ -32,6 +32,7 @@ jobs:
           assert 'if method not in ("GET","HEAD")' in p
           print('PASS_BROWSER_NO_POST_AND_NO_PUBLISH')
           PY
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
           python3 -m pip install --quiet playwright
           command -v google-chrome || command -v chromium || command -v chromium-browser
       - name: Real Chrome inspect P0 Draft mobile tablet desktop and consultation CTA
