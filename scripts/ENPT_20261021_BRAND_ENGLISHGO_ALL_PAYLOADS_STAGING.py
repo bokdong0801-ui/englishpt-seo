@@ -4,11 +4,16 @@
 All 158571 generated HTML payloads + public static HTML + brand-text SVG.
 Protect domain, canonical URLs, robots, verification, forms, Edge, redirects & sitemaps.
 """
-import os,hashlib,json,pathlib,re,datetime,collections
+import os,hashlib,json,pathlib,re,datetime,collections,gzip
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 SITE=ROOT/"thumb-21964-candidate"
 OUT=ROOT/"brand-englishgo-qa";OUT.mkdir(exist_ok=True)
 assert SITE.is_dir()
+with gzip.open(ROOT/"signed-qa-map/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz","rt",encoding="utf8") as f:
+ signed=json.load(f)["original_public_html_to_data_payload"]
+assert len(signed)==158571
+home_path=SITE/signed["englishpt.html"]["to"]
+assert home_path.is_file()
 OLD_KO="잉글리시PT";OLD_EN="ENGLISH PT"
 NEW_KO="잉글리시GO";NEW_EN="ENGLISH GO"
 CHANGES=[("잉글리시PT",NEW_KO),("ENGLISH PT",NEW_EN),("English PT","English GO"),("english PT","english GO")]
@@ -33,7 +38,7 @@ def patch(raw,path):
  if '<meta property="og:title"' in new and 'property="og:site_name"' not in new:
   new=new.replace('</head>','<meta property="og:site_name" content="'+NEW_KO+'"></head>',1)
  # Existing WebSite structured data supports a single canonical name and optional alternative.
- if path.name in ('englishpt.html','index.html'):
+ if path==home_path or path.name=="index.html":
   new=new.replace('"@type":"WebSite","@id"', '"@type":"WebSite","alternateName":["잉글리시GO","English GO"],"@id"',1)
  # Signature route/SEO policies MUST NEVER mutate during presentation branding.
  for rex in (CANON,ROBOTS,VERIFY,FORM):
@@ -75,7 +80,7 @@ if fav.is_file():
 for f,digest in protected_before.items():
  assert hashlib.sha256((SITE/f).read_bytes()).hexdigest()==digest,("protected_file_changed",f)
 for route in ("englishpt.html","student-english.html","english-conversation.html","guides/senior-english.html","guides/international-school-english.html"):
- p=SITE/route
+ p=SITE/(signed[route]["to"] if route in signed else route)
  assert p.is_file(),route
  html=p.read_text("utf8")
  assert NEW_KO in html or NEW_EN in html,route
