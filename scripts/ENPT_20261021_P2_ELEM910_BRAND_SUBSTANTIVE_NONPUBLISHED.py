@@ -92,10 +92,14 @@ def head(t):
 def capture(r,text):
  m=re.search(r,p,text,re.I|re.S);return m.group() if m else None
 def fix_old_generic(body,st):
- # Displace boilerplate judgement cards with more useful applied grade tasks.
- generic=re.compile(r'<section class="section (?:mass-context|local-decision-note)">.*?</section>',re.S|re.I)
+ # Verified against actual P1 Draft HTML: five repeated parent-guide subsections.
+ # Keep SEO head, form, site navigation and the genuinely useful P0/P1 editorial guides.
+ generic=re.compile(r'<section\\b[^>]*data-v2352-tutor-content="parent-guide-v1"[^>]*>.*?</section>',re.S|re.I)
  found=generic.findall(body)
- if len(found)!=2:raise ValueError("Expected exact 2 repetitive template sections: "+st["slug"]+" "+str(len(found)))
+ if len(found)!=5:raise ValueError("Expected exact 5 legacy parent-guide sections: "+st["slug"]+" "+str(len(found)))
+ kinds=set(re.findall(r'data-v2352-section="([^"]+)"', "".join(found)))
+ if kinds!={"levels","lesson","errors","timeline","parent"}:
+  raise ValueError("Unexpected legacy parent-guide section types "+st["slug"]+" "+str(kinds))
  return generic.sub("",body)
 changed=[]
 for st in stations:
@@ -111,7 +115,7 @@ for st in stations:
  for needle in ('name="englishpt-consultation"','name="robots"','rel="canonical"'):
   assert a.count(needle)==b.count(needle), (route,needle)
  path.write_text(b,"utf8")
- changed.append({"url":"https://englishpt.kr/"+route,"slug":st["slug"],"bytes_before":len(a.encode()),"bytes_after":len(b.encode()),"discarded_boilerplate_blocks":2,"new_grade_rubrics":3})
+ changed.append({"url":"https://englishpt.kr/"+route,"slug":st["slug"],"bytes_before":len(a.encode()),"bytes_after":len(b.encode()),"discarded_boilerplate_blocks":5,"new_grade_rubrics":3})
 assert len(changed)==910
 with (OUT/"910_ELEM_INSTRUCTIONAL_CHANGES.csv").open("w",newline="",encoding="utf-8-sig") as f:
  w=csv.DictWriter(f,fieldnames=list(changed[0]));w.writeheader();w.writerows(changed)
