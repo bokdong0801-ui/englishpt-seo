@@ -142,7 +142,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/ENPT_20261021_MINIMAL_SCOPE_GUARD.py after
-          python3 scripts/ENPT_21964_PRODUCTION_CANDIDATE_SEO_FORMS_OFFLINE_QA.py
+          python3 scripts/ENPT_20261021_MINIMAL_PRODUCTION_CANDIDATE_SEO_FORMS_QA.py
           python3 - <<'PY'
           import json,pathlib
           d=json.loads(pathlib.Path('minimal-20261021-qa/MINIMAL_DIFF_SCOPE_REPORT.json').read_text())
