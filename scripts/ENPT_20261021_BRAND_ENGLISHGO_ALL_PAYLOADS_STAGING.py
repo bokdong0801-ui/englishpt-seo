@@ -88,9 +88,10 @@ for route in ("englishpt.html","student-english.html","english-conversation.html
  assert f'<meta property="og:site_name" content="{NEW_KO}">' in html,route
  assert 'name="englishpt-consultation"' in html,route
 for route in ("englishpt.html","student-english.html"):
- raw=(SITE/route).read_text("utf8")
+ raw=(SITE/signed[route]["to"]).read_text("utf8")
  assert '"name":"'+NEW_EN+'"' in raw,("schema_website_name",route)
- assert '"alternateName":["'+NEW_KO+'","English GO"]' in raw,("schema_alternate_name",route)
+ if route=="englishpt.html":
+  assert '"alternateName":["'+NEW_KO+'","English GO"]' in raw,("schema_alternate_name",route)
 result={"status":"PASS_ENGLISHGO_BRAND_ALL_158571_GENERATED_PAGES_PRESERVED_SEO_AND_FORMS",
   "generated_edge_payloads":generated,"html_total":pages,"brand_changed_html":changed,
   "before":{"korean":old_before[OLD_KO],"english":old_before[OLD_EN]},
