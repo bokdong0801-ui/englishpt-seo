@@ -100,7 +100,7 @@ for st in DATA:
  if st["slug"]=="gukjegeumyungsenteo-busaneunhaeng":continue
  route=f'station-{st["slug"]}-elem-tutor.html'
  v=MP[route];assert v["noindex"] is False
- page=SITE/v["to"]];old=page.read_text("utf8")
+ page=SITE/v["to"];old=page.read_text("utf8")
  assert 'data-enpt-p0="20261021"' in old and 'data-enpt-learning-evidence="20261021"' in old
  new,removed=simplify(old,st)
  check_head(old,new,route)
