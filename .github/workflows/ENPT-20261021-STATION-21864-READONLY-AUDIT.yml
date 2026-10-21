@@ -5,6 +5,7 @@ on:
       - qa/enpt-20261021-station-content-readonly
     paths:
       - .github/workflows/ENPT-20261021-STATION-21864-READONLY-AUDIT.yml
+      - scripts/ENPT_20261021_STATION_21864_READONLY_CONTENT_AND_REGION_AUDIT.py
   workflow_dispatch:
 permissions:
   contents: read
