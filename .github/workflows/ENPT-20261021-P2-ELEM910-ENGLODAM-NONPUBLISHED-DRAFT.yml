@@ -2,7 +2,7 @@ name: ENPT 20261021 P2 910 Real Learning Provisional Englodam Draft and Full QA
 on:
   push:
     branches: [qa/enpt-p2-elem910-englodam-preview-20261021]
-    paths: [.github/workflows/ENPT-20261021-P2-ELEM910-ENGLODAM-NONPUBLISHED-DRAFT.yml]
+    paths: [.github/workflows/ENPT-20261021-P2-ELEM910-ENGLODAM-NONPUBLISHED-DRAFT.yml, scripts/ENPT_20261021_P2_ELEM910_BRAND_SUBSTANTIVE_NONPUBLISHED.py]
 permissions:
   contents: read
   actions: read
