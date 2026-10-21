@@ -1,0 +1,50 @@
+name: ENPT P0 1816 Actual Live Draft Before After Content Compare
+on:
+  push:
+    branches: [qa/enpt-p0-hub-elementary-draft-20261021]
+    paths: [.github/workflows/ENPT-20261021-P0-1816-BEFORE-AFTER-READONLY.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-p0-1816-before-after-readonly-20261021
+  cancel-in-progress: false
+jobs:
+  compare-no-writes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/enpt-p0-hub-elementary-draft-20261021
+      - name: Source immutable and no-write static QA
+        run: |
+          python3 -m py_compile scripts/ENPT_20261021_P0_1816_COMPARE_LIVE_BEFORE_AFTER_READONLY.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("scripts/ENPT_20261021_P0_1816_COMPARE_LIVE_BEFORE_AFTER_READONLY.py").read_text()
+          for bad in ("netlify deploy","requests.post","--prod","method=\"POST\""):
+            assert bad not in s,bad
+          print("PASS_READONLY")
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-SHARDED-EDGE-FULL-158571-CANDIDATE-NO-DRAFT-NO-PROD
+          run-id: 39194321977
+          github-token: ${{ github.token }}
+          path: frozen-source
+      - name: Compare every original P0 HTML with actual Draft HTTP GET
+        run: |
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          python3 scripts/ENPT_20261021_P0_1816_COMPARE_LIVE_BEFORE_AFTER_READONLY.py
+      - name: Save actual per-URL comparisons even when incomplete
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261021_P0_1816_LIVE_BEFORE_AFTER_CONTENT_COMPARISON
+          path: p0-1816-before-after-readonly/
+          retention-days: 90
+          if-no-files-found: warn
