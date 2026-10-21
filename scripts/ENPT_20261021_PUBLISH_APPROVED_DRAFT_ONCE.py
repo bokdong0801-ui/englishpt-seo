@@ -65,7 +65,7 @@ def check_public(base,stage):
         if html:
             assert '<link rel="canonical"' in content,("CANONICAL",stage,path)
             assert 'property="og:image"' in content,("OG",stage,path)
-            assert 'name="englishpt-consultation"' in content,("FORM",stage,path)
+            assert ('name="englishpt-consultation"' in content or "name='englishpt-consultation'" in content) and '<form' in content,("FORM",stage,path)
             assert not re.search(r'<meta\s+name="robots"\s+content="[^"]*noindex',content,re.I) or path.startswith("/guides/") or path.startswith("/ulsan-") or path.startswith("/seoul-jongno-"),("UNEXPECTED_NOINDEX",path)
             assert 'noindex' not in item["headers"].get("x-robots-tag","").lower(),("HEADER_NOINDEX",path)
             assert '잉글리시GO' not in content and 'ENGLISH GO' not in content,("BRAND_DRIFT",path)
