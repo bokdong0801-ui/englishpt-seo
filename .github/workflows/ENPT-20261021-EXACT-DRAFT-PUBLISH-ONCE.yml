@@ -1,0 +1,63 @@
+name: ENPT 20261021 Publish Exact Approved Minimal Draft Once and Verify Live
+on:
+  push:
+    branches: [release/enpt-production-promote-6ad87e6-20261021]
+    paths: [.github/workflows/ENPT-20261021-EXACT-DRAFT-PUBLISH-ONCE.yml]
+permissions:
+  contents: read
+concurrency:
+  group: englishpt-20261021-exact-draft-production-publish-one-action
+  cancel-in-progress: false
+jobs:
+  exact-draft-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 26
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/enpt-production-promote-6ad87e6-20261021
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: One existing Netlify Draft ID only - validate immutable site and single POST source
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_20261021_PUBLISH_APPROVED_DRAFT_ONCE.py
+          python3 -m py_compile scripts/ENPT_20261021_LIVE_BROWSER_GETONLY_QA.py scripts/ENPT_20261021_LIVE_26_INTENTS_CSS_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_20261021_PUBLISH_APPROVED_DRAFT_ONCE.py').read_text()
+          assert 'TARGET="6ad87e6bd3bc041359320392"' in s
+          assert 'EXPECTED_OLD="6ad7506cdeb778280a54ee2a"' in s
+          assert 'MARKER="ENPT-20261021-MINIMAL-PROD-OG-FOUR-FIXES-ONLY"' in s
+          assert s.count('method="POST"')==1
+          assert '/restore' in s
+          assert 'api_get("sites/"+SITE)' in s
+          assert 'new_deploys_created":0' in s
+          print('PASS_EXACT_USER_APPROVED_DRAFT_SINGLE_RESTORE_ONLY')
+          PY
+      - name: Publish approved ready Draft with one guarded restore and verify live HTTP SEO ownership robots Forms
+        run: python3 scripts/ENPT_20261021_PUBLISH_APPROVED_DRAFT_ONCE.py
+      - name: Verify production Chrome student six navigation senior international consultation and 26 styles
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --quiet playwright
+          command -v google-chrome || command -v chromium
+          python3 scripts/ENPT_20261021_LIVE_BROWSER_GETONLY_QA.py
+          python3 scripts/ENPT_20261021_LIVE_26_INTENTS_CSS_QA.py
+          echo 'PASS_PRODUCTION_BROWSER_25_52_GETONLY'
+      - name: Upload bounded, safe public deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261021_EXACT_PRODUCTION_RELEASE_HTTP_SEO_FORMS_CHROME_EVIDENCE
+          path: |
+            release-20261021-prod-evidence/
+            prod-live-browser-qa/
+            prod-live-css-qa/
+          retention-days: 30
+          if-no-files-found: warn
