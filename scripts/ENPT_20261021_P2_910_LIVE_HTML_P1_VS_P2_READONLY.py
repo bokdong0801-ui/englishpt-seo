@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Actual 910 elementary HTML from P1 and P2 unpublished Netlify aliases, GET only."""
-import concurrent.futures,csv,hashlib,json,os,pathlib,re,urllib.request,collections,datetime
+import concurrent.futures,csv,hashlib,json,os,pathlib,re,urllib.request,collections,datetime,time
 from html.parser import HTMLParser
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 OUT=pathlib.Path("p2-910-draft-realhtml-qa");OUT.mkdir(exist_ok=True)
@@ -29,7 +29,7 @@ def get_one(item):
  route="station-"+st["slug"]+"-elem-tutor.html"
  url=BASES[edition]+"/"+route
  req=urllib.request.Request(url,headers={"User-Agent":"ENPT-910-GETONLY-SEO-AUDIT"},method="GET")
- with urllib.request.urlopen(req,timeout=40) as resp:
+ with urllib.request.urlopen(req,timeout=75) as resp:
   raw=resp.read(500000).decode("utf8","replace")
   assert resp.status==200 and resp.headers.get("content-type","").startswith("text/html")
   assert 'name="englishpt-consultation"' in raw and '<meta name="robots" content="index,follow' in raw and '<link rel="canonical" href="https://englishpt.kr/' in raw
@@ -40,8 +40,17 @@ def get_one(item):
 items=[(e,s) for e in BASES for s in ST if s["slug"]!="gukjegeumyungsenteo-busaneunhaeng"]
 assert len(items)==1820
 rec={e:{} for e in BASES}
-with concurrent.futures.ThreadPoolExecutor(max_workers=16) as pool:
- for i,(edition,route,lines) in enumerate(pool.map(get_one,items),1):
+def robust_get(item):
+ last=None
+ for attempt in range(5):
+  try:return get_one(item)
+  except Exception as exc:
+   last=exc
+   print('P2_RETRY',item[0],item[1]['slug'],attempt+1,str(exc)[:85],flush=True)
+   time.sleep(1.5*(attempt+1))
+ raise last
+with concurrent.futures.ThreadPoolExecutor(max_workers=7) as pool:
+ for i,(edition,route,lines) in enumerate(pool.map(robust_get,items),1):
   rec[edition][route]=lines
   if i%455==0:print("P2_COMPARE_PROGRESS",i,flush=True)
 def stats(d):
