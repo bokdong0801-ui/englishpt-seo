@@ -2,7 +2,7 @@
 """Chromium GET-only QA for P3 shared guide and navigation station pages."""
 import datetime,json,os,pathlib,urllib.request
 from playwright.sync_api import sync_playwright
-BASE="https://enptp3guide20261021--englishpt-seo.netlify.app"
+BASE="https://enptp31guide20261021--englishpt-seo.netlify.app"
 OUT=pathlib.Path("p3-910-browser-qa");OUT.mkdir(exist_ok=True)
 SITE="98d96cc5-f0b7-4d3d-8072-6476d93e55a3"
 OLDPROD="6ad7506cdeb778280a54ee2a"
