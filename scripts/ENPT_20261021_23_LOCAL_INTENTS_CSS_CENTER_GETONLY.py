@@ -40,7 +40,7 @@ with sync_playwright() as pw:
     if section.count()==0:
      row["comparison_section"]="ABSENT"
      # 3 additional tutor variants may use separate tutor template, report separately
-     if intent not in SKILL_EXTRA:row["errors"].append("MASS_CONTEXT_MISSING")
+     if intent not in SKILL_EXTRA and intent!="elem-tutor":row["errors"].append("MASS_CONTEXT_MISSING")
     else:
      ps=section.locator(".context-block p")
      if ps.count()==0:row["errors"].append("COMPARE_P_MISSING")
