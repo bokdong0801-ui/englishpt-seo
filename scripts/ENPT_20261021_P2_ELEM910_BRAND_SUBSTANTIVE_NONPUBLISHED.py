@@ -90,7 +90,7 @@ def pedagogical(st):
 def head(t):
  m=re.search(r"<head\b[^>]*>.*?</head\s*>",t,re.I|re.S);assert m;return m.group()
 def capture(r,text):
- m=re.search(r,p,text,re.I|re.S);return m.group() if m else None
+ m=re.search(r,text,re.I|re.S);return m.group() if m else None
 def fix_old_generic(body,st):
  # Verified against actual P1 Draft HTML: five repeated parent-guide subsections.
  # Keep SEO head, form, site navigation and the genuinely useful P0/P1 editorial guides.
