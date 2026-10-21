@@ -369,7 +369,7 @@ def apply_search_image_metadata(out: Path, failures: list) -> dict:
             image_alt = re.sub(r'\s+', ' ', image_alt).strip() + " 대표 이미지"
         else:
             title_m = re.search(r'<title>(.*?)</title>', raw, re.S | re.I)
-            image_alt = html.unescape(re.sub(r'<[^>]+>', '', title_m.group(1))).strip() if title_m else "잉글리시PT 대표 이미지"
+            image_alt = html.unescape(re.sub(r'<[^>]+>', '', title_m.group(1))).strip() if title_m else "잉글리시GO 대표 이미지"
 
         meta = (
             f'<meta property="og:image" content="{html.escape(image_url, quote=True)}">'
@@ -483,7 +483,7 @@ SERVICE_THEME_SUFFIXES = {
 }
 EXAM_SUFFIXES = ("toeic", "toeic-speaking", "opic", "ielts", "duolingo", "toefl")
 
-LIVE_FORM = '''<form id="pilotForm" class="lead-form" name="englishpt-consultation" method="POST" data-netlify="true" data-netlify-honeypot="bot-field"><input type="hidden" name="form-name" value="englishpt-consultation"><input type="hidden" name="subject" data-remove-prefix value="ENGLISH PT 새 상담 신청"><p hidden><label>비워두세요 <input name="bot-field"></label></p>
+LIVE_FORM = '''<form id="pilotForm" class="lead-form" name="englishpt-consultation" method="POST" data-netlify="true" data-netlify-honeypot="bot-field"><input type="hidden" name="form-name" value="englishpt-consultation"><input type="hidden" name="subject" data-remove-prefix value="ENGLISH GO 새 상담 신청"><p hidden><label>비워두세요 <input name="bot-field"></label></p>
 <label>이름 <span>*</span><input name="name" autocomplete="name" required></label>
 <label>연락처 <span>*</span><input name="phone" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required></label>
 <label class="full">가장 가까운 일정<input name="deadline" placeholder="시험·발표·면접·사용 일정"></label>
@@ -531,7 +531,7 @@ def simplify_preserved_consultation(raw: str) -> tuple[str, bool]:
         return raw, False
     area_m = re.search(r'id="leadArea"[^>]*value="([^"]*)"', raw, re.I)
     area = html.unescape(area_m.group(1)).strip() if area_m else "송현동"
-    h1 = _plain_h1(raw) or "잉글리시PT"
+    h1 = _plain_h1(raw) or "잉글리시GO"
     new_form = CLEAN_RENDERER.consultation_form({"dong": area}, h1)
     updated, n = re.subn(
         r'<form id="leadForm"[^>]*>.*?</form>',
@@ -704,9 +704,9 @@ def normalize_production_page(raw: str, name: str) -> tuple[str, list[str]]:
     if body_n != 1:
         problems.append("production_body")
 
-    raw = raw.replace("FULL GENERATION · noindex", "ENGLISH PT · 지역별 맞춤 안내")
-    raw = raw.replace("Stage 5 full generation · production 미배포", "ENGLISH PT · 지역별 맞춤 영어 안내")
-    raw = raw.replace("Stage 3 dry-run · production 미배포", "ENGLISH PT · 지역별 맞춤 영어 안내")
+    raw = raw.replace("FULL GENERATION · noindex", "ENGLISH GO · 지역별 맞춤 안내")
+    raw = raw.replace("Stage 5 full generation · production 미배포", "ENGLISH GO · 지역별 맞춤 영어 안내")
+    raw = raw.replace("Stage 3 dry-run · production 미배포", "ENGLISH GO · 지역별 맞춤 영어 안내")
     raw = raw.replace('href="../englishpt.html"', 'href="/englishpt.html"')
 
     raw, form_n = re.subn(
@@ -722,7 +722,7 @@ def normalize_production_page(raw: str, name: str) -> tuple[str, list[str]]:
     h1 = _plain_h1(raw)
     if not h1:
         problems.append("h1_missing_for_ui")
-        h1 = "ENGLISH PT"
+        h1 = "ENGLISH GO"
     service = h1.split(maxsplit=1)[1] if len(h1.split(maxsplit=1)) == 2 else h1
 
     heading_map = {
@@ -761,7 +761,7 @@ def normalize_production_page(raw: str, name: str) -> tuple[str, list[str]]:
     if "<main>" in raw and 'class="breadcrumb wrap"' not in raw:
         crumb = (
             '<div class="breadcrumb wrap" aria-label="현재 위치">'
-            '<a href="/englishpt.html">잉글리시PT</a><span aria-hidden="true">/</span>'
+            '<a href="/englishpt.html">잉글리시GO</a><span aria-hidden="true">/</span>'
             f'<strong>{html.escape(h1)}</strong></div>'
         )
         raw = raw.replace("<main>", "<main>" + crumb, 1)
@@ -776,7 +776,7 @@ def normalize_production_page(raw: str, name: str) -> tuple[str, list[str]]:
                 graph.append({
                     "@type": "BreadcrumbList",
                     "itemListElement": [
-                        {"@type": "ListItem", "position": 1, "name": "잉글리시PT", "item": f"{BASE_URL}/englishpt.html"},
+                        {"@type": "ListItem", "position": 1, "name": "잉글리시GO", "item": f"{BASE_URL}/englishpt.html"},
                         {"@type": "ListItem", "position": 2, "name": h1, "item": canonical_match.group(1)},
                     ],
                 })
@@ -876,12 +876,12 @@ def main() -> None:
                     preserved_raw = preserved_raw.replace('</main>', preserved_region_finder() + '</main>', 1)
             if preserved_page.name == "englishpt.html":
                 preserved_raw = preserved_raw.replace(
-                    "잉글리시PT / 1:1 맞춤 영어관리 | ENGLISH PT",
-                    "1:1 영어과외·영어회화·시험영어 | 잉글리시PT",
+                    "잉글리시GO / 1:1 맞춤 영어관리 | ENGLISH GO",
+                    "1:1 영어과외·영어회화·시험영어 | 잉글리시GO",
                 )
                 preserved_raw = preserved_raw.replace(
-                    "영어를 PT처럼 진단하고 훈련하고 기록하고 다시 조정하는 ENGLISH PT. 회화·시험·학교 영어를 현재 상태와 목표에 맞춰 1:1로 관리합니다.",
-                    "영어회화부터 토익·토익스피킹·오픽·아이엘츠·토플까지, 현재 수준과 목표에 맞춰 필요한 영역을 1:1로 진단하고 훈련하는 잉글리시PT입니다.",
+                    "영어를 PT처럼 진단하고 훈련하고 기록하고 다시 조정하는 ENGLISH GO. 회화·시험·학교 영어를 현재 상태와 목표에 맞춰 1:1로 관리합니다.",
+                    "영어회화부터 토익·토익스피킹·오픽·아이엘츠·토플까지, 현재 수준과 목표에 맞춰 필요한 영역을 1:1로 진단하고 훈련하는 잉글리시GO입니다.",
                 )
             preserved_page.write_text(preserved_raw, encoding="utf-8")
 
