@@ -2,7 +2,7 @@ name: ENPT 20261021 P3 910 Elementary Shared Guide Navigation Draft QA
 on:
   push:
     branches: [qa/enpt-p3-elementary-guide-navigation-20261021]
-    paths: [.github/workflows/ENPT-20261021-P3-910-GUIDE-NAV-NONPUBLISHED-DRAFT.yml]
+    paths: [.github/workflows/ENPT-20261021-P3-910-GUIDE-NAV-NONPUBLISHED-DRAFT.yml, scripts/ENPT_20261021_P3_910_SHARED_GUIDE_AND_STATION_NAV.py]
 permissions:
   contents: read
   actions: read
