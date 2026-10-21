@@ -2,7 +2,7 @@ name: ENPT 20261021 All 23 Regional Intent Types Centered Copy Readonly Browser 
 on:
   push:
     branches: [qa/enpt-four-navigation-css-regression-20261021]
-    paths: [.github/workflows/ENPT-20261021-23-INTENT-CSS-BROWSER-QA.yml]
+    paths: [.github/workflows/ENPT-20261021-23-INTENT-CSS-BROWSER-QA.yml, scripts/ENPT_20261021_23_LOCAL_INTENTS_CSS_CENTER_GETONLY.py]
 permissions:
   contents: read
 jobs:
