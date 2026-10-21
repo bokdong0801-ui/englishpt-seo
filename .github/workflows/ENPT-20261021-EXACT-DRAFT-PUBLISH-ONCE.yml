@@ -38,7 +38,7 @@ jobs:
           assert 'new_deploys_created":0' in s
           print('PASS_EXACT_USER_APPROVED_DRAFT_SINGLE_RESTORE_ONLY')
           PY
-      - name: Publish approved ready Draft with one guarded restore and verify live HTTP SEO ownership robots Forms
+      - name: Publish exact approved Draft once with verified both-quote Forms compatibility and live SEO QA
         run: python3 scripts/ENPT_20261021_PUBLISH_APPROVED_DRAFT_ONCE.py
       - name: Verify production Chrome student six navigation senior international consultation and 26 styles
         run: |
