@@ -1,0 +1,23 @@
+name: ENPT 20261021 Preview GET-only Form Attribute Diagnostics
+on:
+  push:
+    branches: [release/enpt-production-promote-6ad87e6-20261021]
+    paths: [.github/workflows/ENPT-20261021-PREVIEW-ATTR-READONLY-DIAG.yml]
+permissions:
+  contents: read
+jobs:
+  inspect-get-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: GET-only inspect HTML form name, SEO and guide paths without mutations
+        run: |
+          python3 - <<'PY'
+          import urllib.request,re,html
+          base='https://enptminimalfix20261021--englishpt-seo.netlify.app'
+          for p in ['/','/englishpt.html','/student-english.html','/english-conversation.html','/guides/international-school-english.html','/guides/senior-english.html','/courses.html','/exam-english.html','/stations.html','/ulsan-buk-nongso2dong-mid-tutor.html','/ulsan-buk-nongso2dong-high-conv.html','/seoul-jongno-sajikdong-high-tutor.html']:
+            with urllib.request.urlopen(base+p,timeout=22) as f:
+              s=f.read(900000).decode('utf8','replace');code=f.status
+            m=re.findall(r'<form\b[^>]*>',s,re.I|re.S)
+            print('FORM_ATTR_DIAG',repr(p),'http',code,'length',len(s),'exact_attr',('name="englishpt-consultation"' in s),'name_token',('englishpt-consultation' in s),'forms',len(m),'form_tags',[x[:240] for x in m[:2]],'canonical',('rel="canonical"' in s),'og',('property="og:image"' in s),'meta_noindex',bool(re.search(r'<meta\s+name="robots"\s+content="[^"]*noindex',s,re.I)),flush=True)
+          PY
