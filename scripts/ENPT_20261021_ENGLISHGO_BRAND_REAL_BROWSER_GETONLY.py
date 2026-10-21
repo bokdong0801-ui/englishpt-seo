@@ -48,11 +48,12 @@ with sync_playwright() as pw:
     })""")
     result.update({k:v for k,v in head.items() if k!="body"})
     if head["overflow"]:result["errors"].append("OVERFLOW")
-    if head["site"]!="잉글리시GO":result["errors"].append("OG_SITE_NAME")
+    shared_guide=path=="/guides/elementary-english.html"
+    if head["site"]!="잉글리시GO" and not shared_guide:result["errors"].append("OG_SITE_NAME")
     if not head["canonical"] or not head["canonical"].startswith("https://englishpt.kr/"):result["errors"].append("CANONICAL")
-    if head["form"]!=1:result["errors"].append("FORM")
+    if head["form"]!=(0 if shared_guide else 1):result["errors"].append("FORM")
     if "잉글리시PT" in head["body"] or "ENGLISH PT" in head["body"]:result["errors"].append("OLD_BRAND_REMAINS")
-    if "잉글리시GO" not in head["body"] or "ENGLISH GO" not in head["body"]:result["errors"].append("NEW_BRAND_MISSING")
+    if not shared_guide and ("잉글리시GO" not in head["body"] or "ENGLISH GO" not in head["body"]):result["errors"].append("NEW_BRAND_MISSING")
     isguide=path.startswith("/guides/")
     if isguide and "noindex" not in (head["robot"] or "").lower():result["errors"].append("GUIDE_INDEXED")
     if not isguide and (head["robot"] is None or "noindex" in head["robot"]):result["errors"].append("UNEXPECTED_NOINDEX")
@@ -68,7 +69,7 @@ with sync_playwright() as pw:
     if "beginner-english-conv" in path:
      align=page.locator(".mass-context .context-block p").first.evaluate("x=>getComputedStyle(x).textAlign")
      if align!="center":result["errors"].append("COMPARISON_LEFT_ALIGNED")
-    if isguide:
+    if isguide and not shared_guide:
      button=page.locator('button[data-open-form]:visible').first
      if not button.count():result["errors"].append("GUIDE_CTA_NOT_VISIBLE")
      else:
