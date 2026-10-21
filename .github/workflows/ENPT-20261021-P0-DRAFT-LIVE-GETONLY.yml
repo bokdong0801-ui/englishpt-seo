@@ -1,0 +1,43 @@
+name: ENPT 20261021 P0 Nonpublished Draft Live GET Only Verification
+on:
+  push:
+    branches: [qa/enpt-p0-hub-elementary-draft-20261021]
+    paths: [.github/workflows/ENPT-20261021-P0-DRAFT-LIVE-GETONLY.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: enpt-p0-final-draft-sampling-get-only-20261021
+  cancel-in-progress: false
+jobs:
+  verify-draft-without-writes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/enpt-p0-hub-elementary-draft-20261021
+      - name: Static safety check no non-GET, no write, no Production deploy
+        run: |
+          python3 -m py_compile scripts/ENPT_20261021_P0_NONPUBLISHED_DRAFT_GETONLY_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          code=Path("scripts/ENPT_20261021_P0_NONPUBLISHED_DRAFT_GETONLY_QA.py").read_text()
+          assert "method=\"GET\"" in code
+          for needle in ("netlify deploy","requests.post","--prod","urllib.request.Request(url,data="):
+            assert needle not in code,needle
+          print("PASS_GET_ONLY_DRAFT_NO_PRODUCTION_MUTATIONS")
+          PY
+      - name: GET-only sample P0 changed HTML and verify immutable production
+        run: |
+          python3 scripts/ENPT_20261021_P0_NONPUBLISHED_DRAFT_GETONLY_QA.py
+      - name: Preserve actual live QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261021_P0_DRAFT_42_LIVE_HTML_READONLY_QA
+          path: p0-draft-live-readonly-qa/
+          retention-days: 90
+          if-no-files-found: warn
