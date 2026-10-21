@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Generate 1200x630 crop-safe Korean Open Graph social previews for ENGLISH PT.
+"""Generate 1200x630 crop-safe Korean Open Graph social previews for ENGLISH GO.
 
 Stage contract
 - 29 master designs: 1 main + 5 hubs + 23 course intents.
@@ -26,7 +26,7 @@ except ImportError as exc:  # pragma: no cover - CI installs Pillow before use.
 
 BASE_URL = "https://englishpt.kr"
 SIZE = 1200
-BRAND = "잉글리시PT"
+BRAND = "잉글리시GO"
 
 # key -> title, subtitle, chips, palette(bg, ink, accent, soft)
 MASTER = {
@@ -282,7 +282,7 @@ def draw_thumb(path: Path, key: str, title: str, subtitle: str, chips: list[str]
         return lines or [""]
 
     brand_font = _font("bold", 30)
-    centered("ENGLISH PT  |  잉글리시PT", 78, brand_font, accent)
+    centered("ENGLISH GO  |  잉글리시GO", 78, brand_font, accent)
     d.line((safe_left + 50, 132, safe_right - 50, 132), fill=accent, width=3)
 
     max_title_width = 530
