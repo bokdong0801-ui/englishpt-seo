@@ -1,0 +1,47 @@
+name: ENPT P0 Draft Real Chromium 390 768 1440 CTA Readonly QA
+on:
+  push:
+    branches: [qa/enpt-p0-hub-elementary-draft-20261021]
+    paths: [.github/workflows/ENPT-20261021-P0-CHROMIUM-CTA-READONLY.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: enpt-p0-draft-browser-getonly-once-20261021
+  cancel-in-progress: false
+jobs:
+  live-browser-getonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/enpt-p0-hub-elementary-draft-20261021
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Safety freeze GET-only browser and install Playwright
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_20261021_P0_DRAFT_BROWSER_390_768_1440_GETONLY.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/ENPT_20261021_P0_DRAFT_BROWSER_390_768_1440_GETONLY.py').read_text()
+          for banned in ('netlify deploy','--prod','requests.post','page.locator("button[type=submit]").click'):
+            assert banned not in p,banned
+          assert 'if method not in ("GET","HEAD")' in p
+          print('PASS_BROWSER_NO_POST_AND_NO_PUBLISH')
+          PY
+          python3 -m pip install --quiet playwright
+          command -v google-chrome || command -v chromium || command -v chromium-browser
+      - name: Real Chrome inspect P0 Draft mobile tablet desktop and consultation CTA
+        run: |
+          python3 scripts/ENPT_20261021_P0_DRAFT_BROWSER_390_768_1440_GETONLY.py
+      - name: Archive screenshot and full browser QA results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_P0_DRAFT_390_768_1440_39_REAL_BROWSER_CTA_SCREENSHOTS
+          path: p0-final-browser-readonly/
+          retention-days: 90
+          if-no-files-found: warn
