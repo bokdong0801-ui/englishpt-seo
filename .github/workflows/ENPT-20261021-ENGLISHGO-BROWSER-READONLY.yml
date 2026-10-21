@@ -1,0 +1,47 @@
+name: ENPT 20261021 ENGLISH GO Real Brand SEO 390 768 1440 Browser GET-only QA
+on:
+  push:
+    branches: [qa/enpt-englishgo-brand-staging-20261021]
+    paths: [.github/workflows/ENPT-20261021-ENGLISHGO-BROWSER-READONLY.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-mobile-brand:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/enpt-englishgo-brand-staging-20261021
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Freeze no publishing and no POST. Korean font.
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_20261021_ENGLISHGO_BRAND_REAL_BROWSER_GETONLY.py
+          python3 - <<'PY'
+          from pathlib import Path
+          x=Path('scripts/ENPT_20261021_ENGLISHGO_BRAND_REAL_BROWSER_GETONLY.py').read_text()
+          for t in ("netlify deploy","--prod","requests.post","method='POST'","method=\"POST\""):
+            assert t not in x,t
+          assert 'route.request.method not in ("GET","HEAD")' in x
+          print('PASS_ONLY_GET_OR_HEAD',flush=True)
+          PY
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --quiet playwright
+          command -v google-chrome || command -v chromium
+      - name: Actual full ENGLISHGO branding meta favicon 48 viewport and consultation QA
+        run: |
+          python3 scripts/ENPT_20261021_ENGLISHGO_BRAND_REAL_BROWSER_GETONLY.py
+      - name: Archive screenshots and complete SEO/form/mobile report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261021_ENGLISHGO_SITE_BRAND_REAL_CHROME_SEO_FORM_48
+          path: englishgo-brand-live-qa/
+          retention-days: 90
+          if-no-files-found: warn
