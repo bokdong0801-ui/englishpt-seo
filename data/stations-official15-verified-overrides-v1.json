@@ -1,0 +1,157 @@
+{
+  "scope": "official 15 non-homonym station records only",
+  "status": "REVIEW_READY_STAGING_ONLY",
+  "must_not_modify_canonical_or_slug": true,
+  "rows": [
+    {
+      "slug": "dasan",
+      "name": "다산역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 다산동 5841-2",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "deokso",
+      "name": "덕소역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 와부읍 덕소로 56",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "donong",
+      "name": "도농역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 경춘로 433",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "dosim",
+      "name": "도심역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 와부읍 덕소로 237",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "maseok",
+      "name": "마석역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 화도읍 마석중앙로 107",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "byeollaebyeolgaram",
+      "name": "별내별가람역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 별내3로 345",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "byeollaemyeon",
+      "name": "별내역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 경춘북로 375",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "sareung",
+      "name": "사릉역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 진건읍 진건우회로 63",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "onam",
+      "name": "오남역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 오남읍 진건오남로 929",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "ungilsan",
+      "name": "운길산역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 조안면 운길산로 20",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "jinjeop",
+      "name": "진접역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 진접읍 경복대로 244",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "cheonmasan",
+      "name": "천마산역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 화도읍 묵현로25번길 37",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "toegyewon",
+      "name": "퇴계원역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 퇴계원읍 경춘북로 545",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "paldang",
+      "name": "팔당역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 와부읍 팔당로 107",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    },
+    {
+      "slug": "pyeongnaehopyeong",
+      "name": "평내호평역",
+      "city": "경기도",
+      "area": "남양주시",
+      "verified_address": "경기도 남양주시 경춘로 1375",
+      "official_url": "https://nyj.go.kr/www/contents.do?key=3108",
+      "source_last_updated": "2024-08-09",
+      "note": "역명·노선·slug 교차검증 후 QA Draft에만 적용"
+    }
+  ]
+}
