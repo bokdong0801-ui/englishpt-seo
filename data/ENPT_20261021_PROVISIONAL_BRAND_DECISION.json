@@ -1,0 +1,26 @@
+{
+  "status": "PROVISIONAL_NAME_NOT_LEGALLY_CLEARED",
+  "preferred_name_ko": "잉글로담",
+  "preferred_name_en": "ENGLODAM",
+  "domain_keep": "englishpt.kr",
+  "brand_rollout": "DRAFT_ONLY_AFTER_KIPRIS_AND_BUSINESS_NAME_CHECK",
+  "forbidden_changes": [
+    "canonical URLs",
+    "station URL slugs",
+    "search sitemap paths",
+    "Netlify form name",
+    "production deploy"
+  ],
+  "where_to_update_after_approval": [
+    "header",
+    "footer",
+    "title suffix",
+    "og:site_name",
+    "WebSite and Organization JSON-LD",
+    "consultation notification presentation labels",
+    "site root navigation",
+    "privacy contact branding"
+  ],
+  "legal_gate": "KIPRIS similarity for service class 41 plus internet business name check, domain/social handle check",
+  "finding": "Broad web search did not surface a clear exact-name tutoring brand; that is not legal clearance."
+}
