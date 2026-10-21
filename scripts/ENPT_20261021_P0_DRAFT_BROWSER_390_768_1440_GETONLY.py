@@ -59,13 +59,13 @@ with sync_playwright() as pw:
       if form.locator('button[type="submit"]').count()<1:row["errors"].append("SUBMIT_MISSING")
       if form.locator('input[name="consent"]').count()<1:row["errors"].append("CONSENT_MISSING")
      # Actual click path: prioritize in-page anchor, then modal open; never press submit.
-     btn=page.locator('a[href="#consultation-preview"]').first
+     btn=page.locator('a[href="#consultation-preview"]:visible').first
      if btn.count():
       btn.click(timeout=14000)
       page.locator('form[name="englishpt-consultation"]').first.wait_for(state="visible",timeout=14000)
       row["cta"]="inpage"
      else:
-      btn=page.locator('button[data-open-form]').first
+      btn=page.locator('button[data-open-form]:visible').first
       if btn.count():
        btn.click(timeout=14000)
        page.locator('form[name="englishpt-consultation"]').first.wait_for(state="visible",timeout=14000)
