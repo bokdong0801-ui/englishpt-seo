@@ -94,7 +94,7 @@ def capture(r,text):
 def fix_old_generic(body,st):
  # Verified against actual P1 Draft HTML: five repeated parent-guide subsections.
  # Keep SEO head, form, site navigation and the genuinely useful P0/P1 editorial guides.
- generic=re.compile(r'<section\\b[^>]*data-v2352-tutor-content="parent-guide-v1"[^>]*>.*?</section>',re.S|re.I)
+ generic=re.compile(r'<section\b[^>]*data-v2352-tutor-content="parent-guide-v1"[^>]*>.*?</section>',re.S|re.I)
  found=generic.findall(body)
  if len(found)!=5:raise ValueError("Expected exact 5 legacy parent-guide sections: "+st["slug"]+" "+str(len(found)))
  kinds=set(re.findall(r'data-v2352-section="([^"]+)"', "".join(found)))
