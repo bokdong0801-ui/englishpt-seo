@@ -2,7 +2,7 @@ name: ENPT 20261021 ENGLISH GO Brand All Site and Four Nav Nonpublished Draft QA
 on:
   push:
     branches: [qa/enpt-englishgo-brand-staging-20261021]
-    paths: [.github/workflows/ENPT-20261021-ENGLISHGO-ALL-SITE-NONPUB-DRAFT.yml, scripts/ENPT_20261021_FOUR_NAV_AND_CSS_PATCH.py]
+    paths: [.github/workflows/ENPT-20261021-ENGLISHGO-ALL-SITE-NONPUB-DRAFT.yml, scripts/ENPT_20261021_BRAND_ENGLISHGO_ALL_PAYLOADS_STAGING.py]
 permissions:
   contents: read
   actions: read
