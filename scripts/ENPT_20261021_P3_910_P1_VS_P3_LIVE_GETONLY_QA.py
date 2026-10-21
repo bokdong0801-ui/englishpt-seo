@@ -4,7 +4,7 @@ import collections,concurrent.futures,csv,datetime,hashlib,json,pathlib,re,time,
 from html.parser import HTMLParser
 ROOT=pathlib.Path(__file__).resolve().parents[1];OUT=ROOT/"p3-live-910-comparison";OUT.mkdir(exist_ok=True)
 ST=json.loads((ROOT/"data/stations.json").read_text(encoding="utf8"))["stations"]
-SITES={"P1":"https://enptp1stationsreview20261021--englishpt-seo.netlify.app","P3":"https://enptp3guide20261021--englishpt-seo.netlify.app"}
+SITES={"P1":"https://enptp1stationsreview20261021--englishpt-seo.netlify.app","P3":"https://enptp31guide20261021--englishpt-seo.netlify.app"}
 PATHS=[("station-"+s["slug"]+"-elem-tutor.html",s) for s in ST if s["slug"]!="gukjegeumyungsenteo-busaneunhaeng"]
 assert len(PATHS)==910
 class Text(HTMLParser):
