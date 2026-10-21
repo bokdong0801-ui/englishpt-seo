@@ -1,0 +1,49 @@
+name: ENPT 20261021 P31 Nested Guide Mobile QA GET-only
+on:
+  push:
+    branches: [qa/enpt-p3-elementary-guide-navigation-20261021]
+    paths: [.github/workflows/ENPT-20261021-P31-GUIDE-NAV-MOBILE-QA.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: enpt-p31-nested-guide-navigation-mobile-getonly-20261021
+  cancel-in-progress: false
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: qa/enpt-p3-elementary-guide-navigation-20261021
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static freeze and CJK fonts
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_20261021_P3_GUIDE_NAV_CHROMIUM_GETONLY.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_20261021_P3_GUIDE_NAV_CHROMIUM_GETONLY.py').read_text()
+          for x in ('netlify deploy','--prod','requests.post'):
+            assert x not in s,x
+          assert 'route.request.method in ("GET","HEAD")' in s
+          print('PASS_GET_ONLY_P3')
+          PY
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install -q playwright
+          command -v google-chrome || command -v chromium
+      - name: Test 3 viewport guide and station navigation GET only
+        run: python3 scripts/ENPT_20261021_P3_GUIDE_NAV_CHROMIUM_GETONLY.py
+      - name: Preserve screenshots and browser QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261021_P31_MOBILE_390_768_1440_GUIDE_NAV_QA
+          path: p3-910-browser-qa/
+          retention-days: 90
+          if-no-files-found: warn
