@@ -63,8 +63,8 @@ def sig(ps):
 def sim(a,b):return len(a&b)/max(1,min(len(a),len(b))) if a and b else 0.0
 look={}
 for st in ST:
- base="station-"+st["slug"];look[base+".page"]=(st,"hub")
- for intent in INTENTS:look[base+"-"+intent+".page"]=(st,intent)
+ base="station-"+st["slug"];look[base+".html"]=(st,"hub")
+ for intent in INTENTS:look[base+"-"+intent+".html"]=(st,intent)
 assert len(look)==21864
 if not SRC.exists():raise SystemExit("Frozen archive not present")
 sha=hashlib.sha256()
@@ -86,7 +86,7 @@ with tarfile.open(fileobj=proc.stdout,mode="r|") as tar:
   counts.update(set(ph))
   dh=hashlib.sha256(" ".join(paragraphs).encode()).hexdigest()
   normalized_groups[dh].append(name)
-  records[name]={"st":st["slug"],"intent":intent,"sig":sig(paragraphs),"ph":ph,"lens":list(map(len,paragraphs)),"sha":dh,"url":"https://englishpt.kr/"+name.removesuffix(".page")+".html"}
+  records[name]={"st":st["slug"],"intent":intent,"sig":sig(paragraphs),"ph":ph,"lens":list(map(len,paragraphs)),"sha":dh,"url":"https://englishpt.kr/"+name.removesuffix(".html")+".html"}
   if len(records)%5000==0:print("PROGRESS_EXACT_SOURCE_HTML",len(records),flush=True)
 proc.stdout.close()
 if proc.wait():raise RuntimeError("zstd failed")
