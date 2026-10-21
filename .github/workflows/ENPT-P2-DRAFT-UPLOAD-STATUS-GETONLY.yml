@@ -1,0 +1,29 @@
+name: ENPT P2 Netlify Draft Readonly Upload State Check
+on:
+  push:
+    branches: [qa/enpt-p2-elem910-englodam-preview-20261021]
+    paths: [.github/workflows/ENPT-P2-DRAFT-UPLOAD-STATUS-GETONLY.yml]
+permissions:
+  contents: read
+jobs:
+  inspect-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: Netlify GET only draft progress and published baseline
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          sid="98d96cc5-f0b7-4d3d-8072-6476d93e55a3"
+          def get(x):
+            req=urllib.request.Request("https://api.netlify.com/api/v1/"+x,headers={"Authorization":"Bearer "+os.environ["NETLIFY_AUTH_TOKEN"]},method="GET")
+            with urllib.request.urlopen(req,timeout=25) as f:return json.load(f)
+          site=get("sites/"+sid)
+          prod=(site.get("published_deploy") or {}).get("id")
+          assert prod=="6ad7506cdeb778280a54ee2a"
+          a=get("sites/"+sid+"/deploys?per_page=40")
+          found=[{"id":x.get("id"),"state":x.get("state"),"title":x.get("title"),"url":x.get("deploy_ssl_url")} for x in a if "enptp2englodamreview20261021" in str(x.get("deploy_ssl_url")) or "P2-910-INSTRUCTIONAL" in str(x.get("title"))]
+          print("P2_NETLIFY_DRAFT_STATE",json.dumps({"production_unchanged":prod,"draft_matches":found},ensure_ascii=False))
+          PY
