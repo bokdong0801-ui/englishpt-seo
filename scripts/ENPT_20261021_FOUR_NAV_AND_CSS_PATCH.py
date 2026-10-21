@@ -72,7 +72,8 @@ def write_guide(sourcehub,slug,title,desc,h1,parts):
  canon="https://englishpt.kr/"+slug
  # Named head tokens and structured data correctly reflect new PAGE (brand/organization unchanged).
  oldcanon=re.search(r'<link rel="canonical" href="([^"]+)"',src).group(1)
- src=src.replace('<meta name="robots" content="index,follow">','<meta name="robots" content="noindex,follow">',1)
+ src,nrobots=re.subn(r'<meta\\s+name="robots"\\s+content="[^"]*"\\s*/?>','<meta name="robots" content="noindex,follow">',src,count=1,flags=re.I)
+ assert nrobots==1,("COPY_HUB_ROBOTS_MISSING",sourcehub)
  src=re.sub(r'<title>.*?</title>',"<title>"+html.escape(title)+"</title>",src,count=1)
  src=re.sub(r'<meta name="description" content="[^"]*">','<meta name="description" content="'+html.escape(desc,quote=True)+'">',src,count=1)
  src=src.replace(oldcanon,canon)
