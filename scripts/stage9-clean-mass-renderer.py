@@ -516,7 +516,7 @@ TITLE_VARIANTS = {
 }
 
 def consultation_form(loc: dict, h1: str) -> str:
-    return f'''<form id="leadForm" class="lead-form" name="englishpt-consultation" method="POST" data-netlify="true" data-netlify-honeypot="bot-field"><input type="hidden" name="form-name" value="englishpt-consultation"><input type="hidden" id="leadSubject" name="subject" data-remove-prefix value="ENGLISH PT 체험수업 신청"><p hidden><label>비워두세요 <input name="bot-field"></label></p>
+    return f'''<form id="leadForm" class="lead-form" name="englishpt-consultation" method="POST" data-netlify="true" data-netlify-honeypot="bot-field"><input type="hidden" name="form-name" value="englishpt-consultation"><input type="hidden" id="leadSubject" name="subject" data-remove-prefix value="ENGLISH GO 체험수업 신청"><p hidden><label>비워두세요 <input name="bot-field"></label></p>
 <label>이름 <span>*</span><input id="leadName" name="name" autocomplete="name" required></label>
 <label>연락처 <span>*</span><input id="leadPhone" name="phone" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required></label>
 <label>지역 <span>*</span><input id="leadArea" name="area" value="{esc(loc["dong"])}" required></label>
@@ -756,7 +756,7 @@ def location_from_source(raw: str, name: str, intent: str) -> dict:
     else:
         service = next(v["service"] for v in ex.EXAMS.values() if v["intent"] == intent)
     dong = h1[:-len(service)].strip() if h1.endswith(service) else h1.split()[0]
-    m = re.search(r'<p class="eyebrow">(.*?)\s*·\s*ENGLISH PT</p>', raw, re.S)
+    m = re.search(r'<p class="eyebrow">(.*?)\s*·\s*ENGLISH GO</p>', raw, re.S)
     jurisdiction = html.unescape(re.sub(r"<[^>]+>", "", m.group(1))).strip() if m else ""
     if not jurisdiction:
         first = re.search(r'<p>([^<]{2,80}?)\s+' + re.escape(dong) + r'에서', raw)
@@ -1245,7 +1245,7 @@ def conversation_academy_compare_section(loc: dict, intent: str) -> str:
         '<section class="section academy-choice"><div class="wrap">'
         '<p class="kicker">수업 방식 비교</p>'
         f'<h2>{esc(loc["dong"])} {esc(service)}, 학원 이름보다 실제 말하기와 피드백 방식을 먼저 비교해보세요</h2>'
-        '<p class="academy-disclosure">ENGLISH PT는 특정 오프라인 학원으로 소개하는 페이지가 아닙니다. '
+        '<p class="academy-disclosure">ENGLISH GO는 특정 오프라인 학원으로 소개하는 페이지가 아닙니다. '
         '영어회화학원을 검색하는 분이 그룹형 수업과 1:1 맞춤 수업의 차이를 비교할 수 있도록 수업 방식과 관리 기준을 정리했습니다.</p>'
         '<div class="academy-compare">' + card_html + '</div>'
         '<div class="academy-fit">'
@@ -1392,7 +1392,7 @@ def academy_compare_section(loc: dict, intent: str) -> str:
         '<section class="section academy-choice"><div class="wrap">'
         f'<p class="kicker">{esc(kicker)}</p>'
         f'<h2>{esc(heading)}</h2>'
-        '<p class="academy-disclosure">ENGLISH PT는 특정 오프라인 학원으로 소개하는 페이지가 아닙니다. '
+        '<p class="academy-disclosure">ENGLISH GO는 특정 오프라인 학원으로 소개하는 페이지가 아닙니다. '
         f'{esc(disclosure)}</p>'
         '<div class="academy-compare">' + card_html + '</div>'
         '<div class="academy-fit">'
@@ -1581,7 +1581,7 @@ def all_related(loc: dict, current_intent: str) -> str:
 
 def title_for(loc: dict, intent: str) -> str:
     if loc.get("station"):
-        return f'{loc["dong"]} {loc["service"]} | 잉글리시PT'
+        return f'{loc["dong"]} {loc["service"]} | 잉글리시GO'
     variants = TITLE_VARIANTS[intent]
     digest = hashlib.sha256(f'{loc["slug"]}|{intent}|title-v2'.encode()).hexdigest()
     suffix = variants[int(digest[:8], 16) % len(variants)]
@@ -2339,7 +2339,7 @@ def humanize_visible_copy(raw: str, family: str) -> str:
 def v44_header() -> str:
     return (
         '<header class="site-header"><div class="wrap header">'
-        '<a href="/englishpt.html" class="brand"><span class="brand-mark">PT</span><span class="brand-name">ENGLISH PT</span></a>'
+        '<a href="/englishpt.html" class="brand"><span class="brand-mark">PT</span><span class="brand-name">ENGLISH GO</span></a>'
         '<nav class="nav" aria-label="주요 메뉴">'
         '<div class="header-phone">'
         '<button class="phone-cta" type="button" data-phone-toggle aria-expanded="false" aria-controls="header-phone-popover">전화상담</button>'
@@ -2462,8 +2462,8 @@ def enrich_machine_schema(
             graph.insert(0, org)
         org.update({
             "@id": org_id,
-            "name": "잉글리시PT",
-            "alternateName": "ENGLISH PT",
+            "name": "잉글리시GO",
+            "alternateName": "ENGLISH GO",
             "url": BASE_URL + "/englishpt.html",
             "telephone": "+82-10-5006-8027",
             "email": "cicada3865@naver.com",
@@ -2480,14 +2480,14 @@ def enrich_machine_schema(
         if website is None:
             website = {
                 "@type":"WebSite","@id":site_id,"url":BASE_URL+"/englishpt.html",
-                "name":"잉글리시PT","alternateName":"ENGLISH PT",
+                "name":"잉글리시GO","alternateName":"ENGLISH GO",
                 "inLanguage":"ko-KR","publisher":{"@id":org_id},
             }
             graph.append(website)
         else:
             website.update({
                 "@id":site_id,"url":BASE_URL+"/englishpt.html",
-                "name":"잉글리시PT","alternateName":"ENGLISH PT",
+                "name":"잉글리시GO","alternateName":"ENGLISH GO",
                 "inLanguage":"ko-KR","publisher":{"@id":org_id},
             })
 
@@ -2558,7 +2558,7 @@ def add_breadcrumb_schema(raw: str, h1: str, canonical: str) -> tuple[str, bool]
             graph.append({
                 "@type":"BreadcrumbList",
                 "itemListElement":[
-                    {"@type":"ListItem","position":1,"name":"잉글리시PT","item":BASE_URL+"/englishpt.html"},
+                    {"@type":"ListItem","position":1,"name":"잉글리시GO","item":BASE_URL+"/englishpt.html"},
                     {"@type":"ListItem","position":2,"name":h1,"item":canonical},
                 ],
             })
@@ -2770,15 +2770,15 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
 
     crumb=(
         '<div class="breadcrumb wrap" aria-label="현재 위치">'
-        '<a href="/englishpt.html">잉글리시PT</a><span aria-hidden="true">/</span>'
+        '<a href="/englishpt.html">잉글리시GO</a><span aria-hidden="true">/</span>'
         f'<strong>{esc(h1)}</strong></div>'
     )
     raw = raw.replace("<main>","<main>"+crumb,1)
 
     # Production footer and final wording.
     raw = re.sub(
-        r'<footer><div class="wrap"><strong>ENGLISH PT</strong><p>.*?</p></div></footer>',
-        f'<footer><div class="wrap"><strong>ENGLISH PT</strong><p>{esc(loc["full_name"])} · 지역별 맞춤 영어 안내</p><p><a href="/privacy/">개인정보처리방침</a></p></div></footer>',
+        r'<footer><div class="wrap"><strong>ENGLISH GO</strong><p>.*?</p></div></footer>',
+        f'<footer><div class="wrap"><strong>ENGLISH GO</strong><p>{esc(loc["full_name"])} · 지역별 맞춤 영어 안내</p><p><a href="/privacy/">개인정보처리방침</a></p></div></footer>',
         raw, count=1, flags=re.S,
     )
     raw = re.sub(
@@ -2893,7 +2893,7 @@ def render_academy_page(source_raw: str, source_name: str, academy_intent: str) 
     exam["intent"] = academy_intent
     rendered = ex.render(source_slug, loc, key, exam)
     # Make schema honest: these are comparison/1:1 guidance pages, not a claim
-    # that ENGLISH PT is a physical academy in every locality.
+    # that ENGLISH GO is a physical academy in every locality.
     rendered = rendered.replace('"serviceType":"영어시험 과외"', '"serviceType":"영어시험 수업 비교 및 1:1 맞춤 수업 안내"')
     rendered = rendered.replace('"serviceType": "영어시험 과외"', '"serviceType": "영어시험 수업 비교 및 1:1 맞춤 수업 안내"')
     return productionize(rendered, loc, academy_intent, "exam")
