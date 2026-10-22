@@ -1,0 +1,30 @@
+name: ENPT D1 911 Stations and 20 Naver Crawl Candidates Readonly
+on:
+  push:
+    branches: [qa/enpt-20261022-station-index-readonly]
+    paths: [.github/workflows/ENPT-20261022-STATIONS-D1-READONLY.yml]
+permissions:
+  contents: read
+jobs:
+  station-d1-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read-only live station UI and 20 canonical sitemap candidates
+        run: |
+          python3 -m py_compile scripts/ENPT_20261022_D1_STATIONS_READONLY.py
+          python3 scripts/ENPT_20261022_D1_STATIONS_READONLY.py
+      - name: Read-only evidence artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261022_D1_STATIONS_LIVE_AND_NEXT20
+          path: enpt-d1-readonly/
+          retention-days: 30
+          if-no-files-found: warn
