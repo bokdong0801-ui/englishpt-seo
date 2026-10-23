@@ -45,7 +45,7 @@ assert set(parts)=={'CSS','TOOLS','NAV','JS'}
 css,tools,nav,js=[parts[k] for k in ('CSS','TOOLS','NAV','JS')]
 old=station_old.decode('utf8')
 def head(html):
-    x=re.search(r'<head\\b[^>]*>.*?</head>',html,re.I|re.S)
+    x=re.search(r'<head\b[^>]*>.*?</head>',html,re.I|re.S)
     assert x
     return x.group(0)
 # All head SEO bytes unchanged except an inline style addition
