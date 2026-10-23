@@ -76,7 +76,7 @@ def check_public(base,stage):
             for marker in ('id="stationSearch"','id="enptStationLine"','id="enptStationClear"',
                            'id="enpt-stations-ux-20261021"','id="enpt-stations-ux-js-20261021"'):
                 assert marker in content,("NEW_STATIONS_UX_NOT_PRESENT",stage,marker)
-            assert not re.search(r'<meta\\s+name="robots"\\s+content="[^"]*noindex',content,re.I),("STATIONS_NOINDEX",stage)
+            assert not re.search(r'<meta\s+name="robots"\s+content="[^"]*noindex',content,re.I),("STATIONS_NOINDEX",stage)
             row["station_search_ux_pass"]=True
         if path=="/favicon.ico":
             assert item["headers"].get("content-type","").lower().startswith("image/"),("FAVICON_NOT_IMAGE",stage,item["headers"].get("content-type"))
