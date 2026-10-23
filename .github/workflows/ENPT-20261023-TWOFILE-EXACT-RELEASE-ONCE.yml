@@ -1,0 +1,61 @@
+name: ENPT 20261023 Release Twofile Station and Favicon Exact Draft Once
+on:
+  push:
+    branches: [release/enpt-20261023-stations-favicon-only]
+    paths: [.github/workflows/ENPT-20261023-TWOFILE-EXACT-RELEASE-ONCE.yml]
+permissions:
+  contents: read
+concurrency:
+  group: englishpt-20261023-twofile-prod-once-guard
+  cancel-in-progress: false
+jobs:
+  exact-draft-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 26
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/enpt-20261023-stations-favicon-only
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: One existing Netlify Draft ID only - validate immutable site and single POST source
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_20261023_TWOFILE_RELEASE_ONCE.py
+          python3 -m py_compile scripts/ENPT_20261023_TWOFILE_LIVE_BROWSER_QA.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_20261023_TWOFILE_RELEASE_ONCE.py').read_text()
+          assert 'TARGET="6adafef5f2c6d196833683db"' in s
+          assert 'EXPECTED_OLD="6ad87e6bd3bc041359320392"' in s
+          assert 'MARKER="ENPT-20261023-STATION-FAVICON-ONLY-PROD-BASED"' in s
+          assert s.count('method="POST"')==1
+          assert '/restore' in s
+          assert 'api_get("sites/"+SITE)' in s
+          assert 'new_deploys_created":0' in s
+          print('PASS_EXACT_USER_APPROVED_DRAFT_SINGLE_RESTORE_ONLY')
+          PY
+      - name: Publish exact approved Draft once with verified both-quote Forms compatibility and live SEO QA
+        run: python3 scripts/ENPT_20261023_TWOFILE_RELEASE_ONCE.py
+      - name: Verify production Chrome 911 station search 37 lines and root real ICO 390 768 1440
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --quiet playwright
+          command -v google-chrome || command -v chromium
+          python3 scripts/ENPT_20261023_TWOFILE_LIVE_BROWSER_QA.py
+          echo 'PASS_TWOFILE_LIVE_CHROME_390_768_1440'
+      - name: Upload bounded, safe public deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261023_EXACT_STATIONS_FAVICON_PRODUCTION_QA
+          path: |
+            release-20261023-twofile-evidence/
+            enpt-twofile-production-browser-qa/
+          retention-days: 30
+          if-no-files-found: warn
