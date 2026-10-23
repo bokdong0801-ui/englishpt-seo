@@ -1,0 +1,50 @@
+name: ENPT 20261023 Same READY Draft Readonly Chrome Retest
+on:
+  push:
+    branches: [qa/enpt-20261023-twofile-station-favicon]
+    paths: [.github/workflows/ENPT-20261023-RECHECK-READY-DRAFT-GETONLY.yml]
+permissions:
+  contents: read
+jobs:
+  readonly-draft-chrome:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: GET-only verify Draft READY and production not changed
+        run: |
+          python3 - <<'PY'
+          import urllib.request,json,os
+          t=os.environ['NETLIFY_AUTH_TOKEN']
+          def get(p):
+            q=urllib.request.Request('https://api.netlify.com/api/v1/'+p,
+               headers={'Authorization':'Bearer '+t},method='GET')
+            with urllib.request.urlopen(q,timeout=35) as f:return json.load(f)
+          site='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          target='6adafef5f2c6d196833683db'
+          assert get('sites/'+site)['published_deploy']['id']=='6ad87e6bd3bc041359320392'
+          d=get('sites/'+site+'/deploys/'+target)
+          assert d['id']==target and d['state']=='ready' and d['site_id']==site
+          assert d.get('published_at') is None
+          print('PASS_DRAFT_STILL_READY_PRODUCTION_UNCHANGED')
+          PY
+      - name: Real Chrome GET-only UX 390 768 1440px with actual line label
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --quiet playwright
+          command -v google-chrome || command -v chromium
+          python3 scripts/ENPT_20261023_TWOFILE_BROWSER_RECHECK_GETONLY.py
+      - name: Keep screenshots and QA proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_20261023_SAME_DRAFT_390_768_1440_CHROME_READONLY
+          path: enpt-twofile-browser-qa/
+          retention-days: 30
+          if-no-files-found: warn
