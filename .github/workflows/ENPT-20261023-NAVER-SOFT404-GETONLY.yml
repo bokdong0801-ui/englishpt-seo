@@ -1,0 +1,45 @@
+name: ENPT D2 Naver UTM Canonical and Soft404 Readonly Probe
+on:
+  push:
+    branches: [qa/enpt-20261023-navercrawl-soft404-readonly]
+    paths: [.github/workflows/ENPT-20261023-NAVER-SOFT404-GETONLY.yml]
+permissions:
+  contents: read
+jobs:
+  public-get-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: GET-only read-only public SEO checks with no uploads and no mutations
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.error, re, json
+          base='https://englishpt.kr'
+          paths=['/englishpt.html','/englishpt.html?utm_source=chatgpt.com',
+            '/courses.html?utm_source=chatgpt.com',
+            '/student-english.html?utm_source=chatgpt.com',
+            '/english-conversation.html?utm_source=chatgpt.com',
+            '/exam-english.html?utm_source=chatgpt.com',
+            '/stations.html?utm_source=chatgpt.com',
+            '/not-a-real-route-20261023-unique-xyq78.html',
+            '/station-nonexistent-20261023-xyq78.html']
+          result=[]
+          for path in paths:
+            req=urllib.request.Request(base+path,method='GET',headers={'User-Agent':'Mozilla/5.0 (ENPT crawler QA)'})
+            try:
+              with urllib.request.urlopen(req,timeout=20) as response:
+                code=response.status
+                data=response.read(100000).decode('utf8','replace')
+                final=response.url
+            except urllib.error.HTTPError as e:
+              code=e.code;data=e.read(100000).decode('utf8','replace');final=e.url
+            except Exception as e:
+              result.append({'path':path,'error':str(e)[:150]});continue
+            canon=re.search(r'<link\b[^>]*rel=["\']canonical["\'][^>]*href=["\']([^"\']+)',data,re.I)
+            robots=re.search(r'<meta\b[^>]*name=["\']robots["\'][^>]*content=["\']([^"\']+)',data,re.I)
+            row={'path':path,'http':code,'final_url':final,'canonical':canon.group(1) if canon else None,
+                 'robots_meta':robots.group(1) if robots else None,'bytes_sample':len(data),'title':(re.search(r'<title>(.*?)</title>',data,re.I|re.S).group(1)[:90] if re.search(r'<title>(.*?)</title>',data,re.I|re.S) else None),
+                 'looks_missing':('페이지를 찾을 수 없습니다' in data or 'Page Not Found' in data)}
+            result.append(row)
+          print('ENPT_20261023_PUBLIC_CRAWL_DIAG',json.dumps(result,ensure_ascii=False),flush=True)
+          PY
