@@ -1,0 +1,46 @@
+name: ENPT Favicon and Naver 404 Readonly Check
+on:
+  push:
+    branches: [qa/enpt-20261023-favicon-readonly]
+    paths: [.github/workflows/ENPT-20261023-FAVICON-GETONLY.yml]
+permissions:
+  contents: read
+jobs:
+  favicon-get:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: GET-only favicon URLs and HTML link declarations
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,re,json
+          base='https://englishpt.kr'
+          def fetch(path):
+            req=urllib.request.Request(base+path,method='GET',headers={'User-Agent':'Mozilla/5.0 ENPT favicon diagnostic'})
+            try:
+              with urllib.request.urlopen(req,timeout=25) as f:
+                return {'path':path,'status':f.status,'mime':f.headers.get('Content-Type'),'body':f.read(320000)}
+            except urllib.error.HTTPError as e:
+              return {'path':path,'status':e.code,'mime':e.headers.get('Content-Type'),'body':e.read(320000)}
+          homepage=fetch('/englishpt.html')
+          assert homepage['status']==200
+          text=homepage['body'].decode('utf-8','replace')
+          head=re.search(r'<head\b[^>]*>(.*?)</head>',text,re.I|re.S)
+          assert head
+          tags=re.findall(r'<link\b[^>]*>',head.group(1),re.I)
+          favtags=[t for t in tags if re.search(r'rel\s*=\s*["\x27][^"\x27]*icon',t,re.I)]
+          paths=['/favicon.ico','/favicon.png','/favicon.svg','/apple-touch-icon.png','/assets/favicon.ico','/assets/favicon.png']
+          for t in favtags:
+            m=re.search(r'href\s*=\s*["\x27]([^"\x27]+)',t,re.I)
+            if m:
+              from urllib.parse import urlsplit
+              p=urlsplit(m.group(1)).path
+              if p.startswith('/') and p not in paths:paths.append(p)
+          rows=[]
+          for p in paths:
+            a=fetch(p)
+            rows.append(dict(path=p,status=a['status'],mime=a['mime'],byte_len=len(a['body']),signature=a['body'][:20].hex(),html_error=b'<html' in a['body'][:256].lower()))
+          result={'homepage_http':homepage['status'],'favicon_link_tags':favtags,'asset_checks':rows,
+             'favicon_404_is_not_soft404_if_http_status404':True}
+          print('ENPT_FAVICON_DIAG',json.dumps(result,ensure_ascii=False),flush=True)
+          PY
