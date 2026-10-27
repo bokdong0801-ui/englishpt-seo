@@ -1,0 +1,24 @@
+name: ENPT Region V2 5149 Existing Worker URLs HTTP GET-only
+on:
+  push:
+    branches: [review/enpt-region-hubs-v2-20261027]
+    paths: [.github/workflows/enpt-v2-5149-course-live-audit.yml]
+permissions:
+  contents: read
+jobs:
+  audit-real-course-targets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: GET-only 5149 worker course URLs and 17-province six student course samples
+        run: python3 scripts/ENPT_REGION_V2_5149_REAL_HTTP_GET_QA_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_REGION_V2_5149_LIVE_COURSE_HTTP_QA_20261027
+          path: v2-region-live-http-qa/
+          retention-days: 30
