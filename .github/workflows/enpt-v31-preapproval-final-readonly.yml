@@ -1,0 +1,36 @@
+name: ENPT V3.1 FINAL Preapproval GET-only Safety 28 Pages 44 Sitemaps Forms SEO
+on:
+  push:
+    branches: [review/enpt-v3-1-byeongmokandong-fix-20261027]
+    paths: [.github/workflows/enpt-v31-preapproval-final-readonly.yml]
+permissions:
+  contents: read
+jobs:
+  no_deployment_preapproval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile and verify read-only safety
+        run: |
+          python3 -m py_compile scripts/ENPT_V31_FINAL_PREAPPROVAL_GETONLY_GATE_20261027.py
+          python3 - <<'PY'
+          from pathlib import Path
+          code=Path('scripts/ENPT_V31_FINAL_PREAPPROVAL_GETONLY_GATE_20261027.py').read_text()
+          assert 'method="GET"' in code and 'method="POST"' not in code and 'method="PUT"' not in code
+          assert '6adafef5f2c6d196833683db' in code and '6ae06963f085b33a5ee903eb' in code
+          print('PASS_READONLY_NO_PRODUCTION_MUTATION')
+          PY
+      - name: 28 exact live Preview pages, 44 sitemap shards, 21964 URLs, 3 OG image checks and registered Netlify form
+        run: python3 scripts/ENPT_V31_FINAL_PREAPPROVAL_GETONLY_GATE_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V31_FINAL_PREAPPROVAL_GATE_ROBOTS_28P_44XML_OG_FORMS
+          path: v31-preapproval-gate/
+          retention-days: 30
