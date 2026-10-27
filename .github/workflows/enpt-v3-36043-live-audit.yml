@@ -1,0 +1,24 @@
+name: ENPT V3 All 36043 Real HTTP Canonical Region QA GET-only
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-36043-live-audit.yml]
+permissions:
+  contents: read
+jobs:
+  live-all-36043:
+    runs-on: ubuntu-latest
+    timeout-minutes: 48
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Audit all 36043 V3 Preview pages GET-only with correct canonical and regional text
+        run: python3 scripts/ENPT_V3_ALL_36043_LIVE_QA_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_ALL_36043_LIVE_HTTP_CANONICAL_REGION_RESULTS
+          path: v3-final-36043-live-qa/
+          retention-days: 30
