@@ -1,0 +1,54 @@
+name: ENPT V3 published Edge metadata GET-only probe
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-edge-manifest-probe.yml]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      PUBLISHED: 6adafef5f2c6d196833683db
+    steps:
+      - uses: actions/checkout@v4
+      - name: GET-only Edge manifest routes and bundle sha from existing published deployment
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.error,hashlib,pathlib
+          root=pathlib.Path('v3-edge-probe');root.mkdir(exist_ok=True)
+          host='https://'+os.environ['PUBLISHED']+'--englishpt-seo.netlify.app'
+          site=os.environ['SITE_ID'];token=os.environ['NETLIFY_AUTH_TOKEN']
+          path='/.netlify/internal/edge-functions/manifest.json'
+          urls=[host+path,
+            'https://api.netlify.com/api/v1/sites/'+site+'/files/.netlify/internal/edge-functions/manifest.json',
+            'https://api.netlify.com/api/v1/sites/'+site+'/files/.netlify%2Finternal%2Fedge-functions%2Fmanifest.json',
+            'https://api.netlify.com/api/v1/sites/'+site+'/files/robots.txt',
+            'https://api.netlify.com/api/v1/sites/'+site+'/files?per_page=1&page=1',
+            'https://api.netlify.com/api/v1/sites/'+site+'/deploys/'+os.environ['PUBLISHED']]
+          results=[]
+          for url in urls:
+            try:
+              req=urllib.request.Request(url,headers={'Authorization':'Bearer '+token,'Accept':'application/json'},method='GET')
+              with urllib.request.urlopen(req,timeout=35) as r:
+                data=r.read(60000)
+                item={'url':url,'status':r.status,'type':r.headers.get('Content-Type',''),'sha1':hashlib.sha1(data).hexdigest(),'bytes':len(data)}
+                try:
+                  j=json.loads(data)
+                  item['parsed']={k:v for k,v in j.items() if k in ['routes','bundles','name','id','edge_functions_present','edge_functions','required_edge_functions','state']} if isinstance(j,dict) else (j[:2] if isinstance(j,list) else None)
+                except: item['body_start']=data[:140].decode('utf8','replace')
+                results.append(item)
+            except urllib.error.HTTPError as e:results.append({'url':url,'status':e.code,'error':e.read(120).decode('utf8','replace')})
+            except Exception as e:results.append({'url':url,'error':str(e)[:180]})
+          root.joinpath('EDGE_API_GET_PROBE.json').write_text(json.dumps(results,ensure_ascii=False,indent=2),'utf8')
+          print('ENPT_V3_EDGE_MANIFEST_PROBE',json.dumps(results,ensure_ascii=False)[:12000],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_EDGE_API_GET_PROBE
+          path: v3-edge-probe/
+          retention-days: 30
