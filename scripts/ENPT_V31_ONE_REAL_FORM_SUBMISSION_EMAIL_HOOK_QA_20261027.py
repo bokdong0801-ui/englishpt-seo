@@ -81,9 +81,22 @@ try:
    require(nav is not None and nav.status==200,"HOLD_BROWSER_V31_FORM_PAGE_NOT_200")
    form=page.locator("form#leadForm")
    # Popup on the existing page. Use validated opener - no external navigation.
-   buttons=page.locator("button[data-open-form]")
-   if buttons.count() and buttons.first.is_visible():buttons.first.click()
-   else:page.locator('[data-open-form]').first.click()
+   # Actual legacy course pages open the form via the #consultation-preview anchor.
+   # Do not click a hidden mobile menu's data-open-form element.
+   if not form.is_visible():
+    candidates=[
+      page.locator('a[href="#consultation-preview"]:visible'),
+      page.locator('button[data-open-form]:visible'),
+      page.locator('a[data-open-form]:visible'),
+      page.locator('[data-open-form]:visible')
+    ]
+    visible=None
+    for candidate in candidates:
+     if candidate.count()>0:
+      visible=candidate.first
+      break
+    require(visible is not None,"HOLD_NO_VISIBLE_CONSULTATION_OPEN_TRIGGER")
+    visible.click(timeout=12000)
    form.wait_for(state="visible",timeout=15000)
    require(form.get_attribute("name")==NETLIFY_FORM,"HOLD_FORM_NAME_WRONG")
    require(form.locator('input[name="form-name"]').get_attribute("value")==NETLIFY_FORM,"HOLD_FORM_HIDDEN_NAME")
