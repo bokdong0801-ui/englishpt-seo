@@ -1,0 +1,71 @@
+name: ENPT V3.1 Final 36043 SHA-Diff Provenance Reconciliation No Production
+on:
+  push:
+    branches: [review/enpt-v3-1-byeongmokandong-fix-20261027]
+    paths: [.github/workflows/enpt-v31-final-36043-sha-diff-reconcile.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  evidence_based_reconciliation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_202786_SHA_FULLSITE_PREFLI${{ github.token }}T_ONLY_NO_NETLIFY_UPLOAD
+          run-id: 40465037163
+          github-token: ${{ github.token }}
+          path: v3-reference
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_1_7_LOCALITY_TITLE_SOURCE_SAFE_QA_NO_DEPLOY
+          run-id: 40474779481
+          github-token: ${{ github.token }}
+          path: v31-reference
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_ALL_36043_FINAL_HTTP_CANONICAL_REGION_RESULTS
+          run-id: 40472038047
+          github-token: ${{ github.token }}
+          path: v3-previous-live
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_36043_FINAL_57_EXCEPTION_RECHECK
+          run-id: 40474299205
+          github-token: ${{ github.token }}
+          path: v3-57-retest
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V31_CORRECTED_7_ROUTES_LIVE_SEO_MOBILE_QA
+          run-id: 40479186038
+          github-token: ${{ github.token }}
+          path: v31-actual-browser
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_1_7_LOCALITY_TITLE_SOURCE_SAFE_QA_NO_DEPLOY
+          run-id: 40474779481
+          github-token: ${{ github.token }}
+          path: v31-source-proof
+      - name: Compile and reconcile all 36043 site routes against immutable SHA, previous HTTP, 57 retries and V31 seven live repairs
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_V31_36043_SHA_DIFF_CERTIFIED_RECONCILE_20261027.py
+          python3 scripts/ENPT_V31_36043_SHA_DIFF_CERTIFIED_RECONCILE_20261027.py
+          test -s v31-final-reconciled-qa/V31_FINAL_36043_RECONCILIATION.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V31_ALL_36043_OLD_HTTP_VS_SEVEN_SHA_CHANGES_PROVENANCE_FINAL
+          path: v31-final-reconciled-qa/
+          retention-days: 30
