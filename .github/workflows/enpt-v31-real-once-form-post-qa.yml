@@ -2,7 +2,7 @@ name: ENPT V3.1 ONE REAL CONSULTATION POST and Email Hook PREAPPROVAL
 on:
   push:
     branches: [review/enpt-v3-1-byeongmokandong-fix-20261027]
-    paths: [.github/workflows/enpt-v31-real-once-form-post-qa.yml]
+    paths: [.github/workflows/enpt-v31-real-once-form-post-qa.yml, scripts/ENPT_V31_ONE_REAL_FORM_SUBMISSION_EMAIL_HOOK_QA_20261027.py]
 permissions:
   contents: read
 concurrency:
