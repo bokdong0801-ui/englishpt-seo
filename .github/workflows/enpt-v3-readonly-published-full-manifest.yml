@@ -1,0 +1,86 @@
+name: ENPT V3 Published 202768 File SHA Manifest GET-only Recovery
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-readonly-published-full-manifest.yml]
+permissions:
+  contents: read
+jobs:
+  list-current-files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      EXPECTED_PUBLISHED: 6adafef5f2c6d196833683db
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Collect published file SHA digest ONLY via GET, respect rate limits
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.error,re,time,random,gzip,collections,pathlib,concurrent.futures
+          token=os.environ["NETLIFY_AUTH_TOKEN"];site_id=os.environ["NETLIFY_SITE_ID"];published=os.environ["EXPECTED_PUBLISHED"]
+          api="https://api.netlify.com/api/v1/"
+          root=pathlib.Path("v3-published-file-manifest");root.mkdir(exist_ok=True)
+          def get_json(path,timeout=30):
+            req=urllib.request.Request(api+path,method="GET",headers={"Authorization":"Bearer "+token,"Accept":"application/json"})
+            with urllib.request.urlopen(req,timeout=timeout) as r:
+              return json.load(r),dict(r.headers)
+          site,headers=get_json("sites/"+site_id)
+          assert (site.get("published_deploy") or {}).get("id")==published,"HOLD_PRODUCTION_CHANGED"
+          data,h=get_json("sites/"+site_id+"/files?per_page=100&page=1")
+          last=re.search(r'page=(\d+)>;\s*rel="last"',h.get("Link",""))
+          if not last:raise SystemExit("HOLD_CANNOT_PARSE_LAST_PAGE")
+          pages=int(last.group(1))
+          total_expected=202768
+          assert pages==2028,(pages,"PAGINATION_COUNT_MISMATCH")
+          cache={1:data}
+          rate_stats=[]
+          def fetch(page):
+            for trial in range(3):
+              try:
+                r,head=get_json("sites/"+site_id+"/files?per_page=100&page="+str(page),timeout=40)
+                return page,r,head.get("X-Ratelimit-Remaining"),None
+              except urllib.error.HTTPError as e:
+                if e.code==429:return page,[],None,"RATE_LIMIT_429"
+                return page,[],None,"HTTP_"+str(e.code)
+              except Exception as e:
+                if trial<2:time.sleep(.8*(trial+1));continue
+                return page,[],None,type(e).__name__
+          # Limit to 8 workers, no server mutations. Stop on HTTP429 without retry storm.
+          failures={};start=time.monotonic()
+          for batch_from in range(2,pages+1,100):
+            todo=range(batch_from,min(batch_from+100,pages+1))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:rs=list(pool.map(fetch,todo))
+            for page,data,remaining,err in rs:
+              if err:failures[page]=err
+              else:cache[page]=data
+              if remaining is not None:rate_stats.append(remaining)
+            print("ENPT_V3_MANIFEST_PROGRESS",len(cache),"of",pages,"failed",len(failures),"elapsed_s",round(time.monotonic()-start),flush=True)
+            if any(v=="RATE_LIMIT_429" for v in failures.values()):break
+            if len(failures)>10:break
+          objects={};duplicate=[];size_sum=0
+          for page in sorted(cache):
+            for f in cache[page]:
+              path=f.get("path");sha=f.get("sha");size=f.get("size")
+              if not (isinstance(path,str) and path.startswith("/") and isinstance(sha,str) and re.fullmatch("[0-9a-f]{40}",sha)):raise RuntimeError("BAD_FILE_DIGEST")
+              if path in objects:duplicate.append(path)
+              objects[path]=sha;size_sum+=size or 0
+          report={"status":"PASS_PUBLISHED_MANIFEST_FULL" if len(cache)==pages and len(objects)==total_expected and not duplicate else "HOLD_PARTIAL_MANIFEST_RECOVERY",
+           "published_id":published,"pages_expected":pages,"pages_fetched":len(cache),"file_sha_entries":len(objects),"duplicates":len(duplicate),
+           "netlify_listed_bytes":size_sum,"failures":dict(list(failures.items())[:40]),"rate_remaining_samples":rate_stats[-7:],"elapsed_seconds":round(time.monotonic()-start,1),
+           "production_mutations":0,"forms_posted":0}
+          (root/"V3_PUBLISHED_MANIFEST_RECOVERY_STATUS.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),"utf8")
+          if report["status"].startswith("PASS"):
+            with gzip.open(root/"PUBLISHED_202768_STATIC_SHA1_MANIFEST.json.gz","wt",encoding="utf8") as f:json.dump(objects,f,separators=(",",":"))
+          print("ENPT_V3_PUBLISHED_MANIFEST_STATUS",json.dumps(report,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_READONLY_FULL_PUBLISHED_SHA_FILE_MANIFEST
+          path: v3-published-file-manifest/
+          retention-days: 30
