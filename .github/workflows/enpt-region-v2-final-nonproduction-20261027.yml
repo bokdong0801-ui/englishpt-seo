@@ -110,10 +110,10 @@ jobs:
                   target=page.locator('.rg-town:visible').first
                   if not target.evaluate('(e)=>e.open'):target.locator('summary').click()
                   assert target.locator('a[href*="-elem-tutor.html"]').is_visible(),('COURSES_NOT_VISIBLE',width)
-                  assert '−' in target.locator('summary').evaluate('(e)=>getComputedStyle(e,'+""::after""+').content'),('BAD_OPEN_ICON',width)
+                  assert '−' in target.locator('summary').evaluate('(e)=>getComputedStyle(e, "::after").content'),('BAD_OPEN_ICON',width)
                   target.locator('summary').click()
                   assert not target.locator('a[href*="-elem-tutor.html"]').is_visible(),('NOT_COLLAPSIBLE',width)
-                  assert '+' in target.locator('summary').evaluate('(e)=>getComputedStyle(e,'+""::after""+').content'),('BAD_CLOSED_ICON',width)
+                  assert '+' in target.locator('summary').evaluate('(e)=>getComputedStyle(e, "::after").content'),('BAD_CLOSED_ICON',width)
                   target.locator('summary').click()
                   assert target.locator('a[href*="-elem-tutor.html"]').is_visible(),('COURSE_LINK_HIDDEN',width)
                   page.locator('#rgSearch').fill('없는지역999')
