@@ -1,0 +1,37 @@
+name: ENPT V3 Retry 31 Network and 500 Anomalies GET-only
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-retry-31-exceptions.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  recheck-31:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_36043_elem-conv_FULL_GET_QA
+          run-id: 40472038047
+          github-token: ${{ github.token }}
+          path: anomalies/elem
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_36043_worker-english-conv-academy_FULL_GET_QA
+          run-id: 40472038047
+          github-token: GH_TOKEN
+          path: anomalies/worker
+      - name: Exactly 31 anomalous V3 URLs with max 2 concurrency and 3 tries
+        run: python3 scripts/ENPT_V3_RETRY_31_ANOMALIES_GETONLY_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_31_PRELIMINARY_NETWORK_500_RETRY_VERDICT
+          path: v3-anomaly-retry/
+          retention-days: 30
