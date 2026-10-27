@@ -1,0 +1,200 @@
+name: ENPT Region Hubs V2 5149 Broken Links FIX Nonpublished Draft
+on:
+  push:
+    branches: [review/enpt-region-hubs-v2-20261027]
+    paths: [.github/workflows/enpt-region-v2-nonproduction-20261027.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-region-hub-v2-20261027-one-review
+  cancel-in-progress: false
+jobs:
+  build-test-one-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      EXPECTED_PUBLISHED: 6adafef5f2c6d196833683db
+      V2_ALIAS: enpt-regions-v2-review-20261027
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_ALL_6060_TIMES_6_STUDENT_SIGNED_URL_AUDIT
+          run-id: 39548854136
+          github-token: \${{ github.token }}
+          path: signed-student-qa
+      - name: Scope gate + exact 5149 source + pinned Production source
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          w=Path('.github/workflows/enpt-region-v2-nonproduction-20261027.yml').read_text()
+          cmds=[l.strip() for l in w.splitlines() if l.strip().startswith('timeout 340s netlify deploy ')]
+          assert len(cmds)==1 and '--alias="$V2_ALIAS"' in cmds[0] and '--no-build' in cmds[0]
+          assert '--prod' not in cmds[0]
+          assert Path('signed-student-qa/ALL_36360_STUDENT_DESTINATIONS.csv').exists()
+          print('PASS_EXACTLY_ONE_NONPUBLISHED_ALIAS_AND_SIGNED_MAP',flush=True)
+          PY
+          python3 scripts/ENPT_REGION_DRAFT_BUILD_20261027.py
+          python3 scripts/ENPT_REGION_FINAL_INTEGRATION_20261027.py
+          python3 scripts/ENPT_REGION_V2_FIX_5149_LINKS_20261027.py
+      - name: Verify 30894 signed student routes and 5149 V2 township destinations
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import csv,json,pathlib,collections
+          source=list(csv.DictReader(open('signed-student-qa/ALL_36360_STUDENT_DESTINATIONS.csv',encoding='utf-8-sig')))
+          actual=list(csv.DictReader(open('region-review-evidence/ENPT_V2_5149_X_7_REAL_COURSE_LINKS.csv',encoding='utf-8-sig')))
+          assert len(source)==30894 and len(actual)==5149*7
+          assert all(str(r.get('exists','')).lower() in ('true','1') for r in source)
+          expected={'https://englishpt.kr/'+r['route'] for r in source}
+          created={r['target_url'] for r in actual if r['course']!='worker-english-conv-academy'}
+          assert len(expected)==len(created)==30894 and expected==created,'HOLD_GENERATED_COURSE_LINK_MISMATCH'
+          worker=[r for r in actual if r['course']=='worker-english-conv-academy']
+          assert len(worker)==5149 and len({r['region_slug'] for r in worker})==5149
+          assert not any(r['target_url'].endswith(r['region_slug']+'.html') for r in worker)
+          outcome={'status':'PASS_SIGNED_30894_STUDENT_TARGETS','student_targets':len(expected),'distinct_localities':len(worker),'adult_worker_links':len(worker),'total_generated_links':len(actual),'source_missing_routes':0,'bare_town_target_links':0}
+          pathlib.Path('region-review-evidence/V2_SIGNED_DESTINATION_QA.json').write_text(json.dumps(outcome,ensure_ascii=False,indent=2),encoding='utf8')
+          print('ENPT_V2_SIGNED_TARGETS',json.dumps(outcome),flush=True)
+          PY
+      - name: Korean fonts and Chromium setup
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk >/dev/null
+          python3 -m pip install -q playwright
+          python3 -m playwright install chromium
+      - name: Local Chromium responsive 390/768/1440, 21 pages, modal and search
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 --directory region-review-site >/tmp/enpt-regions-v2.log 2>&1 &
+          PID=$!
+          trap 'kill $PID || true' EXIT
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          from playwright.sync_api import sync_playwright
+          root='http://127.0.0.1:8765';out=Path('region-review-evidence')
+          provinces=['gangwon','gyeonggi','gyeongnam','gyeongbuk','gwangju','daegu','daejeon','busan','seoul','sejong','ulsan','incheon','jeonnam','jeonbuk','jeju','chungnam','chungbuk']
+          pages=['regions.html']+['regions/'+p+'.html' for p in provinces]+['englishpt.html','courses.html','student-english.html']
+          report={'status':'HOLD','pages':len(pages),'views':[],'submitted_forms':0,'production_writes':0}
+          with sync_playwright() as p:
+            browser=p.chromium.launch(headless=True,args=['--no-sandbox'])
+            for width,height in [(390,844),(768,1024),(1440,900)]:
+              page=browser.new_page(viewport={'width':width,'height':height},device_scale_factor=1)
+              errors=[]
+              page.on('pageerror',lambda e:errors.append(str(e)[:200]))
+              for f in pages:
+                response=page.goto(root+'/'+f,wait_until='domcontentloaded',timeout=60000)
+                assert response.status==200,(f,response.status)
+                assert page.locator('body').evaluate('(el)=>el.scrollWidth<=window.innerWidth+2'),('OVERFLOW',width,f)
+                assert page.locator('#leadForm').count()==1,('FORM_NOT_FOUND',f)
+                if f.startswith('regions/') and f.endswith('.html'):
+                  town=page.locator('.rg-town')
+                  assert town.count()>=1,('NO_TOWN_DETAILS',f)
+                  assert page.locator('.rg-town-links a[href*="-elem-tutor.html"]').count()==town.count(),('MISSING_CHILD_COURSE',f)
+                  assert page.locator('.rg-town-links a[href*="-worker-english-conv-academy.html"]').count()==town.count(),('MISSING_WORKER',f)
+                  assert page.locator('a[data-locality]').count()==0,('BROKEN_BARE_TOWN_LINK_REMAINS',f)
+                if f=='regions.html':assert page.locator('.rg-card').count()==17
+                if f=='regions/seoul.html':
+                  page.locator('#rgSearch').fill('사직동')
+                  assert page.locator('.rg-town:visible').count()>=1
+                  target=page.locator('.rg-town:visible').first
+                  target.locator('summary').click()
+                  assert target.locator('a[href*="-elem-tutor.html"]').count()==1
+                  page.locator('#rgSearch').fill('없는지역999')
+                  assert page.locator('#rgEmpty').is_visible()
+                  page.locator('#rgSearch').fill('')
+                if f in ('englishpt.html','courses.html','student-english.html'):
+                  assert page.locator('#enpt-regions-entry-20261027').count()==1
+                  page.locator('#enpt-regions-entry-20261027 button[data-open-form]').click()
+                  assert page.locator('#applyModal').get_attribute('aria-hidden')=='false'
+                  page.locator('[data-close-form]').last.click()
+                if width in (390,1440) and f in ('regions.html','regions/seoul.html','regions/gyeonggi.html','englishpt.html','student-english.html'):
+                  page.screenshot(path=str(out/('V2_'+f.replace('/','_').replace('.html','')+'_'+str(width)+'.png')),full_page=True)
+              assert not errors,('JS_ERRORS',width,errors[:4])
+              report['views'].append({'width':width,'checked_pages':len(pages),'broken_bare_town_links':0,'horizontal_overflow':False,'modal':'PASS','search':'PASS','errors':0})
+              page.close()
+            browser.close()
+          report['status']='PASS_V2_STATIC_BROWSER_21_PAGES_390_768_1440'
+          (out/'V2_BROWSER_QA.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
+          print('ENPT_V2_BROWSER',json.dumps(report),flush=True)
+          PY
+      - name: Netlify GET-only Production ID and account gate
+        run: |
+          python3 - <<'PY'
+          import urllib.request,os,json
+          token=os.environ.get('NETLIFY_AUTH_TOKEN','')
+          assert len(token)>20,'HOLD_NO_NETLIFY_TOKEN'
+          sid=os.environ['NETLIFY_SITE_ID']
+          def api(path):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,method='GET',headers={'Authorization':'Bearer '+token})
+            with urllib.request.urlopen(req,timeout=35) as r:return json.load(r)
+          site=api('sites/'+sid)
+          assert site.get('custom_domain')=='englishpt.kr'
+          assert (site.get('published_deploy') or {}).get('id')==os.environ['EXPECTED_PUBLISHED'],'HOLD_PRODUCTION_CHANGED'
+          deploys=api('sites/'+sid+'/deploys?per_page=100')
+          assert not any(os.environ['V2_ALIAS'] in str(d.get('deploy_ssl_url') or '') for d in deploys),'HOLD_ALIAS_ALREADY_EXISTS'
+          account=api('accounts/'+site['account_id'])
+          assert not account.get('usages_exceeded') and not account.get('configurable_limits_exceeded'),'HOLD_NETLIFY_LIMIT'
+          print('PASS_V2_PRODUCTION_GET_ONLY_PREUPLOAD',flush=True)
+          PY
+      - name: Create exactly ONE Netlify unpublished V2 Draft, NEVER production
+        run: |
+          set -euo pipefail
+          npm install -g netlify-cli@27.13.0 --no-fund --no-audit >/dev/null
+          timeout 340s netlify deploy --site="$NETLIFY_SITE_ID" --dir=region-review-site --no-build --alias="$V2_ALIAS" --timeout=275 --message="ENPT-5149-REGIONS-V2-NONPROD-ONLY-20261027" 2>&1 | tee region-review-evidence/V2_NETLIFY_DRAFT_UPLOAD.txt
+      - name: GET-only live Preview HTTP and 5149 corrected anchors, noindex headers, Published unchanged
+        run: |
+          python3 - <<'PY'
+          import os,urllib.request,json,re
+          from pathlib import Path
+          url='https://'+os.environ['V2_ALIAS']+'--englishpt-seo.netlify.app'
+          checks=[]
+          for page in ['regions.html','regions/seoul.html','regions/gyeonggi.html','englishpt.html','courses.html','student-english.html']:
+            with urllib.request.urlopen(url+'/'+page,timeout=50) as r:
+              body=r.read().decode('utf8','replace');headers=dict(r.headers)
+              assert r.status==200
+              assert 'noindex' in (r.headers.get('X-Robots-Tag') or '').lower(),('PREVIEW_NOT_NOINDEX',page)
+              assert 'leadForm' in body and 'englishpt-consultation' in body
+              if page.startswith('regions/'):
+                assert 'data-locality=' in body and 'rg-town' in body
+                assert '-elem-tutor.html' in body and '-worker-english-conv-academy.html' in body
+              checks.append(page)
+          with urllib.request.urlopen(url+'/robots.txt',timeout=35) as r:
+            assert 'Disallow: /' in r.read().decode('utf8')
+          req=urllib.request.Request('https://api.netlify.com/api/v1/sites/'+os.environ['NETLIFY_SITE_ID'],method='GET',headers={'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN']})
+          with urllib.request.urlopen(req,timeout=40) as r:site=json.load(r)
+          actual=(site.get('published_deploy') or {}).get('id')
+          assert actual==os.environ['EXPECTED_PUBLISHED'],'HOLD_PRODUCTION_DRIFT'
+          proof={'status':'PASS_V2_LIVE_NONPRODUCTION','preview':url+'/regions.html','sample_http_200':checks,'production_unchanged':actual,'preview_noindex':True,'production_deploys':0,'forms_submitted':0}
+          Path('region-review-evidence/V2_LIVE_PREVIEW_QA.json').write_text(json.dumps(proof,ensure_ascii=False,indent=2),encoding='utf8')
+          print('ENPT_V2_LIVE_PREVIEW',json.dumps(proof,ensure_ascii=False),flush=True)
+          PY
+      - name: Always read back exact Published ID
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import urllib.request,os,json
+          t=os.environ.get('NETLIFY_AUTH_TOKEN','')
+          assert t
+          r=urllib.request.Request('https://api.netlify.com/api/v1/sites/'+os.environ['NETLIFY_SITE_ID'],headers={'Authorization':'Bearer '+t},method='GET')
+          with urllib.request.urlopen(r,timeout=35) as f:d=json.load(f)
+          current=(d.get('published_deploy') or {}).get('id')
+          print('ENPT_V2_FINAL_PRODUCTION_ID',current,flush=True)
+          assert current==os.environ['EXPECTED_PUBLISHED']
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_5149_REGION_V2_FIXED_COURSE_LINKS_DRAFT_QA_20261027
+          path: region-review-evidence/
+          retention-days: 30
