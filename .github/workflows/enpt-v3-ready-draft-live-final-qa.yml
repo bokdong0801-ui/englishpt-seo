@@ -1,0 +1,35 @@
+name: ENPT V3 READY Full 158571 Route Draft LIVE SEO Forms Mobile GET-only Final QA
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-ready-draft-live-final-qa.yml]
+permissions:
+  contents: read
+jobs:
+  final-live-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      ALIAS: review-enpt-v3-fullsite-20261027
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Chromium and Korean Noto fonts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk >/dev/null
+          python3 -m pip install -q playwright
+          python3 -m playwright install chromium
+      - name: Real full V3 Edge route, 44 sitemaps, 21 region/core pages, form fields and 390 768 1440
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_V3_FULL_NONPUB_DRAFT_LIVE_QA_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_READY_158571_FULL_DRAFT_REAL_LIVE_SEO_FORMS_MOBILE_QA
+          path: enpt-v3-fullsite-qa/
+          retention-days: 30
