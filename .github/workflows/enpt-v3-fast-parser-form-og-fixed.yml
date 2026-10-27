@@ -2,7 +2,7 @@ name: ENPT V3 Fixed HTMLParser All Forms and OG Images Read-only
 on:
   push:
     branches: [review/enpt-v3-fullsite-draft-20261027]
-    paths: [.github/workflows/enpt-v3-fast-parser-form-og-fixed.yml]
+    paths: [.github/workflows/enpt-v3-fast-parser-form-og-fixed.yml, scripts/ENPT_V3_FAST_FORM_IMAGE_PARSER_QA_20261027.py]
 permissions:
   contents: read
 jobs:
