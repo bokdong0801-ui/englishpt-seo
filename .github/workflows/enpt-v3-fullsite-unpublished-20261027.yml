@@ -1,0 +1,318 @@
+name: ENPT V3 Full 158571 Routes + Region Hub Review NONPUBLISHED ONLY
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-fullsite-unpublished-20261027.yml, scripts/ENPT_20261021_FOUR_NAV_AND_CSS_PATCH.py]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-v3-fullsite-region-20261027-one-nonproduction-draft
+  cancel-in-progress: false
+jobs:
+  full-site-fixed-bundling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 48
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      PREVIOUS_PRODUCTION: 6adafef5f2c6d196833683db
+      ALIAS: enpt-v3-fullsite-review-20261027
+      MARKER: ENPT-20261027-V3-158571-FULLSITE-REGION-ONLY-NONPUB
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static freeze, only one CLI draft allowed, original robots and Edge unchanged
+        run: |
+          python3 -m py_compile scripts/ENPT_21964_DRAFT_CANDIDATE_ONLY_EDIT_OG_AND_PRESERVE_NOINDEX.py scripts/ENPT_V3_FULL_PRODUCTION_SOURCE_SAFE_MERGE_20261027.py
+          python3 - <<'PY'
+          from pathlib import Path
+          y=Path('.github/workflows/enpt-v3-fullsite-unpublished-20261027.yml').read_text()
+          a=[i for i,s in enumerate(y.splitlines()) if s.strip().startswith('timeout 1050s netlify deploy ')]
+          assert len(a)==1,'HOLD must be exactly one CLI deploy'
+          assert all('--prod' not in s for s in y.splitlines()[a[0]:a[0]+10])
+          assert '--alias="$ALIAS"' in y
+          assert "netlify --version" in y
+          print('PASS_ONLY_ONE_CLI_NONPUBLISHED_FULL_DRAFT_EXPECTED')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: pristine-release
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_SIGNED_21964_URL_THUMBNAIL_MAPPING_AND_150_REAL_SQUARE_JPEG_PILOT_V2
+          run-id: 39360145172
+          github-token: ${{ github.token }}
+          path: signed-route-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_21964_COMPLETE_SQUARE_JPG_RECOVERED_ALL_SHA256_QA_NO_RERENDER_V1
+          run-id: 39361276955
+          github-token: ${{ github.token }}
+          path: all-jpeg-qa
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 39360903334
+          pattern: ENPT_ALL21964_SQUARE_JPEG_SHARD_*
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          path: existing-jpegs
+      - name: Recreate exact 21964 OG meta from signed original archive; no image rerender and 136607 noindex unchanged
+        run: |
+          set -euo pipefail
+          mkdir -p thumb-21964-candidate thumb-draft-qa edge502-cli-proof
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          f=pristine-release/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          echo "6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884  $f" | sha256sum -c -
+          tar --zstd -xf "$f" -C thumb-21964-candidate
+          python3 scripts/ENPT_21964_DRAFT_CANDIDATE_ONLY_EDIT_OG_AND_PRESERVE_NOINDEX.py
+          test -s thumb-draft-qa/CANDIDATE_21964_SOURCE_PRESERVATION_QA.json
+          test "$(find thumb-21964-candidate/assets/images/seo-square/v1 -type f -name '*.jpg' | wc -l)" -eq 21964
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          r=json.loads(Path('thumb-draft-qa/CANDIDATE_21964_SOURCE_PRESERVATION_QA.json').read_text())
+          assert r['status']=='PASS_DRAFT_CANDIDATE_21964_REAL_OG_LINKS_ALL_NOIDX_PRESERVED'
+          assert r['all_136607_noindex_edge_files_sha1_identical']==136607
+          assert r['new_image_count']==21964 and r['actual_site_page_count']==158571
+          assert r['both_google_naver_owner_tags_preserved']
+          print('PASS_ORIGINAL_180800_AND_NEW_21964_CANDIDATE_OG_QA',flush=True)
+          PY
+      - name: Strict production-safe SEO and Forms QA, unchanged original robots headers and Edge router, plus site byte fingerprint
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_21964_PRODUCTION_CANDIDATE_SEO_FORMS_OFFLINE_QA.py
+          node --check thumb-21964-candidate/netlify/edge-functions/shard-router.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,datetime,gzip
+          root=Path('thumb-21964-candidate')
+          info={'status':'PASS_PRODUCTION_SAFE_BYTES_BEFORE_DRAFT',
+                'created_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                'edge_original_sha256':hashlib.sha256((root/'netlify/edge-functions/shard-router.js').read_bytes()).hexdigest(),
+                'headers_original_sha256':hashlib.sha256((root/'_headers').read_bytes()).hexdigest(),
+                'robots_original_sha256':hashlib.sha256((root/'robots.txt').read_bytes()).hexdigest(),
+                'netlify_toml_original_sha256':hashlib.sha256((root/'netlify.toml').read_bytes()).hexdigest(),
+                'preview_global_noindex':False,'preview_robots_disallow_all':False,
+                'all_136607_noindex_source_immutable':True,
+                'all_21964_new_OG_mapped':True,
+                'source_sha256_original_archive':'6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884',
+                'production_publishes':0}
+          assert info['edge_original_sha256']=='5cb224d7693a92b2b65677bec3dbee780e7c30bcc03fcbeebc6842a873344470'
+          assert 'Disallow: /' not in (root/'robots.txt').read_text()
+          assert 'DRAFT ONLY' not in (root/'netlify/edge-functions/shard-router.js').read_text()
+          # Full independent QA already verifies per-section root vs internal-only noindex.
+          Path('edge502-cli-proof/01_PROD_SAFE_ORIGINAL_ROBOTS_EDGE_GATES.json').write_text(json.dumps(info,ensure_ascii=False,indent=2)+'\\n')
+          print('ENPT_21964_PRODSAFE_CANDIDATE_BYTES_BEFORE_DEPLOY',json.dumps(info,ensure_ascii=False),flush=True)
+          PY
+      - name: Before four fixes snapshot all approved candidate file SHA256 to prevent scope creep
+        run: |
+          python3 -m py_compile scripts/ENPT_20261021_MINIMAL_SCOPE_GUARD.py
+          python3 scripts/ENPT_20261021_MINIMAL_SCOPE_GUARD.py before
+      - name: Patch signed candidate student six course choices, senior & international detail routes and compare alignment
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_20261021_FOUR_NAV_AND_CSS_PATCH.py
+          python3 scripts/ENPT_20261021_FOUR_NAV_AND_CSS_PATCH.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path('four-route-qa/PATCH_SUMMARY.json').read_text())
+          assert x['status']=='PASS_FOUR_INTENTS_CORRECTED_AND_SENIOR_INTERNATIONAL_PAGES_CREATED'
+          assert x['student_option_count']==6 and x['real_six_local_routes_verified']
+          assert all(p['robots']=='noindex,follow' and p['has_form'] for p in x['new_guides'])
+          assert x['production_mutations']==0 and x['all_existing_page_index_policy_unchanged']
+          print('PASS_FOUR_NAV_AND_ALL_COMPARISON_STYLE_QA',flush=True)
+          PY
+      - name: Validate all 202k candidate files differ only in three hubs and scoped CSS plus two guides
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_20261021_MINIMAL_SCOPE_GUARD.py after
+          python3 scripts/ENPT_20261021_MINIMAL_PRODUCTION_CANDIDATE_SEO_FORMS_QA.py
+          python3 - <<'PY'
+          import json,pathlib
+          d=json.loads(pathlib.Path('minimal-20261021-qa/MINIMAL_DIFF_SCOPE_REPORT.json').read_text())
+          assert d['status']=='PASS_ONLY_MINIMAL_NAV_AND_CSS_CHANGES_FROM_APPROVED_OG_CANDIDATE'
+          assert d['new_images_generated']==0 and d['p0_p1_p3_content_patches_run'] is False
+          assert d['signed_route_count']==158571 and d['indexable_count']==21964
+          print('PASS_MINIMAL_PRODUCTION_BASED_DELTA_AFTER_ALL_SEO_QA',flush=True)
+          PY
+      - name: Snapshot exact October 21 published candidate before new two-file patch
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_20261023_TWOFILE_SCOPE_GUARD.py scripts/ENPT_20261023_STATIONS_FAVICON_TWOFILE_PATCH.py
+          python3 scripts/ENPT_20261023_TWOFILE_SCOPE_GUARD.py before
+      - name: Convert original PT SVG to ICO and patch only 911 stations hub UX
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq librsvg2-bin fonts-liberation
+          python3 -m pip install --quiet pillow cairosvg
+          python3 scripts/ENPT_20261023_STATIONS_FAVICON_TWOFILE_PATCH.py
+          python3 scripts/ENPT_20261023_TWOFILE_SCOPE_GUARD.py after
+          python3 - <<'PY'
+          import pathlib,json
+          d=json.loads(pathlib.Path('enpt-twofile-qa/TWOFILE_SCOPE_DIFF.json').read_text())
+          assert d['status']=='PASS_EXACTLY_ONE_EXISTING_STATIONS_PAGE_AND_ONE_NEW_FAVICON_FILE'
+          assert d['after_count']==202767
+          assert d['added_paths']==['favicon.ico']
+          print('PASS_TWOFILE_ONLY_NO_IMPACT_ON_OTHER_202765_FILES')
+          PY
+      - name: V3 source-locked full site plus V2 region integration, no existing SEO routes removed
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_REGION_DRAFT_BUILD_20261027.py
+          python3 scripts/ENPT_REGION_FINAL_INTEGRATION_20261027.py
+          python3 scripts/ENPT_REGION_V2_FIX_5149_LINKS_20261027.py
+          python3 scripts/ENPT_V3_FULL_PRODUCTION_SOURCE_SAFE_MERGE_20261027.py
+          python3 - <<'PY'
+          import pathlib,json
+          report=json.loads(pathlib.Path('enpt-v3-fullsite-qa/V3_FULL_SITE_OFFLINE_GUARD.json').read_text())
+          assert report['status']=='PASS_V3_FULLSITE_SCOPE_AND_SEO_FORMS_PRESERVED'
+          assert report['baseline_20261023_static_files']==202767
+          assert report['final_static_files']==202786
+          assert report['signed_existing_public_routes']==158571
+          assert report['signed_indexable_routes']==21964
+          assert report['signed_noindex_routes']==136607
+          assert report['original_sitemaps_unchanged']==44
+          assert report['new_html']==19 and report['modified_existing_html']==3
+          assert report['all_36043_course_target_routes_exist_in_signed_map'] and report['core_form_and_canonical_unchanged']
+          assert report['global_preview_only_noindex_leaked'] is False
+          print('PASS_V3_158571_ROUTES_202786_FULLSITE_NO_INDEX_LEAK_NO_REWRITE',flush=True)
+          PY
+      - name: GET-only account/site Production identity and uniqueness gate before new Draft
+        run: |
+          python3 - <<'PY'
+          import os,urllib.request,json,pathlib
+          site=os.environ['SITE_ID'];t=os.environ['NETLIFY_AUTH_TOKEN']
+          def get(p):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+p,method='GET',
+              headers={'Authorization':'Bearer '+t,'Accept':'application/json'})
+            with urllib.request.urlopen(req,timeout=35) as r:return json.load(r)
+          s=get('sites/'+site)
+          assert s['id']==site and s.get('custom_domain')=='englishpt.kr'
+          assert (s.get('published_deploy') or {}).get('id')==os.environ['PREVIOUS_PRODUCTION']
+          a=get('accounts/'+s['account_id'])
+          assert not a.get('usages_exceeded') and not a.get('configurable_limits_exceeded'),'HOLD account credit over limit'
+          history=get('sites/'+site+'/deploys?per_page=100')
+          if any(x.get('title')==os.environ['MARKER'] or os.environ['ALIAS'] in str(x.get('deploy_ssl_url') or '') for x in history):
+            raise SystemExit('HOLD same full-CLI attempt already exists; no duplicate')
+          proof={'status':'PASS_ONE_CLI_PRODUCTION_IDENTITY_UNCHANGED_AND_ALIAS_NOT_PREVIOUSLY_USED',
+            'site_id':site,'production_id':os.environ['PREVIOUS_PRODUCTION'],'draft_marker':os.environ['MARKER'],
+            'predeploy_netlify_POSTs':0}
+          pathlib.Path('edge502-cli-proof/02_API_GETONLY_PREDEPLOY_IDENTITY.json').write_text(json.dumps(proof,indent=2)+'\\n')
+          print('ENPT_21964_CLI_FULL_DRAFT_SAFE_PREFLIGHT',json.dumps(proof),flush=True)
+          PY
+      - name: Pin same Netlify CLI version as successful 200 HTTP router Canary
+        run: |
+          npm install -g netlify-cli@27.13.0 --no-fund --no-audit
+          netlify --version
+      - name: ONE full Draft by correct Netlify CLI bundler with already-hosted SHA reuse; NEVER --prod
+        run: |
+          set -euo pipefail
+          cd thumb-21964-candidate
+          echo "START_ONE_CLI_FULL_DRAFT $(date -u +%FT%TZ)" > ../edge502-cli-proof/03_ONE_PRODSAFE_CLI_DRAFT_ATTEMPT.txt
+          timeout 1050s netlify deploy --site="$SITE_ID" --dir=. --no-build --alias="$ALIAS" --timeout=900 --message="$MARKER" > ../edge502-cli-proof/04_PRODSAFE_CLI_DEPLOY_OUTPUT.txt 2>&1
+          echo "PASS_CLI_FULL_DRAFT_SUCCESS_$(date -u +%FT%TZ)" >> ../edge502-cli-proof/03_ONE_PRODSAFE_CLI_DRAFT_ATTEMPT.txt
+      - name: GET-only verify exact nonpublished READY Draft has production-safe robots, Edge HTTP200 and no preview-only X-Robots-Tag
+        if: success()
+        run: |
+          python3 - <<'PY'
+          import os,json,pathlib,re,subprocess,urllib.request,datetime
+          from urllib.parse import urlparse
+          t=os.environ['NETLIFY_AUTH_TOKEN'];siteid=os.environ['SITE_ID'];baseline=os.environ['PREVIOUS_PRODUCTION']
+          def api(p):
+            q=urllib.request.Request('https://api.netlify.com/api/v1/'+p,
+              headers={'Authorization':'Bearer '+t,'Accept':'application/json'},method='GET')
+            with urllib.request.urlopen(q,timeout=35) as r:return json.load(r)
+          site=api('sites/'+siteid)
+          assert site.get('custom_domain')=='englishpt.kr'
+          assert (site.get('published_deploy') or {}).get('id')==baseline
+          histories=api('sites/'+siteid+'/deploys?per_page=100')
+          matches=[x for x in histories if x.get('title')==os.environ['MARKER']]
+          assert len(matches)==1 and matches[0].get('state')=='ready' and matches[0].get('published_at') is None
+          draftid=matches[0]['id'];base='https://'+os.environ['ALIAS']+'--englishpt-seo.netlify.app'
+          result={'draft_id':draftid,'url':base,'status':'HOLD',
+             'state':'ready','published_id_unchanged':baseline,
+             'no_preview_global_noindex_expected':True,'requests':[],
+             'posted_forms':0,'published':False,'errors':[]}
+          checks=['/index.html','/englishpt.html','/robots.txt','/sitemap-index.xml',
+             '/station-419minjumyoji-toeic.html','/station-419minjumyoji-ielts.html',
+             '/gyeongnam-milyang-naeidong-elem-tutor.html','/seoul-jongno-sajikdong-high-tutor.html',
+             '/__pages/23/englishpt.page','/stations.html','/favicon.ico','/student-english.html','/english-conversation.html','/guides/international-school-english.html','/guides/senior-english.html','/ulsan-buk-nongso2dong-beginner-english-conv.html']
+          for p in checks:
+            cmd=['curl','--silent','--show-error','--connect-timeout','8','--max-time','27','-D','-','-w','\\nEFFECTIVE_HTTP=%{http_code}',base+p]
+            r=subprocess.run(cmd,capture_output=True,timeout=32)
+            output=r.stdout.decode('utf8','replace');headers=output.split('\r\n\r\n',1)[0]
+            m=re.search(r'EFFECTIVE_HTTP=(\d+)',output)
+            code=int(m.group(1)) if m else 0
+            row={'path':p,'status':code,'x_robots':next((x.split(':',1)[1].strip() for x in headers.splitlines() if x.lower().startswith('x-robots-tag:')),None),
+               'og_image':'property="og:image"' in output,'canonical':'rel="canonical"' in output,
+               'bytes':len(r.stdout),'curl_exit':r.returncode}
+            result['requests'].append(row)
+            if code!=200:result['errors'].append('HTTP non200 '+p)
+            if p.endswith('.html'):
+              if row['x_robots'] and 'noindex' in row['x_robots'].lower():
+                result['errors'].append('Unexpected preview-level X-Robots noindex on public page '+p)
+              if not row['og_image'] or not row['canonical']:result['errors'].append('OG/canonical absent '+p)
+            if p.startswith('/__pages/') and row['x_robots']!='noindex, nofollow':
+              result['errors'].append('Internal sharded raw page not protected '+p)
+            if p=='/robots.txt':
+              if 'Disallow: /' in output:result['errors'].append('Production robots accidentally blocks all')
+              if 'User-agent:' not in output:result['errors'].append('Robots missing User-agent')
+          result['status']='PASS_READY_NONPUBLISHED_PRODSAFE_EDGE_ROBOTS_META_HTTP' if not result['errors'] else 'HOLD_UNSAFE_OR_BROKEN_PRODSAFE_DRAFT'
+          fp=pathlib.Path('edge502-cli-proof/05_PRODSAFE_FINAL_DRAFT_HTTP_AND_ROBOTS_GETONLY.json')
+          fp.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\\n')
+          print('ENPT_PRODSAFE_FINAL_NONPUBLISHED_DRAFT_GETONLY_QA',json.dumps(result,ensure_ascii=False),flush=True)
+          if result['errors']:raise SystemExit('HOLD production review: do NOT publish')
+          PY
+      - name: Actual GET-only 390 768 1440px stations search line navigation and ICO preview QA
+        if: success()
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+          python3 -m pip install --quiet playwright
+          command -v google-chrome || command -v chromium
+          python3 -m py_compile scripts/ENPT_20261023_TWOFILE_BROWSER_PREVIEW_QA.py
+          python3 scripts/ENPT_20261023_TWOFILE_BROWSER_PREVIEW_QA.py
+          echo 'PASS_TWOFILE_PREVIEW_CHROME_GETONLY'
+      - name: Full V3 Draft live 44 sitemaps / regional UI / Core Forms / 390-768-1440 GET-only
+        if: success()
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_V3_FULL_NONPUB_DRAFT_LIVE_QA_20261027.py
+          test -s enpt-v3-fullsite-qa/V3_FULL_DRAFT_LIVE_QA.json
+      - name: Evidence with no secrets or gigabyte uploads
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ENPT_V3_20261027_158571_FULLSITE_REGION_HUB_NONPUB_DRAFT_QA
+          path: |
+            edge502-cli-proof/
+            thumb-draft-qa/CANDIDATE_21964_SOURCE_PRESERVATION_QA.json
+            minimal-20261021-qa/MINIMAL_DIFF_SCOPE_REPORT.json
+            minimal-live-browser-qa/
+            minimal-css-qa/
+            four-route-qa/PATCH_SUMMARY.json
+            candidate-seo-safety-proof/
+            enpt-twofile-qa/TWOFILE_SCOPE_DIFF.json
+            enpt-twofile-qa/TWOFILE_PATCH_REPORT.json
+            enpt-twofile-browser-qa/
+            enpt-v3-fullsite-qa/
+            region-review-evidence/V2_SIGNED_DESTINATION_QA.json
+            region-review-evidence/ENPT_V2_RELINK_STATIC_QA.json
+          retention-days: 30
+          if-no-files-found: warn
