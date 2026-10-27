@@ -1,0 +1,31 @@
+name: ENPT V3 Final 57 GET-Only Retry of 36043 Full Scan Exceptions
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-final-57-http-retry.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  final-retry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_ALL_36043_FINAL_HTTP_CANONICAL_REGION_RESULTS
+          run-id: 40472038047
+          github-token: ${{ github.token }}
+          path: anomalies-final
+      - name: Scoped 57-only low concurrency GET and correct dong/canonical checks
+        run: python3 scripts/ENPT_V3_FINAL_57_HTTP_RETRY_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_36043_FINAL_57_EXCEPTION_RECHECK
+          path: v3-retry-57/
+          retention-days: 30
