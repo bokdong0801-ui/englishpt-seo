@@ -2,7 +2,7 @@ name: ENPT Final Integrated Region Hubs NONPRODUCTION Review
 on:
   push:
     branches: [review/enpt-regions-integrated-20261027]
-    paths: [.github/workflows/enpt-regions-integrated-20261027.yml]
+    paths: [.github/workflows/enpt-regions-integrated-20261027.yml, scripts/ENPT_REGION_FINAL_INTEGRATION_20261027.py]
 permissions:
   contents: read
 concurrency:
