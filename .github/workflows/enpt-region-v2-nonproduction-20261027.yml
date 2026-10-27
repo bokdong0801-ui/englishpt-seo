@@ -30,7 +30,7 @@ jobs:
         with:
           name: ENPT_ALL_6060_TIMES_6_STUDENT_SIGNED_URL_AUDIT
           run-id: 39548854136
-          github-token: \${{ github.token }}
+          github-token: ${{ github.token }}
           path: signed-student-qa
       - name: Scope gate + exact 5149 source + pinned Production source
         run: |
