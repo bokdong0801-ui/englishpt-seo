@@ -1,0 +1,49 @@
+name: ENPT V3 Draft vs Published SEO Headers 3 CORE Pages GET-only
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-headers-compare-getonly.yml]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare actual published and V3 review robots/canonical, zero Production writes
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,json,pathlib,re
+          hosts={'Production':'https://englishpt.kr','Published_snapshot':'https://6adafef5f2c6d196833683db--englishpt-seo.netlify.app','V3_Draft':'https://review-enpt-v3-fullsite-20261027--englishpt-seo.netlify.app'}
+          out=[]
+          for kind,host in hosts.items():
+            for path in ['/englishpt.html','/courses.html','/student-english.html']:
+              try:
+                req=urllib.request.Request(host+path,method='GET',headers={'User-Agent':'ENPT-Owner-SEO-Readonly-Headers'})
+                with urllib.request.urlopen(req,timeout=35) as r:
+                  s=r.read(100000).decode('utf8','replace')
+                  meta=re.findall(r'<meta\s+name=["\\x27]robots["\\x27]\s+content=["\\x27]([^"\\x27]+)',s,re.I)
+                  canonical=re.findall(r'<link\s+rel=["\\x27]canonical["\\x27]\s+href=["\\x27]([^"\\x27]+)',s,re.I)
+                  row={'host':kind,'path':path,'http':r.status,'X-Robots-Tag':r.headers.get('X-Robots-Tag'),'robots_meta':meta,'canonical':canonical,'form_present':'englishpt-consultation' in s,'V3_entry':'enpt-regions-entry-20261027' in s}
+              except Exception as e:row={'host':kind,'path':path,'error':str(e)[:250]}
+              out.append(row)
+              print('ENPT_V3_VS_PROD_SEO_HEADER',json.dumps(row,ensure_ascii=False),flush=True)
+          assert len(out)==9 and all(x.get('http')==200 for x in out)
+          assert all(x.get('canonical')==['https://englishpt.kr/'+x['path'].lstrip('/')] for x in out)
+          assert all(x.get('form_present') for x in out)
+          for i,p in enumerate(['/englishpt.html','/courses.html','/student-english.html']):
+            a=out[i];b=out[i+3];c=out[i+6]
+            assert a['robots_meta']==b['robots_meta']==c['robots_meta'],('META_POLICY_MUTATED',p)
+            assert not a['V3_entry'] and not b['V3_entry'] and c['V3_entry'],('PRODUCTION_CHANGED',p)
+          report={'status':'PASS_CORE_META_POLICY_UNCHANGED_AND_PROD_NOT_PATCHED','rows':out,'production_writes':0}
+          p=pathlib.Path('v3-headers-compare');p.mkdir(exist_ok=True)
+          (p/'V3_VS_PUBLISHED_HEADERS.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),'utf8')
+          print('ENPT_V3_HEADER_COMPARE_FINAL',report['status'],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_PROD_VS_DRAFT_SEO_HEADERS_GETONLY
+          path: v3-headers-compare/
+          retention-days: 30
