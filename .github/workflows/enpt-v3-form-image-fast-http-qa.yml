@@ -1,0 +1,67 @@
+name: ENPT V3 Immediate Form and Images HTTP-only Preflight
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-form-image-fast-http-qa.yml]
+permissions:
+  contents: read
+jobs:
+  quick-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: GET-only 21 full V3 pages, form fields, OG samples, Netlify forms registration
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,json,re,os,html.parser,collections,pathlib
+          from urllib.parse import urljoin
+          base="https://review-enpt-v3-fullsite-20261027--englishpt-seo.netlify.app"
+          pages=["englishpt.html","courses.html","student-english.html","regions/"]
+          provinces=("gangwon","gyeonggi","gyeongnam","gyeongbuk","gwangju","daegu","daejeon","busan","seoul","sejong","ulsan","incheon","jeonnam","jeonbuk","jeju","chungnam","chungbuk")
+          pages+=["regions/"+p+".html" for p in provinces]
+          report={"pages":len(pages),"http200":0,"form_schema_ok":0,"missing_fields":[],"errors":[],"og_images":[],"form_posts":0,"published_writes":0}
+          def get(url,token=None):
+            h={"User-Agent":"ENPT-OWNER-FORM-IMAGE-GETONLY"}
+            if token:h["Authorization"]="Bearer "+token
+            with urllib.request.urlopen(urllib.request.Request(url,headers=h,method="GET"),timeout=35) as r:return r.status,r.headers,r.read(220000)
+          for path in pages:
+            try:
+              status,h,b=get(base+"/"+path)
+              s=b.decode("utf8","replace")
+              assert status==200
+              assert 'id="leadForm"' in s and 'englishpt-consultation' in s
+              assert all(f'id="{field}"' in s for field in ("leadName","leadPhone","leadArea","leadConsent","leadMessage"))
+              assert 'name="form-name"' in s and 'name="bot-field"' in s
+              assert 'method="POST"' in s
+              assert 'id="applyModal"' in s
+              report["http200"]+=1;report["form_schema_ok"]+=1
+              if path in ("englishpt.html","courses.html","student-english.html"):
+                match=re.findall(r'<meta\s+property=["\\x27]og:image["\\x27]\s+content=["\\x27]([^"\\x27]+)',s,re.I)
+                if not match:report["errors"].append({"page":path,"issue":"OG_IMAGE_META_MISSING"})
+                else:
+                  img=match[0]
+                  code,header,raw=get(img)
+                  report["og_images"].append({"page":path,"http":code,"mime":header.get("Content-Type",""),"jpeg_signature":raw.startswith(bytes.fromhex("ffd8ff"))})
+                  assert code==200 and header.get("Content-Type","").startswith("image/")
+            except Exception as e:report["errors"].append({"page":path,"error":str(e)[:190]})
+          try:
+            tok=os.environ["NETLIFY_AUTH_TOKEN"]
+            c,h,raw=get("https://api.netlify.com/api/v1/sites/98d96cc5-f0b7-4d3d-8072-6476d93e55a3/forms",token=tok)
+            forms=json.loads(raw);report["registered_form_count"]=len(forms)
+            report["registered_consultation_form"]=any(x.get("name")=="englishpt-consultation" for x in forms)
+            assert report["registered_consultation_form"]
+          except Exception as e:report["errors"].append({"forms_api":str(e)[:240]})
+          report["status"]="PASS_21_FORMS_AND_OG_NO_POST" if not report["errors"] and report["form_schema_ok"]==21 else "HOLD_FORM_OR_IMAGES"
+          pathlib.Path("v3-fast-form-image-qa").mkdir(exist_ok=True)
+          pathlib.Path("v3-fast-form-image-qa/HTTP_FORM_IMAGE_CONTRACT.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),"utf8")
+          print("ENPT_V3_FAST_FORM_OG_QA",json.dumps(report,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_FAST_21_FORM_OG_IMAGE_GETONLY_RESULT
+          path: v3-fast-form-image-qa/
+          retention-days: 30
