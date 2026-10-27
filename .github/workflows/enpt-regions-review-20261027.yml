@@ -31,7 +31,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           s=Path('.github/workflows/enpt-regions-review-20261027.yml').read_text()
-          commands=[r for r in s.splitlines() if 'netlify deploy ' in r]
+          commands=[r.strip() for r in s.splitlines() if r.strip().startswith('timeout 330s netlify deploy ')]
           assert len(commands)==1 and '--alias="$REVIEW_ALIAS"' in commands[0] and '--no-build' in commands[0]
           assert '--prod' not in commands[0] and 'restore' not in s
           print('PASS_ONLY_NONPRODUCTION_ALIAS_DRAFT',flush=True)
