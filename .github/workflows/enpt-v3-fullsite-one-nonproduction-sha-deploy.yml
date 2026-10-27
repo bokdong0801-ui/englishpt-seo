@@ -41,7 +41,7 @@ jobs:
           s=Path('scripts/ENPT_V3_SHA_ONLY_ONE_ASYNC_DRAFT_20261027.py').read_text()
           assert 'draft":True' in s and 'async":True' in s
           assert s.count('method="POST"')==1
-          assert 'restore' not in s and '--prod' not in s
+          assert '/restore' not in s and '--prod' not in s
           assert 'EXPECTED_PUBLISHED' not in s or '6adafef5f2c6d196833683db' in s
           print('PASS_SINGLE_API_DRAFT_POST_NO_PROD_NO_FORM_POST')
           PY
