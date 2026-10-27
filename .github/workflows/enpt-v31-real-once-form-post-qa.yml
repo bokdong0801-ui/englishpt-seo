@@ -1,0 +1,48 @@
+name: ENPT V3.1 ONE REAL CONSULTATION POST and Email Hook PREAPPROVAL
+on:
+  push:
+    branches: [review/enpt-v3-1-byeongmokandong-fix-20261027]
+    paths: [.github/workflows/enpt-v31-real-once-form-post-qa.yml]
+permissions:
+  contents: read
+concurrency:
+  group: enpt-v31-real-form-post-exactly-once-20261027
+  cancel-in-progress: false
+jobs:
+  one_real_labeled_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Preflight guard for one synthetic test, no repeat, no production publish
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/ENPT_V31_ONE_REAL_FORM_SUBMISSION_EMAIL_HOOK_QA_20261027.py
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_V31_ONE_REAL_FORM_SUBMISSION_EMAIL_HOOK_QA_20261027.py').read_text()
+          assert 'ENPT_V31_ONE_QA_NO_CONTACT_20261027_V1' in s
+          assert '"POST_attempts":0' in s and 'HOLD_ALREADY_SUBMITTED_THIS_MARKER_NO_REPEAT' in s
+          assert '6adafef5f2c6d196833683db' in s and '6ae06963f085b33a5ee903eb' in s
+          assert 'method="DELETE"' not in s and '/restore' not in s and 'publish_deploy' not in s
+          print('PASS_ONE_QA_TEST_ONLY_NO_PRODUCTION_PUBLISH',flush=True)
+          PY
+      - name: Install Korean fonts and real Chromium
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk >/dev/null
+          python3 -m pip install -q playwright
+          python3 -m playwright install chromium
+      - name: Perform strictly one synthetic browser form submission, confirm Netlify backend and email hook
+        run: python3 scripts/ENPT_V31_ONE_REAL_FORM_SUBMISSION_EMAIL_HOOK_QA_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V31_EXACTLY_ONE_SYNTHETIC_REAL_FORM_POST_NAVER_HOOK_QA
+          path: v31-consultation-real-test/
+          retention-days: 30
