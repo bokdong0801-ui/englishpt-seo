@@ -2,7 +2,7 @@ name: ENPT V3.1 LIVE Final 7 Corrected Locality and Full SEO Mobile QA GET-only
 on:
   push:
     branches: [review/enpt-v3-1-byeongmokandong-fix-20261027]
-    paths: [.github/workflows/enpt-v31-live-final-qa.yml]
+    paths: [.github/workflows/enpt-v31-live-final-qa.yml, scripts/ENPT_V31_LIVE_FINAL_QA_20261027.py]
 permissions:
   contents: read
 jobs:
@@ -23,7 +23,9 @@ jobs:
           python3 -m pip install -q playwright
           python3 -m playwright install chromium
       - name: Inspect live exact V3.1 Draft 7 fixes, 21 main/region pages, sitemap 44, responsive and forms, GET only
-        run: python3 scripts/ENPT_V31_LIVE_FINAL_QA_20261027.py
+        run: |
+          python3 -m py_compile scripts/ENPT_V31_LIVE_FINAL_QA_20261027.py
+          python3 scripts/ENPT_V31_LIVE_FINAL_QA_20261027.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
