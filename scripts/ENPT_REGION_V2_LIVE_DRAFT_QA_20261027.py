@@ -4,7 +4,7 @@ No form POST, deploy or production modification.
 """
 import json,pathlib,urllib.request,os
 from playwright.sync_api import sync_playwright
-BASE="https://enpt-regions-v2-review-20261027--englishpt-seo.netlify.app"
+BASE=os.environ.get("ENPT_V2_PREVIEW_BASE","https://enpt-regions-v2-review-20261027--englishpt-seo.netlify.app")
 OUT=pathlib.Path("v2-live-browser-qa");OUT.mkdir(exist_ok=True)
 report={"preview":BASE+"/regions.html","status":"HOLD","desktop_mobile":[],"form_submissions":0,"production_changes":0}
 with sync_playwright() as p:
@@ -27,8 +27,15 @@ with sync_playwright() as p:
     page.locator("#rgSearch").fill("사직동")
     a=page.locator('.rg-town[data-locality="seoul-jongno-sajikdong"]')
     assert a.count()==1 and a.is_visible(),("MISSING_SAJIKDONG",width)
-    if not a.get_attribute("open"):a.locator("summary").click()
+    if not a.evaluate('(e)=>e.open'):a.locator("summary").click()
     assert a.locator("a").count()==7,("WRONG_COURSE_COUNT",width)
+    assert a.locator('a[href$="-elem-tutor.html"]').is_visible(),("COURSE_LINK_NOT_VISIBLE",width)
+    assert '−' in a.locator('summary').evaluate('(e)=>getComputedStyle(e,"::after").content'),("OPEN_ICON",width)
+    a.locator("summary").click()
+    assert not a.locator('a[href$="-elem-tutor.html"]').is_visible(),("COLLAPSE_FAILED",width)
+    assert '+' in a.locator('summary').evaluate('(e)=>getComputedStyle(e,"::after").content'),("CLOSED_ICON",width)
+    a.locator("summary").click()
+    assert a.locator('a[href$="-elem-tutor.html"]').is_visible(),("REOPEN_FAILED",width)
     assert a.locator('a[href$="-elem-tutor.html"]').count()==1
     page.screenshot(path=str(OUT/f"V2_LIVE_SEOUL_SELECT_{width}.png"),full_page=False)
     link=a.locator('a[href$="-elem-tutor.html"]').get_attribute("href")
