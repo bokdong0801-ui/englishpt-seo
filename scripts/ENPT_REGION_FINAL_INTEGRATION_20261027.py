@@ -117,7 +117,7 @@ def main():
     assert SITE.joinpath("robots.txt").read_text("utf8").strip().endswith("Disallow: /")
     assert "X-Robots-Tag: noindex, nofollow" in SITE.joinpath("_headers").read_text("utf8")
     summary["html_page_total"]=len(list(SITE.rglob("*.html")))
-    assert summary["html_page_total"]==21,summary
+    assert summary["html_page_total"]==22,summary  # 18 region + 3 protected core + privacy/index.html
     summary["netlify_forms_submitted"]=0
     EVIDENCE.mkdir(exist_ok=True)
     (EVIDENCE/"INTEGRATION_SOURCE_QA.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),"utf8")
