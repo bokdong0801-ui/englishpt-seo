@@ -1,0 +1,33 @@
+name: ENPT V2 Published Preview Chrome QA GET-only
+on:
+  push:
+    branches: [review/enpt-region-hubs-v2-20261027]
+    paths: [.github/workflows/enpt-v2-live-draft-browser-qa.yml]
+permissions:
+  contents: read
+jobs:
+  preview-browser-read-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Chromium and Korean fonts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk >/dev/null
+          python3 -m pip install -q playwright
+          python3 -m playwright install chromium
+      - name: Test actual unpublished Netlify V2 Draft 390px + 1440px, no form POST
+        run: python3 scripts/ENPT_REGION_V2_LIVE_DRAFT_QA_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_REGION_V2_LIVE_DRAFT_BROWSER_PROOFS
+          path: v2-live-browser-qa/
+          retention-days: 30
