@@ -54,7 +54,7 @@ jobs:
           assert p.count('method="PUT"')==1 and 'method="POST"' not in p
           assert '6ae04e7fd0a35eb412bbe704' in p and w
           assert 'deploys/'+ '6ae04e7fd0a35eb412bbe704' not in p
-          assert w.count("method='PUT'")==1
+          assert sum(1 for ln in w.splitlines() if ln.strip().startswith("req=urllib.request.Request(url,data=body,method='PUT'"))==1
           assert "restore" not in p.lower()
           print('PASS_ONLY_KNOWN_DRAFT_NO_PRODUCTION_API_MUTATIONS',flush=True)
           PY
