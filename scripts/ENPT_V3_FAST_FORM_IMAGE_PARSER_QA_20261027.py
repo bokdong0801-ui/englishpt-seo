@@ -19,7 +19,7 @@ def get(url,token=None):
  h={"User-Agent":"ENPT-Owner-Fast-DOM-ReadOnly"}
  if token:h["Authorization"]="Bearer "+token
  req=urllib.request.Request(url,method="GET",headers=h)
- with urllib.request.urlopen(req,timeout=35) as r:return r.status,r.headers,r.read(350000)
+ with urllib.request.urlopen(req,timeout=35) as r:return r.status,r.headers,r.read(4000000)
 for path in paths:
  try:
   stat,headers,data=get(host+"/"+path);assert stat==200,("BAD_HTTP",stat)
