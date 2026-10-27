@@ -62,7 +62,7 @@ jobs:
               assert page.locator(".rg-card").count()==17
               assert page.locator("body").evaluate("(el)=>el.scrollWidth<=window.innerWidth+2")
               page.screenshot(path=str(out/f"REGION_NATIONAL_{width}.png"),full_page=True)
-              page.locator("[data-open-form]").first.click()
+              page.locator("[data-open-form]:visible").first.click()
               assert page.locator("#applyModal").get_attribute("aria-hidden")=="false"
               assert page.locator("#leadPhone").is_visible()
               page.locator("[data-close-form]").last.click()
