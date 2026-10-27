@@ -1,0 +1,87 @@
+name: ENPT V3 36043 Live Course Links Seven Shard GET-only QA
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-full-36043-live-qa.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-v3-36043-full-link-audit-20261027
+  cancel-in-progress: false
+jobs:
+  audit-each-course-5149:
+    runs-on: ubuntu-latest
+    timeout-minutes: 48
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        course: [elem-tutor, elem-conv, mid-tutor, mid-conv, high-tutor, high-conv, worker-english-conv-academy]
+    env:
+      ENPT_COURSE: ${{ matrix.course }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_5149_REGION_V2_FINAL_POLISHED_DRAFT_QA_20261027
+          run-id: 40454837096
+          github-token: ${{ github.token }}
+          path: v2-evidence
+      - name: GET-only 5149 V3 Draft course destinations, response canonical + locality
+        run: python3 scripts/ENPT_V3_FULL_36043_GETONLY_LINK_AUDIT_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_36043_${{ matrix.course }}_FULL_GET_QA
+          path: v3-36043-http-results/${{ matrix.course }}/
+          retention-days: 30
+  merge-final-summary:
+    runs-on: ubuntu-latest
+    needs: audit-each-course-5149
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ENPT_V3_36043_*_FULL_GET_QA
+          path: v3-36043-shards/
+      - name: Consolidate 7 shards, exact URL coverage, HTTP and regional report
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import csv,json,collections,datetime
+          root=Path("v3-36043-shards")
+          paths=sorted(root.glob("*/SUMMARY.json"))
+          report={"status":"HOLD_NOT_ALL_SHARDS","course_jobs_found":len(paths),"total_expected":36043,"total_checked":0,"http_200":0,"http_404":0,"missing_response":0,"canonical_region_pass":0,"issues":[],"production_changes":0,"form_posts":0,"utc":datetime.datetime.now(datetime.timezone.utc).isoformat()}
+          rows=[]
+          for path in paths:
+            pp=path.parent/"RESULTS_5149.csv"
+            if pp.exists():rows+=list(csv.DictReader(pp.open(encoding="utf-8-sig")))
+          report["total_checked"]=len(rows)
+          if len(paths)==7 and len(rows)==36043 and len({r["preview_url"] for r in rows})==36043:
+            report["http_200"]=sum(r["http"]=="200" for r in rows)
+            report["http_404"]=sum(r["http"]=="404" for r in rows)
+            report["missing_response"]=sum(not r["http"] for r in rows)
+            report["canonical_region_pass"]=sum(r["class"]=="PASS" for r in rows)
+            report["class_counts"]=dict(sorted(collections.Counter(r["class"] for r in rows).items()))
+            report["status"]="PASS_ALL_36043_V3_LIVE_HTTP_CANONICAL_REGION" if report["canonical_region_pass"]==36043 else "HOLD_ISSUES_REMAIN"
+            report["issues"]=[{k:v for k,v in r.items() if k in ("course","preview_url","http","class","canonical","error")} for r in rows if r["class"]!="PASS"][:90]
+          out=Path("v3-36043-final");out.mkdir(exist_ok=True)
+          (out/"FINAL_FULL_36043_RESULTS.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),"utf8")
+          if rows:
+            with (out/"FULL_36043_LINK_HTTP_QA.csv").open("w",newline="",encoding="utf-8-sig") as f:
+              w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
+            with (out/"NON_PASS_LINKS.csv").open("w",newline="",encoding="utf-8-sig") as f:
+              w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows([r for r in rows if r["class"]!="PASS"])
+          print("ENPT_V3_36043_FINAL_RESULT",json.dumps({k:v for k,v in report.items() if k not in ("issues",)},ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_ALL_36043_FINAL_HTTP_CANONICAL_REGION_RESULTS
+          path: v3-36043-final/
+          retention-days: 30
