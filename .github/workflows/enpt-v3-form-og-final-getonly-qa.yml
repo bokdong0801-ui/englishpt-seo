@@ -1,0 +1,32 @@
+name: ENPT V3 Final Form No-Submit and OG Real Image QA
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-form-og-final-getonly-qa.yml]
+permissions:
+  contents: read
+jobs:
+  read-only-form-og:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Korean fonts and real browser
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk >/dev/null
+          python3 -m pip install -q playwright
+          python3 -m playwright install chromium
+      - name: Verify 21 form schemas at 390 and 1440 and nine real OG images, GET-only
+        run: python3 scripts/ENPT_V3_NOPOST_FORMS_AND_OG_AUDIT_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_FORMS_NO_POST_OG_IMAGES_FINAL_EVIDENCE
+          path: v3-forms-assets-qa/
+          retention-days: 30
