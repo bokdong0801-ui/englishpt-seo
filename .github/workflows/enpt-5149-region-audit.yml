@@ -1,0 +1,28 @@
+name: ENPT 5149 GET-only Region Link Audit
+on:
+  push:
+    branches: [review/enpt-regions-integrated-20261027]
+    paths: [.github/workflows/enpt-5149-region-audit.yml]
+permissions:
+  contents: read
+jobs:
+  read-only-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build standalone region links from frozen data
+        run: python3 scripts/ENPT_REGION_DRAFT_BUILD_20261027.py
+      - name: Audit all 5149 live destinations with GET, output CSV
+        run: python3 scripts/ENPT_5149_ALL_LINKS_READONLY_AUDIT_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_5149_ALL_HTTP_SEO_RESULTS_20261027
+          path: region-link-audit-20261027/
+          retention-days: 30
