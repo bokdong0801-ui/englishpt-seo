@@ -1,0 +1,30 @@
+name: ENPT Final Region Preview 21-page Browser GET-only QA
+on:
+  push:
+    branches: [review/enpt-regions-integrated-20261027]
+    paths: [.github/workflows/enpt-final-region-21-browser-qa.yml]
+permissions:
+  contents: read
+jobs:
+  preview-only-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Hangul fonts and Chromium
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk >/dev/null
+          python3 -m pip install -q playwright
+          python3 -m playwright install chromium
+      - name: Audit final nonpublished Preview 21 pages at 390, 768, 1440px
+        run: python3 scripts/ENPT_REGION_FINAL_DRAFT_LIVE_CHROME_QA_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_FINAL_REGION_LIVE_MOBILE_PC_QA_20261027
+          path: region-browser-qa-20261027/
+          retention-days: 30
