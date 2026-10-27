@@ -1,0 +1,60 @@
+name: ENPT V3 Netlify Published Files Read-only Recovery Probe
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-netlify-recovery-getonly.yml]
+permissions:
+  contents: read
+jobs:
+  get-only-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      NETLIFY_AUTH_${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}: TOKEN
+      SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      PUBLISHED: 6adafef5f2c6d196833683db
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe read-only list and archive metadata (no binary download, no mutation)
+        run: |
+          set -euo pipefail
+          mkdir -p v3-recovery-probe
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.error,time,pathlib
+          tok=os.environ["NETLIFY_AUTH_TOKEN"];sid=os.environ["SITE_ID"];published=os.environ["PUBLISHED"]
+          root="https://api.netlify.com/api/v1/"
+          checks=[
+           ("site","sites/"+sid),
+           ("published","sites/"+sid+"/deploys/"+published),
+           ("files-1","sites/"+sid+"/files?per_page=1&page=1"),
+           ("files-100","sites/"+sid+"/files?per_page=100&page=1"),
+           ("files-1000","sites/"+sid+"/files?per_page=1000&page=1"),
+           ("deploy-files","sites/"+sid+"/deploys/"+published+"/files?per_page=1"),
+           ("deploy-download","deploys/"+published+"/download"),
+           ("deploy-zip","deploys/"+published+"/zip"),
+           ("site-deploy-download","sites/"+sid+"/deploys/"+published+"/download")
+          ]
+          results=[]
+          for label,path in checks:
+            req=urllib.request.Request(root+path,method="GET",headers={"Authorization":"Bearer "+tok,"Accept":"application/json","Range":"bytes=0-0"})
+            try:
+              with urllib.request.urlopen(req,timeout=35) as res:
+                content=res.read(260000)
+                typ=res.headers.get("content-type","")
+                data=None
+                if "json" in typ:
+                  try:data=json.loads(content)
+                  except:pass
+                record={"path":label,"status":res.status,"mime":typ,"url":res.geturl().split("?")[0],"content_length":res.headers.get("content-length",""),"link_header":res.headers.get("link","")[:300],"array_length":len(data) if isinstance(data,list) else None,"keys":list(data)[:24] if isinstance(data,dict) else [],"first_file":{k:v for k,v in data[0].items() if k in ("path","sha","size")} if isinstance(data,list) and data else None,"body_bytes_sampled":len(content)}
+            except urllib.error.HTTPError as e:record={"path":label,"status":e.code,"error":e.read(150).decode("utf8","replace")}
+            except Exception as e:record={"path":label,"status":None,"error":type(e).__name__+":"+str(e)[:170]}
+            results.append(record);print("V3_NETLIFY_READONLY_RECOVERY",json.dumps(record,ensure_ascii=False),flush=True)
+          assert results[0]["status"]==200 and results[1]["status"]==200
+          pathlib.Path("v3-recovery-probe/GETONLY_PUBLISHED_RECOVERY_POSSIBILITIES.json").write_text(json.dumps(results,ensure_ascii=False,indent=2),"utf8")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_NETLIFY_RECOVERY_PROBE_GETONLY
+          path: v3-recovery-probe/
+          retention-days: 30
