@@ -1,0 +1,74 @@
+name: ENPT V3 Full Published Manifest and Edge and HTML Route Inspection (read only)
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-manifest-edge-inspection.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  source_inspection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      BASE_DEPLOY: 6adafef5f2c6d196833683db
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_READONLY_FULL_PUBLISHED_SHA_FILE_MANIFEST
+          run-id: 40459650646
+          github-token: ${{ github.token }}
+          path: published-manifest
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - name: Compare published entries and sharded source, Edge and new paths
+        run: |
+          python3 - <<'PY'
+          import gzip,hashlib,json,os,re,urllib.request,urllib.error,pathlib
+          output=pathlib.Path('v3-edge-inspection');output.mkdir(exist_ok=True)
+          manifest=json.load(gzip.open('published-manifest/PUBLISHED_202768_STATIC_SHA1_MANIFEST.json.gz','rt',encoding='utf8'))
+          signed=json.load(gzip.open('signed-qa-map/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz','rt',encoding='utf8'))
+          assert len(manifest)==202768
+          rows=signed['original_public_html_to_data_payload']
+          roots=['englishpt.html','courses.html','student-english.html']
+          result={'manifest_count':len(manifest),'raw_entries':{},'routes':{},'edge':{},'production_unchanged':None}
+          for route in roots:
+            ref=rows[route]
+            names=['/'+route,'/'+ref['to']]
+            result['routes'][route]={'signed':ref,'netlify_files':[{ 'path':n,'exists':n in manifest,'sha1':manifest.get(n)} for n in names]}
+          for path in ['/_headers','/robots.txt','/netlify.toml','/sitemap-index.xml','/stations.html','/favicon.ico','/.netlify/internal/edge-functions/manifest.json']:
+            result['raw_entries'][path]=manifest.get(path)
+          token=os.environ['NETLIFY_AUTH_TOKEN'];s=os.environ['SITE_ID'];pub=os.environ['BASE_DEPLOY']
+          def api(path):
+            req=urllib.request.Request('https://api.netlify.com/api/v1/'+path,method='GET',headers={'Authorization':'Bearer '+token})
+            with urllib.request.urlopen(req,timeout=35) as r:return json.load(r)
+          site=api('sites/'+s)
+          assert (site.get('published_deploy') or {}).get('id')==pub,'PRODUCTION_ID_CHANGE_HOLD'
+          deploy=api('sites/'+s+'/deploys/'+pub)
+          result['edge']={k:v for k,v in deploy.items() if 'edge' in k or 'function' in k or k in ('id','state','draft','published_at','context','title')}
+          result['production_unchanged']=pub
+          base='https://'+pub+'--englishpt-seo.netlify.app'
+          for name in roots:
+            for path in ('/'+name,'/'+rows[name]['to']):
+              req=urllib.request.Request(base+path,method='GET',headers={'User-Agent':'ENPT-V3-Owner-Readonly'})
+              try:
+                with urllib.request.urlopen(req,timeout=35) as r:
+                  body=r.read(200000)
+                  result.setdefault('sample_source',[]).append({'route':name,'path':path,'http':r.status,'body_sha1':hashlib.sha1(body).hexdigest(),'body_bytes':len(body),'has_modal':b'id="applyModal"' in body,'has_form':b'englishpt-consultation' in body,'has_title':b'<title>' in body})
+              except Exception as e:result.setdefault('sample_source',[]).append({'path':path,'error':str(e)[:220]})
+          output.joinpath('V3_PUBLISHED_SOURCE_INSPECTION.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),'utf8')
+          print('ENPT_V3_INSPECT',json.dumps(result,ensure_ascii=False)[:12000],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_PUBLISHED_MANIFEST_EDGE_HTML_READONLY_INSPECT
+          path: v3-edge-inspection/
+          retention-days: 30
