@@ -4,7 +4,7 @@ Verify Netlify exact IDs, all 44 live sitemap shards and 21,964 URLs, SEO and me
 7 fixes, 21 region/core entry routes, forms/hooks config; issue HOLD for external inbox.
 """
 from __future__ import annotations
-import collections,datetime,json,os,pathlib,re,urllib.request,urllib.error,xml.etree.ElementTree as ET
+import collections,datetime,json,os,pathlib,re,time,urllib.request,urllib.error,xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 OUT=pathlib.Path("v31-preapproval-gate");OUT.mkdir(exist_ok=True)
 SITE="98d96cc5-f0b7-4d3d-8072-6476d93e55a3"
@@ -27,7 +27,13 @@ def api(path):
  with urllib.request.urlopen(req,timeout=40) as r:return json.load(r)
 def get(url,limit=16000000):
  req=urllib.request.Request(url,method="GET",headers={"User-Agent":"ENPT-V31-SAFE-FINAL-READONLY"})
- with urllib.request.urlopen(req,timeout=42) as r:return r.status,r.headers,r.read(limit)
+ for n in range(3):
+  try:
+   with urllib.request.urlopen(req,timeout=48) as r:return r.status,r.headers,r.read(limit)
+  except urllib.error.HTTPError as e:
+   if e.code not in (500,502,503,504) or n==2:raise
+   print("ENPT_V31_TRANSIENT_GET_RETRY",url,e.code,"attempt",n+1,flush=True)
+   time.sleep(1.0*(n+1))
 rep={"checked_utc":datetime.datetime.now(datetime.timezone.utc).isoformat(),"phase":"FINAL_PREAPPROVAL_GETONLY","draft_id":DRAFT,"production_id_expected":PUB,"files_expected":202786,"production_deploys":0,"form_posts":0,"errors":[],"http_pages":[],"xml_sitemaps":[],"og_assets":[]}
 site=api("sites/"+SITE)
 draft=api("sites/"+SITE+"/deploys/"+DRAFT)
@@ -48,7 +54,7 @@ routes+=["gyeonggi-anyang-manan-byeongmokandong-"+p+".html" for p in ("elem-tuto
 assert len(routes)==28
 for p in routes:
  try:
-  status,h,b=get(BASE+"/"+p,250000)
+  status,h,b=get(BASE+"/"+p,12000000)
   assert status==200,(p,status)
   s=b.decode("utf8","replace")
   meta=Meta();meta.feed(s)
@@ -71,14 +77,17 @@ for p in routes:
  except Exception as ex:rep["errors"].append({"page":p,"reason":str(ex)[:300]})
 try:
  status,h,rob=get(BASE+"/robots.txt")
+ print("ENPT_V31_PROTECTIVE_ROBOTS_200",status,flush=True)
  assert status==200 and b"Disallow: /" not in rob,("PRODUCTION_ROBOTS_LEAK")
  status,h,index=get(BASE+"/sitemap-index.xml")
+ print("ENPT_V31_SITEMAP_INDEX_RESPONSE",status,flush=True)
  assert status==200
  locs=[x.text for x in ET.fromstring(index).iter() if x.tag.endswith("loc")]
  assert len(locs)==44
  total=0
  for u in locs:
   assert u.startswith("https://englishpt.kr/")
+  print("ENPT_V31_SITEMAP_CHILD_ATTEMPT",u,flush=True)
   status,h,data=get(BASE+u[len("https://englishpt.kr"):])
   assert status==200
   n=sum(el.tag.endswith("loc") for el in ET.fromstring(data).iter())
