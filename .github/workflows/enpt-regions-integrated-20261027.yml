@@ -1,0 +1,181 @@
+name: ENPT Final Integrated Region Hubs NONPRODUCTION Review
+on:
+  push:
+    branches: [review/enpt-regions-integrated-20261027]
+    paths: [.github/workflows/enpt-regions-integrated-20261027.yml]
+permissions:
+  contents: read
+concurrency:
+  group: enpt-regions-integration-20261027-once
+  cancel-in-progress: false
+jobs:
+  integrated-review-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      EXPECTED_PUBLISHED: 6adafef5f2c6d196833683db
+      ALIAS: enpt-regions-final-review-20261027
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Scope guard - immutable Production, single alias Draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          w=Path('.github/workflows/enpt-regions-integrated-20261027.yml').read_text()
+          commands=[x.strip() for x in w.splitlines() if x.strip().startswith('timeout 350s netlify deploy ')]
+          assert len(commands)==1
+          assert '--alias="$ALIAS"' in commands[0] and '--no-build' in commands[0]
+          assert '--prod' not in commands[0]
+          assert 'scripts/ENPT_REGION_DRAFT_BUILD_20261027.py' in w
+          assert 'scripts/ENPT_REGION_FINAL_INTEGRATION_20261027.py' in w
+          print('PASS_SCOPED_NONPROD_ONLY',flush=True)
+          PY
+      - name: Build 17 region hubs and integrate immutable Production core HTML
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_REGION_DRAFT_BUILD_20261027.py
+          python3 scripts/ENPT_REGION_FINAL_INTEGRATION_20261027.py
+          test "$(find region-review-site/regions -maxdepth 1 -name '*.html' | wc -l)" -eq 17
+          test "$(find region-review-site -maxdepth 1 -name '*.html' | wc -l)" -eq 4
+          grep -q 'Disallow: /' region-review-site/robots.txt
+          grep -q 'X-Robots-Tag: noindex, nofollow' region-review-site/_headers
+      - name: Browser and Korean font environment
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-cjk >/dev/null
+          fc-list :lang=ko family | head -6
+          python3 -m pip install --quiet playwright
+          python3 -m playwright install chromium
+      - name: Actual Chromium 390 / 768 / 1440 QA including all three entry pages
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 --directory region-review-site >/tmp/enpt-regions-integrated.log 2>&1 &
+          PID=$!
+          trap 'kill $PID || true' EXIT
+          python3 - <<'PY'
+          import json, pathlib
+          from playwright.sync_api import sync_playwright
+          out=pathlib.Path("region-review-evidence")
+          host="http://127.0.0.1:8765"
+          results=[]
+          files=["regions.html","regions/seoul.html","regions/gyeonggi.html","englishpt.html","courses.html","student-english.html"]
+          with sync_playwright() as p:
+            browser=p.chromium.launch(headless=True,args=["--no-sandbox"])
+            for width,height in [(390,844),(768,1024),(1440,900)]:
+              page=browser.new_page(viewport={"width":width,"height":height},device_scale_factor=1)
+              errors=[]
+              page.on("pageerror",lambda e:errors.append(str(e)[:180]))
+              for f in files:
+                resp=page.goto(host+"/"+f,wait_until="domcontentloaded",timeout=50000)
+                assert resp is not None and resp.status==200,(f,resp.status if resp else None)
+                assert page.locator('body').evaluate('(e)=>e.scrollWidth <= innerWidth + 2'),("horizontal_overflow",width,f)
+                assert page.locator('#applyModal').count()==1,("MISSING_FORM_MODAL",f)
+                assert page.locator('#leadName').count()==1 and page.locator('#leadPhone').count()==1,("MISSING_FORM_FIELDS",f)
+                assert page.locator('a[href="/regions.html"]').count()>=1,("MISSING_HUB_LINK",f)
+                assert 'Noto' in page.evaluate("document.fonts.check('16px Noto Sans CJK KR') ? 'Noto' : 'missing'"),"HOLD_NO_HANGUL_FONT"
+                if f in ("regions.html","regions/seoul.html","englishpt.html","courses.html","student-english.html"):
+                  page.screenshot(path=str(out/(f.replace("/","_").replace(".html","")+"_"+str(width)+".png")),full_page=True)
+                if f=="regions.html":
+                  assert page.locator(".rg-card").count()==17
+                if f=="regions/seoul.html":
+                  assert page.locator(".rg-district").count()>0
+                  page.locator("#rgSearch").fill("사직동")
+                  assert page.locator(".rg-town-links a:visible").count()>=1
+                  page.locator("#rgSearch").fill("없는지역999")
+                  assert page.locator("#rgEmpty").is_visible()
+                if f in ("englishpt.html","courses.html","student-english.html"):
+                  assert page.locator('#enpt-regions-entry-20261027').count()==1
+                  assert page.locator('#enpt-regions-entry-20261027 a[href="/regions.html"]').is_visible()
+                  page.locator('#enpt-regions-entry-20261027 button[data-open-form]').click()
+                  assert page.locator('#applyModal').get_attribute('aria-hidden')=="false"
+                  assert page.locator('#leadArea').count()==1
+                  page.locator('[data-close-form]').last.click()
+                  assert page.locator('#applyModal').get_attribute('aria-hidden')=="true"
+              results.append({"width":width,"pages":len(files),"browser":"PASS","form_modal":"PASS","korean_font":"PASS","horizontal_overflow":False,"submitted_forms":0,"uncaught_errors":errors[:6]})
+              assert not errors,("JS_EXCEPTION",width,errors[:4])
+              page.close()
+            browser.close()
+          report={"status":"PASS_LOCAL_390_768_1440_ALL_SIX_PAGES","results":results,"preview_screenshots":15,"production_writes":0,"form_submissions":0}
+          (out/"INTEGRATED_BROWSER_QA.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf8")
+          print("ENPT_FINAL_INTEGRATED_BROWSER_QA",json.dumps(report,ensure_ascii=False),flush=True)
+          PY
+      - name: READ-ONLY Netlify Production identity and predeploy budget gate
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import urllib.request,json,os
+          token=os.environ.get("NETLIFY_AUTH_TOKEN","")
+          assert len(token)>20,"HOLD_NETLIFY_TOKEN"
+          def api(path):
+            r=urllib.request.Request("https://api.netlify.com/api/v1/"+path,method="GET",headers={"Authorization":"Bearer "+token})
+            with urllib.request.urlopen(r,timeout=38) as resp:return json.load(resp)
+          site=api("sites/"+os.environ["NETLIFY_SITE_ID"])
+          assert site.get("custom_domain")=="englishpt.kr","HOLD_DOMAIN"
+          assert (site.get("published_deploy") or {}).get("id")==os.environ["EXPECTED_PUBLISHED"],"HOLD_PUBLISHED_DRIFT"
+          recent=api("sites/"+os.environ["NETLIFY_SITE_ID"]+"/deploys?per_page=100")
+          assert not any(os.environ["ALIAS"] in str(d.get("deploy_ssl_url") or "") for d in recent),"HOLD_ALREADY_DEPLOYED"
+          account=api("accounts/"+site["account_id"])
+          assert not account.get("usages_exceeded") and not account.get("configurable_limits_exceeded"),"HOLD_CREDITS"
+          print("PASS_EXACT_PRODUCTION_ID_BEFORE_DRAFT",flush=True)
+          PY
+      - name: Create ONE nonpublished Netlify alias Draft - NEVER production
+        run: |
+          set -euo pipefail
+          npm install -g netlify-cli@27.13.0 --no-fund --no-audit >/dev/null
+          timeout 350s netlify deploy --site="$NETLIFY_SITE_ID" --dir=region-review-site --no-build --alias="$ALIAS" --timeout=280 --message="ENPT-REGIONS-20261027-INTEGRATED-REVIEW-ONLY" 2>&1 | tee region-review-evidence/NETLIFY_FINAL_REVIEW_DEPLOY.txt
+      - name: Real Preview HTTP SEO block, core and contact form GET QA
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request
+          from pathlib import Path
+          base="https://"+os.environ["ALIAS"]+"--englishpt-seo.netlify.app"
+          checked=[]
+          for name in ["regions.html","regions/seoul.html","regions/gyeonggi.html","englishpt.html","courses.html","student-english.html"]:
+            req=urllib.request.Request(base+"/"+name,method="GET")
+            with urllib.request.urlopen(req,timeout=50) as resp:
+              assert resp.status==200,(name,resp.status)
+              assert "noindex" in resp.headers.get("X-Robots-Tag","").lower(),("LEAK_INDEXABLE_PREVIEW",name)
+              content=resp.read().decode("utf8")
+              assert 'name="englishpt-consultation"' in content
+              assert 'href="/regions.html"' in content
+              checked.append(name)
+          with urllib.request.urlopen(base+"/robots.txt",timeout=40) as resp:
+            assert "Disallow: /" in resp.read().decode("utf8")
+          token=os.environ["NETLIFY_AUTH_TOKEN"]
+          r=urllib.request.Request("https://api.netlify.com/api/v1/sites/"+os.environ["NETLIFY_SITE_ID"],headers={"Authorization":"Bearer "+token},method="GET")
+          with urllib.request.urlopen(r,timeout=35) as resp:site=json.load(resp)
+          assert (site.get("published_deploy") or {}).get("id")==os.environ["EXPECTED_PUBLISHED"]
+          report={"status":"PASS_NONPUBLISHED_LIVE_DRAFT","url":base+"/regions.html","pages_http_200":checked,"preview_nofollow_noindex":True,"production_unchanged":os.environ["EXPECTED_PUBLISHED"],"real_form_submissions":0}
+          Path("region-review-evidence/INTEGRATED_LIVE_PREVIEW_QA.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf8")
+          print("ENPT_FINAL_REGION_DRAFT_LIVE_QA",json.dumps(report,ensure_ascii=False),flush=True)
+          PY
+      - name: GET-only final Published ID check, even if failed
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os,urllib.request,json
+          t=os.environ.get("NETLIFY_AUTH_TOKEN","")
+          assert t,"HOLD_MISSING_NETLIFY_TOKEN"
+          req=urllib.request.Request("https://api.netlify.com/api/v1/sites/"+os.environ["NETLIFY_SITE_ID"],method="GET",headers={"Authorization":"Bearer "+t})
+          with urllib.request.urlopen(req,timeout=40) as r:s=json.load(r)
+          actual=(s.get("published_deploy") or {}).get("id")
+          print("FINAL_PRODUCTION_DEPLOY_ID",actual,flush=True)
+          assert actual==os.environ["EXPECTED_PUBLISHED"],"PRODUCTION_WAS_CHANGED"
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_20261027_INTEGRATED_REGION_FINAL_DRAFT_QA
+          path: region-review-evidence/
+          retention-days: 30
