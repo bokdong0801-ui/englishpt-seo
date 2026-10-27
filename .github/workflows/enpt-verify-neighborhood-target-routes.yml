@@ -1,0 +1,47 @@
+name: ENPT Verify locality hub 404 versus valid course URLs GET-only
+on:
+  push:
+    branches: [review/enpt-regions-integrated-20261027]
+    paths: [.github/workflows/enpt-verify-neighborhood-target-routes.yml]
+permissions:
+  contents: read
+jobs:
+  read-only-compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare hub vs real courses without Range GET-only
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,json,os,re
+          urls=[
+          "https://englishpt.kr/englishpt.html",
+          "https://englishpt.kr/seoul-jongno-sajikdong.html",
+          "https://englishpt.kr/seoul-jongno-sajikdong-worker-english-conv-academy.html",
+          "https://englishpt.kr/seoul-jongno-sajikdong-elem-tutor.html",
+          "https://englishpt.kr/seoul-jongno-sajikdong-high-tutor.html",
+          "https://englishpt.kr/daegu-dalseo-songhyeondong.html",
+          "https://englishpt.kr/daegu-dalseo-songhyeondong-worker-english-conv-academy.html",
+          "https://englishpt.kr/chungbuk-cheongju-heungdeok-bokdaedong.html",
+          "https://englishpt.kr/chungbuk-cheongju-heungdeok-bokdaedong-elem-tutor.html",
+          "https://6adafef5f2c6d196833683db--englishpt-seo.netlify.app/seoul-jongno-sajikdong.html"
+          ]
+          rows=[]
+          for url in urls:
+            try:
+              req=urllib.request.Request(url,method="GET",headers={"User-Agent":"Mozilla/5.0 (compatible; ENPT-Owned-QA)"})
+              with urllib.request.urlopen(req,timeout=20) as r:
+                body=r.read(35000).decode("utf8","replace")
+                result={"url":url,"http":r.status,"final_url":r.geturl(),"canonical":(re.findall(r'<link rel="canonical" href="([^"]+)"',body) or [""])[0],"title":(re.findall(r'<title>([^<]*)</title>',body) or [""])[0]}
+            except urllib.error.HTTPError as e:result={"url":url,"http":e.code,"error":"HTTPError"}
+            except Exception as e:result={"url":url,"http":None,"error":type(e).__name__+":"+str(e)[:130]}
+            rows.append(result);print("ENPT_ROUTE_COMPARE",json.dumps(result,ensure_ascii=False),flush=True)
+          os.makedirs("enpt-route-compare",exist_ok=True)
+          open("enpt-route-compare/route-compare.json","w",encoding="utf8").write(json.dumps(rows,ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_404_CAUSE_HUB_VS_COURSE_URLS_20261027
+          path: enpt-route-compare/
