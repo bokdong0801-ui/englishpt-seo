@@ -27,7 +27,7 @@ assert d.get("state")=="ready" and d.get("published_at") is None and d.get("draf
 assert d.get("title")=="ENPT-V3-1-20261027-BYEONGMOKANDONG-7-CORRECTED-NONPUB"
 assert not d.get("required") and not d.get("required_edge_functions")
 BASE=d.get("deploy_ssl_url") or d.get("deploy_url")
-assert BASE and DRAFT in BASE and BASE.startswith("https://"),("UNEXPECTED_DRAFT_URL",BASE)
+assert BASE=="https://review-enpt-v3-1-20261027--englishpt-seo.netlify.app",("UNEXPECTED_DRAFT_URL",BASE)
 BASE=BASE.rstrip("/")
 report={"draft_id":DRAFT,"preview":BASE,"published_id":PUBLISHED,"status":"HOLD","routes":[],"errors":[],"browser":[],"sitemaps":[],"form_posts":0,"production_changes":0}
 for path in CORE+TOWNS+["regions/","regions/seoul.html","regions/gyeonggi.html","favicon.ico","robots.txt"]:
