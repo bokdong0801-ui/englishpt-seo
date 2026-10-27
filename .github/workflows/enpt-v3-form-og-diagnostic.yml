@@ -1,0 +1,52 @@
+name: ENPT V3 Form HTML Normalization and OG 404 Diagnostic GET-only
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-form-og-diagnostic.yml]
+permissions:
+  contents: read
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect exact Form markup and OG URLs across Draft vs Production
+        run: |
+          python3 - <<'PY'
+          import urllib.request,urllib.error,re,json,html,os,pathlib
+          hosts={"draft":"https://review-enpt-v3-fullsite-20261027--englishpt-seo.netlify.app",
+            "prod":"https://englishpt.kr"}
+          paths=["/englishpt.html","/courses.html","/student-english.html","/regions/","/regions/seoul.html"]
+          rows=[]
+          for kind,root in hosts.items():
+            for p in paths:
+              row={"host":kind,"path":p}
+              try:
+                req=urllib.request.Request(root+p,headers={"User-Agent":"ENPT-Owner-GetOnly-Diagnostic"})
+                with urllib.request.urlopen(req,timeout=30) as r:
+                  source=r.read(250000).decode("utf8","replace")
+                  row["http"]=r.status;row["mime"]=r.headers.get("content-type")
+                row["form_opening"]=re.search(r'<form[^>]*id=["\\x27]leadForm["\\x27][^>]*>',source,re.I).group(0)[:350] if re.search(r'<form[^>]*id=["\\x27]leadForm["\\x27][^>]*>',source,re.I) else "NONE"
+                row["form_found"]=bool(row["form_opening"]!="NONE")
+                row["og_tag"]=re.findall(r'<meta[^>]+(?:property=["\\x27]og:image["\\x27])[^>]*>',source,re.I)[:2]
+                vals=re.findall(r'<meta[^>]+property=["\\x27]og:image["\\x27][^>]+content=["\\x27]([^"\\x27]+)',source,re.I)
+                row["og_url"]=html.unescape(vals[0]) if vals else None
+                if row["og_url"]:
+                  req=urllib.request.Request(row["og_url"],headers={"User-Agent":"ENPT-Owner-GetOnly-Diagnostic"})
+                  try:
+                    with urllib.request.urlopen(req,timeout=30) as im:
+                      b=im.read(70);row["og_http"]=im.status;row["og_type"]=im.headers.get("content-type","");row["image_header_jpeg"]=b[:3].hex()
+                  except urllib.error.HTTPError as e:row["og_http"]=e.code;row["og_error"]=str(e)[:200]
+                  except Exception as e:row["og_error"]=repr(e)[:200]
+              except Exception as e:row["error"]=str(e)[:200]
+              rows.append(row);print("ENPT_V3_FORM_OG_DIAG",json.dumps(row,ensure_ascii=False),flush=True)
+          p=pathlib.Path("v3-diag");p.mkdir(exist_ok=True)
+          (p/"FORM_OG_EXACT_LIVE_DIAGNOSTIC.json").write_text(json.dumps(rows,ensure_ascii=False,indent=2),"utf8")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_OG_IMAGE_AND_FORM_MARKUP_GETONLY_DIAGNOSTIC
+          path: v3-diag/
+          retention-days: 30
