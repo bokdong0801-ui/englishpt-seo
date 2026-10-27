@@ -1,0 +1,23 @@
+name: ENPT V3 Fixed HTMLParser All Forms and OG Images Read-only
+on:
+  push:
+    branches: [review/enpt-v3-fullsite-draft-20261027]
+    paths: [.github/workflows/enpt-v3-fast-parser-form-og-fixed.yml]
+permissions:
+  contents: read
+jobs:
+  parser-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 21 real Form schemas and 3 original OG images with proper attribute parser
+        run: python3 scripts/ENPT_V3_FAST_FORM_IMAGE_PARSER_QA_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_21_FORMS_3_REAL_OG_IMAGES_CORRECTED_QA
+          path: v3-fast-htmlparser-qa/
+          retention-days: 30
