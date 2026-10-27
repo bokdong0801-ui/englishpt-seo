@@ -1,0 +1,59 @@
+name: ENPT Retry 128 Unverified Locality URLs GET-only
+on:
+  push:
+    branches: [review/enpt-regions-integrated-20261027]
+    paths: [.github/workflows/enpt-retry-128-network-locality.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  retry-only-failed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_5149_ALL_HTTP_SEO_RESULTS_20261027
+          run-id: 40444868198
+          github-token: ${{ github.token }}
+          path: previous-audit
+      - name: GET-only retry of 128 TLS/network failures, no Range
+        run: |
+          python3 - <<'PY'
+          import csv,collections,concurrent.futures,json,os,urllib.request,urllib.error,time
+          from pathlib import Path
+          rows=list(csv.DictReader(open('previous-audit/ENPT_ALL_5149_LINK_TARGET_HTTP_SEO.csv',encoding='utf-8-sig')))
+          targets=[r for r in rows if r['class']=='NETWORK_ERROR']
+          assert len(rows)==5149 and len(targets)==128,(len(rows),len(targets))
+          def check(r):
+            e=''
+            for attempt in range(2):
+              try:
+                req=urllib.request.Request(r['url'],method='GET',headers={'User-Agent':'Mozilla/5.0 (ENPT-ReadOnly-QA)'})
+                with urllib.request.urlopen(req,timeout=15) as resp:
+                  return {'url':r['url'],'status':resp.status,'final_url':resp.geturl(),'error':''}
+              except urllib.error.HTTPError as exc:
+                return {'url':r['url'],'status':exc.code,'final_url':exc.geturl(),'error':''}
+              except Exception as exc:
+                e=type(exc).__name__+':'+str(exc)[:170]
+                time.sleep(.4)
+            return {'url':r['url'],'status':None,'final_url':'','error':e}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:finished=list(pool.map(check,targets))
+          os.makedirs('retry-128-qa',exist_ok=True)
+          d=dict(collections.Counter(str(r['status']) for r in finished))
+          result={'retried':len(finished),'results':d,'original_404':5021,'confirmed_total_404':5021+d.get('404',0),'still_unknown':d.get('None',0),'production_writes':0,'form_submissions':0,'examples':finished[:12]}
+          Path('retry-128-qa/RETRY_128_SUMMARY.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')
+          with open('retry-128-qa/RETRY_128_DETAILS.csv','w',encoding='utf-8-sig',newline='') as f:
+            w=csv.DictWriter(f,fieldnames=list(finished[0]));w.writeheader();w.writerows(finished)
+          print('ENPT_RETRY_128_FINAL',json.dumps(result,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_RETRY_128_NETWORK_FAILED_20261027
+          path: retry-128-qa/
+          retention-days: 30
