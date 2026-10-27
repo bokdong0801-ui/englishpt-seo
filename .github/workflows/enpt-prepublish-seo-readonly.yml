@@ -1,0 +1,24 @@
+name: ENPT Production SEO and Sitemap GET-only Audit
+on:
+  push:
+    branches: [review/enpt-regions-integrated-20261027]
+    paths: [.github/workflows/enpt-prepublish-seo-readonly.yml]
+permissions:
+  contents: read
+jobs:
+  read-only-seo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: GET-only published robots, core canonicals and sitemap index children
+        run: python3 scripts/ENPT_PREPUBLISH_SEO_SITEMAP_GETONLY_20261027.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_PREPUBLISH_SEO_SITEMAP_JSON_20261027
+          path: region-prepublish-seo-20261027/
+          retention-days: 30
