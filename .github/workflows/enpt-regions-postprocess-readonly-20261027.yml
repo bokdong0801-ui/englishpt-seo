@@ -1,0 +1,57 @@
+name: ENPT Final Region Preview GET-only Postprocess Inspection
+on:
+  push:
+    branches: [review/enpt-regions-integrated-20261027]
+    paths: [.github/workflows/enpt-regions-postprocess-readonly-20261027.yml]
+permissions:
+  contents: read
+jobs:
+  read-only-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      EXPECTED_PUBLISHED: 6adafef5f2c6d196833683db
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect deployed Preview HTML, Forms markup, and SEO headers without any writes
+        run: |
+          set -euo pipefail
+          mkdir -p postprocess-inspection
+          python3 - <<'PY'
+          import urllib.request,json,os,hashlib
+          from html.parser import HTMLParser
+          from pathlib import Path
+          root="https://enpt-regions-final-review-20261027--englishpt-seo.netlify.app"
+          files=["regions.html","regions/seoul.html","regions/gyeonggi.html","englishpt.html","courses.html","student-english.html"]
+          report={"url":root,"mode":"GET_ONLY","requests":[],"production_posts":0,"form_submissions":0}
+          for file in files:
+            with urllib.request.urlopen(root+"/"+file,timeout=50) as r:
+              body=r.read().decode("utf8","replace");h=dict(r.headers)
+              row={"page":file,"status":r.status,"bytes":len(body.encode()),"noindex_header":h.get("X-Robots-Tag") or h.get("X-Robots-tag"),"form_name_attribute":'name="englishpt-consultation"' in body,"form_modal":'id="applyModal"' in body,"form_id":'id="leadForm"' in body,"form_hidden_name":'name="form-name"' in body,"form_has_name_input":'value="englishpt-consultation"' in body,"region_link":'href="/regions.html"' in body,"input_name":'id="leadName"' in body,"input_phone":'id="leadPhone"' in body,"canonical_present":'rel="canonical"' in body,"sha256":hashlib.sha256(body.encode()).hexdigest()}
+              report["requests"].append(row)
+              print("ENPT_LIVE_PREVIEW_POSTPROCESS_ROW",json.dumps(row,ensure_ascii=False),flush=True)
+              assert row["status"]==200,("BAD_HTTP",file)
+              assert row["noindex_header"] and "noindex" in row["noindex_header"].lower(),("PREVIEW_MISSING_NOINDEX",file)
+              assert row["form_modal"] and row["form_id"] and row["input_name"] and row["input_phone"],("FORM_INACCESSIBLE",file)
+              assert row["region_link"],("REGION_LINK_MISSING",file)
+          with urllib.request.urlopen(root+"/robots.txt",timeout=35) as r:
+            report["robots_disallow_all"]="Disallow: /" in r.read().decode("utf8")
+          assert report["robots_disallow_all"],"PREVIEW_ROBOTS_NOT_BLOCKED"
+          token=os.environ.get("NETLIFY_AUTH_TOKEN","")
+          assert token
+          req=urllib.request.Request("https://api.netlify.com/api/v1/sites/"+os.environ["NETLIFY_SITE_ID"],headers={"Authorization":"Bearer "+token},method="GET")
+          with urllib.request.urlopen(req,timeout=35) as r:site=json.load(r)
+          report["production_published_id"]=(site.get("published_deploy") or {}).get("id")
+          assert report["production_published_id"]==os.environ["EXPECTED_PUBLISHED"],"PRODUCTION_DRIFT"
+          report["status"]="PASS_LIVE_READONLY_ALL_CORE_ROUTES_FORM_UI_AND_NOIDX"
+          Path("postprocess-inspection/preview-postprocess-qa.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf8")
+          print("ENPT_FINAL_REGIONS_READONLY_VERDICT",report["status"],flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_REGIONS_POSTPROCESS_READONLY_20261027
+          path: postprocess-inspection/
+          retention-days: 30
