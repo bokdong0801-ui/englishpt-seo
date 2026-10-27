@@ -17,7 +17,7 @@ jobs:
           python-version: '3.12'
       - uses: actions/download-artifact@v4
         with:
-          name: ENPT_V3_202786_SHA_FULLSITE_PREFLI${{ github.token }}T_ONLY_NO_NETLIFY_UPLOAD
+          name: ENPT_V3_202786_SHA_FULLSITE_PREFLIGHT_ONLY_NO_NETLIFY_UPLOAD
           run-id: 40465037163
           github-token: ${{ github.token }}
           path: v3-reference
