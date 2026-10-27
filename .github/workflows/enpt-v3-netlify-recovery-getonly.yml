@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
-      NETLIFY_AUTH_${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}: TOKEN
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
       SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
       PUBLISHED: 6adafef5f2c6d196833683db
     steps:
