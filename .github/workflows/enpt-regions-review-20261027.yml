@@ -1,0 +1,145 @@
+name: ENPT Safe Region Draft Browser QA
+on:
+  push:
+    branches: [review/enpt-region-hubs-20261027]
+    paths: [.github/workflows/enpt-regions-review-20261027.yml]
+permissions:
+  contents: read
+concurrency:
+  group: region-hubs-20261027-single-review
+  cancel-in-progress: false
+jobs:
+  safe-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      NETLIFY_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      EXPECTED_PUBLISHED: 6adafef5f2c6d196833683db
+      REVIEW_ALIAS: enpt-regions-review-20261027
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Guard scope and build protected review files
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('.github/workflows/enpt-regions-review-20261027.yml').read_text()
+          commands=[r for r in s.splitlines() if 'netlify deploy ' in r]
+          assert len(commands)==1 and '--alias="$REVIEW_ALIAS"' in commands[0] and '--no-build' in commands[0]
+          assert '--prod' not in commands[0] and 'restore' not in s
+          print('PASS_ONLY_NONPRODUCTION_ALIAS_DRAFT',flush=True)
+          PY
+          python3 scripts/ENPT_REGION_DRAFT_BUILD_20261027.py
+      - name: Install browser for local QA
+        run: |
+          python3 -m pip install -q playwright
+          python3 -m playwright install chromium
+      - name: Actual Chrome screenshots 390px and 1440px, never submit forms
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8765 --directory region-review-site >/tmp/enpt-region-review-server.log 2>&1 &
+          PID=$!
+          trap 'kill $PID || true' EXIT
+          python3 - <<'PY'
+          from playwright.sync_api import sync_playwright
+          from pathlib import Path
+          import json
+          url="http://127.0.0.1:8765";out=Path("region-review-evidence")
+          results=[]
+          with sync_playwright() as p:
+            browser=p.chromium.launch(headless=True,args=["--no-sandbox"])
+            for width,height in [(390,844),(1440,900)]:
+              page=browser.new_page(viewport={"width":width,"height":height})
+              resp=page.goto(url+"/regions.html",wait_until="domcontentloaded",timeout=45000)
+              assert resp.status==200
+              assert page.locator(".rg-card").count()==17
+              assert page.locator("body").evaluate("(el)=>el.scrollWidth<=window.innerWidth+2")
+              page.screenshot(path=str(out/f"REGION_NATIONAL_{width}.png"),full_page=True)
+              page.locator("[data-open-form]").first.click()
+              assert page.locator("#applyModal").get_attribute("aria-hidden")=="false"
+              assert page.locator("#leadPhone").is_visible()
+              page.locator("[data-close-form]").last.click()
+              assert page.locator("#applyModal").get_attribute("aria-hidden")=="true"
+              r=page.goto(url+"/regions/seoul.html",wait_until="domcontentloaded")
+              assert r.status==200 and page.locator(".rg-district").count()>0
+              page.locator("#rgSearch").fill("사직동")
+              assert page.locator(".rg-town-links a:visible").count()>=1
+              assert page.locator("body").evaluate("(el)=>el.scrollWidth<=window.innerWidth+2")
+              page.screenshot(path=str(out/f"REGION_SEOUL_{width}.png"),full_page=True)
+              page.locator("#rgSearch").fill("없는지역999")
+              assert page.locator("#rgEmpty").is_visible()
+              results.append({"width":width,"render":"PASS","modal":"PASS","filter":"PASS","overflow":False,"POSTs":0})
+              page.close()
+            browser.close()
+          report={"status":"PASS_LOCAL_CHROME_390_1440","results":results,"screenshots":4,"production_writes":0}
+          (out/"BROWSER_QA.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf8")
+          print("REGIONS_BROWSER_QA",json.dumps(report,ensure_ascii=False),flush=True)
+          PY
+      - name: Netlify GET-only published-ID and credits gate
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          token=os.environ.get("NETLIFY_AUTH_TOKEN","")
+          assert len(token)>20,"HOLD_NETLIFY_TOKEN_NOT_CONFIGURED"
+          siteid=os.environ["NETLIFY_SITE_ID"]
+          def api(path):
+            r=urllib.request.Request("https://api.netlify.com/api/v1/"+path,headers={"Authorization":"Bearer "+token},method="GET")
+            with urllib.request.urlopen(r,timeout=40) as x:return json.load(x)
+          s=api("sites/"+siteid)
+          assert s["id"]==siteid and s.get("custom_domain")=="englishpt.kr"
+          assert (s.get("published_deploy") or {}).get("id")==os.environ["EXPECTED_PUBLISHED"],"HOLD_PROD_ID_CHANGED"
+          old=api("sites/"+siteid+"/deploys?per_page=100")
+          assert not any(os.environ["REVIEW_ALIAS"] in str(r.get("deploy_ssl_url")) for r in old),"HOLD_DUPLICATE_DRAFT"
+          account=api("accounts/"+s["account_id"])
+          assert not account.get("usages_exceeded") and not account.get("configurable_limits_exceeded"),"HOLD_NETLIFY_LIMIT"
+          print("PASS_GETONLY_NO_PRODUCTION_WRITES",flush=True)
+          PY
+      - name: Exactly one non-production Netlify review Draft
+        run: |
+          set -euo pipefail
+          npm install -g netlify-cli@27.13.0 --no-fund --no-audit >/dev/null
+          timeout 330s netlify deploy --site="$NETLIFY_SITE_ID" --dir=region-review-site --no-build --alias="$REVIEW_ALIAS" --timeout=270 --message="ENPT_REGION_DRAFT_NONPRODUCTION_ONLY_20261027" 2>&1 | tee region-review-evidence/NETLIFY_DEPLOY_LOG.txt
+      - name: Live preview HTTP, noindex and form DOM GET-only QA
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request
+          from pathlib import Path
+          root="https://"+os.environ["REVIEW_ALIAS"]+"--englishpt-seo.netlify.app"
+          for path in ["/regions.html","/regions/seoul.html","/regions/gyeonggi.html","/robots.txt"]:
+            with urllib.request.urlopen(root+path,timeout=45) as r:
+              assert r.status==200,(path,r.status)
+              assert "noindex" in r.headers.get("X-Robots-Tag","").lower(),("PREVIEW_INDEXABLE",path)
+              if path.endswith(".html"):assert 'id="applyModal"' in r.read().decode("utf8")
+          req=urllib.request.Request("https://api.netlify.com/api/v1/sites/"+os.environ["NETLIFY_SITE_ID"],headers={"Authorization":"Bearer "+os.environ["NETLIFY_AUTH_TOKEN"]},method="GET")
+          with urllib.request.urlopen(req,timeout=40) as r:site=json.load(r)
+          assert (site.get("published_deploy") or {}).get("id")==os.environ["EXPECTED_PUBLISHED"]
+          report={"status":"PASS_NONPRODUCTION_DRAFT_LIVE","preview":root+"/regions.html","prod_id_unchanged":os.environ["EXPECTED_PUBLISHED"],"submitted_forms":0}
+          Path("region-review-evidence/LIVE_QA.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf8")
+          print("REGIONS_LIVE_QA",json.dumps(report,ensure_ascii=False),flush=True)
+          PY
+      - name: Final Production GET-only safety readback
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os,urllib.request,json
+          t=os.environ.get("NETLIFY_AUTH_TOKEN","")
+          assert t,"HOLD_NO_NETLIFY_TOKEN"
+          req=urllib.request.Request("https://api.netlify.com/api/v1/sites/"+os.environ["NETLIFY_SITE_ID"],headers={"Authorization":"Bearer "+t},method="GET")
+          with urllib.request.urlopen(req,timeout=40) as r:site=json.load(r)
+          published=(site.get("published_deploy") or {}).get("id")
+          print("PRODUCTION_ID_AFTER_SAFE_REVIEW",published,flush=True)
+          assert published==os.environ["EXPECTED_PUBLISHED"],"STOP_PRODUCTION_DRIFT"
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_REGIONS_20261027_QA_390_1440
+          path: region-review-evidence/
+          retention-days: 30
