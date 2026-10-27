@@ -1,0 +1,60 @@
+name: ENPT V2 Retry 110 Unverified Real Course Targets GET-only
+on:
+  push:
+    branches: [review/enpt-region-hubs-v2-20261027]
+    paths: [.github/workflows/enpt-v2-retry-110-course-targets.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  retry-unverified-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_REGION_V2_5149_LIVE_COURSE_HTTP_QA_20261027
+          run-id: 40454051585
+          github-token: ${{ github.token }}
+          path: last-audit
+      - name: Retry only 110 network inconclusives as GET without Range
+        run: |
+          python3 - <<'PY'
+          import csv,collections,concurrent.futures,json,time,urllib.error,urllib.request,pathlib
+          p=pathlib.Path("last-audit/V2_5149_WORKER_AND_7_INTENT_LIVE_HTTP.csv")
+          rows=list(csv.DictReader(p.open(encoding="utf-8-sig")))
+          assert len(rows)==5251,len(rows)
+          unverified=[x for x in rows if not x["http"]]
+          assert len(unverified)==110,len(unverified)
+          def get(r):
+            err=""
+            for t in range(3):
+              try:
+                req=urllib.request.Request(r["url"],method="GET",headers={"User-Agent":"Mozilla/5.0 (ENPT-Owned-Course-ReadOnly-Retry)"})
+                with urllib.request.urlopen(req,timeout=18) as res:
+                  return {"url":r["url"],"status":res.status,"final_url":res.geturl(),"error":""}
+              except urllib.error.HTTPError as e:
+                return {"url":r["url"],"status":e.code,"final_url":e.geturl(),"error":""}
+              except Exception as e:
+                err=type(e).__name__+":"+str(e)[:150]
+                if t<2:time.sleep(.4)
+            return {"url":r["url"],"status":None,"final_url":"","error":err}
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:result=list(pool.map(get,unverified))
+          summary={"old_success_http200":5141,"retried":len(result),"retry_counts":dict(collections.Counter(str(r["status"]) for r in result)),"total_verified_http200":5141+sum(r["status"]==200 and r["final_url"]==r["url"] for r in result),"original_total":len(rows),"remaining_unknown":sum(r["status"] is None for r in result),"bad_status":sum(r["status"] not in (None,200) for r in result),"production_writes":0,"form_submits":0,"error_examples":[r for r in result if r["status"]!=200][:12]}
+          summary["status"]="PASS_ALL_5251_EXISTING_COURSE_URLS_HTTP200" if summary["total_verified_http200"]==5251 else "HOLD_STILL_UNVERIFIED"
+          d=pathlib.Path("v2-retry-110-evidence");d.mkdir(exist_ok=True)
+          (d/"V2_110_RETRY_SUMMARY.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2),"utf8")
+          with (d/"V2_110_RETRY_RESULTS.csv").open("w",encoding="utf-8-sig",newline="") as f:
+            w=csv.DictWriter(f,fieldnames=list(result[0]));w.writeheader();w.writerows(result)
+          print("ENPT_V2_110_FINAL_HTTP_RETRY",json.dumps({k:v for k,v in summary.items() if k!="error_examples"},ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V2_RETRY_110_REAL_COURSE_HTTP_PROOF
+          path: v2-retry-110-evidence/
+          retention-days: 30
