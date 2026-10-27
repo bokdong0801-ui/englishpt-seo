@@ -45,7 +45,7 @@ jobs:
           run-id: 39234109195
           github-token: ${{ github.token }}
           path: pristine-archive
-      - name: Hard scope: PUT only two endpoint types to exact existing Draft, zero POST, no restore/publish
+      - name: Hard scope for PUT-only exact existing Draft and zero POST
         run: |
           python3 - <<'PY'
           from pathlib import Path
