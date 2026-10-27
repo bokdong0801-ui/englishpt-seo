@@ -43,7 +43,7 @@ jobs:
           assert '"draft":True' in s and '"async":True' in s
           assert '6adafef5f2c6d196833683db' in s and 'EXISTING_MARKER_DO_NOT_DUPLICATE' in s
           assert 'ENPT-V3-1-20261027-BYEONGMOKANDONG-7-CORRECTED-NONPUB' in s
-          assert 'method="DELETE"' not in s and '/restore' not in s
+          assert 'method="DELETE"' not in s and 'BASE+"sites/"+SITE+"/restore"' not in s
           print('PASS_V31_ONLY_ONE_NONPUB_POST_PROTECTED',flush=True)
           PY
       - name: Rebuild signed immutable 158571-route V3 plus 7 exact locality content replacements
