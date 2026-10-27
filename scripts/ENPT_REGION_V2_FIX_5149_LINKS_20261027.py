@@ -55,6 +55,9 @@ STYLE=r"""<style id="enpt-region-v2-choices-css">
 .rg-town summary:focus-visible{outline:3px solid #367a56;outline-offset:-3px}
 .rg-town summary:after{content:'+';font-size:19px;color:#236347}
 .rg-town[open] summary:after{content:'−'}
+/* Nested details: scope toggle icons to direct child summary; ancestor's state must not leak. */
+.rg-district .rg-town:not([open]) > summary:after{content:'+'!important}
+.rg-district .rg-town[open] > summary:after{content:'−'!important}
 .rg-choices{display:grid;grid-template-columns:1fr;gap:5px;padding:7px 9px 11px;background:#fff;border-top:1px solid #dfebe2}
 .rg-choices a{display:block;border-radius:7px;padding:8px 10px!important;background:#eef4ed!important;text-decoration:none!important;color:#1e5034!important;font-size:13px!important;font-weight:600}
 .rg-choices a:hover,.rg-choices a:focus-visible{background:#d7e9d9!important;outline-color:#3b8057}
