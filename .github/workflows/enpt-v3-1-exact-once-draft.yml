@@ -1,0 +1,91 @@
+name: ENPT V3.1 ONLY ONE NONPUBLISHED 202786 Full Draft + Seven Text Corrections
+on:
+  push:
+    branches: [review/enpt-v3-1-byeongmokandong-fix-20261027]
+    paths: [.github/workflows/enpt-v3-1-exact-once-draft.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-v3-1-once-nonproduction-20261027
+  cancel-in-progress: false
+jobs:
+  v31-single-nonpub-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      PUBLISHED: 6adafef5f2c6d196833683db
+      NETLIFY_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_READONLY_FULL_PUBLISHED_SHA_FILE_MANIFEST
+          run-id: 40459650646
+          github-token: ${{ github.token }}
+          path: published-manifest
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - name: Fail closed - one nonproduction draft POST only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/ENPT_V3_1_ONCE_NONPUB_SHA_DRAFT_20261027.py').read_text()
+          assert s.count('method="POST"')==1 and s.count('method="PUT"')==1
+          assert '"draft":True' in s and '"async":True' in s
+          assert '6adafef5f2c6d196833683db' in s and 'EXISTING_MARKER_DO_NOT_DUPLICATE' in s
+          assert 'ENPT-V3-1-20261027-BYEONGMOKANDONG-7-CORRECTED-NONPUB' in s
+          assert 'method="DELETE"' not in s and '/restore' not in s
+          print('PASS_V31_ONLY_ONE_NONPUB_POST_PROTECTED',flush=True)
+          PY
+      - name: Rebuild signed immutable 158571-route V3 plus 7 exact locality content replacements
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_REGION_DRAFT_BUILD_20261027.py
+          python3 scripts/ENPT_REGION_FINAL_INTEGRATION_20261027.py
+          python3 scripts/ENPT_REGION_V2_FIX_5149_LINKS_20261027.py
+          python3 scripts/ENPT_V3_SHA_REUSE_MINIMAL_FULLSITE_BUILDER_20261027.py
+          python3 scripts/ENPT_V3_1_FIX_7_LOCALITY_TITLES_ONLY_20261027.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          s=json.loads(Path('v3-1-patch-evidence/V3_1_7_LOCALITY_CORRECTION_SOURCE_GUARD.json').read_text())
+          assert s['patched_html']==7 and s['total_paths']==202786 and s['source_existing_routes']==158571
+          assert s['changed_from_immutable_published']==10 and s['all_36043_link_destinations_unmodified']
+          assert s['original_sitemap_shards']==44 and s['production_writes']==0
+          print('PASS_V31_7_CONTENT_ONLY_202786_FULL_MANIFEST',flush=True)
+          PY
+      - name: Exactly one V3.1 Netlify Draft only and required static SHA uploads
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_V3_1_ONCE_NONPUB_SHA_DRAFT_20261027.py
+          test -s v3-1-draft-ledger/05_ALL_STATICS_VERIFIED_EDGE_PENDING.json
+      - name: Final GET-only Published ID safety readback
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os,urllib.request,json
+          t=os.environ.get('NETLIFY_AUTH_TOKEN','')
+          assert t
+          req=urllib.request.Request('https://api.netlify.com/api/v1/sites/'+os.environ['NETLIFY_SITE_ID'],method='GET',headers={'Authorization':'Bearer '+t})
+          with urllib.request.urlopen(req,timeout=38) as r:s=json.load(r)
+          actual=(s.get('published_deploy') or {}).get('id')
+          print('ENPT_V31_PUBLISHED_ID',actual,flush=True)
+          assert actual==os.environ['PUBLISHED']
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V3_1_CREATED_NONPUB_DRAFT_28_STATIC_SHA_EVIDENCE
+          path: |
+            v3-1-patch-evidence/V3_1_7_LOCALITY_CORRECTION_SOURCE_GUARD.json
+            v3-1-draft-ledger/
+          retention-days: 30
