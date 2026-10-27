@@ -112,7 +112,7 @@ with sync_playwright() as p:
      assert "병목안동" in title and "가장 어려운 부분안동" not in title
      if width in (390,1440) and path.endswith("elem-tutor.html"):
       page.screenshot(path=str(OUT/f"V31_BYEONGMOKANDONG_{width}.png"),full_page=True)
-  except Exception as e:report["errors"].append({"width":width,"path":path,"error":str(e)[:300]})
+   except Exception as e:report["errors"].append({"width":width,"path":path,"error":str(e)[:300]})
   report["browser"].append({"width":width,"routes_attempted":len(CORE+REGIONS+TOWNS),"js_errors":js[:5]})
   if js:report["errors"].append({"width":width,"js_errors":js[:5]})
   page.close()
