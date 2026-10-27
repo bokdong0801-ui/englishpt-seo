@@ -15,7 +15,7 @@ PROD="https://englishpt.kr"
 FILES=["englishpt.html","courses.html","student-english.html"]
 STATIC=["assets/styles.css","assets/site.js","assets/favicon.svg","assets/locality-index.json"]
 def get(path):
-    req=urllib.request.Request(PINN+"/"+path,method="GET",headers={"User-Agent":"ENPT-Protected-Region-Preview-Source-20261027","Cache-Control":"no-cache"})
+    req=urllib.request.Request(PINNED+"/"+path,method="GET",headers={"User-Agent":"ENPT-Protected-Region-Preview-Source-20261027","Cache-Control":"no-cache"})
     with urllib.request.urlopen(req,timeout=50) as r:
         assert r.status==200,(path,r.status)
         raw=r.read(2_500_000)
