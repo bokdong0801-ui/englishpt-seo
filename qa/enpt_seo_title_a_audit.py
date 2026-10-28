@@ -114,6 +114,7 @@ for name in ["dalseo-songhyeondong-biz-business-conv.html","dalseo-songhyeondong
     # only the requested SEO / robots metadata is the release gate.
     loc=clean.location_from_source(src.read_text(encoding="utf8"),name,clean.intent_from_name(name)[1])
     pages.append(check_html(raw,loc["dong"],pol.course_title(loc["dong"],clean.intent_from_name(name)[1]),name,False,"https://englishpt.kr/"+name))
+guard(not warnings,"UNRESOLVED_RENDER_WARNINGS:"+str(len(warnings)))
 summary={
     "status":"PASS" if not errors else "HOLD",
     "station_hubs":911,"station_specialists":20953,
@@ -122,7 +123,7 @@ summary={
     "neighborhood_hub_policy_only":True,
     "neighborhood_mass_index_policy":"noindex,follow (unchanged)",
     "netlify_deploys":0,"production_mutations":0,"search_collection_submissions":0,
-    "warnings":warnings[:80],"full_page_contract":"RECHECK_CLUSTER_LINK_GATE","errors":errors[:80]
+    "warnings":warnings[:80],"full_page_contract":"PASS" if not warnings else "RECHECK_CLUSTER_LINK_GATE","errors":errors[:80]
 }
 out=ROOT/"seo-title-qa-report"
 out.mkdir(exist_ok=True)
