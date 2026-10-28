@@ -45,6 +45,11 @@ jobs:
           command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
           ARCHIVE=original-oct21-candidate/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
           echo "6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884  $ARCHIVE" | sha256sum -c -
+          tar --zstd -tf "$ARCHIVE" > oct21-historical-qa/all-archive-paths.txt
+          echo "ENPT_ARCHIVE_FIRST_15"
+          head -n 15 oct21-historical-qa/all-archive-paths.txt
+          echo "ENPT_ARCHIVE_STATION_NAMING_SAMPLE"
+          grep -E 'station-banwoldang|station-gangnam|__pages' oct21-historical-qa/all-archive-paths.txt | head -n 12 || true
           tar --zstd -xf "$ARCHIVE" -C sample-historical-here --wildcards '*station-banwoldang.html' '*station-gangnam.html' '*station-seomyeon.html' '*station-banwoldang-biz-business-conv.html' '*station-gangnam-opic.html' '*station-sangmu-elem-tutor.html' '*station-gapcheon-duolingo-academy.html'
           python3 - <<'PY'
           import pathlib,gzip,json,hashlib
