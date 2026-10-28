@@ -1,0 +1,7 @@
+ENPT SEO-A V3.1 isolated review draft request (2026-10-28)
+User requested one separate unpublished Netlify Preview with full generation and SEO QA.
+Prerequisite workflow 40664047571 must have conclusion=success.
+Scope: modify exactly 21,864 indexable station sharded HTML heads in a 202,786 static file frozen V3.1 manifest.
+Preserve Production 6adafef5f2c6d196833683db and original V3.1 Draft 6ae06963f085b33a5ee903eb.
+No publish, no restore, no change to index policy, canonical URLs, robots, sitemap, forms, OG image assets.
+If full SHA, Netlify quota or identity gate fails: HOLD without creating or publishing a draft.
