@@ -1,0 +1,290 @@
+{
+  "description": "GSC 2026-10-28 example list: 33 priority + 23 intent representatives, excludes 3 already user-confirmed live checks",
+  "excluded_already_google_live_checked": [
+    "https://englishpt.kr/station-byeollaemyeon-ielts-academy.html",
+    "https://englishpt.kr/station-byeollaemyeon.html",
+    "https://englishpt.kr/station-byeollaemyeon-ielts.html"
+  ],
+  "targets": [
+    {
+      "url": "https://englishpt.kr/dalseo-songhyeondong-1to1-conv.html",
+      "priority": "P1",
+      "category": "송현동 지역 상세"
+    },
+    {
+      "url": "https://englishpt.kr/dalseo-songhyeondong-adult-tutor.html",
+      "priority": "P1",
+      "category": "송현동 지역 상세"
+    },
+    {
+      "url": "https://englishpt.kr/dalseo-songhyeondong-high-suneung.html",
+      "priority": "P1",
+      "category": "송현동 지역 상세"
+    },
+    {
+      "url": "https://englishpt.kr/dalseo-songhyeondong-intl-sat.html",
+      "priority": "P1",
+      "category": "송현동 지역 상세"
+    },
+    {
+      "url": "https://englishpt.kr/dalseo-songhyeondong-mid-basic-eng-conv.html",
+      "priority": "P1",
+      "category": "송현동 지역 상세"
+    },
+    {
+      "url": "https://englishpt.kr/dalseo-songhyeondong-mid-beginner-eng-conv.html",
+      "priority": "P1",
+      "category": "송현동 지역 상세"
+    },
+    {
+      "url": "https://englishpt.kr/dalseo-songhyeondong-mid-speaking-test.html",
+      "priority": "P1",
+      "category": "송현동 지역 상세"
+    },
+    {
+      "url": "https://englishpt.kr/dalseo-songhyeondong-mid-tutor.html",
+      "priority": "P1",
+      "category": "송현동 지역 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-asin.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-banghak.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-banyeonongsanmulsijang.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-bongcheon.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-chodang.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-eonju.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-gangbyeon.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-gapcheon.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-geomdansageori.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-gwangjusongjeong.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-hayang.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-incheonairport-t2.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-munjeong.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-myeongjidae.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-pyeonggang.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-samyang.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-sangildong.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-sinmokdong.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-sinyeonsu.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-solsaem.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-soyosan.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-ssangmun.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-taejeon.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-yangju.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-yeokgok.html",
+      "priority": "P1",
+      "category": "역 허브"
+    },
+    {
+      "url": "https://englishpt.kr/station-dadaepohang-high-conv.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-suwon-duolingo-academy.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-samseongjungang-univ-conv.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-sinmae-toeic-speaking.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-cheyukgongwon-adult-english-conv-academy.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-cheongu-toefl-academy.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-pungsan-housewife-conv.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-donguidae-english-conv-academy.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-gimdaejungkeonbensyeonsenteo-worker-english-conv-academy.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-singal-ielts.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-seoulsup-jobseeker-conv.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-goksan-toeic.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-dangni-duolingo.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-beomil-mid-conv.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-sanggal-toeic-academy.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-amsayeoksagongwon-beginner-english-conv.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-incheonairport-t1-elem-tutor.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-sinbanghwa-opic-academy.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-sinmae-biz-business-conv.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-bupyeongsamgeori-toeic-speaking-academy.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-yongmun-ielts-academy.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-tanhyeon-opic.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    },
+    {
+      "url": "https://englishpt.kr/station-geondeulbawi-toefl.html",
+      "priority": "P2",
+      "category": "역별 과정 상세"
+    }
+  ]
+}
