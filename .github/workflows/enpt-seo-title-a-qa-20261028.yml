@@ -1,0 +1,54 @@
+name: ENPT A-approved title policy full isolated QA
+on:
+  push:
+    branches:
+      - review/enpt-seo-titles-approved-a-v1-20261028
+    paths:
+      - 'scripts/enpt_seo_title_policy_a_v1.py'
+      - 'scripts/stage9-clean-mass-renderer.py'
+      - 'scripts/stage9-station-renderer.py'
+      - 'qa/enpt_seo_title_a_audit.py'
+      - '.github/workflows/enpt-seo-title-a-qa-20261028.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Guard no production, Netlify, sitemap, robots or canonical source mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only 'origin/review/enpt-v3-1-byeongmokandong-fix-20261027' HEAD > /tmp/enpt_seo_changed.txt
+          cat /tmp/enpt_seo_changed.txt
+          python - <<'PY'
+          from pathlib import Path
+          allowed={
+          'scripts/enpt_seo_title_policy_a_v1.py',
+          'scripts/stage9-clean-mass-renderer.py',
+          'scripts/stage9-station-renderer.py',
+          'qa/ENPT_SEO_TITLE_A_APPROVED_REVIEW_20261028.md',
+          'qa/enpt_seo_title_a_audit.py',
+          '.github/workflows/enpt-seo-title-a-qa-20261028.yml'
+          }
+          changed=set(Path('/tmp/enpt_seo_changed.txt').read_text().splitlines())
+          assert changed and changed<=allowed,sorted(changed-allowed)
+          print('SAFETY_SCOPE_PASS',sorted(changed))
+          PY
+      - name: Test title policy / 911 stations / 23 intents / live HTML rendering / local noindex
+        run: python qa/enpt_seo_title_a_audit.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_APPROVED_A_SEO_TITLE_QA_20261028
+          path: seo-title-qa-report/
+          retention-days: 30
+          if-no-files-found: warn
