@@ -1,0 +1,78 @@
+name: ENPT V3.1 Pre-Nov3 GO HOLD Read Only
+on:
+  push:
+    branches: [review/enpt-v31-gohold-preflight-20261028]
+    paths: [.github/workflows/enpt-v31-gohold-preflight-20261028.yml]
+permissions:
+  contents: read
+concurrency:
+  group: enpt-v31-gohold-readonly-20261028
+  cancel-in-progress: false
+jobs:
+  preapproval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify immutable IDs and GET-only safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          script=Path('scripts/ENPT_V31_FINAL_PREAPPROVAL_GETONLY_GATE_20261027.py').read_text('utf8')
+          assert 'method="GET"' in script
+          assert all('method="'+v+'"' not in script for v in ('POST','PUT','PATCH','DELETE'))
+          assert '6adafef5f2c6d196833683db' in script
+          assert '6ae06963f085b33a5ee903eb' in script
+          print('PASS_PREAPPROVAL_GET_ONLY_NO_DEPLOY')
+          PY
+      - name: Netlify exact production and draft ID, 28 Preview HTML, 44 sitemap shards, 21964 URL, SEO, images and Forms
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile scripts/ENPT_V31_FINAL_PREAPPROVAL_GETONLY_GATE_20261027.py
+          python scripts/ENPT_V31_FINAL_PREAPPROVAL_GETONLY_GATE_20261027.py
+      - name: Independently verify five indexable live Production pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import urllib.request,json,datetime,pathlib
+          from html.parser import HTMLParser
+          U=['englishpt.html','courses.html','student-english.html','stations.html','station-byeollaemyeon-ielts-academy.html']
+          class Meta(HTMLParser):
+           def __init__(self):super().__init__();self.canon=[];self.robots=[]
+           def handle_starttag(self,tag,attrs):
+            d=dict(attrs)
+            if tag=='link' and d.get('rel')=='canonical':self.canon.append(d.get('href'))
+            if tag=='meta' and d.get('name')=='robots':self.robots.append(d.get('content',''))
+          rows=[]
+          for p in U:
+           url='https://englishpt.kr/'+p
+           req=urllib.request.Request(url,method='GET',headers={'User-Agent':'ENPT-V31-GOHOLD-GETONLY'})
+           with urllib.request.urlopen(req,timeout=40) as r:
+            status=r.status;headers={k.lower():v for k,v in r.headers.items()};html=r.read(12000000)
+           m=Meta();m.feed(html.decode('utf8','replace'))
+           assert status==200 and len(html)>2500,(p,'HTTP',status)
+           assert m.canon==[url],(p,'CANONICAL',m.canon)
+           assert all('noindex' not in x.lower() for x in m.robots),(p,'HTML_NOINDEX')
+           assert 'noindex' not in headers.get('x-robots-tag','').lower(),(p,'HEADER_NOINDEX')
+           rows.append({'url':url,'http':status,'canonical':m.canon[0],'meta_robots':m.robots})
+          out=pathlib.Path('v31-preapproval-gate');out.mkdir(exist_ok=True)
+          report={'date_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'status':'PASS_LIVE5_TECHNICAL','condition':'NOV03_RECHECK_AND_EXPLICIT_APPROVAL_REQUIRED','production_mutations':0,'form_posts':0,'urls':rows}
+          (out/'GOHOLD_LIVE5_GETONLY.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),'utf8')
+          print('PASS_GO_HOLD_LIVE5_GETONLY',json.dumps(report,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V31_GOHOLD_READONLY_20261028
+          path: v31-preapproval-gate/
+          retention-days: 30
+          if-no-files-found: warn
