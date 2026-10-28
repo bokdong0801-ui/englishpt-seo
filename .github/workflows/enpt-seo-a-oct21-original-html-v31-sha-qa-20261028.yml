@@ -50,7 +50,7 @@ jobs:
           head -n 15 oct21-historical-qa/all-archive-paths.txt
           echo "ENPT_ARCHIVE_STATION_NAMING_SAMPLE"
           grep -E 'station-banwoldang|station-gangnam|__pages' oct21-historical-qa/all-archive-paths.txt | head -n 12 || true
-          tar --zstd -xf "$ARCHIVE" -C sample-historical-here --wildcards '*station-banwoldang.html' '*station-gangnam.html' '*station-seomyeon.html' '*station-banwoldang-biz-business-conv.html' '*station-gangnam-opic.html' '*station-sangmu-elem-tutor.html' '*station-gapcheon-duolingo-academy.html'
+          tar --zstd -xf "$ARCHIVE" -C sample-historical-here --wildcards '*station-banwoldang.page' '*station-gangnam.page' '*station-seomyeon.page' '*station-banwoldang-biz-business-conv.page' '*station-gangnam-opic.page' '*station-sangmu-elem-tutor.page' '*station-gapcheon-duolingo-academy.page'
           python3 - <<'PY'
           import pathlib,gzip,json,hashlib
           base=pathlib.Path('sample-historical-here')
@@ -61,7 +61,7 @@ jobs:
           'station-sangmu-elem-tutor.html','station-gapcheon-duolingo-academy.html']
           out=[]
           for n in names:
-              hits=list(base.rglob(n))
+              hits=list(base.rglob(n.replace(".html",".page")))
               assert len(hits)==1,(n,hits[:3])
               b=hits[0].read_bytes()
               h=hashlib.sha1(b).hexdigest()
