@@ -27,12 +27,12 @@ jobs:
           base='https://englishpt.kr/'
           pages=[
            ('1','강남역 전체 영어과정','station-gangnam.html','hub'),
-           ('2','판교역 전체 영어과정','station-pangyo.html','hub'),
+           ('2','여의도역 전체 영어과정','station-yeouido.html','hub'),
            ('3','홍대입구역 전체 영어과정','station-hongdaeipgu.html','hub'),
            ('4','서면역 전체 영어과정','station-seomyeon.html','hub'),
            ('5','수원역 전체 영어과정','station-suwon.html','hub'),
            ('6','강남역 왕초보 영어회화','station-gangnam-beginner-english-conv.html','detail'),
-           ('7','판교역 비즈니스 영어회화','station-pangyo-biz-business-conv.html','detail'),
+           ('7','여의도역 비즈니스 영어회화','station-yeouido-biz-business-conv.html','detail'),
            ('8','홍대입구역 오픽 과외','station-hongdaeipgu-opic.html','detail'),
            ('9','서면역 토익스피킹 과외','station-seomyeon-toeic-speaking.html','detail'),
            ('10','수원역 초등 영어과외','station-suwon-elem-tutor.html','detail')
