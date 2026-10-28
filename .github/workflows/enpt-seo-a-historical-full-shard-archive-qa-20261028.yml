@@ -1,0 +1,79 @@
+name: ENPT SEO A Historical Signed Shard Archive vs V31 GET-free QA
+on:
+  push:
+    branches: [review/enpt-seo-titles-approved-a-v1-20261028]
+    paths: [.github/workflows/enpt-seo-a-historical-full-shard-archive-qa-20261028.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compare-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_READONLY_FULL_PUBLISHED_SHA_FILE_MANIFEST
+          run-id: 40459650646
+          github-token: ${{ github.token }}
+          path: published-manifest
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-SHARDED-EDGE-FULL-158571-CANDIDATE-NO-DRAFT-NO-PROD
+          run-id: 39194321977
+          github-token: ${{ github.token }}
+          path: historical-shard-source
+      - name: Create frozen V3.1 complete 202786 sha target
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_REGION_DRAFT_BUILD_20261027.py
+          python3 scripts/ENPT_REGION_FINAL_INTEGRATION_20261027.py
+          python3 scripts/ENPT_REGION_V2_FIX_5149_LINKS_20261027.py
+          python3 scripts/ENPT_V3_SHA_REUSE_MINIMAL_FULLSITE_BUILDER_20261027.py
+          python3 scripts/ENPT_V3_1_FIX_7_LOCALITY_TITLES_ONLY_20261027.py
+      - name: Extract 7 actual historical static sharded HTML sample blobs without external GET
+        run: |
+          set -euo pipefail
+          mkdir -p historical-shard-samples historical-shard-qa
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          ARCHIVE=historical-shard-source/ENGLISHPT_v23.5.2.1_SHARDED_EDGE_NEW_CANDIDATE_NOT_DEPLOYED.tar.zst
+          test -s "$ARCHIVE"
+          tar --zstd -xf "$ARCHIVE" -C historical-shard-samples --wildcards '*__pages/66/station-banwoldang.page' '*__pages/7c/station-gangnam.page' '*__pages/ab/station-seomyeon.page' '*__pages/e3/station-banwoldang-biz-business-conv.page' '*__pages/86/station-gangnam-opic.page' '*__pages/36/station-sangmu-elem-tutor.page' '*__pages/7c/station-gapcheon-duolingo-academy.page'
+          python3 - <<'PY'
+          import gzip,hashlib,json,pathlib
+          root=pathlib.Path('historical-shard-samples')
+          with gzip.open('v3-1-patch-evidence/V3_1_202786_CANDIDATE_FILES_SHA1.json.gz','rt') as f:manifest=json.load(f)
+          paths=[
+           '__pages/66/station-banwoldang.page',
+           '__pages/7c/station-gangnam.page',
+           '__pages/ab/station-seomyeon.page',
+           '__pages/e3/station-banwoldang-biz-business-conv.page',
+           '__pages/86/station-gangnam-opic.page',
+           '__pages/36/station-sangmu-elem-tutor.page',
+           '__pages/7c/station-gapcheon-duolingo-academy.page']
+          rows=[]
+          for p in paths:
+            f=root/p
+            assert f.exists(),p
+            raw=f.read_bytes();h=hashlib.sha1(raw).hexdigest();expected=manifest.get('/'+p)
+            rows.append({'path':p,'archive_sha1':h,'v31_sha1':expected,'match':h==expected,'bytes':len(raw)})
+          count=sum(x['match'] for x in rows)
+          out={'status':'PASS_ARCHIVE_SHA_ALL_MATCH' if count==len(rows) else 'HOLD_ARCHIVE_OLDER_THAN_V31','matches':count,'tested':len(rows),'samples':rows,'new_draft_posts':0,'production_changes':0}
+          pathlib.Path('historical-shard-qa/comparison.json').write_text(json.dumps(out,ensure_ascii=False,indent=2))
+          print('ENPT_HISTORIC_SHARD_V31_COMPARISON',json.dumps(out,ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_SEO_A_HISTORICAL_SHARD_ARCHIVE_V31_EXACT_SOURCE_COMPARISON
+          path: historical-shard-qa/
+          retention-days: 30
