@@ -12,7 +12,7 @@ concurrency:
 jobs:
   one-safe-nonpub-preview:
     runs-on: ubuntu-latest
-    timeout-minutes: 100
+    timeout-minutes: 170
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
       ENPT_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
@@ -32,12 +32,17 @@ jobs:
           set -euo pipefail
           python3 -m py_compile scripts/enpt_seo_title_policy_a_v1.py scripts/enpt_seo_v31_shard_minimal_patch_20261028.py scripts/enpt_seo_a_v31_one_nonpub_draft_20261028.py
           python3 - <<'PY'
-          import os,json,urllib.request
+          import os,json,urllib.request,time
           tok=os.environ['GH_TOKEN']
           req=urllib.request.Request('https://api.github.com/repos/bokdong0801-ui/englishpt-seo/actions/runs/40664047571',
               method='GET',headers={'Authorization':'Bearer '+tok,'Accept':'application/vnd.github+json'})
-          with urllib.request.urlopen(req,timeout=35) as f:run=json.load(f)
-          assert run['status']=='completed' and run['conclusion']=='success','HOLD_OFFLINE_FULL_21864_NOT_PROVEN'
+          for attempt in range(180):
+              with urllib.request.urlopen(req,timeout=35) as f:run=json.load(f)
+              if run['status']=='completed':break
+              if attempt%12==0:print('ENPT_SEO_WAITING_FOR_ALL_21864_SHA_GATE',attempt,flush=True)
+              time.sleep(15)
+          else:raise RuntimeError('HOLD_OFFLINE_FULL_21864_NOT_FINISHED')
+          assert run['conclusion']=='success','HOLD_OFFLINE_FULL_21864_FAILED'
           t=os.environ['NETLIFY_AUTH_TOKEN'];site=os.environ['ENPT_SITE_ID']
           def api(p):
               q=urllib.request.Request('https://api.netlify.com/api/v1/'+p,method='GET',headers={'Authorization':'Bearer '+t})
