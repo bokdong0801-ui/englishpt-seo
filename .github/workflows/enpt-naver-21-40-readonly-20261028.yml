@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Audit ten URLs for status, indexability, self canonical and internal links without any posting
+      - name: Audit twenty URLs for status, indexability, self canonical and internal links without any posting
         shell: bash
         run: |
           set -euo pipefail
@@ -47,7 +47,7 @@ jobs:
            ('39','김해시청역 주부 영어회화','station-gimhaesicheong-housewife-conv.html','detail'),
            ('40','성수역 대학생 영어회화','station-seongsu-univ-conv.html','detail')
           ]
-          assert len(pages)==20 and len({x[2] for x in pages})==10
+          assert len(pages)==20 and len({x[2] for x in pages})==20
           class Meta(HTMLParser):
            def __init__(self):super().__init__();self.canon=[];self.robots=[];self.links=[];self.titles=0;self.h1=0
            def handle_starttag(self,tag,attrs):
