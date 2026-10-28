@@ -22,6 +22,15 @@ if _HERO_SPEC is None or _HERO_SPEC.loader is None:
     raise RuntimeError("stage9_hero_copy module unavailable")
 HERO_COPY = importlib.util.module_from_spec(_HERO_SPEC)
 _HERO_SPEC.loader.exec_module(HERO_COPY)
+
+# Isolated, approval-scoped SEO policy; production and V3.1 Draft remain untouched.
+_SEO_SPEC = importlib.util.spec_from_file_location(
+    "enpt_seo_title_policy_a_v1", ROOT / "scripts" / "enpt_seo_title_policy_a_v1.py"
+)
+if _SEO_SPEC is None or _SEO_SPEC.loader is None:
+    raise RuntimeError("ENPT approved SEO title policy unavailable")
+SEO_TITLE_POLICY = importlib.util.module_from_spec(_SEO_SPEC)
+_SEO_SPEC.loader.exec_module(SEO_TITLE_POLICY)
 BASE_URL = "https://englishpt.kr"
 PHONE = "010-5006-8027"
 PHONE_HREF = "tel:+821050068027"
@@ -1580,12 +1589,9 @@ def all_related(loc: dict, current_intent: str) -> str:
 
 
 def title_for(loc: dict, intent: str) -> str:
-    if loc.get("station"):
-        return f'{loc["dong"]} {loc["service"]} | 잉글리시PT'
-    variants = TITLE_VARIANTS[intent]
-    digest = hashlib.sha256(f'{loc["slug"]}|{intent}|title-v2'.encode()).hexdigest()
-    suffix = variants[int(digest[:8], 16) % len(variants)]
-    return f'{loc["dong"]} {loc["service"]} | {suffix}'
+    # Identical specialist-intent policy for station and neighborhood pages.
+    # IMPORTANT: non-station pages keep their existing noindex,follow policy.
+    return SEO_TITLE_POLICY.course_title(loc["dong"], intent)
 
 
 EXAM_READER_PILOT_INTENTS = {"ielts","opic","toeic","toeic-speaking","duolingo","toefl"}
