@@ -1,0 +1,141 @@
+name: ENPT GSC 56 URL GET-only crawl health audit
+on:
+  push:
+    branches: [review/enpt-gsc56-readonly-20261028]
+    paths:
+      - .github/workflows/enpt-gsc56-readonly-audit.yml
+      - qa/enpt-gsc56-targets-20261028.json
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: enpt-gsc56-readonly-review-only
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read-only HTTP, canonical, robots, 44 sitemap shards and station links
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, urllib.parse, urllib.request, urllib.error, xml.etree.ElementTree as ET, csv, time, pathlib
+          from html.parser import HTMLParser
+          from concurrent.futures import ThreadPoolExecutor
+          from collections import Counter
+          from datetime import datetime,timezone
+
+          HOST='https://englishpt.kr'
+          out=pathlib.Path('gsc56-readonly-results');out.mkdir(exist_ok=True)
+          raw=json.loads(pathlib.Path('qa/enpt-gsc56-targets-20261028.json').read_text('utf8'))
+          targets=raw['targets'];excluded=set(raw['excluded_already_google_live_checked'])
+          assert len(targets)==56 and len({x['url'] for x in targets})==56
+          assert sum(x['priority']=='P1' for x in targets)==33
+          assert sum(x['priority']=='P2' for x in targets)==23
+          assert not any(t['url'] in excluded for t in targets)
+
+          class HTML(HTMLParser):
+           def __init__(self):
+            super().__init__();self.canon=[];self.robots=[];self.title=0;self.h1=0;self.links=[];self.forms=0
+           def handle_starttag(self,tag,attrs):
+            d=dict(attrs)
+            if tag=='link' and str(d.get('rel','')).lower()=='canonical':self.canon.append(d.get('href',''))
+            if tag=='meta' and str(d.get('name','')).lower()=='robots':self.robots.append(d.get('content',''))
+            if tag=='title':self.title+=1
+            if tag=='h1':self.h1+=1
+            if tag=='a' and d.get('href'):self.links.append(d['href'])
+            if tag=='form' and d.get('name')=='englishpt-consultation':self.forms+=1
+
+          def fetch(url,bytes_max=5000000):
+           if not url.startswith(HOST+'/'):raise RuntimeError('UNEXPECTED_HOST')
+           last=''
+           for attempt in range(3):
+            try:
+             req=urllib.request.Request(url,method='GET',headers={'User-Agent':'ENPT-GSC56-ReadOnly-QA','Accept':'text/html,application/xml,*/*'})
+             t=time.monotonic()
+             with urllib.request.urlopen(req,timeout=35) as r:
+              final=r.geturl()
+              if not final.startswith(HOST+'/'):raise RuntimeError('OFF_HOST_REDIRECT')
+              return r.status,final,{k.lower():v for k,v in r.headers.items()},r.read(bytes_max),round((time.monotonic()-t)*1000)
+            except urllib.error.HTTPError as e:
+             last=f'HTTP_{e.code}'
+             if e.code not in (429,500,502,503,504):break
+            except Exception as e:last=str(e)[:160]
+            if attempt<2:time.sleep(attempt+1)
+           raise RuntimeError(last)
+
+          def load_sitemaps():
+           _,_,_,body,_=fetch(HOST+'/sitemap-index.xml')
+           locs=[(e.text or '').strip() for e in ET.fromstring(body).iter() if e.tag.endswith('loc')]
+           if len(locs)!=44 or len(set(locs))!=44:raise RuntimeError('SITEMAP_44_UNEXPECTED_'+str(len(locs)))
+           def one(url):
+            _,_,_,content,_=fetch(url)
+            return [(e.text or '').strip() for e in ET.fromstring(content).iter() if e.tag.endswith('loc')]
+           all_locs=[]
+           with ThreadPoolExecutor(max_workers=6) as pool:
+            for a in pool.map(one,locs):all_locs.extend(a)
+           if len(all_locs)!=21964 or len(set(all_locs))!=21964:raise RuntimeError(f'SITEMAP_21964_MISMATCH_{len(all_locs)}')
+           return set(all_locs)
+
+          indexed=None;sitemap_error=''
+          try:indexed=load_sitemaps()
+          except Exception as e:sitemap_error=str(e)
+          print('SITEMAP_RESULT',len(indexed) if indexed is not None else sitemap_error,flush=True)
+
+          def test(item):
+           url=item['url'];data={**item,'http':None,'final_url':'','sitemap_member':None if indexed is None else url in indexed,'status':'','issues':[]}
+           try:
+            p=urllib.parse.urlparse(url)
+            if p.hostname!='englishpt.kr' or p.query or p.scheme!='https':raise RuntimeError('INVALID_TARGET')
+            status,final,h,b,ms=fetch(url)
+            parser=HTML();parser.feed(b.decode('utf8','replace'))
+            bots=','.join(parser.robots).lower()+','+h.get('x-robots-tag','').lower()
+            data.update({'http':status,'final_url':final,'latency_ms':ms,'bytes':len(b),'content_type':h.get('content-type',''),'canonical':';'.join(parser.canon),'meta_robots':';'.join(parser.robots),'x_robots':h.get('x-robots-tag',''),'h1_count':parser.h1,'form_count':parser.forms})
+            if status!=200:data['issues'].append('NON_200')
+            if not h.get('content-type','').startswith('text/html'):data['issues'].append('HTML_MIME')
+            if parser.title!=1 or parser.h1<1:data['issues'].append('MISSING_TITLE_OR_H1')
+            if len(b)<2500:data['issues'].append('SMALL_HTML')
+            if parser.canon!=[url]:data['issues'].append('CANONICAL_MISMATCH')
+            if final!=url:data['issues'].append('REDIRECT_REVIEW')
+            if indexed is not None and url in indexed and 'noindex' in bots:data['issues'].append('INDEXABLE_BUT_NOINDEX')
+            if indexed is not None and url in indexed and 'nofollow' in bots:data['issues'].append('INDEXABLE_BUT_NOFOLLOW')
+            if item['category']=='역 허브':
+             slug=p.path.rsplit('/',1)[-1][len('station-'):-len('.html')]
+             links={urllib.parse.urlparse(x).path for x in parser.links if urllib.parse.urlparse(x).path.startswith('/station-'+slug+'-') and x.endswith('.html')}
+             data['station_course_links']=len(links)
+             if len(links)<23:data['issues'].append('STATION_COURSES_LT23')
+            if indexed is None:data['status']='POLICY_UNKNOWN' if not data['issues'] else 'REVIEW'
+            elif data['issues']:data['status']='REVIEW'
+            elif url not in indexed:data['status']='NOT_IN_SITEMAP_CHECK_SOURCE_POLICY'
+            else:data['status']='PASS'
+           except Exception as e:data['status']='ERROR';data['issues'].append('HTTP_REQUEST_FAILED');data['error']=str(e)[:200]
+           return data
+
+          with ThreadPoolExecutor(max_workers=6) as pool:
+           results=list(pool.map(test,targets))
+          counts=dict(Counter(x['status'] for x in results))
+          issue_counts=dict(Counter(i for x in results for i in x['issues']))
+          summary={'checked_utc':datetime.now(timezone.utc).isoformat(),'mode':'GET_ONLY','requested':56,'tested':len(results),'excluded_google_live_checked':list(excluded),'sitemap_verified':indexed is not None,'sitemap_error':sitemap_error,'result_counts':counts,'issue_counts':issue_counts,'production_publishes':0,'form_posts':0}
+          (out/'results.json').write_text(json.dumps(results,ensure_ascii=False,indent=2),encoding='utf8')
+          (out/'summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf8')
+          keys=['priority','category','url','status','http','sitemap_member','latency_ms','canonical','meta_robots','x_robots','h1_count','station_course_links','issues','error']
+          with (out/'results.csv').open('w',encoding='utf-8-sig',newline='') as f:
+           writer=csv.DictWriter(f,fieldnames=keys,extrasaction='ignore');writer.writeheader()
+           for x in results:writer.writerow({**x,'issues':';'.join(x['issues'])})
+          print('ENPT_GSC56_FINAL_SUMMARY',json.dumps(summary,ensure_ascii=False),flush=True)
+          for x in results:
+           if x['status']!='PASS':print('GSC56_NEEDS_ATTENTION',json.dumps({k:x.get(k) for k in ('url','status','http','sitemap_member','issues','error')},ensure_ascii=False),flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_GSC_56_GETONLY_RESULTS_20261028
+          path: gsc56-readonly-results/
+          retention-days: 30
+          if-no-files-found: warn
