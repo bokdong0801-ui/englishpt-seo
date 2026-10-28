@@ -55,16 +55,18 @@ jobs:
           data=json.loads((root/'data/stations.json').read_text())
           sm={x['slug']:x for x in data['stations']}
           with gzip.open(root/'v3-1-patch-evidence/V3_1_202786_CANDIDATE_FILES_SHA1.json.gz','rt') as f:manifest=json.load(f)
+          with gzip.open(root/'signed-qa-map/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz','rt') as f:routes=json.load(f)['original_public_html_to_data_payload']
           samples=[('banwoldang','hub'),('gangnam','hub'),('seomyeon','hub'),
                    ('banwoldang','biz-business-conv'),('gangnam','opic'),('sangmu','elem-tutor')]
           report=[]
           for slug,intent in samples:
             station=sm[slug];name='station-'+slug+('' if intent=='hub' else '-'+intent)+'.html'
-            p='/'+name
+            route=routes.get(name) or {}
+            p='/'+route.get('to','NONE')
             raw=mod.station_hub(station,sm) if intent=='hub' else mod.render_station_course(station,intent,sm)[0]
             digest=hashlib.sha1(raw.encode('utf8')).hexdigest()
             expected=manifest.get(p)
-            report.append({'path':p,'in_v31_manifest':expected is not None,'reconstructed_sha':digest,'v31_sha':expected,'exact_match':expected==digest})
+            report.append({'route':name,'payload_path':p,'in_v31_manifest':expected is not None,'reconstructed_sha':digest,'v31_sha':expected,'exact_match':expected==digest})
           evidence={'status':'PASS_SOURCE_EXACT' if all(x['exact_match'] for x in report) else 'HOLD_NOT_EXACT_DO_NOT_USE_DIRECT_RERENDER','v31_manifest_paths':len(manifest),'samples':report,'draft_posts':0,'production_mutations':0}
           (root/'seo-v31-compat/origin-comparison.json').write_text(json.dumps(evidence,ensure_ascii=False,indent=2))
           print('ENPT_SEO_V31_ORIGIN_COMPAT',json.dumps(evidence,ensure_ascii=False),flush=True)
