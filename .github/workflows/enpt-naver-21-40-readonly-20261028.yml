@@ -1,0 +1,114 @@
+name: ENPT Naver 21-40 GET-only URL SEO Gate
+on:
+  push:
+    branches: [review/enpt-naver-21-40-readonly-20261028]
+    paths: [.github/workflows/enpt-naver-21-40-readonly-20261028.yml]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Audit ten URLs for status, indexability, self canonical and internal links without any posting
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from urllib.request import Request,urlopen
+          from urllib.parse import urlparse
+          from html.parser import HTMLParser
+          from concurrent.futures import ThreadPoolExecutor
+          import pathlib,json,csv,xml.etree.ElementTree as ET,collections
+          base='https://englishpt.kr/'
+          pages=[
+           ('21','역삼역 영어과정','station-yeoksam.html','hub'),
+           ('22','노원역 영어과정','station-nowon.html','hub'),
+           ('23','사상역 영어과정','station-sasang.html','hub'),
+           ('24','센텀시티역 영어과정','station-centum-city.html','hub'),
+           ('25','반월당역 영어과정','station-banwoldang.html','hub'),
+           ('26','정부청사역 영어과정','station-jeongbucheongsa.html','hub'),
+           ('27','광주송정역 영어과정','station-gwangjusongjeong.html','hub'),
+           ('28','천안역 영어과정','station-cheonan.html','hub'),
+           ('29','김해시청역 영어과정','station-gimhaesicheong.html','hub'),
+           ('30','성수역 영어과정','station-seongsu.html','hub'),
+           ('31','역삼역 아이엘츠 과외','station-yeoksam-ielts.html','detail'),
+           ('32','노원역 중학생 영어회화','station-nowon-mid-conv.html','detail'),
+           ('33','사상역 초등학생 영어과외','station-sasang-elem-tutor.html','detail'),
+           ('34','센텀시티역 토플 과외','station-centum-city-toefl.html','detail'),
+           ('35','반월당역 왕초보 영어회화','station-banwoldang-beginner-english-conv.html','detail'),
+           ('36','정부청사역 비즈니스 영어회화','station-jeongbucheongsa-biz-business-conv.html','detail'),
+           ('37','광주송정역 오픽 과외','station-gwangjusongjeong-opic.html','detail'),
+           ('38','천안역 토익 과외','station-cheonan-toeic.html','detail'),
+           ('39','김해시청역 주부 영어회화','station-gimhaesicheong-housewife-conv.html','detail'),
+           ('40','성수역 대학생 영어회화','station-seongsu-univ-conv.html','detail')
+          ]
+          assert len(pages)==20 and len({x[2] for x in pages})==10
+          class Meta(HTMLParser):
+           def __init__(self):super().__init__();self.canon=[];self.robots=[];self.links=[];self.titles=0;self.h1=0
+           def handle_starttag(self,tag,attrs):
+            d=dict(attrs)
+            if tag=='link' and d.get('rel')=='canonical':self.canon.append(d.get('href',''))
+            if tag=='meta' and d.get('name')=='robots':self.robots.append(d.get('content',''))
+            if tag=='a' and d.get('href'):self.links.append(d.get('href'))
+            if tag=='title':self.titles+=1
+            if tag=='h1':self.h1+=1
+          def get(path):
+           r=Request(base+path,headers={'User-Agent':'ENPT-NAVER-21TO40-READONLY','Accept':'text/html,application/xml,*/*'},method='GET')
+           with urlopen(r,timeout=40) as resp:return resp.status,resp.geturl(),dict((k.lower(),v) for k,v in resp.headers.items()),resp.read(12000000)
+          status,_,_,root=get('sitemap-index.xml')
+          assert status==200
+          locs=[(e.text or '').strip() for e in ET.fromstring(root).iter() if e.tag.endswith('loc')]
+          assert len(locs)==44
+          def readmap(x):
+           rel=x.replace(base,'')
+           code,_,_,b=get(rel)
+           assert code==200
+           return [(e.text or '').strip() for e in ET.fromstring(b).iter() if e.tag.endswith('loc')]
+          urls=set()
+          with ThreadPoolExecutor(max_workers=6) as pool:
+           for lst in pool.map(readmap,locs):urls.update(lst)
+          assert len(urls)==21964
+          def test(p):
+           index,name,path,kind=p;url=base+path;issues=[]
+           try:
+            code,final,headers,body=get(path)
+            html=Meta();html.feed(body.decode('utf8','replace'))
+            bots=' '.join(html.robots+[headers.get('x-robots-tag','')]).lower()
+            if code!=200 or final!=url:issues.append('HTTP_OR_REDIRECT')
+            if html.canon!=[url]:issues.append('CANONICAL')
+            if 'noindex' in bots or 'nofollow' in bots:issues.append('UNEXPECTED_NOINDEX_NOFOLLOW')
+            if url not in urls:issues.append('NOT_IN_SITEMAP')
+            if html.titles!=1 or html.h1==0:issues.append('TITLE_OR_H1')
+            if len(body)<2500:issues.append('SHORT_HTML')
+            links=0
+            if kind=='hub':
+             stem=path[:-5]
+             links=len({urlparse(a).path for a in html.links if urlparse(a).path.startswith('/'+stem+'-') and urlparse(a).path.endswith('.html')})
+             if links<23:issues.append('HUB_LINKS_LT23')
+            return dict(rank=index,name=name,url=url,category=kind,http=code,sitemap_member=url in urls,canonical=','.join(html.canon),robots=';'.join(html.robots),x_robots=headers.get('x-robots-tag',''),course_links=links,issues=issues,verdict='PASS' if not issues else 'HOLD')
+           except Exception as e:
+            return dict(rank=index,name=name,url=url,category=kind,verdict='HOLD',issues=['FETCH_ERROR'],error=str(e)[:180])
+          with ThreadPoolExecutor(max_workers=5) as pool:res=list(pool.map(test,pages))
+          out=pathlib.Path('naver-top10-evidence');out.mkdir(exist_ok=True)
+          (out/'results.json').write_text(json.dumps(res,ensure_ascii=False,indent=2),encoding='utf8')
+          with (out/'results.csv').open('w',encoding='utf-8-sig',newline='') as f:
+           keys=['rank','name','url','category','verdict','http','sitemap_member','canonical','robots','x_robots','course_links','issues','error'];w=csv.DictWriter(f,fieldnames=keys,extrasaction='ignore');w.writeheader()
+           for x in res:w.writerow({**x,'issues':';'.join(x['issues'])})
+          summary={'status':'PASS' if all(x['verdict']=='PASS' for x in res) else 'HOLD','tested':len(res),'passed':sum(x['verdict']=='PASS' for x in res),'sitemap_shards':len(locs),'indexable_urls':len(urls),'mutations':0,'requests_to_naver':0}
+          (out/'summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf8')
+          print('ENPT_NAVER_21_40_RESULT',json.dumps(summary,ensure_ascii=False),flush=True)
+          for x in res:print('NAVER_21_40_URL',json.dumps({'url':x['url'],'verdict':x['verdict'],'issues':x['issues']},ensure_ascii=False),flush=True)
+          assert summary['status']=='PASS','NAVER_TOP10_HOLD'
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_NAVER_21_40_URL_SEO_READONLY_20261028
+          path: naver-top10-evidence/
+          retention-days: 30
+          if-no-files-found: warn
