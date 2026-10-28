@@ -1,0 +1,79 @@
+name: ENPT SEO A vs V31 SHA Origin Preflight No Deploy
+on:
+  push:
+    branches: [review/enpt-seo-titles-approved-a-v1-20261028]
+    paths: [.github/workflows/enpt-seo-a-v31-baseline-sha-offline-20261028.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  origin-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_READONLY_FULL_PUBLISHED_SHA_FILE_MANIFEST
+          run-id: 40459650646
+          github-token: ${{ github.token }}
+          path: published-manifest
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - name: Build exact V31 legacy static SHA inventory locally only
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_REGION_DRAFT_BUILD_20261027.py
+          python3 scripts/ENPT_REGION_FINAL_INTEGRATION_20261027.py
+          python3 scripts/ENPT_REGION_V2_FIX_5149_LINKS_20261027.py
+          python3 scripts/ENPT_V3_SHA_REUSE_MINIMAL_FULLSITE_BUILDER_20261027.py
+          python3 scripts/ENPT_V3_1_FIX_7_LOCALITY_TITLES_ONLY_20261027.py
+          test -s v3-1-patch-evidence/V3_1_202786_CANDIDATE_FILES_SHA1.json.gz
+      - name: Exact baseline station HTML SHA proof before SEO-only variant
+        run: |
+          set -euo pipefail
+          mkdir -p seo-v31-compat
+          cp scripts/stage9-clean-mass-renderer.py /tmp/enpt-seo-new-clean.py
+          cp scripts/stage9-station-renderer.py /tmp/enpt-seo-new-station.py
+          git show origin/review/enpt-v3-1-byeongmokandong-fix-20261027:scripts/stage9-clean-mass-renderer.py > scripts/stage9-clean-mass-renderer.py
+          git show origin/review/enpt-v3-1-byeongmokandong-fix-20261027:scripts/stage9-station-renderer.py > scripts/stage9-station-renderer.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import json,gzip,hashlib,importlib.util
+          root=Path.cwd()
+          spec=importlib.util.spec_from_file_location('old_station_renderer',root/'scripts/stage9-station-renderer.py')
+          mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
+          data=json.loads((root/'data/stations.json').read_text())
+          sm={x['slug']:x for x in data['stations']}
+          with gzip.open(root/'v3-1-patch-evidence/V3_1_202786_CANDIDATE_FILES_SHA1.json.gz','rt') as f:manifest=json.load(f)
+          samples=[('banwoldang','hub'),('gangnam','hub'),('seomyeon','hub'),
+                   ('banwoldang','biz-business-conv'),('gangnam','opic'),('sangmu','elem-tutor')]
+          report=[]
+          for slug,intent in samples:
+            station=sm[slug];name='station-'+slug+('' if intent=='hub' else '-'+intent)+'.html'
+            p='/'+name
+            raw=mod.station_hub(station,sm) if intent=='hub' else mod.render_station_course(station,intent,sm)[0]
+            digest=hashlib.sha1(raw.encode('utf8')).hexdigest()
+            expected=manifest.get(p)
+            report.append({'path':p,'in_v31_manifest':expected is not None,'reconstructed_sha':digest,'v31_sha':expected,'exact_match':expected==digest})
+          evidence={'status':'PASS_SOURCE_EXACT' if all(x['exact_match'] for x in report) else 'HOLD_NOT_EXACT_DO_NOT_USE_DIRECT_RERENDER','v31_manifest_paths':len(manifest),'samples':report,'draft_posts':0,'production_mutations':0}
+          (root/'seo-v31-compat/origin-comparison.json').write_text(json.dumps(evidence,ensure_ascii=False,indent=2))
+          print('ENPT_SEO_V31_ORIGIN_COMPAT',json.dumps(evidence,ensure_ascii=False),flush=True)
+          PY
+          cp /tmp/enpt-seo-new-clean.py scripts/stage9-clean-mass-renderer.py
+          cp /tmp/enpt-seo-new-station.py scripts/stage9-station-renderer.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_SEO_A_V31_ORIGIN_SHA_ONLY_NO_DEPLOY_20261028
+          path: seo-v31-compat/
+          retention-days: 30
