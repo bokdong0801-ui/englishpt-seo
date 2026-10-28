@@ -2857,7 +2857,10 @@ def productionize(raw: str, loc: dict, intent: str, family: str) -> tuple[str,li
     bad=[x for x in forbidden if x in raw]
     if bad:
         problems.append("stale_or_machine_copy:"+",".join(bad))
-    min_cluster_links = 22
+    # The 23-intent navigation intentionally sends unavailable mid/high tutor
+    # links to the national student guide, leaving 20-21 *local* detail links.
+    # The former threshold of 22 falsely flagged every properly rendered page.
+    min_cluster_links = 20
     if raw.count('href="/'+loc["slug"]+'-') < min_cluster_links:
         problems.append("cluster_links")
     if is_academy_intent(intent) and 'class="section academy-choice"' not in raw:
