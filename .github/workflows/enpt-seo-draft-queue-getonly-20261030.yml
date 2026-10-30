@@ -1,0 +1,59 @@
+name: ENPT SEO Existing 6ae44a45 Draft File Queue Diagnose GET ONLY
+on:
+  push:
+    branches: [review/enpt-seo-titles-approved-a-v1-20261028]
+    paths: [.github/workflows/enpt-seo-draft-queue-getonly-20261030.yml]
+permissions: {contents: read}
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: Read-only inspect deploy file queue and CDN representative paths
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request,urllib.error,hashlib
+          t=os.environ['NETLIFY_AUTH_TOKEN']
+          site='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          did='6ae44a45133b105058f6f9ef'
+          api='https://api.netlify.com/api/v1/'
+          def req(u,auth=False):
+            headers={'Accept':'application/json' if auth else '*/*'}
+            if auth:headers['Authorization']='Bearer '+t
+            q=urllib.request.Request(u,method='GET',headers=headers)
+            try:
+              with urllib.request.urlopen(q,timeout=25) as resp:
+                body=resp.read(220000)
+                return {'code':resp.status,'raw':body,'type':resp.headers.get('Content-Type'),
+                    'rate_remaining':resp.headers.get('X-RateLimit-Remaining'),
+                    'retry_after':resp.headers.get('Retry-After')}
+            except urllib.error.HTTPError as e:
+              return {'code':e.code,'raw':e.read(2000),'type':e.headers.get('Content-Type'),'retry_after':e.headers.get('Retry-After')}
+            except Exception as e:return {'error':repr(e)[:180]}
+          p=req(api+'sites/'+site+'/deploys/'+did,True)
+          if p.get('code')!=200:raise RuntimeError('GET_DRAFT_FAILED_'+str(p))
+          d=json.loads(p['raw'])
+          keylist=['id','state','draft','published_at','deploy_url','deploy_ssl_url','required','required_edge_functions','files','functions','error_message','error','summary','created_at','updated_at','prepared_at','uploaded_at','title']
+          data={k:({'count':len(d[k]),'first':d[k][:4]} if isinstance(d.get(k),list) and k in ['required','required_edge_functions'] else d.get(k))
+                for k in keylist if k in d}
+          print('ENPT_DRAFT_QUEUEREAD',json.dumps({'data':data,'keys':sorted(d.keys()),'has_required_key':'required' in d},ensure_ascii=False)[:6800],flush=True)
+          pp=['/__pages/66/station-banwoldang.page',
+              '/__pages/86/station-gangnam-opic.page',
+              '/__pages/7c/station-gapcheon-duolingo-academy.page',
+              '/sitemap-index.xml']
+          for path in pp:
+            for source,u,auth in [('existing_draft_api',api+'deploys/'+did+'/files'+path,True),
+                                  ('existing_draft_cdn','https://'+did+'--englishpt-seo.netlify.app'+path,False)]:
+              z=req(u,auth)
+              x={'path':path,'source':source,'http':z.get('code'),'error':z.get('error'),'type':z.get('type'),
+                  'sha1':hashlib.sha1(z['raw']).hexdigest() if z.get('code')==200 else None,
+                  'bytes':len(z.get('raw',b''))}
+              if z.get('code')==200:
+                from re import search
+                ss=z['raw'].decode('utf8','replace')
+                m=search(r'<title>(.*?)</title>',ss)
+                x['title']=m.group(1)[:130] if m else None
+              print('ENPT_DRAFT_FILE_DIAG',json.dumps(x,ensure_ascii=False),flush=True)
+          PY
