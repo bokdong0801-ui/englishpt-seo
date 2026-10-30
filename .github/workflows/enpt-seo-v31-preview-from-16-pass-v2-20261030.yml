@@ -1,0 +1,238 @@
+name: ENPT SEO V31 Nonpublished Preview From Full PASS Gate V2
+on:
+  push:
+    branches: [review/enpt-seo-titles-approved-a-v1-20261028]
+    paths: [.github/workflows/enpt-seo-v31-preview-from-16-pass-v2-20261030.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-seo-a-v31-new-separate-nonprod-draft-once
+  cancel-in-progress: false
+jobs:
+  one-safe-nonpub-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 170
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      ENPT_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      ENPT_PUB_ID: 6adafef5f2c6d196833683db
+      ENPT_V31_ID: 6ae06963f085b33a5ee903eb
+      EDGE_SHA: 1359b9c72eadd149ad8cde014235de40b91e0d33e2132c2d5609bf76a6e4653b
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Validate frozen reviewed offline 21864 SHA audit success and Netlify preconditions BEFORE build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/enpt_seo_title_policy_a_v1.py scripts/enpt_seo_v31_shard_minimal_patch_20261028.py scripts/enpt_seo_a_v31_one_nonpub_draft_20261030.py
+          python3 - <<'PY'
+          import os,json,urllib.request,time
+          tok=os.environ['GH_TOKEN']
+          req=urllib.request.Request('https://api.github.com/repos/bokdong0801-ui/englishpt-seo/actions/runs/41020966297',
+              method='GET',headers={'Authorization':'Bearer '+tok,'Accept':'application/vnd.github+json'})
+          for attempt in range(180):
+              with urllib.request.urlopen(req,timeout=35) as f:run=json.load(f)
+              if run['status']=='completed':break
+              if attempt%12==0:print('ENPT_SEO_WAITING_FOR_ALL_21864_SHA_GATE',attempt,flush=True)
+              time.sleep(15)
+          else:raise RuntimeError('HOLD_OFFLINE_FULL_21864_NOT_FINISHED')
+          assert run['conclusion']=='success','HOLD_OFFLINE_FULL_21864_FAILED'
+          t=os.environ['NETLIFY_AUTH_TOKEN'];site=os.environ['ENPT_SITE_ID']
+          def api(p):
+              q=urllib.request.Request('https://api.netlify.com/api/v1/'+p,method='GET',headers={'Authorization':'Bearer '+t})
+              with urllib.request.urlopen(q,timeout=35) as f:return json.load(f)
+          s=api('sites/'+site);d=api('sites/'+site+'/deploys/'+os.environ['ENPT_V31_ID'])
+          assert (s.get('published_deploy') or {}).get('id')==os.environ['ENPT_PUB_ID']
+          assert d.get('id')==os.environ['ENPT_V31_ID'] and d.get('state')=='ready' and d.get('published_at') is None
+          print('PASS_OFFLINE_FULL_21864_AND_PRODUCTION_V31_FROZEN',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_READONLY_FULL_PUBLISHED_SHA_FILE_MANIFEST
+          run-id: 40459650646
+          github-token: ${{ github.token }}
+          path: published-manifest
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: pristine-edge-archive
+      - name: Recreate exact V31 202786 files and original seven locality repairs
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_REGION_DRAFT_BUILD_20261027.py
+          python3 scripts/ENPT_REGION_FINAL_INTEGRATION_20261027.py
+          python3 scripts/ENPT_REGION_V2_FIX_5149_LINKS_20261027.py
+          python3 scripts/ENPT_V3_SHA_REUSE_MINIMAL_FULLSITE_BUILDER_20261027.py
+          python3 scripts/ENPT_V3_1_FIX_7_LOCALITY_TITLES_ONLY_20261027.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V31_20261030_ALL16_SIGNED_SHA_AGGREGATED_PASS
+          run-id: 41020966297
+          github-token: ${{ github.token }}
+          path: signed-combined-artifact
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ENPT_V31_SHA_SHARD_*
+          run-id: 41019999727
+          github-token: ${{ github.token }}
+          path: signed-shard-artifacts
+          merge-multiple: false
+      - name: Restore and SHA-reverify all 21864 signed delta bytes and 202786 immutable base
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,gzip,pathlib,hashlib,shutil
+          base=pathlib.Path('signed-combined-artifact')
+          found=list(base.rglob('full-summary.json'))
+          assert len(found)==1,('MISSING_COMBINED_SUMMARY',found)
+          src=found[0].parent
+          x=json.loads(found[0].read_text('utf8'))
+          assert x['status']=='PASS' and x['processed']==x['expected']==21864
+          dest=pathlib.Path('seo-v31-minimal')
+          dest.mkdir(exist_ok=True)
+          for name in ('full-summary.json','SEO_A_V31_202786_STATIC_FILES_SHA1.json.gz'):
+              shutil.copy2(src/name,dest/name)
+          with gzip.open(dest/'SEO_A_V31_202786_STATIC_FILES_SHA1.json.gz','rt') as f:updated=json.load(f)
+          with gzip.open('v3-1-patch-evidence/V3_1_202786_CANDIDATE_FILES_SHA1.json.gz','rt') as f:old=json.load(f)
+          assert len(old)==len(updated)==202786 and set(old)==set(updated)
+          changed={p for p in old if old[p]!=updated[p]}
+          assert len(changed)==21864 and all(p.startswith('/__pages/') and p.endswith('.page') for p in changed)
+          seen=set()
+          for n in range(16):
+              root=pathlib.Path('signed-shard-artifacts')/('ENPT_V31_SHA_SHARD_'+str(n))
+              summaries=list(root.rglob('summary.json'))
+              assert len(summaries)==1,('SHARD_MISSING',n)
+              folder=summaries[0].parent
+              summary=json.loads(summaries[0].read_text('utf8'))
+              assert summary['status']=='PASS' and summary['shard']==n and not summary['failures']
+              records=json.loads((folder/'files.json').read_text('utf8'))
+              assert len(records)==summary['passed']==summary['expected']
+              for obj in records:
+                  p=obj['path']
+                  assert p in changed and p not in seen and obj['before_sha1']==old[p]
+                  f=folder/'delta'/p.lstrip('/')
+                  assert f.is_file() and hashlib.sha1(f.read_bytes()).hexdigest()==obj['after_sha1']==updated[p]
+                  dst=dest/'delta'/p.lstrip('/')
+                  dst.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copy2(f,dst)
+                  seen.add(p)
+          assert seen==changed
+          print('PASS_21864_SIGNED_EXACT_SEO_PATCHED_FILES_AND_202786_MANIFEST',flush=True)
+          PY
+      - name: Reconstruct EXACT historical Edge tar from signed archive, before new Netlify Draft POST
+        run: |
+          set -euo pipefail
+          mkdir -p source-edge-only seo-v31-verbatim-edge
+          command -v zstd || (sudo apt-get update -qq && sudo apt-get install -y -qq zstd)
+          ARCHIVE=pristine-edge-archive/ENGLISHPT_v23521_NAVER_GOOGLE_META_ONLY_TWO_HOME_NOT_DEPLOYED.tar.zst
+          printf '%s  %s\n' 6d0272d1601a1a47abeccc4d740359af9e7678293ee0a3d257eecd2ca478d884 "$ARCHIVE" | sha256sum -c -
+          tar --zstd -xf "$ARCHIVE" -C source-edge-only --wildcards '*netlify.toml' '*netlify/edge-functions/shard-router.js'
+          python3 - <<'PY'
+          import tomllib,hashlib,pathlib
+          p=pathlib.Path('source-edge-only')
+          a=tomllib.loads((p/'netlify.toml').read_text('utf8'))
+          assert a['edge_functions']==[{'function':'shard-router','pattern':'^/[^/]+[.]html$'}]
+          assert hashlib.sha256((p/'netlify/edge-functions/shard-router.js').read_bytes()).hexdigest()=='5cb224d7693a92b2b65677bec3dbee780e7c30bcc03fcbeebc6842a873344470'
+          PY
+          npm install --no-audit --no-fund --no-save netlify-cli@27.13.0 >/dev/null
+          cat > seo-v31-edge-reconstruct.mjs <<'JS'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import crypto from 'node:crypto';
+          import {createRequire} from 'node:module';
+          const require=createRequire(import.meta.url);
+          const file=require.resolve('@netlify/edge-bundler',{paths:[path.resolve('node_modules/netlify-cli'),process.cwd()]});
+          const {bundle}=await import('file://'+file);
+          const sha=process.env.EDGE_SHA;
+          const root=path.resolve('source-edge-only'),dest=path.resolve('seo-v31-verbatim-edge');
+          const output=await bundle([path.join(root,'netlify/edge-functions')],dest,
+            [{function:'shard-router',pattern:'^/[^/]+[.]html$'}],
+            {basePath:root,rootPath:root,featureFlags:{edge_bundler_generate_tarball:true}});
+          const asset=path.join(dest,sha+'.tar.gz');
+          if(!fs.existsSync(asset))throw Error('Original Edge tar not generated');
+          const body=fs.readFileSync(asset);
+          if(body.length!==2137 || crypto.createHash('sha256').update(body).digest('hex')!==sha)throw Error('Historical Edge tar digest mismatch');
+          if(!output.manifest?.bundles?.some(x=>x.asset===sha+'.tar.gz'&&x.format==='tar'))throw Error('Edge metadata mismatch');
+          console.log('PASS_BYTE_IDENTICAL_V31_EDGE_TAR',sha);
+          JS
+          timeout 160s node seo-v31-edge-reconstruct.mjs
+      - name: Exactly ONE new nonpublished V31-derived Draft and only required SHA PUT
+        run: |
+          set -euo pipefail
+          python3 scripts/enpt_seo_a_v31_one_nonpub_draft_20261030.py
+          test -s seo-v31-new-draft-evidence/06_NEW_DRAFT_READY.json
+      - name: GET-only draft readback including 3 SEO examples, 44 XML, original Production and V31 identity
+        run: |
+          python3 - <<'PY'
+          import urllib.request,json,os,html,re,xml.etree.ElementTree as ET,pathlib
+          d=json.loads(pathlib.Path('seo-v31-new-draft-evidence/06_NEW_DRAFT_READY.json').read_text())
+          did=d['draft_id']
+          base='https://'+did+'--englishpt-seo.netlify.app'
+          cases={
+              '/station-banwoldang.html':'반월당역 영어회화 영어과외 | 1:1 맞춤 직장인 학생 주부',
+              '/station-banwoldang-biz-business-conv.html':'반월당역 직장인 영어회화 | 1:1 맞춤 비즈니스 영어',
+              '/station-gangnam-opic.html':'강남역 오픽 과외 | 1:1 맞춤 말하기',
+              '/station-seomyeon.html':'서면역 영어회화 영어과외 | 1:1 맞춤 직장인 학생 주부'}
+          for p,expected in cases.items():
+              q=urllib.request.Request(base+p,method='GET')
+              with urllib.request.urlopen(q,timeout=45) as r:raw=r.read().decode('utf8');status=r.status
+              assert status==200
+              m=re.search('<title>(.*?)</title>',raw,re.S|re.I)
+              assert m and html.unescape(m.group(1))==expected,(p,m.group(1) if m else None)
+              assert '<meta name="robots" content="index,follow' in raw and 'englishpt-consultation' in raw
+              assert 'rel="canonical" href="https://englishpt.kr'+p+'"' in raw
+              print('PASS_DRAFT_LIVE_SEO_META',p,flush=True)
+          with urllib.request.urlopen(base+'/sitemap-index.xml',timeout=45) as r:xml=r.read()
+          locs=[x.text for x in ET.fromstring(xml).iter() if x.tag.endswith('loc')]
+          assert len(locs)==44
+          print('PASS_44_ORIGINAL_INDEXABLE_SITEMAP_SHARDS',flush=True)
+          t=os.environ['NETLIFY_AUTH_TOKEN'];site=os.environ['ENPT_SITE_ID']
+          def api(p):
+              q=urllib.request.Request('https://api.netlify.com/api/v1/'+p,headers={'Authorization':'Bearer '+t},method='GET')
+              with urllib.request.urlopen(q,timeout=40) as r:return json.load(r)
+          s=api('sites/'+site);old=api('sites/'+site+'/deploys/'+os.environ['ENPT_V31_ID']);new=api('sites/'+site+'/deploys/'+did)
+          assert (s.get('published_deploy') or {}).get('id')==os.environ['ENPT_PUB_ID']
+          assert old.get('state')=='ready' and old.get('published_at') is None
+          assert new.get('state')=='ready' and new.get('published_at') is None and new.get('draft') is not False
+          print('ENPT_SEO_A_SEPARATE_DRAFT_PREVIEW_READY_FINAL',json.dumps({'id':did,'preview':base,'published_unchanged':True,'v31_unchanged':True}),flush=True)
+          PY
+      - name: Always GET-only Production and original V31 identity check
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          t=os.environ.get('NETLIFY_AUTH_TOKEN','')
+          if not t:raise RuntimeError('HOLD_TOKEN_UNAVAILABLE')
+          base='https://api.netlify.com/api/v1/'
+          def get(path):
+              q=urllib.request.Request(base+path,method='GET',headers={'Authorization':'Bearer '+t})
+              with urllib.request.urlopen(q,timeout=35) as r:return json.load(r)
+          s=get('sites/'+os.environ['ENPT_SITE_ID'])
+          d=get('sites/'+os.environ['ENPT_SITE_ID']+'/deploys/'+os.environ['ENPT_V31_ID'])
+          assert (s.get('published_deploy') or {}).get('id')==os.environ['ENPT_PUB_ID']
+          assert d.get('state')=='ready' and d.get('published_at') is None
+          print('ENPT_SEO_A_PROD_AND_OLD_V31_DRAFT_SAFE')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_SEO_A_V31_21864_NONPUBLISHED_DRAFT_ONE_PREVIEW_EVIDENCE
+          path: |
+            seo-v31-new-draft-evidence/
+            seo-v31-minimal/full-summary.json
+            seo-v31-minimal/title-route-diff-samples.json
+          retention-days: 30
