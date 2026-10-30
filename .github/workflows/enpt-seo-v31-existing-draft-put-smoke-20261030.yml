@@ -1,0 +1,163 @@
+name: ENPT SEO V31 Existing Draft PUT Throttle Smoke 20261030
+on:
+  push:
+    branches: [review/enpt-seo-titles-approved-a-v1-20261028]
+    paths: [.github/workflows/enpt-seo-v31-existing-draft-put-smoke-20261030.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: enpt-seo-a-v31-new-separate-nonprod-draft-once
+  cancel-in-progress: false
+jobs:
+  one-safe-nonpub-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+      ENPT_SITE_ID: 98d96cc5-f0b7-4d3d-8072-6476d93e55a3
+      ENPT_PUB_ID: 6adafef5f2c6d196833683db
+      ENPT_V31_ID: 6ae06963f085b33a5ee903eb
+      EDGE_SHA: 1359b9c72eadd149ad8cde014235de40b91e0d33e2132c2d5609bf76a6e4653b
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Validate frozen reviewed offline 21864 SHA audit success and Netlify preconditions BEFORE build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 -m py_compile scripts/enpt_seo_title_policy_a_v1.py scripts/enpt_seo_v31_shard_minimal_patch_20261028.py scripts/enpt_seo_a_v31_one_nonpub_draft_20261030.py
+          python3 - <<'PY'
+          import os,json,urllib.request,time
+          tok=os.environ['GH_TOKEN']
+          req=urllib.request.Request('https://api.github.com/repos/bokdong0801-ui/englishpt-seo/actions/runs/41020966297',
+              method='GET',headers={'Authorization':'Bearer '+tok,'Accept':'application/vnd.github+json'})
+          for attempt in range(180):
+              with urllib.request.urlopen(req,timeout=35) as f:run=json.load(f)
+              if run['status']=='completed':break
+              if attempt%12==0:print('ENPT_SEO_WAITING_FOR_ALL_21864_SHA_GATE',attempt,flush=True)
+              time.sleep(15)
+          else:raise RuntimeError('HOLD_OFFLINE_FULL_21864_NOT_FINISHED')
+          assert run['conclusion']=='success','HOLD_OFFLINE_FULL_21864_FAILED'
+          t=os.environ['NETLIFY_AUTH_TOKEN'];site=os.environ['ENPT_SITE_ID']
+          def api(p):
+              q=urllib.request.Request('https://api.netlify.com/api/v1/'+p,method='GET',headers={'Authorization':'Bearer '+t})
+              with urllib.request.urlopen(q,timeout=35) as f:return json.load(f)
+          s=api('sites/'+site);d=api('sites/'+site+'/deploys/'+os.environ['ENPT_V31_ID'])
+          assert (s.get('published_deploy') or {}).get('id')==os.environ['ENPT_PUB_ID']
+          assert d.get('id')==os.environ['ENPT_V31_ID'] and d.get('state')=='ready' and d.get('published_at') is None
+          print('PASS_OFFLINE_FULL_21864_AND_PRODUCTION_V31_FROZEN',flush=True)
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_READONLY_FULL_PUBLISHED_SHA_FILE_MANIFEST
+          run-id: 40459650646
+          github-token: ${{ github.token }}
+          path: published-manifest
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-GOOGLE-TAGS-2HOMES-FULL-CANDIDATE-NOT-DEPLOYED
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: pristine-edge-archive
+      - name: Recreate exact V31 202786 files and original seven locality repairs
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_REGION_DRAFT_BUILD_20261027.py
+          python3 scripts/ENPT_REGION_FINAL_INTEGRATION_20261027.py
+          python3 scripts/ENPT_REGION_V2_FIX_5149_LINKS_20261027.py
+          python3 scripts/ENPT_V3_SHA_REUSE_MINIMAL_FULLSITE_BUILDER_20261027.py
+          python3 scripts/ENPT_V3_1_FIX_7_LOCALITY_TITLES_ONLY_20261027.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V31_20261030_ALL16_SIGNED_SHA_AGGREGATED_PASS
+          run-id: 41020966297
+          github-token: ${{ github.token }}
+          path: signed-combined-artifact
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ENPT_V31_SHA_SHARD_*
+          run-id: 41019999727
+          github-token: ${{ github.token }}
+          path: signed-shard-artifacts
+          merge-multiple: false
+      - name: Restore and SHA-reverify all 21864 signed delta bytes and 202786 immutable base
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,gzip,pathlib,hashlib,shutil
+          base=pathlib.Path('signed-combined-artifact')
+          found=list(base.rglob('full-summary.json'))
+          assert len(found)==1,('MISSING_COMBINED_SUMMARY',found)
+          src=found[0].parent
+          x=json.loads(found[0].read_text('utf8'))
+          assert x['status']=='PASS' and x['processed']==x['expected']==21864
+          dest=pathlib.Path('seo-v31-minimal')
+          dest.mkdir(exist_ok=True)
+          for name in ('full-summary.json','SEO_A_V31_202786_STATIC_FILES_SHA1.json.gz'):
+              shutil.copy2(src/name,dest/name)
+          with gzip.open(dest/'SEO_A_V31_202786_STATIC_FILES_SHA1.json.gz','rt') as f:updated=json.load(f)
+          with gzip.open('v3-1-patch-evidence/V3_1_202786_CANDIDATE_FILES_SHA1.json.gz','rt') as f:old=json.load(f)
+          assert len(old)==len(updated)==202786 and set(old)==set(updated)
+          changed={p for p in old if old[p]!=updated[p]}
+          assert len(changed)==21864 and all(p.startswith('/__pages/') and p.endswith('.page') for p in changed)
+          seen=set()
+          for n in range(16):
+              root=pathlib.Path('signed-shard-artifacts')/('ENPT_V31_SHA_SHARD_'+str(n))
+              summaries=list(root.rglob('summary.json'))
+              assert len(summaries)==1,('SHARD_MISSING',n)
+              folder=summaries[0].parent
+              summary=json.loads(summaries[0].read_text('utf8'))
+              assert summary['status']=='PASS' and summary['shard']==n and not summary['failures']
+              records=json.loads((folder/'files.json').read_text('utf8'))
+              assert len(records)==summary['passed']==summary['expected']
+              for obj in records:
+                  p=obj['path']
+                  assert p in changed and p not in seen and obj['before_sha1']==old[p]
+                  f=folder/'delta'/p.lstrip('/')
+                  assert f.is_file() and hashlib.sha1(f.read_bytes()).hexdigest()==obj['after_sha1']==updated[p]
+                  dst=dest/'delta'/p.lstrip('/')
+                  dst.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copy2(f,dst)
+                  seen.add(p)
+          assert seen==changed
+          print('PASS_21864_SIGNED_EXACT_SEO_PATCHED_FILES_AND_202786_MANIFEST',flush=True)
+          PY
+      - name: Smoke test 12 paced SHA-verified PUT requests to EXACT already existing nonpublished Draft
+        run: |
+          set -euo pipefail
+          python3 scripts/enpt_seo_v31_resume_existing_draft_20261030.py --smoke 12 --pace 0.40
+          test -s seo-v31-resume-evidence/02_SMOKE_PASS.json
+      - name: Always GET-only Production and original V31 identity check
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          t=os.environ.get('NETLIFY_AUTH_TOKEN','')
+          if not t:raise RuntimeError('HOLD_TOKEN_UNAVAILABLE')
+          base='https://api.netlify.com/api/v1/'
+          def get(path):
+              q=urllib.request.Request(base+path,method='GET',headers={'Authorization':'Bearer '+t})
+              with urllib.request.urlopen(q,timeout=35) as r:return json.load(r)
+          s=get('sites/'+os.environ['ENPT_SITE_ID'])
+          d=get('sites/'+os.environ['ENPT_SITE_ID']+'/deploys/'+os.environ['ENPT_V31_ID'])
+          assert (s.get('published_deploy') or {}).get('id')==os.environ['ENPT_PUB_ID']
+          assert d.get('state')=='ready' and d.get('published_at') is None
+          print('ENPT_SEO_A_PROD_AND_OLD_V31_DRAFT_SAFE')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V31_EXISTING_DRAFT_12_PUT_RATE_LIMIT_SMOKE
+          path: seo-v31-resume-evidence/
+          retention-days: 14
