@@ -1,0 +1,121 @@
+name: ENPT SEO V31 Aggregate Verified 16 Signed SHA Artifacts 20261030
+on:
+  push:
+    branches: [review/enpt-seo-titles-approved-a-v1-20261028]
+    paths: [.github/workflows/enpt-seo-v31-aggregate-saved-shards-20261030.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_READONLY_FULL_PUBLISHED_SHA_FILE_MANIFEST
+          run-id: 40459650646
+          github-token: ${{ github.token }}
+          path: published-manifest
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - name: Reconstruct frozen V3.1 manifest
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_REGION_DRAFT_BUILD_20261027.py
+          python3 scripts/ENPT_REGION_FINAL_INTEGRATION_20261027.py
+          python3 scripts/ENPT_REGION_V2_FIX_5149_LINKS_20261027.py
+          python3 scripts/ENPT_V3_SHA_REUSE_MINIMAL_FULLSITE_BUILDER_20261027.py
+          python3 scripts/ENPT_V3_1_FIX_7_LOCALITY_TITLES_ONLY_20261027.py
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ENPT_V31_SHA_SHARD_*
+          run-id: 41019999727
+          github-token: ${{ github.token }}
+          path: collected-shards
+          merge-multiple: false
+      - name: Display artifact directory entries for archive layout diagnosis
+        run: |
+          find collected-shards -name summary.json | sort | head -n 24
+      - name: Reconcile ALL 21864 verified raw pages and frozen 202786 SHA set
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, gzip, pathlib, hashlib
+          root=pathlib.Path('collected-shards')
+          with gzip.open('v3-1-patch-evidence/V3_1_202786_CANDIDATE_FILES_SHA1.json.gz','rt') as f:old=json.load(f)
+          with gzip.open('signed-qa-map/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz','rt') as f:signed=json.load(f)['original_public_html_to_data_payload']
+          stations=json.loads(pathlib.Path('data/stations.json').read_text('utf8'))['stations']
+          from sys import path as sys_path
+          sys_path.insert(0,'scripts')
+          from enpt_seo_title_policy_a_v1 import COURSE_TITLES
+          expected={}
+          for station in stations:
+              for intent in [None]+list(COURSE_TITLES):
+                  route='station-'+station['slug']+('-'+intent if intent else '')+'.html'
+                  payload='/'+signed[route]['to'].lstrip('/')
+                  if payload in expected:raise RuntimeError('COLLISION')
+                  expected[payload]=route
+          assert len(expected)==21864 and len(old)==202786
+          merged=dict(old)
+          seen=set(); total=0;rows=[]
+          for n in range(16):
+              parent=root/('ENPT_V31_SHA_SHARD_'+str(n))
+              found=list(parent.rglob('summary.json'))
+              assert len(found)==1,('MISSING_OR_DUPLICATE_SHARD_SUMMARY',n,[str(x) for x in found[:4]])
+              folder=found[0].parent
+              summary=json.loads((folder/'summary.json').read_text('utf8'))
+              assert summary['status']=='PASS' and summary['shard']==n and not summary['failures'],summary
+              records=json.loads((folder/'files.json').read_text('utf8'))
+              assert len(records)==summary['expected']==summary['passed']
+              for entry in records:
+                  p=entry['path']
+                  assert p not in seen and expected.get(p)==entry['route']
+                  assert old[p]==entry['before_sha1']
+                  f=folder/'delta'/p.lstrip('/')
+                  assert f.is_file() and hashlib.sha1(f.read_bytes()).hexdigest()==entry['after_sha1']
+                  assert entry['after_sha1']!=old[p]
+                  merged[p]=entry['after_sha1'];seen.add(p);total+=1
+                  if len(rows)<30:rows.append({k:entry[k] for k in ['route','path','before_sha1','after_sha1','title']})
+          assert seen==set(expected) and total==21864
+          assert len(merged)==len(old)==202786
+          assert sum(merged[k]!=old[k] for k in old)==21864
+          out=pathlib.Path('seo-v31-combined');out.mkdir(exist_ok=True)
+          with gzip.open(out/'SEO_A_V31_202786_STATIC_FILES_SHA1.json.gz','wt',encoding='utf8') as f:json.dump(merged,f,separators=(',',':'))
+          summary={'status':'PASS','processed':total,'expected':21864,'shards':16,
+                   'unchanged_static_paths':202786-21864,'total_static_paths':202786,
+                   'SEO_head_only_changes':21864,'published_posts':0,'draft_posts':0}
+          (out/'full-summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),'utf8')
+          (out/'title-route-diff-samples.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2),'utf8')
+          print('ENPT_21864_ALL_SHARD_FULL_SIGNED_SHA_PASS',json.dumps(summary,ensure_ascii=False),flush=True)
+          PY
+      - name: Verify original Production and V3.1 Draft still unchanged
+        run: |
+          python3 - <<'PY'
+          import os,urllib.request,json
+          t=os.environ['NETLIFY_AUTH_TOKEN']
+          site='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          def get(p):
+              q=urllib.request.Request('https://api.netlify.com/api/v1/'+p,headers={'Authorization':'Bearer '+t})
+              with urllib.request.urlopen(q,timeout=35) as r:return json.load(r)
+          s=get('sites/'+site);d=get('sites/'+site+'/deploys/6ae06963f085b33a5ee903eb')
+          assert (s.get('published_deploy') or {}).get('id')=='6adafef5f2c6d196833683db','HOLD_PRODUCTION_CHANGED'
+          assert d.get('state')=='ready' and d.get('published_at') is None and d.get('draft') is not False,'HOLD_V31_CHANGED'
+          print('ENPT_BASELINE_PROTECTED_READONLY_PASS',flush=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: ENPT_V31_20261030_ALL16_SIGNED_SHA_AGGREGATED_PASS
+          path: seo-v31-combined/
+          retention-days: 14
+          if-no-files-found: error
