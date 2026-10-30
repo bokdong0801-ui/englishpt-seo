@@ -1,0 +1,1 @@
+ENPT SEO A V31 verified SHA source gate 40997417623; trigger ONE separate nonpublished Draft only after 21864/21864 verified artifact success. Do not publish Production or modify prior Draft. Date: 2026-10-30 KST.
