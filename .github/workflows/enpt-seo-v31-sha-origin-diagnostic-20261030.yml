@@ -1,0 +1,104 @@
+name: ENPT SEO V31 GET-only raw origin SHA diagnosis 20261030
+on:
+  push:
+    branches: [review/enpt-seo-titles-approved-a-v1-20261028]
+    paths: [.github/workflows/enpt-seo-v31-sha-origin-diagnostic-20261030.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  origin-diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        with:
+          name: ENPT_V3_READONLY_FULL_PUBLISHED_SHA_FILE_MANIFEST
+          run-id: 40459650646
+          github-token: ${{ github.token }}
+          path: published-manifest
+      - uses: actions/download-artifact@v4
+        with:
+          name: englishpt-v23521-NAVER-TAG-PRESERVE-GOOGLE-180800-FULL-QA
+          run-id: 39234109195
+          github-token: ${{ github.token }}
+          path: signed-qa-map
+      - name: Reconstruct signed V3.1 immutable SHA manifest without writes
+        run: |
+          set -euo pipefail
+          python3 scripts/ENPT_REGION_DRAFT_BUILD_20261027.py
+          python3 scripts/ENPT_REGION_FINAL_INTEGRATION_20261027.py
+          python3 scripts/ENPT_REGION_V2_FIX_5149_LINKS_20261027.py
+          python3 scripts/ENPT_V3_SHA_REUSE_MINIMAL_FULLSITE_BUILDER_20261027.py
+          python3 scripts/ENPT_V3_1_FIX_7_LOCALITY_TITLES_ONLY_20261027.py
+      - name: Diagnose immutable raw origin versus CDN without any deployment mutation
+        run: |
+          python3 - <<'PY'
+          import os,hashlib,urllib.request,urllib.error,json,gzip,time
+          S='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          PUB='6adafef5f2c6d196833683db'
+          V31='6ae06963f085b33a5ee903eb'
+          with gzip.open('v3-1-patch-evidence/V3_1_202786_CANDIDATE_FILES_SHA1.json.gz','rt') as f: manifest=json.load(f)
+          with gzip.open('signed-qa-map/NAVER_GOOGLE_TWO_HOME_NEW_SHA1_MAP.json.gz','rt') as f:signed=json.load(f)['original_public_html_to_data_payload']
+          token=os.environ.get('NETLIFY_AUTH_TOKEN','')
+          assert len(token)>20,'HOLD_MISSING_TOKEN'
+          def download(url, raw=False):
+              h={'User-Agent':'ENPT-SEO-20261030-READONLY-SHA-ORIGIN','Accept':'application/vnd.bitballoon.v1.raw' if raw else '*/*'}
+              if 'api.netlify.com' in url:
+                  h['Authorization']='Bearer '+token
+                  if raw:h['Content-Type']='application/vnd.bitballoon.v1.raw'
+              req=urllib.request.Request(url,headers=h,method='GET')
+              for i in range(3):
+                  try:
+                      with urllib.request.urlopen(req,timeout=28) as res:
+                          data=res.read(750000)
+                          return {'http':res.status,'sha1':hashlib.sha1(data).hexdigest(),'bytes':len(data),
+                              'type':res.headers.get('content-type',''),'html_like':b'<html' in data[:250].lower()}
+                  except Exception as e:
+                      err=f'{type(e).__name__}: {str(e)[:100]}'
+                      time.sleep(1+i*2)
+              return {'error':err}
+          site_api='https://api.netlify.com/api/v1/sites/'+S
+          r=download(site_api)
+          # Site API response SHA is not useful, verify published identity separately.
+          q=urllib.request.Request(site_api,headers={'Authorization':'Bearer '+token},method='GET')
+          with urllib.request.urlopen(q,timeout=40) as f: site=json.load(f)
+          assert (site.get('published_deploy') or {}).get('id')==PUB,'HOLD_PRODUCTION_ID_CHANGED'
+          q=urllib.request.Request(site_api+'/deploys/'+V31,headers={'Authorization':'Bearer '+token},method='GET')
+          with urllib.request.urlopen(q,timeout=40) as f: draft=json.load(f)
+          assert draft.get('state')=='ready' and draft.get('published_at') is None,'HOLD_V31_DRAFT_DRIFT'
+          routes=['station-gapcheon-duolingo-academy.html','station-banwoldang.html','station-gangnam-opic.html']
+          rows=[]
+          for route in routes:
+              path='/'+signed[route]['to'].lstrip('/')
+              expected=manifest[path]
+              sample={'route':route,'payload':path,'signed_v31_sha1':expected}
+              paths={
+                  'published_cdn':'https://'+PUB+'--englishpt-seo.netlify.app'+path,
+                  'draft_cdn':'https://'+V31+'--englishpt-seo.netlify.app'+path,
+                  'published_site_raw_api':site_api+'/files'+path,
+                  'published_deploy_raw_api':'https://api.netlify.com/api/v1/deploys/'+PUB+'/files'+path,
+                  'v31_draft_raw_api':'https://api.netlify.com/api/v1/deploys/'+V31+'/files'+path,
+              }
+              for label,url in paths.items():
+                  datum=download(url,raw=('api' in label))
+                  if 'sha1' in datum: datum['matches_signed']=datum['sha1']==expected
+                  sample[label]=datum
+              print('ENPT_SOURCE_SHA_DIAG',json.dumps(sample,ensure_ascii=False),flush=True)
+              rows.append(sample)
+          print('ENPT_DIAG_SAFE',json.dumps({'published':PUB,'draft':V31,'productions_published':0,'drafts_created':0}),flush=True)
+          import pathlib
+          pathlib.Path('seo-sha-diag').mkdir(exist_ok=True)
+          pathlib.Path('seo-sha-diag/results.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_V31_OCT30_RAW_SHA_READONLY_DIAG
+          path: seo-sha-diag/
+          retention-days: 14
