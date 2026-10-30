@@ -1,0 +1,42 @@
+name: ENPT SEO V31 Existing Draft Readonly State Check 20261030
+on:
+  push:
+    branches: [review/enpt-seo-titles-approved-a-v1-20261028]
+    paths: [.github/workflows/enpt-seo-v31-draft-state-readonly-20261030.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - name: Validate immutable published and old draft identities and inspect EXACT existing new draft
+        run: |
+          python3 - <<'PY'
+          import os,json,urllib.request
+          tok=os.environ['NETLIFY_AUTH_TOKEN']
+          site='98d96cc5-f0b7-4d3d-8072-6476d93e55a3'
+          draft='6ae44a45133b105058f6f9ef'
+          api='https://api.netlify.com/api/v1/'
+          def get(p):
+            req=urllib.request.Request(api+p,headers={'Authorization':'Bearer '+tok,'Accept':'application/json'},method='GET')
+            with urllib.request.urlopen(req,timeout=40) as r:return json.load(r)
+          s=get('sites/'+site)
+          pub=(s.get('published_deploy') or {}).get('id')
+          old=get('sites/'+site+'/deploys/6ae06963f085b33a5ee903eb')
+          new=get('sites/'+site+'/deploys/'+draft)
+          assert pub=='6adafef5f2c6d196833683db','HOLD_PUBLISHED_CHANGED'
+          assert old.get('state')=='ready' and old.get('published_at') is None and old.get('draft') is not False,'HOLD_V31_CHANGED'
+          assert new.get('id')==draft and new.get('published_at') is None and new.get('draft') is not False,'HOLD_NEW_DRAFT_NOT_UNPUBLISHED'
+          required=new.get('required') or []
+          edges=new.get('required_edge_functions') or []
+          output={'published_unchanged':pub,'old_v31_ready':old.get('state'),
+           'existing_new_draft':draft,'state':new.get('state'),'draft':new.get('draft'),
+           'published_at':new.get('published_at'),'title':new.get('title'),
+           'deploy_ssl_url':new.get('deploy_ssl_url'),'required_count':len(required),
+           'required_edge_functions':edges,'required_sample':required[:3],
+           'total_expected_new_sha':21864,'writes':0}
+          print('ENPT_EXISTING_DRAFT_STATE',json.dumps(output,ensure_ascii=False),flush=True)
+          PY
