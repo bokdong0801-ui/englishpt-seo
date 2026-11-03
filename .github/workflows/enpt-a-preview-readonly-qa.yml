@@ -1,0 +1,39 @@
+name: ENPT A Preview READONLY 28 Pages 44 Sitemaps SEO Forms
+on:
+  push:
+    branches: [review/enpt-seo-titles-approved-a-v1-20261028]
+    paths:
+      - .github/workflows/enpt-a-preview-readonly-qa.yml
+      - scripts/enpt_a_preview_readonly_qa.py
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN || secrets.NETLIFY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify GET-only script
+        run: |
+          python -m py_compile scripts/enpt_a_preview_readonly_qa.py
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('scripts/enpt_a_preview_readonly_qa.py').read_text()
+          assert 'method="GET"' in s
+          assert 'method="POST"' not in s and 'method="PUT"' not in s and 'method="DELETE"' not in s
+          assert '6ae44a45133b105058f6f9ef' in s
+          print('GET_ONLY_SOURCE_PASS')
+          PY
+      - name: Run A Preview QA
+        run: python scripts/enpt_a_preview_readonly_qa.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ENPT_A_PREVIEW_READONLY_28P_44XML_REPORT
+          path: enpt-a-readonly-report/
+          retention-days: 30
